@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MDS Prospection — Maquette</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --md-blue: #0B3FA8;
+    --md-blue-dark: #031A56;
+    --md-blue-deep: #00124A;
+    --md-magenta: #E6217D;
+    --md-magenta-soft: #FF4DA0;
+    --md-white: #FFFFFF;
+    --md-bg: #F2F4FB;
+    --md-text: #0E1A3C;
+    --md-text-muted: #5C6A8A;
+    --md-border: #DCE2F0;
+    --md-success: #1FBF7A;
+    --md-warning: #F5A524;
+    --md-danger: #E5484D;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow-sm: 0 1px 3px rgba(11,63,168,0.08);
+    --shadow-md: 0 8px 24px rgba(11,63,168,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--md-bg);
+    color: var(--md-text);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  h1, h2, h3, h4 { font-family: 'Montserrat', sans-serif; letter-spacing: -0.01em; }
+  .wordmark {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--md-white);
+    display: inline-flex;
+    align-items: baseline;
+  }
+  .wordmark .y {
+    color: var(--md-magenta);
+    transform: translateY(-3px);
+    display: inline-block;
+    font-style: italic;
+  }
+  .wordmark.dark { color: var(--md-blue-dark); }
+  .wordmark.small { font-size: 16px; }
+
+  /* === LAYOUT WRAPPER FOR MOCKUP DEMO === */
+  .mockup-frame {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+  .mockup-section { margin-bottom: 56px; }
+  .mockup-label {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--md-text-muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mockup-label::before {
+    content: '';
+    width: 24px;
+    height: 2px;
+    background: var(--md-magenta);
+    display: inline-block;
+  }
+
+  /* === TOP BAR (ADMIN) === */
+  .topbar {
+    background: linear-gradient(135deg, var(--md-blue) 0%, var(--md-blue-dark) 100%);
+    color: white;
+    padding: 14px 24px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .topbar nav { display: flex; gap: 6px; margin-left: 24px; }
+  .topbar nav a {
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    transition: 0.2s;
+  }
+  .topbar nav a:hover, .topbar nav a.active {
+    background: rgba(255,255,255,0.12);
+    color: white;
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--md-magenta);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  /* === DASHBOARD CONTAINER === */
+  .app {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+  .dashboard {
+    padding: 28px 24px;
+  }
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .page-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--md-blue-dark);
+  }
+  .page-header p { color: var(--md-text-muted); font-size: 14px; margin-top: 4px; }
+
+  /* === KPI CARDS === */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .kpi {
+    background: white;
+    border: 1px solid var(--md-border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--md-blue);
+  }
+  .kpi.accent::before { background: var(--md-magenta); }
+  .kpi.success::before { background: var(--md-success); }
+  .kpi.warning::before { background: var(--md-warning); }
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--md-text-muted);
+  }
+  .kpi-value {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--md-blue-dark);
+    margin-top: 4px;
+  }
+  .kpi-delta {
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  .kpi-delta.up { color: var(--md-success); }
+  .kpi-delta.down { color: var(--md-danger); }
+
+  /* === TOOLBAR (filters / search) === */
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .search {
+    flex: 1;
+    min-width: 220px;
+    position: relative;
+  }
+  .search input {
+    width: 100%;
+    padding: 10px 14px 10px 36px;
+    border: 1px solid var(--md-border);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+  }
+  .search input:focus { outline: 2px solid var(--md-blue); outline-offset: -1px; }
+  .search::before {
+    content: '🔍';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    opacity: 0.5;
+  }
+  .filter {
+    padding: 9px 14px;
+    background: white;
+    border: 1px solid var(--md-border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--md-text);
+  }
+  .filter.active { background: var(--md-blue-dark); color: white; border-color: var(--md-blue-dark); }
+  .btn {
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary {
+    background: var(--md-magenta);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--md-magenta-soft); }
+  .btn-secondary {
+    background: var(--md-blue-dark);
+    color: white;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--md-blue-dark);
+    border: 1px solid var(--md-border);
+  }
+
+  /* === PROSPECTS TABLE === */
+  .table-wrap {
+    border: 1px solid var(--md-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: white;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  thead {
+    background: #FAFBFE;
+    border-bottom: 1px solid var(--md-border);
+  }
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--md-text-muted);
+    font-weight: 700;
+  }
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--md-border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover { background: #FAFBFE; cursor: pointer; }
+  .company {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .company-logo {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    background: var(--md-blue);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .company-name { font-weight: 600; color: var(--md-blue-dark); }
+  .company-contact { font-size: 12px; color: var(--md-text-muted); }
+
+  /* === STATUS PILLS === */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .pill::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .pill.lead { background: #E5E9F5; color: #2A3D6E; }
+  .pill.lead::before { background: #6B7BA8; }
+  .pill.contact { background: #FFE6F1; color: #B8195F; }
+  .pill.contact::before { background: var(--md-magenta); }
+  .pill.proposal { background: #FFF3DD; color: #8B5A00; }
+  .pill.proposal::before { background: var(--md-warning); }
+  .pill.signed { background: #DDF6E8; color: #117A4A; }
+  .pill.signed::before { background: var(--md-success); }
+  .pill.lost { background: #FCE3E4; color: #A8262B; }
+  .pill.lost::before { background: var(--md-danger); }
+
+  /* === SYNC INDICATORS === */
+  .sync-badges {
+    display: flex;
+    gap: 4px;
+  }
+  .sync-badge {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    background: var(--md-bg);
+    color: var(--md-text-muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    border: 1px solid var(--md-border);
+  }
+  .sync-badge.synced { background: #DDF6E8; color: #117A4A; border-color: #B5E5C9; }
+  .sync-badge.pending { background: #FFF3DD; color: #8B5A00; border-color: #F0D89B; }
+
+  /* === PUBLIC FORM (HERO) === */
+  .public-hero {
+    background:
+      linear-gradient(135deg, rgba(3,26,86,0.92) 0%, rgba(11,63,168,0.85) 100%),
+      radial-gradient(circle at 20% 80%, rgba(230,33,125,0.4), transparent 50%);
+    background-color: var(--md-blue-dark);
+    padding: 60px 40px 40px;
+    color: white;
+    border-radius: var(--radius) var(--radius) 0 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .public-hero::after {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, var(--md-magenta) 0%, transparent 70%);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .badge-new {
+    display: inline-block;
+    background: var(--md-magenta);
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+    transform: rotate(-3deg);
+  }
+  .public-hero h1 {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1.1;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .public-hero p {
+    font-size: 16px;
+    opacity: 0.85;
+    max-width: 580px;
+  }
+  .event-pills {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .event-pill {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    backdrop-filter: blur(8px);
+  }
+
+  /* === FORM === */
+  .form-body {
+    padding: 32px 40px;
+    background: white;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .form-grid .full { grid-column: 1 / -1; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--md-blue-dark);
+    margin-bottom: 6px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--md-border);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 14px;
+    background: white;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: 2px solid var(--md-blue);
+    outline-offset: -1px;
+  }
+  .field textarea { resize: vertical; min-height: 80px; }
+
+  .pack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .pack {
+    border: 2px solid var(--md-border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+    position: relative;
+  }
+  .pack:hover { border-color: var(--md-blue); }
+  .pack.selected {
+    border-color: var(--md-magenta);
+    background: linear-gradient(135deg, rgba(230,33,125,0.04) 0%, rgba(230,33,125,0.01) 100%);
+  }
+  .pack.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 22px; height: 22px;
+    background: var(--md-magenta);
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .pack-name {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--md-blue-dark);
+    margin-bottom: 4px;
+  }
+  .pack-price {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--md-blue-dark);
+  }
+  .pack-price small {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--md-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .pack-desc {
+    font-size: 12px;
+    color: var(--md-text-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  .submit-row {
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .submit-row small { color: var(--md-text-muted); font-size: 12px; }
+
+  /* === PROSPECT DETAIL === */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    margin-top: 16px;
+  }
+  .detail-main { display: flex; flex-direction: column; gap: 16px; }
+  .detail-card {
+    background: white;
+    border: 1px solid var(--md-border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .detail-card h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--md-text-muted);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .timeline-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--md-border);
+  }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--md-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .timeline-content { flex: 1; }
+  .timeline-title { font-weight: 600; font-size: 14px; color: var(--md-blue-dark); }
+  .timeline-meta { font-size: 12px; color: var(--md-text-muted); margin-top: 2px; }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .topbar nav { display: none; }
+    .page-header { flex-direction: column; align-items: stretch; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-body, .public-hero { padding-left: 20px; padding-right: 20px; }
+    .public-hero h1 { font-size: 26px; }
+    .detail-grid { grid-template-columns: 1fr; }
+    th:nth-child(3), td:nth-child(3),
+    th:nth-child(5), td:nth-child(5) { display: none; }
+    .dashboard { padding: 18px 14px; }
+    .kpi-value { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="mockup-frame">
+
+  <!-- ====== ADMIN DASHBOARD ====== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Écran 1 — Dashboard admin (toi + commerciale)</div>
+    <div class="app">
+      <div class="topbar">
+        <div class="topbar-left">
+          <span class="wordmark">mediada<span class="y">y</span>s · prospection</span>
+          <nav>
+            <a href="#" class="active">Prospects</a>
+            <a href="#">Pipeline</a>
+            <a href="#">Inscriptions</a>
+            <a href="#">Synchros</a>
+          </nav>
+        </div>
+        <div class="avatar">PC</div>
+      </div>
+      <div class="dashboard">
+        <div class="page-header">
+          <div>
+            <h1>Pipeline MDS 2026</h1>
+            <p>Suivi commercial — Paris (Carrousel du Louvre) · Marseille (Pharo) · Bruxelles</p>
+          </div>
+          <button class="btn btn-primary">+ Nouveau prospect</button>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi"><div class="kpi-label">Prospects actifs</div><div class="kpi-value">142</div><div class="kpi-delta up">+18 cette semaine</div></div>
+          <div class="kpi accent"><div class="kpi-label">Inscriptions reçues</div><div class="kpi-value">37</div><div class="kpi-delta up">+6 ces 7j</div></div>
+          <div class="kpi warning"><div class="kpi-label">Devis envoyés</div><div class="kpi-value">22</div><div class="kpi-delta">en attente</div></div>
+          <div class="kpi success"><div class="kpi-label">Signés</div><div class="kpi-value">14</div><div class="kpi-delta up">CA 86 200 €</div></div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search"><input type="text" placeholder="Chercher un prospect, une société, un email..."></div>
+          <button class="filter active">Tous</button>
+          <button class="filter">À relancer</button>
+          <button class="filter">Inscriptions web</button>
+          <button class="filter">Premium</button>
+          <button class="btn btn-ghost">Exporter</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Société / Contact</th>
+                <th>Statut</th>
+                <th>Source</th>
+                <th>Pack</th>
+                <th>Dernière action</th>
+                <th>Synchros</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="company"><div class="company-logo">RF</div><div><div class="company-name">Radio France</div><div class="company-contact">m.dupont@radiofrance.com</div></div></div></td>
+                <td><span class="pill signed">Signé</span></td>
+                <td>Direct</td>
+                <td>Premium Paris</td>
+                <td>Hier · BDC reçu</td>
+                <td><div class="sync-badges"><span class="sync-badge synced" title="Sellsy">SE</span><span class="sync-badge synced" title="Brevo">BR</span><span class="sync-badge synced" title="Connectonair">CA</span></div></td>
+              </tr>
+              <tr>
+                <td><div class="company"><div class="company-logo" style="background:var(--md-magenta);">NR</div><div><div class="company-name">NRJ Group</div><div class="company-contact">contact@nrj.fr</div></div></div></td>
+                <td><span class="pill proposal">Devis envoyé</span></td>
+                <td>Inscription web</td>
+                <td>Stand 12m²</td>
+                <td>Il y a 2j · relance prog.</td>
+                <td><div class="sync-badges"><span class="sync-badge synced">SE</span><span class="sync-badge synced">BR</span><span class="sync-badge pending">CA</span></div></td>
+              </tr>
+              <tr>
+                <td><div class="company"><div class="company-logo" style="background:#117A4A;">EU</div><div><div class="company-name">Europe 1</div><div class="company-contact">partenariats@europe1.fr</div></div></div></td>
+                <td><span class="pill contact">En contact</span></td>
+                <td>Salon SATIS</td>
+                <td>—</td>
+                <td>Il y a 3j · réunion fixée</td>
+                <td><div class="sync-badges"><span class="sync-badge synced">SE</span><span class="sync-badge pending">BR</span><span class="sync-badge">CA</span></div></td>
+              </tr>
+              <tr>
+                <td><div class="company"><div class="company-logo" style="background:#8B5A00;">PD</div><div><div class="company-name">Podcast Deluxe Studios</div><div class="company-contact">hello@pdstudios.com</div></div></div></td>
+                <td><span class="pill lead">Lead</span></td>
+                <td>Inscription web</td>
+                <td>Visibilité +</td>
+                <td>Aujourd'hui · à qualifier</td>
+                <td><div class="sync-badges"><span class="sync-badge pending">SE</span><span class="sync-badge">BR</span><span class="sync-badge">CA</span></div></td>
+              </tr>
+              <tr>
+                <td><div class="company"><div class="company-logo" style="background:#A8262B;">MR</div><div><div class="company-name">Mediawan Radio</div><div class="company-contact">k.bertin@mediawan.com</div></div></div></td>
+                <td><span class="pill lost">Perdu</span></td>
+                <td>Direct</td>
+                <td>—</td>
+                <td>15/04 · pas de budget 2026</td>
+                <td><div class="sync-badges"><span class="sync-badge synced">SE</span><span class="sync-badge">BR</span><span class="sync-badge">CA</span></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== PROSPECT DETAIL ====== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Écran 2 — Fiche prospect (vue mobile-friendly)</div>
+    <div class="app">
+      <div class="topbar">
+        <div class="topbar-left">
+          <span class="wordmark small">mediada<span class="y">y</span>s</span>
+        </div>
+        <div class="avatar">PC</div>
+      </div>
+      <div class="dashboard">
+        <div class="page-header">
+          <div>
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div class="company-logo" style="width:54px;height:54px;font-size:20px;background:var(--md-magenta);">NR</div>
+              <div>
+                <h1 style="font-size:22px;">NRJ Group</h1>
+                <p>Marie Lambert · Directrice partenariats · marie.lambert@nrj.fr · +33 1 40 71 40 00</p>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost">Email</button>
+            <button class="btn btn-secondary">Appeler</button>
+            <button class="btn btn-primary">Pousser vers Sellsy</button>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-main">
+            <div class="detail-card">
+              <h3>Statut & pack</h3>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <span class="pill proposal">Devis envoyé</span>
+                <span class="pill" style="background:#E5E9F5;color:#2A3D6E;">Stand 12m² — Paris</span>
+                <span class="pill" style="background:#FFE6F1;color:#B8195F;">Visibilité +</span>
+                <span class="pill" style="background:#DCE2F0;color:#0E1A3C;">Salon SATIS</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:14px;">
+                <div><div class="kpi-label">Montant devis</div><div style="font-family:Montserrat;font-weight:700;font-size:18px;color:var(--md-blue-dark);">14 800 € HT</div></div>
+                <div><div class="kpi-label">Probabilité</div><div style="font-family:Montserrat;font-weight:700;font-size:18px;color:var(--md-blue-dark);">70%</div></div>
+                <div><div class="kpi-label">Closing prévu</div><div style="font-family:Montserrat;font-weight:700;font-size:18px;color:var(--md-blue-dark);">15/05/2026</div></div>
+              </div>
+            </div>
+            <div class="detail-card">
+              <h3>Historique</h3>
+              <div class="timeline-item">
+                <div class="timeline-icon">📩</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Devis envoyé — Stand 12m² + Visibilité totem</div>
+                  <div class="timeline-meta">26/04/2026 · Sellsy #DV-2026-088 · Synchro Brevo OK</div>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-icon">📞</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Appel découverte — 25 min</div>
+                  <div class="timeline-meta">23/04/2026 · Notes : besoin présence Paris + retombées presse</div>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-icon">🌐</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Inscription via formulaire public</div>
+                  <div class="timeline-meta">21/04/2026 · IP 92.184.x.x · Source : LinkedIn Ads</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="detail-card">
+              <h3>Synchronisations</h3>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:600;">Sellsy</span><span class="pill signed">À jour</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:600;">Brevo</span><span class="pill signed">À jour</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:600;">Connectonair</span><span class="pill proposal">À pousser</span></div>
+              </div>
+              <button class="btn btn-secondary" style="width:100%;margin-top:12px;justify-content:center;">Tout resynchroniser</button>
+            </div>
+            <div class="detail-card" style="margin-top:14px;">
+              <h3>Note Claude</h3>
+              <p style="font-size:13px;color:var(--md-text-muted);line-height:1.5;">NRJ a déjà été exposant en 2024. Probabilité élevée. Mentionner le retour SATIS dans la relance. À recontacter dans 4 jours si pas de retour devis.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== PUBLIC FORM ====== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Écran 3 — Formulaire public d'inscription exposant</div>
+    <div class="app">
+      <div class="public-hero">
+        <span class="badge-new">NEW · ÉDITION 2026</span>
+        <h1>Devenez exposant des MediaDays Solutions</h1>
+        <p>Le rendez-vous où le marché entier de l'audio, de la radio et du podcast converge. Réservez votre stand pour Paris, Marseille ou Bruxelles.</p>
+        <div class="event-pills">
+          <span class="event-pill">📍 Paris · Carrousel du Louvre · 15 déc. 2026</span>
+          <span class="event-pill">📍 Marseille · Palais du Pharo · 10 déc. 2026</span>
+          <span class="event-pill">📍 Bruxelles · Le Mix · 26 nov. 2026</span>
+        </div>
+      </div>
+      <div class="form-body">
+        <h2 style="font-size:18px;color:var(--md-blue-dark);margin-bottom:18px;">Vos coordonnées</h2>
+        <div class="form-grid">
+          <div class="field"><label>Société *</label><input type="text" placeholder="Ex. Radio France"></div>
+          <div class="field"><label>Site web</label><input type="text" placeholder="https://..."></div>
+          <div class="field"><label>Prénom *</label><input type="text"></div>
+          <div class="field"><label>Nom *</label><input type="text"></div>
+          <div class="field"><label>Fonction *</label><input type="text" placeholder="Ex. Directeur partenariats"></div>
+          <div class="field"><label>Téléphone *</label><input type="tel" placeholder="+33 ..."></div>
+          <div class="field full"><label>Email professionnel *</label><input type="email"></div>
+        </div>
+
+        <h2 style="font-size:18px;color:var(--md-blue-dark);margin:26px 0 14px;">Quel salon vous intéresse ?</h2>
+        <div class="form-grid">
+          <div class="field"><label>Salon souhaité</label><select><option>Paris — Carrousel du Louvre</option><option>Marseille — Palais du Pharo</option><option>Bruxelles — Le Mix</option><option>Plusieurs salons</option></select></div>
+          <div class="field"><label>Type de présence</label><select><option>Exposant</option><option>Partenaire</option><option>Sponsor</option></select></div>
+        </div>
+
+        <h2 style="font-size:18px;color:var(--md-blue-dark);margin:26px 0 4px;">Pack souhaité</h2>
+        <p style="color:var(--md-text-muted);font-size:13px;">Vous pourrez ajuster avec la commerciale après le premier contact.</p>
+        <div class="pack-grid">
+          <div class="pack"><div class="pack-name">Stand 6m²</div><div class="pack-price">3 800 €<small> HT</small></div><div class="pack-desc">Espace standard, mobilier inclus.</div></div>
+          <div class="pack selected"><div class="pack-name">Stand 12m²</div><div class="pack-price">6 900 €<small> HT</small></div><div class="pack-desc">Espace élargi, branding personnalisé.</div></div>
+          <div class="pack"><div class="pack-name">Premium</div><div class="pack-price">14 800 €<small> HT</small></div><div class="pack-desc">Stand + visibilité totem + presse.</div></div>
+          <div class="pack"><div class="pack-name">À discuter</div><div class="pack-price" style="font-size:16px;">Sur mesure</div><div class="pack-desc">Partenariat global multi-salons.</div></div>
+        </div>
+
+        <div class="field full" style="margin-top:20px;"><label>Message (optionnel)</label><textarea placeholder="Précisez votre projet, vos besoins, vos attentes..."></textarea></div>
+
+        <div class="submit-row">
+          <small>* Champs obligatoires · Vos données sont traitées conformément au RGPD.</small>
+          <button class="btn btn-primary" style="font-size:15px;padding:14px 28px;">Envoyer ma demande →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="text-align:center;color:var(--md-text-muted);font-size:12px;margin-top:32px;">Maquette MDS Prospection · charte MediaDays Solutions 2026</p>
+</div>
+</body>
+</html>
