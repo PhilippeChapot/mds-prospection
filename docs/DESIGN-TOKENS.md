@@ -4,12 +4,15 @@
 
 ## Couleurs
 
+> **Source de vérité** : les couleurs officielles `#294294` (bleu) et `#E6007E` (magenta) sont **directement extraites des SVG officiels** des logos MD et PRS 2026 (déposés dans `public/brand/`). Tout écart avec d'autres docs (mockup v1, etc.) doit s'aligner sur ces valeurs.
+
 | Token | Hex | Usage |
 |---|---|---|
-| `--md-blue` | `#0B3FA8` | Bleu de marque dominant — fond, header |
+| `--md-blue` | `#294294` | **Bleu officiel MD** (extrait des SVG) — fond, header |
+| `--md-blue-bright` | `#0B3FA8` | Variante claire pour gradients |
 | `--md-blue-dark` | `#031A56` | Gradients, contraste profond |
 | `--md-blue-deep` | `#00124A` | Accent ultra sombre |
-| `--md-magenta` | `#E6217D` | Accent signature ("y" de mediadays, CTA principal) |
+| `--md-magenta` | `#E6007E` | **Magenta officiel MD** (extrait des SVG) — accent signature, CTA principal |
 | `--md-magenta-soft` | `#FF4DA0` | Hover sur CTA magenta |
 | `--md-white` | `#FFFFFF` | Texte sur fond bleu, surfaces |
 | `--md-bg` | `#F2F4FB` | Fond app (gris bleuté) |

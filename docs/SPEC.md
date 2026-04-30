@@ -1969,7 +1969,7 @@ L'admin peut forcer un pôle sur la fiche société (`/companies/[id]`) — `pol
 **Pourquoi** : éviter que les tarifs ou libellés de la plateforme divergent du catalogue Sellsy (ce qui cassrait la facturation). Une seule source de vérité catalogue : Sellsy.
 
 **Mécanisme** :
-1. Côté Sellsy, Phil crée chaque produit (packs ACCESS/CLASSIC/PREMIUM × 2 catégories + 17 options additionnelles) avec un **SKU stable** (ex. `PACK_ACCESS_MDS`, `OPT_LOGO_GOLD`).
+1. Côté Sellsy, Phil crée chaque produit (packs ACCESS/CLASSIC/PREMIUM × 2 catégories + 18 options additionnelles) avec un **SKU stable** (ex. `PACK_ACCESS_MDS`, `OPT_LOGO_GOLD`).
 2. La plateforme synchronise via `GET /catalogue/items` :
    - Soit déclenchée manuellement (bouton "Synchroniser maintenant" dans `/admin/sellsy-products`)
    - Soit via cron quotidien (Vercel Cron Job)
@@ -2340,7 +2340,7 @@ NEXT_PUBLIC_APP_URL=https://mds-prospection.vercel.app
 
 À copier dans Claude Code une fois ce SPEC dans `docs/SPEC.md` :
 
-> *"Lis `docs/SPEC.md` (v2.5), `docs/MDS-Design-Tokens.md` et `docs/MDS-Prospection-Mockup-v2.4.html`. Compare avec l'état actuel du repo et produis-moi un plan détaillé pour la **Phase 0 uniquement** : setup Supabase, migration SQL avec toutes les tables incluant `seasons`, `audit_log`, `stripe_events_processed`, FK `season_id` partout pertinent, colonnes bilingues `_fr`/`_en`, extension pg_trgm, triggers Postgres pour audit_log ; installation `next-intl` avec routes localisées FR/EN ; seeds initiaux liés à la saison `MDS_2026` (6 pôles + tarifs ACCESS/CLASSIC/PREMIUM × 2 catégories + 17 options additionnelles) ; intégration Sentry + Vercel Analytics ; shadcn ; CI ; déploiement Vercel. Plan en français, avec checklist des fichiers à créer/modifier et des commandes à lancer. N'écris pas de code à ce stade — juste le plan que je validerai avant qu'on attaque."*
+> *"Lis `docs/SPEC.md` (v2.5), `docs/MDS-Design-Tokens.md` et `docs/MDS-Prospection-Mockup-v2.4.html`. Compare avec l'état actuel du repo et produis-moi un plan détaillé pour la **Phase 0 uniquement** : setup Supabase, migration SQL avec toutes les tables incluant `seasons`, `audit_log`, `stripe_events_processed`, FK `season_id` partout pertinent, colonnes bilingues `_fr`/`_en`, extension pg_trgm, triggers Postgres pour audit_log ; installation `next-intl` avec routes localisées FR/EN ; seeds initiaux liés à la saison `MDS_2026` (6 pôles + tarifs ACCESS/CLASSIC/PREMIUM × 2 catégories + 18 options additionnelles) ; intégration Sentry + Vercel Analytics ; shadcn ; CI ; déploiement Vercel. Plan en français, avec checklist des fichiers à créer/modifier et des commandes à lancer. N'écris pas de code à ce stade — juste le plan que je validerai avant qu'on attaque."*
 
 Une fois le plan validé : `/plan-eng-review` (Gstack) → `/ship` morceau par morceau.
 
