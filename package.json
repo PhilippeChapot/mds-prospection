@@ -20,10 +20,10 @@
     "db:types": "supabase gen types typescript --linked > src/lib/supabase/database.types.ts",
     "seed:all": "tsx scripts/seed/index.ts",
     "seed:season": "tsx scripts/seed/01_season.ts",
-    "seed:poles": "tsx scripts/seed/02_poles.ts",
-    "seed:tiers": "tsx scripts/seed/03_pricing_tiers.ts",
-    "seed:addons": "tsx scripts/seed/04_addon_options.ts",
-    "seed:settings": "tsx scripts/seed/05_app_settings.ts",
+    "seed:tiers": "tsx scripts/seed/02_pricing_tiers.ts",
+    "seed:addons": "tsx scripts/seed/03_addon_options.ts",
+    "seed:settings": "tsx scripts/seed/04_app_settings.ts",
+    "seed:prs": "tsx scripts/seed/05_prs_exhibitors.ts",
     "ai:test-classification": "tsx scripts/test-ai-classification.ts"
   },
   "lint-staged": {
