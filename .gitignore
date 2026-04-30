@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.env.local
+.env.production
+
+# Autorise les templates env (sans secrets)
+!.env.local.example
+!.env.example

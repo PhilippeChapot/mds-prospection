@@ -1,0 +1,2510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MDS Prospection — Maquette v2.5 (logos + admin)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --md-blue: #294294;            /* couleur officielle des SVG */
+    --md-blue-bright: #0B3FA8;
+    --md-blue-dark: #031A56;
+    --md-magenta: #E6007E;          /* couleur officielle des SVG */
+    --md-magenta-soft: #FF4DA0;
+    --md-white: #FFFFFF;
+    --md-bg: #F2F4FB;
+    --md-text: #0E1A3C;
+    --md-text-muted: #5C6A8A;
+    --md-border: #DCE2F0;
+    --md-success: #1FBF7A;
+    --md-warning: #F5A524;
+    --md-danger: #E5484D;
+    --pole-regies: #FFCDD2; --pole-audio: #F8BBD0; --pole-diffusion: #E1BEE7;
+    --pole-video: #BBDEFB; --pole-outdoor: #FFE0B2; --pole-data: #C8E6C9;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow-sm: 0 1px 3px rgba(11,63,168,0.08);
+    --shadow-md: 0 8px 24px rgba(11,63,168,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--md-bg); color: var(--md-text); line-height: 1.5; }
+  h1, h2, h3, h4 { font-family: 'Montserrat', sans-serif; letter-spacing: -0.01em; }
+
+  /* === LOGO LOCKUP — Logos officiels MD 2026 (Blanc sur fond foncé / Bleu sur fond clair) === */
+  .logo-lockup {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-prs-img, .logo-mds-img {
+    height: 44px;
+    width: auto;
+    display: block;
+    flex-shrink: 0;
+  }
+  .logo-divider {
+    width: 1px; height: 32px;
+    background: rgba(255,255,255,0.2);
+  }
+  /* Variante on-light : bascule sur la version bleue (à utiliser sur fond clair) */
+  .logo-lockup.on-light .logo-prs-img { content: url("_brand/PRS-LogoBleu2026.svg"); }
+  .logo-lockup.on-light .logo-mds-img { content: url("_brand/MDS-LogoBleu2026.svg"); }
+  .logo-lockup.on-light .logo-divider { background: rgba(41,66,148,0.2); }
+
+  /* === LAYOUT === */
+  .mockup-frame { max-width: 1320px; margin: 0 auto; padding: 32px 24px; }
+  .mockup-section { margin-bottom: 56px; }
+  .mockup-label {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--md-text-muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mockup-label::before { content: ''; width: 24px; height: 2px; background: var(--md-magenta); display: inline-block; }
+  .mockup-label .scope { background: var(--md-magenta); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; letter-spacing: 0.05em; }
+  .mockup-label .new-badge { background: var(--md-success); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; letter-spacing: 0.05em; font-weight: 800; }
+  .app { background: white; border-radius: var(--radius); box-shadow: var(--shadow-md); overflow: hidden; }
+
+  /* === HEADER PUBLIC === */
+  .public-header {
+    background: linear-gradient(135deg, var(--md-blue) 0%, var(--md-blue-dark) 100%);
+    color: white;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: var(--radius) var(--radius) 0 0;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .public-header-right { display: flex; align-items: center; gap: 14px; }
+  .lang-toggle { display: inline-flex; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 999px; overflow: hidden; }
+  .lang-toggle button { background: transparent; color: rgba(255,255,255,0.7); border: none; padding: 6px 12px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .lang-toggle button.active { background: var(--md-magenta); color: white; }
+  .header-cta { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 14px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; }
+
+  /* === HERO === */
+  .public-hero {
+    background:
+      linear-gradient(135deg, rgba(3,26,86,0.92) 0%, rgba(41,66,148,0.85) 100%),
+      radial-gradient(circle at 20% 80%, rgba(230,0,126,0.4), transparent 50%);
+    background-color: var(--md-blue-dark);
+    padding: 50px 40px 36px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .public-hero::after { content: ''; position: absolute; top: -40px; right: -40px; width: 200px; height: 200px; background: radial-gradient(circle, var(--md-magenta) 0%, transparent 70%); opacity: 0.5; pointer-events: none; }
+  .badge-new { display: inline-block; background: var(--md-magenta); color: white; font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.18em; padding: 4px 10px; border-radius: 4px; margin-bottom: 12px; transform: rotate(-3deg); }
+  .public-hero h1 { font-size: 30px; font-weight: 800; line-height: 1.15; text-transform: uppercase; margin-bottom: 8px; max-width: 780px; }
+  .public-hero p { font-size: 14px; opacity: 0.85; max-width: 580px; }
+  .event-pills { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .event-pill { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 999px; font-size: 12px; backdrop-filter: blur(8px); }
+
+  /* === STEPPER === */
+  .stepper { display: flex; align-items: center; gap: 14px; padding: 16px 40px; background: #FAFBFE; border-bottom: 1px solid var(--md-border); flex-wrap: wrap; }
+  .step { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--md-text-muted); font-weight: 600; }
+  .step .dot { width: 22px; height: 22px; border-radius: 50%; background: var(--md-border); color: var(--md-text-muted); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; }
+  .step.active { color: var(--md-blue-dark); }
+  .step.active .dot { background: var(--md-magenta); color: white; }
+  .step.done .dot { background: var(--md-success); color: white; }
+  .step-divider { flex: 1; height: 2px; background: var(--md-border); border-radius: 2px; max-width: 60px; }
+
+  /* === FORM === */
+  .form-body { padding: 28px 40px; background: white; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .field label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--md-blue-dark); margin-bottom: 6px; }
+  .field label .required { color: var(--md-magenta); }
+  .field input, .field select, .field textarea { width: 100%; padding: 11px 14px; border: 1px solid var(--md-border); border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; background: white; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--md-blue); outline-offset: -1px; }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .field-hint { font-size: 11px; color: var(--md-text-muted); margin-top: 4px; }
+  .autocomplete-wrap { position: relative; }
+  .autocomplete-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid var(--md-border); border-radius: var(--radius-sm); box-shadow: var(--shadow-md); z-index: 10; max-height: 240px; overflow-y: auto; }
+  .autocomplete-item { padding: 10px 14px; border-bottom: 1px solid var(--md-border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .autocomplete-item:hover { background: #FAFBFE; }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-name { font-weight: 600; font-size: 14px; color: var(--md-blue-dark); }
+  .pole-tag { font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 700; color: var(--md-blue-dark); }
+  .pole-tag.audio { background: var(--pole-audio); }
+  .pole-tag.diffusion { background: var(--pole-diffusion); }
+  .pole-tag.regies { background: var(--pole-regies); }
+  .pole-tag.video { background: var(--pole-video); }
+  .pole-tag.outdoor { background: var(--pole-outdoor); }
+  .pole-tag.data { background: var(--pole-data); }
+  .field-locked input { background: #F0F4FF; cursor: not-allowed; padding-right: 36px; }
+  .field-lock-icon { position: absolute; right: 12px; top: 38px; opacity: 0.5; }
+  .submit-row { margin-top: 22px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .submit-row small { color: var(--md-text-muted); font-size: 11px; flex: 1; }
+  .submit-row a { color: var(--md-blue); }
+
+  /* === BUTTONS === */
+  .btn { padding: 10px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--md-magenta); color: white; }
+  .btn-primary:hover { background: var(--md-magenta-soft); }
+  .btn-secondary { background: var(--md-blue-dark); color: white; }
+  .btn-ghost { background: transparent; color: var(--md-blue-dark); border: 1px solid var(--md-border); }
+  .btn-block { width: 100%; justify-content: center; }
+  .btn-lg { font-size: 15px; padding: 14px 28px; }
+  .btn-sm { font-size: 12px; padding: 6px 10px; }
+
+  /* === ALERTS === */
+  .alert { padding: 14px 18px; border-radius: var(--radius-sm); font-size: 14px; line-height: 1.4; display: flex; align-items: flex-start; gap: 10px; }
+  .alert.error { background: #FEE7E8; color: #A8262B; border: 1px solid #F5BCC0; }
+  .alert.success { background: #DDF6E8; color: #117A4A; border: 1px solid #B5E5C9; }
+  .alert.info { background: #E5E9F5; color: #2A3D6E; border: 1px solid #C2CCE8; }
+  .alert-icon { flex-shrink: 0; font-size: 16px; }
+
+  /* === CONFIRMATION ÉCRAN === */
+  .confirmation-screen { padding: 60px 40px; text-align: center; }
+  .confirmation-icon { font-size: 56px; margin-bottom: 16px; }
+  .confirmation-screen h2 { font-size: 26px; color: var(--md-blue-dark); margin-bottom: 12px; }
+  .confirmation-screen p { color: var(--md-text-muted); max-width: 520px; margin: 0 auto 8px; }
+  .confirmation-email-box { background: var(--md-bg); border: 1px dashed var(--md-border); padding: 14px 20px; border-radius: var(--radius-sm); display: inline-block; margin: 18px 0; font-family: monospace; color: var(--md-blue-dark); font-weight: 600; }
+
+  /* === FORM SECTIONS (accordéons) === */
+  .form-section { border: 1px solid var(--md-border); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+  .form-section-header { padding: 16px 20px; background: white; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid var(--md-border); }
+  .form-section-header h3 { font-size: 16px; color: var(--md-blue-dark); display: flex; align-items: center; gap: 10px; }
+  .form-section-header .step-num { width: 26px; height: 26px; background: var(--md-magenta); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .form-section-header .check { background: var(--md-success); color: white; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .form-section-body { padding: 20px; background: #FAFBFE; }
+
+  /* === PACK CARDS === */
+  .pack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .pack { border: 2px solid var(--md-border); border-radius: var(--radius); padding: 16px; cursor: pointer; transition: 0.2s; position: relative; background: white; }
+  .pack:hover { border-color: var(--md-blue); }
+  .pack.selected { border-color: var(--md-magenta); background: linear-gradient(135deg, rgba(230,0,126,0.04) 0%, rgba(230,0,126,0.01) 100%); }
+  .pack.selected::after { content: '✓'; position: absolute; top: 12px; right: 12px; width: 22px; height: 22px; background: var(--md-magenta); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .pack-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 15px; text-transform: uppercase; color: var(--md-blue-dark); margin-bottom: 6px; }
+  .pack-price { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 22px; color: var(--md-blue-dark); }
+  .pack-price.discount { color: var(--md-magenta); }
+  .pack-price.crossed { text-decoration: line-through; color: var(--md-text-muted); font-size: 13px; font-weight: 500; margin-right: 6px; }
+  .pack-price small { font-size: 11px; font-weight: 500; color: var(--md-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .pack-desc { font-size: 12px; color: var(--md-text-muted); margin-top: 6px; line-height: 1.4; }
+  .pack-prs-badge { display: inline-block; background: var(--md-magenta); color: white; font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 700; margin-top: 8px; }
+
+  /* === BOOTH === */
+  .booth-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .booth-canva-btn { background: white; border: 1px solid var(--md-blue); color: var(--md-blue); padding: 8px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .booth-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+  .booth-card { border: 2px solid var(--md-border); border-radius: var(--radius-sm); padding: 12px 14px; background: white; cursor: pointer; }
+  .booth-card:hover { border-color: var(--md-blue); }
+  .booth-card.selected { border-color: var(--md-magenta); background: rgba(230,0,126,0.04); }
+  .booth-code { font-family: monospace; font-weight: 700; color: var(--md-blue-dark); font-size: 14px; }
+  .booth-room { font-size: 12px; color: var(--md-text-muted); margin-top: 2px; }
+  .booth-surface { font-size: 13px; color: var(--md-blue); font-weight: 600; margin-top: 4px; }
+
+  /* === ADDONS === */
+  .addon-list { display: flex; flex-direction: column; gap: 8px; }
+  .addon-item { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: white; border: 1px solid var(--md-border); border-radius: var(--radius-sm); }
+  .addon-checkbox { flex-shrink: 0; width: 20px; height: 20px; border: 2px solid var(--md-border); border-radius: 4px; }
+  .addon-checkbox.checked { background: var(--md-magenta); border-color: var(--md-magenta); position: relative; }
+  .addon-checkbox.checked::after { content: '✓'; color: white; position: absolute; top: -3px; left: 3px; font-size: 14px; font-weight: 700; }
+  .addon-info { flex: 1; }
+  .addon-name { font-weight: 600; font-size: 14px; color: var(--md-blue-dark); }
+  .addon-cat { font-size: 11px; color: var(--md-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  .addon-price { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 14px; color: var(--md-blue-dark); flex-shrink: 0; }
+
+  /* === PAYMENT === */
+  .total-box { background: linear-gradient(135deg, var(--md-blue-dark), var(--md-blue)); color: white; padding: 20px 24px; border-radius: var(--radius); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .total-amount { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 28px; }
+  .total-label { font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.08em; }
+  .deposit-mini { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+  .payment-paths { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .pay-path { border: 2px solid var(--md-border); border-radius: var(--radius); padding: 16px; cursor: pointer; background: white; position: relative; }
+  .pay-path:hover { border-color: var(--md-blue); }
+  .pay-path.selected { border-color: var(--md-magenta); background: linear-gradient(135deg, rgba(230,0,126,0.04) 0%, rgba(230,0,126,0.01) 100%); }
+  .pay-path-radio { width: 18px; height: 18px; border: 2px solid var(--md-border); border-radius: 50%; flex-shrink: 0; }
+  .pay-path.selected .pay-path-radio { border-color: var(--md-magenta); background: var(--md-magenta) radial-gradient(circle, white 30%, transparent 35%); }
+  .pay-path-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .pay-path-name { font-weight: 700; color: var(--md-blue-dark); font-size: 14px; }
+  .pay-path-desc { font-size: 12px; color: var(--md-text-muted); margin-left: 28px; line-height: 1.4; }
+  .pay-path-amount { font-family: 'Montserrat', sans-serif; font-weight: 800; color: var(--md-magenta); font-size: 14px; margin-left: 28px; margin-top: 4px; }
+  .stripe-trust { display: flex; gap: 8px; align-items: center; margin-top: 14px; padding: 10px 14px; background: #F0F8F2; border-radius: var(--radius-sm); border: 1px solid #B5E5C9; }
+  .stripe-trust-text { font-size: 12px; color: #117A4A; }
+  .cgv-line { display: flex; gap: 8px; align-items: flex-start; margin-top: 14px; }
+  .cgv-line input { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; }
+  .cgv-line label { font-size: 12px; color: var(--md-text); }
+  .cgv-line a { color: var(--md-blue); }
+
+  /* === ESPACE PARTENAIRE === */
+  .partner-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 600px; }
+  .partner-sidebar { background: var(--md-blue-dark); color: white; padding: 22px 18px; }
+  .partner-brand { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 14px; opacity: 0.7; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .partner-company { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .partner-pole-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; color: var(--md-blue-dark); margin-bottom: 24px; }
+  .partner-nav { display: flex; flex-direction: column; gap: 4px; }
+  .partner-nav a { color: rgba(255,255,255,0.7); text-decoration: none; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+  .partner-nav a:hover { background: rgba(255,255,255,0.08); color: white; }
+  .partner-nav a.active { background: var(--md-magenta); color: white; }
+  .partner-nav-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 12px 0; }
+  .partner-main { padding: 28px 32px; background: white; }
+  .partner-page-title { font-size: 22px; color: var(--md-blue-dark); font-weight: 700; margin-bottom: 6px; }
+  .partner-page-sub { color: var(--md-text-muted); font-size: 14px; margin-bottom: 22px; }
+  .ex-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ex-card { background: white; border: 1px solid var(--md-border); border-radius: var(--radius); padding: 18px 20px; }
+  .ex-card-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--md-text-muted); font-weight: 700; margin-bottom: 12px; }
+  .ex-pay-status { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); margin-bottom: 8px; }
+  .ex-pay-status.paid { background: #DDF6E8; color: #117A4A; }
+  .ex-pay-status.pending { background: #FFF3DD; color: #8B5A00; }
+  .ex-pay-status-amount { font-family: Montserrat; font-weight: 700; }
+  .ex-action-btn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--md-bg); border-radius: var(--radius-sm); margin-bottom: 6px; cursor: pointer; font-size: 13px; color: var(--md-blue-dark); font-weight: 500; }
+  .ex-action-btn:hover { background: #E5E9F5; }
+  .checklist-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 13px; }
+  .checklist-item.done { color: var(--md-success); }
+  .checklist-item.pending { color: var(--md-text-muted); }
+  .affiliate-link-box { background: var(--md-blue-dark); color: white; padding: 16px 20px; border-radius: var(--radius); margin-bottom: 14px; }
+  .affiliate-link-text { font-family: monospace; font-size: 13px; word-break: break-all; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: var(--radius-sm); margin: 8px 0; }
+  .affiliate-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
+  .affiliate-stat { background: white; border: 1px solid var(--md-border); border-radius: var(--radius-sm); padding: 12px; text-align: center; }
+  .affiliate-stat-value { font-family: Montserrat; font-weight: 800; font-size: 22px; color: var(--md-blue-dark); }
+  .affiliate-stat-label { font-size: 11px; color: var(--md-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .qr-box { background: white; padding: 12px; border: 2px solid var(--md-border); border-radius: var(--radius-sm); display: inline-block; }
+  .qr-placeholder { width: 120px; height: 120px; background: linear-gradient(45deg, var(--md-blue-dark) 25%, transparent 25%), linear-gradient(-45deg, var(--md-blue-dark) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--md-blue-dark) 75%), linear-gradient(-45deg, transparent 75%, var(--md-blue-dark) 75%); background-size: 12px 12px; background-position: 0 0, 0 6px, 6px -6px, -6px 0px; }
+
+  /* === ADMIN === */
+  .admin-shell { display: grid; grid-template-columns: 232px 1fr; min-height: 700px; }
+  .admin-sidebar { background: white; border-right: 1px solid var(--md-border); padding: 18px 14px; }
+  .admin-section-title { font-size: 10px; color: var(--md-text-muted); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; padding: 8px 12px; margin-top: 12px; }
+  .admin-nav { display: flex; flex-direction: column; gap: 1px; }
+  .admin-nav a { padding: 8px 12px; border-radius: var(--radius-sm); color: var(--md-text); text-decoration: none; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .admin-nav a:hover { background: var(--md-bg); }
+  .admin-nav a.active { background: var(--md-blue-dark); color: white; }
+  .admin-nav .badge { background: var(--md-magenta); color: white; font-size: 10px; padding: 1px 6px; border-radius: 999px; font-weight: 700; }
+  .admin-main { padding: 24px 28px; background: var(--md-bg); }
+
+  /* Saison switcher */
+  .season-switcher { display: inline-flex; align-items: center; gap: 8px; background: white; border: 1px solid var(--md-border); border-radius: 999px; padding: 4px 14px; font-size: 12px; font-weight: 600; color: var(--md-blue-dark); cursor: pointer; }
+  .season-switcher::before { content: '🗓️'; }
+  .season-switcher::after { content: '▾'; opacity: 0.5; }
+
+  /* KPI cards */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .kpi { background: white; border: 1px solid var(--md-border); border-radius: var(--radius); padding: 16px 18px; position: relative; overflow: hidden; }
+  .kpi::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--md-blue); }
+  .kpi.accent::before { background: var(--md-magenta); }
+  .kpi.success::before { background: var(--md-success); }
+  .kpi.warning::before { background: var(--md-warning); }
+  .kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--md-text-muted); }
+  .kpi-value { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 800; color: var(--md-blue-dark); margin-top: 4px; }
+  .kpi-delta { font-size: 12px; font-weight: 600; margin-top: 2px; }
+  .kpi-delta.up { color: var(--md-success); }
+  .kpi-delta.down { color: var(--md-danger); }
+
+  /* Filters bar */
+  .filters-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; padding: 12px 14px; background: white; border-radius: var(--radius); border: 1px solid var(--md-border); }
+  .search { flex: 1; min-width: 200px; position: relative; }
+  .search input { width: 100%; padding: 8px 14px 8px 32px; border: 1px solid var(--md-border); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; background: white; }
+  .search::before { content: '🔍'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; opacity: 0.5; }
+  .filter-chip { padding: 7px 12px; background: var(--md-bg); border: 1px solid var(--md-border); border-radius: 999px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--md-text); display: inline-flex; align-items: center; gap: 4px; }
+  .filter-chip.active { background: var(--md-blue-dark); color: white; border-color: var(--md-blue-dark); }
+  .filter-chip .x { opacity: 0.6; }
+
+  /* Admin tables */
+  .admin-table { background: white; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--md-border); }
+  .admin-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .admin-table thead { background: #FAFBFE; border-bottom: 1px solid var(--md-border); }
+  .admin-table th { text-align: left; padding: 11px 14px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--md-text-muted); font-weight: 700; }
+  .admin-table td { padding: 12px 14px; border-bottom: 1px solid var(--md-border); vertical-align: middle; }
+  .admin-table tr:last-child td { border-bottom: none; }
+  .admin-table tr:hover { background: #FAFBFE; cursor: pointer; }
+  .company-row { display: flex; align-items: center; gap: 10px; }
+  .company-logo { width: 30px; height: 30px; border-radius: 6px; background: var(--md-blue); color: white; display: flex; align-items: center; justify-content: center; font-family: Montserrat; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+  .company-name { font-weight: 600; color: var(--md-blue-dark); font-size: 13px; }
+  .company-contact { font-size: 11px; color: var(--md-text-muted); }
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .pill.lead { background: #E5E9F5; color: #2A3D6E; } .pill.lead::before { background: #6B7BA8; }
+  .pill.contact { background: #FFE6F1; color: #B8195F; } .pill.contact::before { background: var(--md-magenta); }
+  .pill.devis { background: #FFF3DD; color: #8B5A00; } .pill.devis::before { background: var(--md-warning); }
+  .pill.acompte { background: #E0F2FF; color: #0265B5; } .pill.acompte::before { background: #0265B5; }
+  .pill.signe { background: #DDF6E8; color: #117A4A; } .pill.signe::before { background: var(--md-success); }
+  .pill.perdu { background: #FCE3E4; color: #A8262B; } .pill.perdu::before { background: var(--md-danger); }
+  .sync-badges { display: flex; gap: 4px; }
+  .sync-badge { width: 22px; height: 22px; border-radius: 4px; background: var(--md-bg); color: var(--md-text-muted); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; border: 1px solid var(--md-border); }
+  .sync-badge.synced { background: #DDF6E8; color: #117A4A; border-color: #B5E5C9; }
+  .sync-badge.pending { background: #FFF3DD; color: #8B5A00; border-color: #F0D89B; }
+  .sync-badge.error { background: #FCE3E4; color: #A8262B; border-color: #F5BCC0; }
+  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; font-size: 13px; color: var(--md-text-muted); }
+  .pagination-controls { display: flex; gap: 4px; }
+  .pagination-controls button { background: white; border: 1px solid var(--md-border); padding: 6px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; }
+  .pagination-controls button.active { background: var(--md-blue-dark); color: white; border-color: var(--md-blue-dark); }
+
+  /* Tabs */
+  .admin-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--md-border); margin-bottom: 18px; flex-wrap: wrap; }
+  .admin-tab { padding: 10px 16px; border: none; background: transparent; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--md-text-muted); border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 6px; }
+  .admin-tab.active { color: var(--md-blue-dark); border-bottom-color: var(--md-magenta); }
+  .admin-tab .count-badge { background: var(--md-magenta); color: white; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 800; }
+
+  /* Settings field */
+  .setting-row { display: flex; align-items: center; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--md-border); }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-info { flex: 1; }
+  .setting-name { font-weight: 600; color: var(--md-blue-dark); font-size: 14px; }
+  .setting-desc { font-size: 12px; color: var(--md-text-muted); margin-top: 2px; }
+  .setting-control input[type="number"], .setting-control input[type="text"] { width: 100px; padding: 8px 10px; border: 1px solid var(--md-border); border-radius: var(--radius-sm); font-family: inherit; }
+  .toggle { width: 40px; height: 22px; background: var(--md-border); border-radius: 999px; position: relative; cursor: pointer; }
+  .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: white; transition: 0.2s; }
+  .toggle.on { background: var(--md-success); }
+  .toggle.on::after { left: 20px; }
+
+  /* Empty / error states */
+  .empty-state { padding: 60px 30px; text-align: center; }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+  .empty-title { font-size: 18px; font-weight: 700; color: var(--md-blue-dark); margin-bottom: 6px; }
+  .empty-desc { color: var(--md-text-muted); font-size: 14px; max-width: 380px; margin: 0 auto 16px; }
+
+  /* Prospect detail page */
+  .prospect-header { background: white; border-radius: var(--radius); padding: 20px 24px; border: 1px solid var(--md-border); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+  .prospect-header-left { display: flex; gap: 14px; align-items: center; flex: 1; min-width: 280px; }
+  .prospect-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .prospect-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
+  .prospect-section { background: white; border: 1px solid var(--md-border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; }
+  .prospect-section h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--md-text-muted); margin-bottom: 12px; font-weight: 700; }
+
+  .timeline-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--md-border); }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-icon { width: 28px; height: 28px; border-radius: 50%; background: var(--md-bg); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+  .timeline-icon.event-stripe { background: #DDF6E8; }
+  .timeline-icon.event-call { background: #E0F2FF; }
+  .timeline-icon.event-mail { background: #FFF3DD; }
+  .timeline-icon.event-system { background: #E5E9F5; }
+  .timeline-content { flex: 1; }
+  .timeline-title { font-weight: 600; font-size: 13px; color: var(--md-blue-dark); }
+  .timeline-meta { font-size: 11px; color: var(--md-text-muted); margin-top: 2px; }
+
+  /* Booth grid view */
+  .booth-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 4px; }
+  .booth-cell { aspect-ratio: 1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: monospace; font-size: 9px; font-weight: 700; cursor: pointer; }
+  .booth-cell.available { background: #DDF6E8; color: #117A4A; }
+  .booth-cell.option { background: #FFF3DD; color: #8B5A00; }
+  .booth-cell.reserved { background: #E0F2FF; color: #0265B5; }
+  .booth-cell.signed { background: var(--md-magenta); color: white; }
+
+  /* Responsive */
+  @media (max-width: 920px) {
+    .partner-shell, .admin-shell { grid-template-columns: 1fr; }
+    .partner-sidebar, .admin-sidebar { border-bottom: 1px solid var(--md-border); border-right: none; }
+    .form-grid { grid-template-columns: 1fr; }
+    .payment-paths { grid-template-columns: 1fr; }
+    .ex-grid { grid-template-columns: 1fr; }
+    .affiliate-stats { grid-template-columns: repeat(2, 1fr); }
+    .prospect-grid { grid-template-columns: 1fr; }
+    .form-body, .public-hero { padding-left: 20px; padding-right: 20px; }
+    .public-hero h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- v2.6.1 — logos officiels chargés depuis _brand/ (PRS-LogoBlanc2026.svg, MDS-LogoBlanc2026.svg, et leurs variantes Bleu) -->
+<!-- Les anciens <symbol> SVG inline ont été retirés en v2.6.1 au profit des fichiers SVG officiels -->
+
+
+<div class="mockup-frame">
+
+  <p style="color:var(--md-text-muted);font-size:13px;margin-bottom:24px;">
+    <strong>Maquette v2.11</strong> — page d'accueil publique style mediadays.net (vidéo plein écran, MDS gauche + PRS droite) + société facturatrice <strong>Editions HF</strong> en footer + <strong>logo contextuel</strong> selon catégorie (PRS exposant ne voit que le logo PRS, MDS standard ne voit que MDS).
+  </p>
+
+  <!-- ====================================================================== -->
+  <!-- ============= PAGE D'ACCUEIL PUBLIQUE (NOUVEAU EN v2.11) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Public · Page d'accueil <code>/{locale}</code> (style mediadays.net) <span class="new-badge">NOUVEAU v2.11</span></div>
+    <div class="app">
+      <!-- Header bleu marine étroit -->
+      <div style="background:#294294;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;color:white;flex-wrap:wrap;gap:12px;">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img" style="height:38px;">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img" style="height:38px;">
+        </div>
+        <nav style="display:flex;align-items:center;gap:24px;font-size:14px;font-weight:600;">
+          <a href="#" style="color:var(--md-magenta);text-decoration:none;">Accueil</a>
+          <a href="#" style="color:white;text-decoration:none;opacity:0.85;">Nos éditions</a>
+          <a href="#" style="color:white;text-decoration:none;opacity:0.85;">Partenaires 2025</a>
+          <a href="#" style="color:white;text-decoration:none;opacity:0.85;">FAQ</a>
+          <a href="#" style="background:var(--md-magenta);color:white;text-decoration:none;padding:8px 18px;border-radius:6px;font-weight:700;">Une question ?</a>
+        </nav>
+      </div>
+
+      <!-- Hero vidéo full-screen simulé -->
+      <div style="position:relative;height:520px;overflow:hidden;background:linear-gradient(135deg,#1A1A3E,#031A56,#294294);">
+        <!-- Simulation de la vidéo de fond avec gradient + image floue -->
+        <div style="position:absolute;inset:0;background:
+          radial-gradient(ellipse at 30% 30%, rgba(230,0,126,0.3), transparent 50%),
+          radial-gradient(ellipse at 70% 70%, rgba(11,63,168,0.5), transparent 60%),
+          linear-gradient(135deg, #1a1a3e 0%, #031A56 60%, #294294 100%);
+          filter:blur(2px);"></div>
+        <!-- Overlay sombre pour lisibilité -->
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(3,26,86,0.4) 0%, rgba(41,66,148,0.6) 100%);"></div>
+
+        <!-- Indicateur "vidéo" -->
+        <div style="position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.5);color:white;padding:4px 12px;border-radius:999px;font-size:11px;display:flex;align-items:center;gap:6px;">
+          <span style="display:inline-block;width:6px;height:6px;background:#FF4444;border-radius:50%;"></span>
+          🎥 Vidéo plein écran (autoplay, muet, boucle) — ambiance salons MDS/PRS
+        </div>
+
+        <!-- Contenu centré -->
+        <div style="position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 30px;color:white;">
+
+          <!-- Les 2 logos en grand : MDS gauche, PRS droite -->
+          <div style="display:flex;align-items:center;gap:40px;margin-bottom:40px;">
+            <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" style="height:130px;filter:drop-shadow(0 4px 20px rgba(0,0,0,0.4));">
+            <span style="width:1px;height:80px;background:rgba(255,255,255,0.3);"></span>
+            <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" style="height:130px;filter:drop-shadow(0 4px 20px rgba(0,0,0,0.4));">
+          </div>
+
+          <h1 style="font-family:Montserrat,sans-serif;font-size:56px;font-weight:800;letter-spacing:-0.02em;line-height:1;margin-bottom:14px;color:var(--md-magenta);text-transform:uppercase;text-shadow:0 4px 20px rgba(0,0,0,0.3);">
+            MDS Partenaires 2026
+          </h1>
+
+          <p style="font-family:Montserrat,sans-serif;font-size:18px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:36px;text-shadow:0 2px 10px rgba(0,0,0,0.4);">
+            Paris · Marseille · Bruxelles
+          </p>
+
+          <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
+            <a href="#" style="background:var(--md-magenta);color:white;padding:16px 32px;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none;box-shadow:0 8px 24px rgba(230,0,126,0.4);">✨ Devenir partenaire</a>
+            <a href="#" style="background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.4);color:white;padding:16px 32px;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none;">🤝 Espace Partenaire</a>
+          </div>
+
+          <!-- Petit indicateur scroll en bas -->
+          <div style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);font-size:11px;opacity:0.6;letter-spacing:0.1em;text-transform:uppercase;">↓ Découvrir les éditions 2026</div>
+        </div>
+      </div>
+
+      <!-- Section bleue : les 3 étapes 2026 -->
+      <div style="background:#031A56;color:white;padding:50px 30px;text-align:center;">
+        <h2 style="font-family:Montserrat,sans-serif;font-size:24px;font-weight:800;letter-spacing:0.1em;margin-bottom:36px;">LES ÉTAPES DE L'ÉDITION 2026</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1100px;margin:0 auto;">
+          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;text-align:left;">
+            <div style="font-size:11px;letter-spacing:0.15em;color:var(--md-magenta);font-weight:700;margin-bottom:6px;">📍 ÉTAPE 1 — BRUXELLES</div>
+            <div style="font-family:Montserrat;font-size:22px;font-weight:800;margin-bottom:6px;">26 novembre 2026</div>
+            <div style="font-size:13px;opacity:0.85;margin-bottom:12px;">Le Mix · Bruxelles · journée dédiée au marché belge audio/radio</div>
+            <a href="#" style="color:var(--md-magenta);font-size:12px;font-weight:700;text-decoration:none;">→ S'inscrire à Bruxelles</a>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;text-align:left;">
+            <div style="font-size:11px;letter-spacing:0.15em;color:var(--md-magenta);font-weight:700;margin-bottom:6px;">📍 ÉTAPE 2 — MARSEILLE</div>
+            <div style="font-family:Montserrat;font-size:22px;font-weight:800;margin-bottom:6px;">10 décembre 2026</div>
+            <div style="font-size:13px;opacity:0.85;margin-bottom:12px;">Palais du Pharo · vue mer · networking étendue Sud-Méditerranée</div>
+            <a href="#" style="color:var(--md-magenta);font-size:12px;font-weight:700;text-decoration:none;">→ S'inscrire à Marseille</a>
+          </div>
+          <div style="background:rgba(255,255,255,0.08);border:2px solid var(--md-magenta);border-radius:12px;padding:24px;text-align:left;position:relative;">
+            <div style="position:absolute;top:-10px;right:14px;background:var(--md-magenta);color:white;font-size:10px;padding:3px 10px;border-radius:999px;font-weight:800;letter-spacing:0.1em;">PHARE</div>
+            <div style="font-size:11px;letter-spacing:0.15em;color:var(--md-magenta);font-weight:700;margin-bottom:6px;">📍 ÉTAPE 3 — PARIS</div>
+            <div style="font-family:Montserrat;font-size:22px;font-weight:800;margin-bottom:6px;">15 décembre 2026</div>
+            <div style="font-size:13px;opacity:0.85;margin-bottom:12px;">Carrousel du Louvre · 6 pôles thématiques · 184 emplacements</div>
+            <a href="#" style="color:var(--md-magenta);font-size:12px;font-weight:700;text-decoration:none;">→ S'inscrire à Paris</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer avec mention Editions HF -->
+      <div style="background:#021440;color:white;padding:24px 30px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;font-size:12px;">
+        <div>Une plateforme éditée par <strong style="color:var(--md-magenta);">Editions HF</strong> — Paris Radio Show & MediaDays Solutions</div>
+        <div style="display:flex;gap:18px;opacity:0.8;">
+          <a href="#" style="color:white;text-decoration:none;">Mentions légales</a>
+          <a href="#" style="color:white;text-decoration:none;">CGV</a>
+          <a href="#" style="color:white;text-decoration:none;">Politique de confidentialité</a>
+          <a href="#" style="color:white;text-decoration:none;">Contact RGPD</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ============= EXEMPLES LOGO CONTEXTUEL (NOUVEAU EN v2.11) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Logo contextuel selon catégorie partenaire — comparaison <span class="new-badge">NOUVEAU v2.11</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:18px;">
+
+      <!-- Cas A — Exposant PRS connecté -->
+      <div>
+        <div class="mockup-label" style="font-size:10px;">Marie · NRJ Group (catégorie <code>prs_exhibitor</code>)</div>
+        <div class="app">
+          <div class="public-header">
+            <div class="logo-lockup">
+              <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+            </div>
+            <div class="public-header-right">
+              <span style="font-size:13px;color:white;">Marie · NRJ Group</span>
+            </div>
+          </div>
+          <div style="padding:30px;text-align:center;background:linear-gradient(135deg,#031A56,#294294);color:white;">
+            <span style="display:inline-block;background:rgba(230,0,126,0.2);color:var(--md-magenta);padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0.1em;margin-bottom:10px;">⭐ EXPOSANT PARIS RADIO SHOW 2026</span>
+            <h3 style="font-size:18px;font-weight:700;margin-bottom:6px;">Bienvenue dans votre Espace Partenaire</h3>
+            <p style="font-size:13px;opacity:0.85;">En tant qu'exposant PRS 2026, votre interface est dédiée à la communauté audio/radio. Tarifs préférentiels appliqués automatiquement.</p>
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--md-text-muted);margin-top:8px;text-align:center;">Logo PRS uniquement · cohérent avec la communauté audio/radio</p>
+      </div>
+
+      <!-- Cas B — Exposant MDS Standard connecté -->
+      <div>
+        <div class="mockup-label" style="font-size:10px;">Hugo · Podcast Deluxe (catégorie <code>standard</code>)</div>
+        <div class="app">
+          <div class="public-header">
+            <div class="logo-lockup">
+              <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+            </div>
+            <div class="public-header-right">
+              <span style="font-size:13px;color:white;">Hugo · Podcast Deluxe</span>
+            </div>
+          </div>
+          <div style="padding:30px;text-align:center;background:linear-gradient(135deg,#031A56,#294294);color:white;">
+            <span style="display:inline-block;background:rgba(11,63,168,0.3);color:#90B4FF;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0.1em;margin-bottom:10px;">📺 PARTENAIRE MEDIADAYS SOLUTIONS 2026</span>
+            <h3 style="font-size:18px;font-weight:700;margin-bottom:6px;">Bienvenue dans votre Espace Partenaire</h3>
+            <p style="font-size:13px;opacity:0.85;">Tarifs MDS standard appliqués. Accès aux pôles thématiques data, vidéo, régies, outdoor, podcast.</p>
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--md-text-muted);margin-top:8px;text-align:center;">Logo MDS Solutions uniquement · pas de confusion avec le sub-event PRS</p>
+      </div>
+
+      <!-- Cas C — Anonyme (page accueil) ou admin -->
+      <div style="grid-column:1/-1;">
+        <div class="mockup-label" style="font-size:10px;">Anonyme (page d'accueil) ou Admin Phil — les deux logos</div>
+        <div class="app">
+          <div class="public-header">
+            <div class="logo-lockup">
+              <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+              <span class="logo-divider"></span>
+              <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+            </div>
+            <div class="public-header-right">
+              <span style="font-size:13px;color:white;opacity:0.85;">Visiteur public ou admin</span>
+            </div>
+          </div>
+          <div style="padding:30px;text-align:center;background:linear-gradient(135deg,#031A56,#294294);color:white;">
+            <p style="font-size:13px;opacity:0.85;">Avant identification (page d'accueil, signup, partenaire <code>non_eligible</code>) ET côté admin (Phil + commerciale gèrent les deux salons) : <strong>les deux logos sont affichés</strong>.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- ============= PUBLIC ÉTAPE 1 ============= -->
+  <!-- ============================================ -->
+  <div class="mockup-section">
+    <div class="mockup-label">Public · Étape 1 — Pré-qualification (logos officiels + "partenaire") <span class="scope">FR</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+        </div>
+        <div class="public-header-right">
+          <a href="#" class="header-cta">Espace Partenaire</a>
+          <div class="lang-toggle"><button class="active">FR</button><button>EN</button></div>
+        </div>
+      </div>
+      <div class="public-hero">
+        <span class="badge-new">NEW · ÉDITION 2026</span>
+        <h1>Devenez partenaire des MediaDays Solutions</h1>
+        <p>Le rendez-vous où le marché entier de l'audio, de la radio, du podcast et de la vidéo converge.</p>
+        <div class="event-pills">
+          <span class="event-pill">📍 Paris · Carrousel du Louvre · 15 déc. 2026</span>
+          <span class="event-pill">📍 Marseille · Palais du Pharo · 10 déc. 2026</span>
+          <span class="event-pill">📍 Bruxelles · Le Mix · 26 nov. 2026</span>
+        </div>
+      </div>
+      <div class="stepper">
+        <div class="step active"><span class="dot">1</span> Pré-qualification</div>
+        <div class="step-divider"></div>
+        <div class="step"><span class="dot">2</span> Vérification email</div>
+        <div class="step-divider"></div>
+        <div class="step"><span class="dot">3</span> Détails & paiement</div>
+      </div>
+      <div class="form-body">
+        <div class="alert info" style="margin-bottom:16px;">
+          <span class="alert-icon">ℹ️</span>
+          <div>Cet événement est strictement <strong>B2B</strong>. Inscriptions uniquement avec une adresse email professionnelle. Les tarifs s'affichent après vérification de votre email.</div>
+        </div>
+        <h2 style="font-size:16px;color:var(--md-blue-dark);margin-bottom:14px;">Vos coordonnées</h2>
+        <div class="form-grid">
+          <div class="field full">
+            <label>Email professionnel <span class="required">*</span></label>
+            <input type="email" value="marie.lambert@nrj.fr">
+            <div class="field-hint">Pas de gmail, yahoo, hotmail… L'email pro est requis pour valider votre inscription.</div>
+          </div>
+          <div class="field full autocomplete-wrap">
+            <label>Société <span class="required">*</span></label>
+            <input type="text" value="NR" placeholder="Commencez à taper le nom...">
+            <div class="autocomplete-list">
+              <div class="autocomplete-item">
+                <div><div class="autocomplete-name">NRJ Group</div><div class="addon-cat">déjà au pipeline</div></div>
+                <span class="pole-tag audio">🎙️ AUDIO & RADIO</span>
+              </div>
+              <div class="autocomplete-item">
+                <div><div class="autocomplete-name">Nrj Régies</div><div class="addon-cat">déjà au pipeline</div></div>
+                <span class="pole-tag regies">🏛️ RÉGIES</span>
+              </div>
+              <div class="autocomplete-item" style="color:var(--md-text-muted);font-style:italic;">
+                <div>+ ma société n'apparaît pas — la créer</div>
+              </div>
+            </div>
+          </div>
+          <div class="field"><label>Prénom <span class="required">*</span></label><input type="text" value="Marie"></div>
+          <div class="field"><label>Nom <span class="required">*</span></label><input type="text" value="Lambert"></div>
+          <div class="field"><label>Fonction <span class="required">*</span></label><input type="text" value="Directrice partenariats"></div>
+          <div class="field"><label>Téléphone</label><input type="tel" placeholder="+33 ..."></div>
+          <div class="field full field-locked autocomplete-wrap" style="position:relative;">
+            <label>Venez-vous de la part de quelqu'un ?</label>
+            <input type="text" value="Broadcast Associés" readonly>
+            <span class="field-lock-icon">🔒</span>
+            <div class="field-hint" style="color:var(--md-magenta);">Lien d'affiliation détecté — votre apporteur est <strong>Broadcast Associés</strong>.</div>
+          </div>
+        </div>
+        <div class="cgv-line">
+          <input type="checkbox" id="newsletter">
+          <label for="newsletter">Je souhaite recevoir les actualités MediaDays Solutions (1-2 emails / mois). Optionnel.</label>
+        </div>
+        <div class="submit-row">
+          <small>Vos données sont traitées conformément au RGPD. <a href="#">Politique de confidentialité</a>.</small>
+          <button class="btn btn-primary btn-lg">Continuer →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- ============= STEP 1 ERREUR + EMAIL ENVOYÉ ============= -->
+  <!-- ============================================ -->
+  <div class="mockup-section" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+    <div>
+      <div class="mockup-label">État erreur — email perso refusé</div>
+      <div class="app">
+        <div class="public-header" style="border-radius: var(--radius) var(--radius) 0 0;">
+          <div class="logo-lockup">
+            <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+            <span class="logo-divider"></span>
+            <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+          </div>
+        </div>
+        <div class="form-body">
+          <div class="alert error" style="margin-bottom:16px;">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>Email non accepté.</strong><br>Cet événement est strictement B2B. Merci d'utiliser votre adresse email professionnelle (pas de gmail, hotmail, yahoo…).</div>
+          </div>
+          <div class="field"><label>Email professionnel</label><input type="email" value="marie.lambert@gmail.com" style="border-color:var(--md-danger);"></div>
+          <div class="submit-row"><small></small><button class="btn btn-primary">Continuer →</button></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mockup-label">Confirmation — email envoyé</div>
+      <div class="app">
+        <div class="public-header" style="border-radius: var(--radius) var(--radius) 0 0;">
+          <div class="logo-lockup">
+            <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+            <span class="logo-divider"></span>
+            <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+          </div>
+        </div>
+        <div class="confirmation-screen">
+          <div class="confirmation-icon">📨</div>
+          <h2>Vérifiez votre email</h2>
+          <p>Nous avons envoyé un lien de confirmation à</p>
+          <div class="confirmation-email-box">marie.lambert@nrj.fr</div>
+          <p>Cliquez sur le lien dans l'email pour accéder aux tarifs et finaliser votre demande de partenariat. Le lien est valable 48 heures.</p>
+          <div style="margin-top:18px;"><button class="btn btn-ghost">Renvoyer le lien</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- ============= ÉTAPE 2A — Cas A (PRS) ============= -->
+  <!-- ============================================ -->
+  <div class="mockup-section">
+    <div class="mockup-label">Public · Étape 2A — Formulaire détaillé (catégorie PRS exhibitor) <span class="scope">FR</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+          <span style="font-size:13px;opacity:0.85;margin-left:8px;">NRJ Group · Marie Lambert</span>
+        </div>
+        <div class="lang-toggle"><button class="active">FR</button><button>EN</button></div>
+      </div>
+      <div class="stepper">
+        <div class="step done"><span class="dot">✓</span> Pré-qualification</div>
+        <div class="step-divider"></div>
+        <div class="step done"><span class="dot">✓</span> Email vérifié</div>
+        <div class="step-divider"></div>
+        <div class="step active"><span class="dot">3</span> Détails & paiement</div>
+      </div>
+      <div class="form-body">
+        <div class="alert success" style="margin-bottom:18px;">
+          <span class="alert-icon">🎉</span>
+          <div><strong>Bienvenue NRJ Group !</strong> En tant qu'exposant Paris Radio Show 2026, vous bénéficiez du <strong>tarif préférentiel partenaire</strong> jusqu'à -84%. Pôle assigné : <span class="pole-tag audio">🎙️ AUDIO & RADIO</span></div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-header">
+            <h3><span class="step-num">1</span> Pack & salons</h3>
+            <span class="check">✓ Sélectionné</span>
+          </div>
+          <div class="form-section-body">
+            <div class="field full" style="margin-bottom:12px;">
+              <label>Salon(s) souhaité(s)</label>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:2px solid var(--md-magenta);border-radius:var(--radius-sm);background:rgba(230,0,126,0.04);cursor:pointer;font-size:13px;font-weight:600;color:var(--md-blue-dark);"><input type="checkbox" checked> 📍 Paris (15 déc.)</label>
+                <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:2px solid var(--md-border);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;"><input type="checkbox"> Marseille (10 déc.)</label>
+                <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:2px solid var(--md-border);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;"><input type="checkbox"> Bruxelles (26 nov.)</label>
+              </div>
+            </div>
+            <div class="pack-grid">
+              <div class="pack">
+                <div class="pack-name">ACCESS</div>
+                <div><span class="pack-price crossed">12 500 €</span><span class="pack-price discount">1 980 €</span><small> HT</small></div>
+                <div class="pack-desc">Stand de base, espace privatif</div>
+                <span class="pack-prs-badge">-84% Tarif PRS</span>
+              </div>
+              <div class="pack selected">
+                <div class="pack-name">CLASSIC</div>
+                <div><span class="pack-price crossed">14 800 €</span><span class="pack-price discount">2 475 €</span><small> HT</small></div>
+                <div class="pack-desc">Stand + 2 places déjeuner Paris</div>
+                <span class="pack-prs-badge">-83% Tarif PRS</span>
+              </div>
+              <div class="pack">
+                <div class="pack-name">PREMIUM</div>
+                <div><span class="pack-price crossed">20 500 €</span><span class="pack-price discount">8 700 €</span><small> HT</small></div>
+                <div class="pack-desc">Stand + temps de parole + masterclass</div>
+                <span class="pack-prs-badge">-58% Tarif PRS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-header"><h3><span class="step-num">2</span> Emplacement & options</h3></div>
+          <div class="form-section-body">
+            <div class="booth-toolbar">
+              <strong style="font-size:13px;color:var(--md-blue-dark);">Choisissez votre emplacement :</strong>
+              <button class="booth-canva-btn">🗺️ Voir le plan complet (Canva)</button>
+            </div>
+            <div class="booth-list">
+              <div class="booth-card selected"><div class="booth-code">P-LN-A12</div><div class="booth-room">Salle Le Nôtre · Rangée A</div><div class="booth-surface">12 m²</div></div>
+              <div class="booth-card"><div class="booth-code">P-LN-A14</div><div class="booth-room">Salle Le Nôtre · Rangée A</div><div class="booth-surface">12 m²</div></div>
+              <div class="booth-card"><div class="booth-code">P-LN-B07</div><div class="booth-room">Salle Le Nôtre · Rangée B</div><div class="booth-surface">12 m²</div></div>
+            </div>
+            <div style="margin-top:16px;">
+              <strong style="font-size:13px;color:var(--md-blue-dark);display:block;margin-bottom:8px;">Options additionnelles :</strong>
+              <div class="addon-list">
+                <div class="addon-item"><div class="addon-checkbox checked"></div><div class="addon-info"><div class="addon-name">Logo partenaire Gold</div><div class="addon-cat">Visibilité partenaire</div></div><div class="addon-price">3 000 € HT</div></div>
+                <div class="addon-item"><div class="addon-checkbox checked"></div><div class="addon-info"><div class="addon-name">Emailing dédié (base 20 000 contacts)</div><div class="addon-cat">Communication</div></div><div class="addon-price">500 € HT</div></div>
+                <div class="addon-item" style="opacity:0.6;font-size:13px;color:var(--md-text-muted);text-align:center;padding:8px;">+ 15 autres options disponibles — voir le détail</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-header"><h3><span class="step-num">3</span> Choix du parcours de paiement</h3></div>
+          <div class="form-section-body">
+            <div class="total-box">
+              <div><div class="total-label">Total à régler</div><div class="total-amount">5 975 € HT</div></div>
+              <div><div class="total-label">Acompte (30%)</div><div class="total-amount" style="color: var(--md-magenta);">1 793 €</div><div class="deposit-mini">Solde 4 182 € à régler à signature</div></div>
+            </div>
+            <div class="payment-paths">
+              <div class="pay-path"><div class="pay-path-header"><span class="pay-path-radio"></span><span class="pay-path-name">📄 Devis — paiement différé</span></div><div class="pay-path-desc">Recevez le devis Sellsy par email. Réglez plus tard.</div></div>
+              <div class="pay-path selected"><div class="pay-path-header"><span class="pay-path-radio"></span><span class="pay-path-name">💳 Devis + acompte immédiat</span></div><div class="pay-path-desc">Réservation confirmée dès paiement. Carte ou SEPA.</div><div class="pay-path-amount">→ 1 793 € HT maintenant</div></div>
+              <div class="pay-path"><div class="pay-path-header"><span class="pay-path-radio"></span><span class="pay-path-name">📑 Pro-forma + acompte</span></div><div class="pay-path-desc">Pratique pour comptabilité internationale.</div><div class="pay-path-amount">→ 1 793 € HT maintenant</div></div>
+              <div class="pay-path"><div class="pay-path-header"><span class="pay-path-radio"></span><span class="pay-path-name">⚡ Paiement intégral + facture</span></div><div class="pay-path-desc">Réservation directement validée. Accès Espace Partenaire.</div><div class="pay-path-amount">→ 5 975 € HT maintenant</div></div>
+            </div>
+            <div class="stripe-trust">
+              <span>🔒</span>
+              <div class="stripe-trust-text">Paiement sécurisé via <strong>Stripe</strong> — vos données carte ne transitent jamais par MediaDays. 3D Secure activé.</div>
+            </div>
+            <div class="cgv-line">
+              <input type="checkbox" id="cgv">
+              <label for="cgv">J'accepte les <a href="#">CGV</a>, les <a href="#">mentions légales</a> et la <a href="#">politique de confidentialité</a> des MediaDays Solutions.</label>
+            </div>
+            <div class="submit-row">
+              <small>* Vous serez redirigé vers Stripe pour finaliser le paiement de l'acompte.</small>
+              <button class="btn btn-primary btn-lg">Procéder au paiement →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- ============= ÉTAPE 2B — Non éligible ============= -->
+  <!-- ============================================ -->
+  <div class="mockup-section">
+    <div class="mockup-label">Public · Étape 2B — Cas non éligible <span class="scope">FR</span></div>
+    <div class="app" style="max-width:760px;margin:0 auto;">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+        </div>
+        <div class="lang-toggle"><button class="active">FR</button><button>EN</button></div>
+      </div>
+      <div class="form-body">
+        <div class="alert info" style="margin-bottom:18px;">
+          <span class="alert-icon">💡</span>
+          <div>Votre profil ne correspond pas immédiatement à l'un des 6 pôles partenaires des MediaDays Solutions. <strong>Notre équipe va étudier votre demande</strong> et revenir vers vous rapidement.</div>
+        </div>
+        <h2 style="font-size:18px;color:var(--md-blue-dark);margin-bottom:6px;">Parlez-nous de votre projet</h2>
+        <p style="color:var(--md-text-muted);font-size:13px;margin-bottom:16px;">Plus vous nous donnez de détails, mieux nous pourrons vous orienter (sponsoring, partenariat institutionnel, autre format de visibilité…).</p>
+        <div class="field full" style="margin-bottom:14px;"><label>Activité de votre société</label><textarea placeholder="Décrivez en quelques lignes votre activité..."></textarea></div>
+        <div class="field full"><label>Que recherchez-vous aux MDS 2026 ?</label><textarea placeholder="Visibilité, networking, lancement produit..."></textarea></div>
+        <div class="submit-row">
+          <small>Notre équipe revient vers vous sous 48h ouvrées.</small>
+          <button class="btn btn-primary">Envoyer ma demande</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- ============= ESPACE PARTENAIRE — DASHBOARD ============= -->
+  <!-- ============================================ -->
+  <div class="mockup-section">
+    <div class="mockup-label">Espace Partenaire — Dashboard <span class="scope">FR</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+          <span style="font-size:13px;opacity:0.85;margin-left:8px;">Espace Partenaire</span>
+        </div>
+        <div class="public-header-right">
+          <span style="font-size:13px;">Marie Lambert · NRJ Group</span>
+          <div class="lang-toggle"><button class="active">FR</button><button>EN</button></div>
+        </div>
+      </div>
+      <div class="partner-shell">
+        <aside class="partner-sidebar">
+          <div class="partner-brand">PARTENAIRE 2026</div>
+          <div class="partner-company">NRJ Group</div>
+          <span class="partner-pole-tag" style="background:var(--pole-audio);">🎙️ AUDIO & RADIO</span>
+          <nav class="partner-nav">
+            <a href="#" class="active">📊 Tableau de bord</a>
+            <a href="#">📦 Ma commande</a>
+            <a href="#">✨ Mon profil partenaire</a>
+            <a href="#">🤝 Affiliation</a>
+            <a href="#">📚 Ressources & guide</a>
+            <a href="#">🛒 Options supplémentaires</a>
+            <div class="partner-nav-divider"></div>
+            <a href="#">💬 Contact équipe</a>
+            <a href="#">↪ Se déconnecter</a>
+          </nav>
+        </aside>
+        <main class="partner-main">
+          <h2 class="partner-page-title">Bienvenue Marie 👋</h2>
+          <p class="partner-page-sub">J-127 avant Paris · Carrousel du Louvre · 15 décembre 2026</p>
+          <div class="ex-grid">
+            <div class="ex-card">
+              <div class="ex-card-title">Ma réservation</div>
+              <div style="font-weight:600;font-size:15px;color:var(--md-blue-dark);margin-bottom:4px;">Pack CLASSIC + 2 options</div>
+              <div style="font-size:13px;color:var(--md-text-muted);margin-bottom:10px;">Emplacement P-LN-A12 · Salle Le Nôtre · Rangée A · 12 m²</div>
+              <div class="ex-pay-status paid"><span>✓</span><div>Acompte payé · <strong class="ex-pay-status-amount">1 793 € HT</strong></div></div>
+              <div class="ex-pay-status pending"><span>⏳</span><div>Solde dû · <strong class="ex-pay-status-amount">4 182 € HT</strong></div></div>
+              <button class="btn btn-ghost btn-block" style="margin-top:8px;">Voir le détail complet →</button>
+            </div>
+            <div class="ex-card">
+              <div class="ex-card-title">À faire avant le salon</div>
+              <div class="checklist-item pending">⬜ Compléter mon profil partenaire <span style="margin-left:auto;font-size:11px;color:var(--md-magenta);font-weight:700;">75% fait</span></div>
+              <div class="checklist-item pending">⬜ Fournir mon logo HD (deadline J-30)</div>
+              <div class="checklist-item pending">⬜ Vérifier les badges équipe</div>
+              <div class="checklist-item done">✓ Devis signé</div>
+              <div class="checklist-item done">✓ Acompte payé</div>
+            </div>
+            <div class="ex-card" style="grid-column:1 / -1;">
+              <div class="ex-card-title">Documents à télécharger</div>
+              <div class="ex-action-btn">📄 Devis signé · DV-2026-088.pdf</div>
+              <div class="ex-action-btn">🧾 Reçu acompte · PAY-2026-088-A.pdf</div>
+              <div class="ex-action-btn">📋 Récapitulatif de commande · MDS-RECAP-NRJ.pdf</div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ============= ADMIN — DASHBOARD (NOUVEAU EN v2.5) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Admin · Dashboard prospection <span class="new-badge">NOUVEAU v2.5</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+          <span style="font-size:13px;opacity:0.85;margin-left:8px;">Admin · Prospection</span>
+        </div>
+        <div class="public-header-right">
+          <span class="season-switcher" style="background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);">MDS 2026</span>
+          <span style="font-size:13px;">Philippe C. · admin</span>
+        </div>
+      </div>
+      <div class="admin-shell">
+        <aside class="admin-sidebar">
+          <a href="#" style="display:block;background:var(--md-magenta);color:white;padding:10px 14px;border-radius:var(--radius-sm);text-decoration:none;font-size:13px;font-weight:700;text-align:center;margin-bottom:16px;box-shadow:0 2px 8px rgba(230,0,126,0.25);">⚡ + Nouveau devis</a>
+          <div class="admin-section-title">Pipeline</div>
+          <nav class="admin-nav">
+            <a href="#" class="active">📊 Dashboard</a>
+            <a href="#">👥 Prospects <span class="badge">142</span></a>
+            <a href="#">🏢 Sociétés</a>
+            <a href="#">📨 Inscriptions web <span class="badge">8</span></a>
+          </nav>
+          <div class="admin-section-title">Salon</div>
+          <nav class="admin-nav">
+            <a href="#">🪑 Emplacements</a>
+            <a href="#">🗺️ Plan Canva</a>
+            <a href="#">💰 Tarifs</a>
+            <a href="#">🛒 Catalogue Sellsy</a>
+          </nav>
+          <div class="admin-section-title">Croissance</div>
+          <nav class="admin-nav">
+            <a href="#">🤝 Affiliés</a>
+            <a href="#">📋 Profils partenaires</a>
+            <a href="#">📚 Ressources</a>
+          </nav>
+          <div class="admin-section-title">Réglages</div>
+          <nav class="admin-nav">
+            <a href="#">⚙️ Préférences</a>
+            <a href="#">🗓️ Saisons</a>
+            <a href="#">👤 Utilisateurs</a>
+            <a href="#">🔄 Logs sync</a>
+            <a href="#">📜 Audit log</a>
+          </nav>
+        </aside>
+        <main class="admin-main">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h1 style="font-size:22px;color:var(--md-blue-dark);font-weight:700;">Pipeline MDS 2026</h1>
+              <p style="color:var(--md-text-muted);font-size:13px;">Suivi commercial — Paris (Carrousel du Louvre) · Marseille (Pharo) · Bruxelles (Le Mix)</p>
+            </div>
+            <button class="btn btn-primary">+ Nouveau prospect</button>
+          </div>
+          <div class="kpis">
+            <div class="kpi"><div class="kpi-label">Prospects actifs</div><div class="kpi-value">142</div><div class="kpi-delta up">+18 cette semaine</div></div>
+            <div class="kpi accent"><div class="kpi-label">Inscriptions web</div><div class="kpi-value">37</div><div class="kpi-delta up">+6 ces 7j</div></div>
+            <div class="kpi warning"><div class="kpi-label">Devis envoyés</div><div class="kpi-value">22</div><div class="kpi-delta">8 en attente</div></div>
+            <div class="kpi success"><div class="kpi-label">Acompte payé</div><div class="kpi-value">9</div><div class="kpi-delta up">via Stripe</div></div>
+            <div class="kpi success"><div class="kpi-label">Signés</div><div class="kpi-value">14</div><div class="kpi-delta up">CA 186 200 €</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+            <div class="prospect-section" style="margin:0;">
+              <h3>Répartition par pôle</h3>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;gap:10px;"><span class="pole-tag audio">🎙️ AUDIO & RADIO</span><div style="flex:1;background:var(--md-bg);height:8px;border-radius:999px;overflow:hidden;"><div style="width:62%;background:var(--md-magenta);height:100%;"></div></div><strong style="font-size:12px;width:30px;text-align:right;">38</strong></div>
+                <div style="display:flex;align-items:center;gap:10px;"><span class="pole-tag data">📊 DATA & ADTECH</span><div style="flex:1;background:var(--md-bg);height:8px;border-radius:999px;overflow:hidden;"><div style="width:48%;background:var(--md-magenta);height:100%;"></div></div><strong style="font-size:12px;width:30px;text-align:right;">29</strong></div>
+                <div style="display:flex;align-items:center;gap:10px;"><span class="pole-tag video">🎥 VIDÉO & CTV</span><div style="flex:1;background:var(--md-bg);height:8px;border-radius:999px;overflow:hidden;"><div style="width:38%;background:var(--md-magenta);height:100%;"></div></div><strong style="font-size:12px;width:30px;text-align:right;">23</strong></div>
+                <div style="display:flex;align-items:center;gap:10px;"><span class="pole-tag regies">🏛️ RÉGIES</span><div style="flex:1;background:var(--md-bg);height:8px;border-radius:999px;overflow:hidden;"><div style="width:32%;background:var(--md-magenta);height:100%;"></div></div><strong style="font-size:12px;width:30px;text-align:right;">19</strong></div>
+                <div style="display:flex;align-items:center;gap:10px;"><span class="pole-tag diffusion">📡 DIFFUSION</span><div style="flex:1;background:var(--md-bg);height:8px;border-radius:999px;overflow:hidden;"><div style="width:25%;background:var(--md-magenta);height:100%;"></div></div><strong style="font-size:12px;width:30px;text-align:right;">15</strong></div>
+                <div style="display:flex;align-items:center;gap:10px;"><span class="pole-tag outdoor">📢 OUTDOOR</span><div style="flex:1;background:var(--md-bg);height:8px;border-radius:999px;overflow:hidden;"><div style="width:18%;background:var(--md-magenta);height:100%;"></div></div><strong style="font-size:12px;width:30px;text-align:right;">12</strong></div>
+              </div>
+            </div>
+            <div class="prospect-section" style="margin:0;">
+              <h3>Funnel conversion</h3>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;">
+                <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--md-bg);border-radius:var(--radius-sm);"><span>👀 Clics affiliés</span><strong>847</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#E5E9F5;border-radius:var(--radius-sm);"><span>📝 Inscriptions étape 1</span><strong>312 (37%)</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FFE6F1;border-radius:var(--radius-sm);"><span>✅ Email vérifié</span><strong>198 (63%)</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FFF3DD;border-radius:var(--radius-sm);"><span>📄 Formulaire 2 soumis</span><strong>142 (72%)</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#DDF6E8;border-radius:var(--radius-sm);"><span>🎉 Signés</span><strong>14 (10%)</strong></div>
+              </div>
+            </div>
+          </div>
+          <h3 style="font-size:14px;color:var(--md-blue-dark);margin-bottom:8px;">Activité récente</h3>
+          <div class="admin-table">
+            <table>
+              <thead><tr><th>Société / Contact</th><th>Statut</th><th>Pôle</th><th>Pack</th><th>Dernière action</th><th>Synchros</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><div class="company-row"><div class="company-logo" style="background:var(--md-magenta);">NR</div><div><div class="company-name">NRJ Group</div><div class="company-contact">m.lambert@nrj.fr</div></div></div></td>
+                  <td><span class="pill acompte">Acompte payé</span></td>
+                  <td><span class="pole-tag audio">🎙️</span></td>
+                  <td>CLASSIC PRS</td>
+                  <td>Aujourd'hui · paiement Stripe</td>
+                  <td><div class="sync-badges"><span class="sync-badge synced">SE</span><span class="sync-badge synced">BR</span><span class="sync-badge synced">ST</span></div></td>
+                </tr>
+                <tr>
+                  <td><div class="company-row"><div class="company-logo">RF</div><div><div class="company-name">Radio France</div><div class="company-contact">m.dupont@radiofrance.com</div></div></div></td>
+                  <td><span class="pill signe">Signé</span></td>
+                  <td><span class="pole-tag audio">🎙️</span></td>
+                  <td>Premium</td>
+                  <td>Hier · facture émise</td>
+                  <td><div class="sync-badges"><span class="sync-badge synced">SE</span><span class="sync-badge synced">BR</span><span class="sync-badge synced">CA</span></div></td>
+                </tr>
+                <tr>
+                  <td><div class="company-row"><div class="company-logo" style="background:#117A4A;">EU</div><div><div class="company-name">Europe 1</div><div class="company-contact">partenariats@europe1.fr</div></div></div></td>
+                  <td><span class="pill devis">Devis envoyé</span></td>
+                  <td><span class="pole-tag audio">🎙️</span></td>
+                  <td>—</td>
+                  <td>Il y a 2j · relance prog.</td>
+                  <td><div class="sync-badges"><span class="sync-badge synced">SE</span><span class="sync-badge pending">BR</span><span class="sync-badge">ST</span></div></td>
+                </tr>
+                <tr>
+                  <td><div class="company-row"><div class="company-logo" style="background:#8B5A00;">PD</div><div><div class="company-name">Podcast Deluxe Studios</div><div class="company-contact">hello@pdstudios.com</div></div></div></td>
+                  <td><span class="pill lead">Lead</span></td>
+                  <td><span class="pole-tag audio">🎙️</span></td>
+                  <td>Visibilité +</td>
+                  <td>Aujourd'hui · à qualifier</td>
+                  <td><div class="sync-badges"><span class="sync-badge pending">SE</span><span class="sync-badge">BR</span><span class="sync-badge">ST</span></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ============= ADMIN — LISTE PROSPECTS (NOUVEAU EN v2.5) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Admin · Liste prospects (filtres + recherche + auto-complete) <span class="new-badge">NOUVEAU v2.5</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+          <span style="font-size:13px;opacity:0.85;margin-left:8px;">Admin · Prospection</span>
+        </div>
+        <div class="public-header-right">
+          <span class="season-switcher" style="background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);">MDS 2026</span>
+        </div>
+      </div>
+      <div class="admin-shell">
+        <aside class="admin-sidebar">
+          <div class="admin-section-title">Pipeline</div>
+          <nav class="admin-nav">
+            <a href="#">📊 Dashboard</a>
+            <a href="#" class="active">👥 Prospects <span class="badge">142</span></a>
+            <a href="#">🏢 Sociétés</a>
+            <a href="#">📨 Inscriptions web <span class="badge">8</span></a>
+          </nav>
+        </aside>
+        <main class="admin-main">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+            <h1 style="font-size:22px;color:var(--md-blue-dark);font-weight:700;">Prospects · 142</h1>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost">📥 Exporter CSV</button>
+              <button class="btn btn-primary">+ Nouveau prospect</button>
+            </div>
+          </div>
+
+          <div class="filters-bar">
+            <div class="search"><input type="text" placeholder="Rechercher société, contact, email, ville..."></div>
+            <span class="filter-chip active">Tous (142)</span>
+            <span class="filter-chip">À relancer (12)</span>
+            <span class="filter-chip">Signés (14)</span>
+            <span class="filter-chip">Pôle Audio <span class="x">×</span></span>
+            <select style="padding:6px 10px;border:1px solid var(--md-border);border-radius:var(--radius-sm);font-size:12px;"><option>Tous statuts</option><option>Lead</option><option>Devis envoyé</option><option>Acompte payé</option><option>Signé</option><option>Perdu</option></select>
+            <select style="padding:6px 10px;border:1px solid var(--md-border);border-radius:var(--radius-sm);font-size:12px;"><option>Tous owners</option><option>Philippe</option><option>Commerciale</option></select>
+          </div>
+
+          <div class="admin-table">
+            <table>
+              <thead>
+                <tr>
+                  <th><input type="checkbox" style="margin:0;"></th>
+                  <th>Société / Contact</th>
+                  <th>Statut</th>
+                  <th>Pôle</th>
+                  <th>Catégorie</th>
+                  <th>Pack</th>
+                  <th>Owner</th>
+                  <th>Affilié</th>
+                  <th>€ HT</th>
+                  <th>Synchros</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td><div class="company-row"><div class="company-logo" style="background:var(--md-magenta);">NR</div><div><div class="company-name">NRJ Group</div><div class="company-contact">m.lambert@nrj.fr</div></div></div></td>
+                  <td><span class="pill acompte">Acompte payé</span></td>
+                  <td><span class="pole-tag audio">🎙️ Audio</span></td>
+                  <td><strong style="font-size:11px;color:var(--md-magenta);">PRS</strong></td>
+                  <td>CLASSIC</td>
+                  <td>Phil</td>
+                  <td>B. Associés</td>
+                  <td>5 975 €</td>
+                  <td><div class="sync-badges"><span class="sync-badge synced">SE</span><span class="sync-badge synced">BR</span><span class="sync-badge synced">ST</span></div></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td><div class="company-row"><div class="company-logo">RF</div><div><div class="company-name">Radio France</div><div class="company-contact">m.dupont@radiofrance.com</div></div></div></td>
+                  <td><span class="pill signe">Signé</span></td>
+                  <td><span class="pole-tag audio">🎙️ Audio</span></td>
+                  <td>Standard</td>
+                  <td>PREMIUM</td>
+                  <td>Phil</td>
+                  <td>—</td>
+                  <td>20 500 €</td>
+                  <td><div class="sync-badges"><span class="sync-badge synced">SE</span><span class="sync-badge synced">BR</span><span class="sync-badge synced">CA</span></div></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td><div class="company-row"><div class="company-logo" style="background:#117A4A;">EU</div><div><div class="company-name">Europe 1</div><div class="company-contact">partenariats@europe1.fr</div></div></div></td>
+                  <td><span class="pill devis">Devis envoyé</span></td>
+                  <td><span class="pole-tag audio">🎙️ Audio</span></td>
+                  <td>Standard</td>
+                  <td>CLASSIC</td>
+                  <td>Commerciale</td>
+                  <td>LaLettre.pro</td>
+                  <td>14 800 €</td>
+                  <td><div class="sync-badges"><span class="sync-badge synced">SE</span><span class="sync-badge pending">BR</span><span class="sync-badge">ST</span></div></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td><div class="company-row"><div class="company-logo" style="background:#0265B5;">RT</div><div><div class="company-name">RTL Group</div><div class="company-contact">k.petit@rtlgroup.com</div></div></div></td>
+                  <td><span class="pill contact">En contact</span></td>
+                  <td><span class="pole-tag audio">🎙️ Audio</span></td>
+                  <td><strong style="font-size:11px;color:var(--md-magenta);">PRS</strong></td>
+                  <td>—</td>
+                  <td>Phil</td>
+                  <td>B. Associés</td>
+                  <td>—</td>
+                  <td><div class="sync-badges"><span class="sync-badge synced">SE</span><span class="sync-badge">BR</span><span class="sync-badge">ST</span></div></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td><div class="company-row"><div class="company-logo" style="background:#8B5A00;">PD</div><div><div class="company-name">Podcast Deluxe</div><div class="company-contact">hello@pdstudios.com</div></div></div></td>
+                  <td><span class="pill lead">Lead</span></td>
+                  <td><span class="pole-tag audio">🎙️ Audio</span></td>
+                  <td>Standard</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td><div class="sync-badges"><span class="sync-badge pending">SE</span><span class="sync-badge">BR</span><span class="sync-badge">ST</span></div></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td><div class="company-row"><div class="company-logo" style="background:#A8262B;">MR</div><div><div class="company-name">Mediawan Radio</div><div class="company-contact">k.bertin@mediawan.com</div></div></div></td>
+                  <td><span class="pill perdu">Perdu</span></td>
+                  <td><span class="pole-tag audio">🎙️ Audio</span></td>
+                  <td>Standard</td>
+                  <td>—</td>
+                  <td>Commerciale</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td><div class="sync-badges"><span class="sync-badge synced">SE</span><span class="sync-badge">BR</span><span class="sync-badge">ST</span></div></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="pagination">
+              <div>Affichage 1-6 sur 142</div>
+              <div class="pagination-controls">
+                <button>‹</button><button class="active">1</button><button>2</button><button>3</button><button>…</button><button>24</button><button>›</button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ============= ADMIN — CRÉER UN DEVIS (NOUVEAU EN v2.6) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Admin · Nouveau devis (mode concierge — RDV client) <span class="new-badge">NOUVEAU v2.6</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+          <span style="font-size:13px;opacity:0.85;margin-left:8px;">Admin · Prospection</span>
+        </div>
+        <div class="public-header-right">
+          <span class="season-switcher" style="background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);">MDS 2026</span>
+          <span style="font-size:13px;">Philippe C.</span>
+        </div>
+      </div>
+      <div class="admin-shell">
+        <aside class="admin-sidebar">
+          <div class="admin-section-title">Pipeline</div>
+          <nav class="admin-nav">
+            <a href="#">📊 Dashboard</a>
+            <a href="#">👥 Prospects</a>
+            <a href="#">🏢 Sociétés</a>
+            <a href="#">📨 Inscriptions web</a>
+            <a href="#" class="active">⚡ Nouveau devis</a>
+          </nav>
+        </aside>
+        <main class="admin-main">
+          <a href="#" style="font-size:12px;color:var(--md-text-muted);margin-bottom:10px;display:inline-block;">← Annuler et revenir au pipeline</a>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+            <div>
+              <h1 style="font-size:22px;color:var(--md-blue-dark);font-weight:700;">⚡ Nouveau devis (mode concierge)</h1>
+              <p style="color:var(--md-text-muted);font-size:13px;">Créez un devis Sellsy en direct pendant un RDV ou un call. L'envoi par email se fait en un clic après validation.</p>
+            </div>
+          </div>
+
+          <!-- Stepper concierge -->
+          <div style="display:flex;gap:14px;align-items:center;padding:14px 16px;background:white;border:1px solid var(--md-border);border-radius:var(--radius);margin-bottom:14px;flex-wrap:wrap;">
+            <div class="step done"><span class="dot">✓</span> Société</div>
+            <div class="step-divider"></div>
+            <div class="step done"><span class="dot">✓</span> Contact</div>
+            <div class="step-divider"></div>
+            <div class="step done"><span class="dot">✓</span> Configuration de l'offre</div>
+            <div class="step-divider"></div>
+            <div class="step active"><span class="dot">4</span> Émission & envoi</div>
+          </div>
+
+          <!-- SECTION 1 — Société (fermée, validée) -->
+          <div class="form-section">
+            <div class="form-section-header" style="background:#FAFBFE;">
+              <h3>
+                <span class="step-num" style="background:var(--md-success);">✓</span>
+                1. Société sélectionnée
+              </h3>
+              <a href="#" style="font-size:12px;color:var(--md-blue);">Modifier</a>
+            </div>
+            <div class="form-section-body" style="padding:14px 20px;">
+              <div style="display:flex;gap:12px;align-items:center;">
+                <div class="company-logo" style="width:44px;height:44px;font-size:16px;background:var(--md-magenta);">NR</div>
+                <div style="flex:1;">
+                  <div style="font-weight:700;color:var(--md-blue-dark);font-size:15px;">NRJ Group</div>
+                  <div style="font-size:12px;color:var(--md-text-muted);">www.nrj.fr · 22 rue Boileau, 75016 Paris · FR45304256127 ✓</div>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <span class="pole-tag audio">🎙️ AUDIO & RADIO</span>
+                  <span class="pole-tag" style="background:#FFE6F1;color:var(--md-magenta);">⭐ Tarif PRS</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2 — Contact (fermée, validée) -->
+          <div class="form-section">
+            <div class="form-section-header" style="background:#FAFBFE;">
+              <h3>
+                <span class="step-num" style="background:var(--md-success);">✓</span>
+                2. Contact destinataire
+              </h3>
+              <a href="#" style="font-size:12px;color:var(--md-blue);">Modifier · + Nouveau contact</a>
+            </div>
+            <div class="form-section-body" style="padding:14px 20px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <div>
+                  <div style="font-weight:700;color:var(--md-blue-dark);font-size:14px;">Marie Lambert · Directrice partenariats</div>
+                  <div style="font-size:12px;color:var(--md-text-muted);">m.lambert@nrj.fr · +33 1 40 71 40 00 · Langue FR</div>
+                </div>
+                <span class="pill" style="background:#DDF6E8;color:#117A4A;font-size:11px;">Email pro vérifié ✓</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 3 — Configuration offre (fermée, validée) -->
+          <div class="form-section">
+            <div class="form-section-header" style="background:#FAFBFE;">
+              <h3>
+                <span class="step-num" style="background:var(--md-success);">✓</span>
+                3. Configuration de l'offre
+              </h3>
+              <a href="#" style="font-size:12px;color:var(--md-blue);">Modifier</a>
+            </div>
+            <div class="form-section-body" style="padding:14px 20px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:13px;">
+                <div>
+                  <div class="kpi-label">Pack</div>
+                  <div style="font-weight:700;color:var(--md-blue-dark);">CLASSIC <span class="pack-prs-badge" style="margin-left:6px;">Tarif PRS</span></div>
+                </div>
+                <div>
+                  <div class="kpi-label">Salons</div>
+                  <div>📍 Paris · Carrousel du Louvre</div>
+                </div>
+                <div>
+                  <div class="kpi-label">Emplacement</div>
+                  <div style="font-family:monospace;font-weight:700;color:var(--md-blue-dark);">P-LN-A12 · Salle Le Nôtre · 12 m²</div>
+                </div>
+                <div>
+                  <div class="kpi-label">Options additionnelles</div>
+                  <div>Logo Gold + Emailing dédié</div>
+                </div>
+                <div>
+                  <div class="kpi-label">Source du prospect</div>
+                  <div><select style="padding:4px 8px;border:1px solid var(--md-border);border-radius:4px;font-size:12px;"><option>📞 Call commercial</option><option>🤝 Salon SATIS 2025</option><option>👥 Recommandation</option><option>📢 Campagne LinkedIn</option></select></div>
+                </div>
+                <div>
+                  <div class="kpi-label">Note interne (admin uniquement)</div>
+                  <div style="font-size:12px;color:var(--md-text-muted);font-style:italic;">"Discuté avec Marie le 28/04 — closing imminent. Mention spéciale : engagement pluriannuel possible 2026+2027."</div>
+                </div>
+              </div>
+              <div style="background:linear-gradient(135deg, var(--md-blue-dark), var(--md-blue));color:white;padding:14px 18px;border-radius:var(--radius);margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <div>
+                  <div style="font-size:11px;opacity:0.85;text-transform:uppercase;letter-spacing:0.06em;">Total HT calculé</div>
+                  <div style="font-family:Montserrat;font-weight:800;font-size:24px;">5 975 € HT</div>
+                  <div style="font-size:12px;opacity:0.85;">Pack 2 475 € + Logo Gold 3 000 € + Emailing 500 €</div>
+                </div>
+                <div>
+                  <div style="font-size:11px;opacity:0.85;text-transform:uppercase;letter-spacing:0.06em;">Acompte 30%</div>
+                  <div style="font-family:Montserrat;font-weight:800;font-size:24px;color:#FFB7DA;">1 793 € HT</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 4 — Émission & envoi (active) -->
+          <div class="form-section" style="border-color:var(--md-magenta);">
+            <div class="form-section-header" style="background:linear-gradient(135deg, rgba(230,0,126,0.04), rgba(230,0,126,0.01));">
+              <h3>
+                <span class="step-num">4</span>
+                Émission Sellsy & envoi par email
+              </h3>
+            </div>
+            <div class="form-section-body">
+              <div style="margin-bottom:16px;">
+                <strong style="font-size:13px;color:var(--md-blue-dark);display:block;margin-bottom:8px;">Quel parcours souhaitez-vous proposer à Marie ?</strong>
+                <div class="payment-paths">
+                  <div class="pay-path">
+                    <div class="pay-path-header"><span class="pay-path-radio"></span><span class="pay-path-name">📄 Devis simple — paiement différé</span></div>
+                    <div class="pay-path-desc">Devis Sellsy envoyé par email. Marie règle plus tard. Pas de Payment Link.</div>
+                  </div>
+                  <div class="pay-path selected">
+                    <div class="pay-path-header"><span class="pay-path-radio"></span><span class="pay-path-name">💳 Devis + Stripe Payment Link (acompte)</span></div>
+                    <div class="pay-path-desc">Lien de paiement intégré dans le mail pour règlement de l'acompte à distance.</div>
+                    <div class="pay-path-amount">→ 1 793 € HT (acompte 30%)</div>
+                  </div>
+                  <div class="pay-path">
+                    <div class="pay-path-header"><span class="pay-path-radio"></span><span class="pay-path-name">📑 Pro-forma + Stripe Payment Link</span></div>
+                    <div class="pay-path-desc">Pour clients internationaux ou B2G ayant besoin d'une pro-forma.</div>
+                    <div class="pay-path-amount">→ 1 793 € HT</div>
+                  </div>
+                  <div class="pay-path">
+                    <div class="pay-path-header"><span class="pay-path-radio"></span><span class="pay-path-name">⚡ Paiement intégral immédiat</span></div>
+                    <div class="pay-path-desc">Encaissement total à la signature. Status passe directement à signé.</div>
+                    <div class="pay-path-amount">→ 5 975 € HT</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-bottom:16px;">
+                <strong style="font-size:13px;color:var(--md-blue-dark);display:block;margin-bottom:8px;">Aperçu de l'email envoyé à Marie</strong>
+                <div style="background:white;border:1px solid var(--md-border);border-radius:var(--radius);overflow:hidden;">
+                  <div style="background:#FAFBFE;padding:10px 14px;border-bottom:1px solid var(--md-border);font-size:12px;">
+                    <div><strong>De :</strong> Philippe Chapot &lt;philippe@mediadays.fr&gt;</div>
+                    <div><strong>À :</strong> Marie Lambert &lt;m.lambert@nrj.fr&gt;</div>
+                    <div><strong>Sujet :</strong> Votre devis MediaDays Solutions 2026 — CLASSIC PRS · NRJ Group</div>
+                  </div>
+                  <div style="padding:18px 22px;font-size:13px;line-height:1.6;color:var(--md-text);">
+                    <div contenteditable style="outline:none;border-bottom:1px dashed transparent;padding-bottom:10px;" onfocus="this.style.borderBottom='1px dashed var(--md-magenta)'" onblur="this.style.borderBottom='1px dashed transparent'">
+                      <strong>Bonjour Marie,</strong><br><br>
+                      Suite à notre échange de ce matin, je vous transmets le devis pour votre participation aux MediaDays Solutions 2026.<br><br>
+                      <strong>Récapitulatif :</strong><br>
+                      • Pack CLASSIC (tarif préférentiel exposant Paris Radio Show)<br>
+                      • Stand 12m² · emplacement P-LN-A12 · Salle Le Nôtre<br>
+                      • Logo partenaire Gold + Emailing dédié base ConnectOnAir<br><br>
+                      <strong>Total : 5 975 € HT</strong> · acompte 30% (1 793 € HT) à régler pour confirmer la réservation.<br><br>
+                      Vous trouverez le devis détaillé en pièce jointe. Pour finaliser dès maintenant, cliquez sur le bouton ci-dessous pour régler l'acompte de manière sécurisée via Stripe.<br><br>
+                      <em style="color:var(--md-text-muted);font-size:11px;">[bouton "Voir le devis (PDF)" + bouton "Régler l'acompte 1 793 €"]</em><br><br>
+                      Restant à votre disposition pour toute question.<br><br>
+                      Belle journée,<br>
+                      <strong>Philippe Chapot</strong><br>
+                      MediaDays Solutions
+                    </div>
+                  </div>
+                  <div style="padding:10px 14px;background:#FAFBFE;border-top:1px solid var(--md-border);font-size:11px;color:var(--md-text-muted);">
+                    📎 Devis-MDS-2026-NRJ-088.pdf · Pièce jointe générée par Sellsy · Langue : FR
+                  </div>
+                </div>
+                <div style="font-size:11px;color:var(--md-text-muted);margin-top:6px;">💡 Cliquez dans le corps du message pour personnaliser. La signature et la pièce jointe sont automatiques.</div>
+              </div>
+
+              <div style="background:#FFFCF0;border:1px solid #F0D89B;padding:12px 14px;border-radius:var(--radius-sm);font-size:12px;color:#8B5A00;margin-bottom:16px;">
+                <strong>📋 Ce qui se passera après "Émettre & envoyer" :</strong>
+                <ol style="margin:6px 0 0 18px;line-height:1.7;">
+                  <li>Création de l'opportunité dans Sellsy avec le tag <code>tarif_prs_2026</code> + tag pôle <code>audio_radio</code></li>
+                  <li>Émission du devis Sellsy DV-2026-XXX (numérotation automatique Sellsy)</li>
+                  <li>Génération du Stripe Payment Link pour 1 793 € HT (TTL 30 jours)</li>
+                  <li>Envoi de l'email avec PDF + Payment Link à m.lambert@nrj.fr via Brevo SMTP</li>
+                  <li>Création du prospect en statut <span class="pill devis" style="font-size:10px;">Devis envoyé</span> avec source = "Call commercial"</li>
+                  <li>Trace complète dans <code>activities</code> + <code>audit_log</code></li>
+                </ol>
+              </div>
+
+              <div class="submit-row" style="margin-top:6px;">
+                <small>Une copie de l'email vous sera envoyée à <strong>philippe@mediadays.fr</strong>.</small>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn btn-ghost">💾 Enregistrer en brouillon</button>
+                  <button class="btn btn-primary btn-lg">⚡ Émettre & envoyer le devis</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ============= ADMIN — FICHE PROSPECT (NOUVEAU EN v2.5) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Admin · Fiche prospect (timeline + synchros + affiliation) <span class="new-badge">NOUVEAU v2.5</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+          <span style="font-size:13px;opacity:0.85;margin-left:8px;">Admin · Prospection</span>
+        </div>
+      </div>
+      <div class="admin-shell">
+        <aside class="admin-sidebar">
+          <div class="admin-section-title">Pipeline</div>
+          <nav class="admin-nav">
+            <a href="#">📊 Dashboard</a>
+            <a href="#" class="active">👥 Prospects</a>
+            <a href="#">🏢 Sociétés</a>
+            <a href="#">📨 Inscriptions web</a>
+          </nav>
+        </aside>
+        <main class="admin-main">
+          <a href="#" style="font-size:12px;color:var(--md-text-muted);margin-bottom:10px;display:inline-block;">← Retour à la liste</a>
+          <div class="prospect-header">
+            <div class="prospect-header-left">
+              <div class="company-logo" style="width:54px;height:54px;font-size:18px;background:var(--md-magenta);">NR</div>
+              <div>
+                <h1 style="font-size:22px;color:var(--md-blue-dark);font-weight:700;">NRJ Group</h1>
+                <div style="font-size:13px;color:var(--md-text-muted);">Marie Lambert · Directrice partenariats · m.lambert@nrj.fr · +33 1 40 71 40 00</div>
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                  <span class="pill acompte">Acompte payé</span>
+                  <span class="pole-tag audio">🎙️ AUDIO & RADIO</span>
+                  <span class="pole-tag" style="background:#FFE6F1;color:var(--md-magenta);">⭐ Tarif PRS</span>
+                  <span class="pole-tag" style="background:var(--md-bg);color:var(--md-text);">Salon SATIS</span>
+                </div>
+              </div>
+            </div>
+            <div class="prospect-actions">
+              <button class="btn btn-ghost btn-sm">✉️ Email</button>
+              <button class="btn btn-ghost btn-sm">📞 Appel</button>
+              <button class="btn btn-secondary btn-sm">↻ Resync</button>
+              <button class="btn btn-primary btn-sm">📝 Modifier</button>
+            </div>
+          </div>
+
+          <div class="prospect-grid">
+            <div>
+              <div class="prospect-section">
+                <h3>Récap commande</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+                  <div><div class="kpi-label">Total HT</div><div style="font-family:Montserrat;font-weight:800;font-size:20px;color:var(--md-blue-dark);">5 975 €</div></div>
+                  <div><div class="kpi-label">Acompte payé</div><div style="font-family:Montserrat;font-weight:800;font-size:20px;color:var(--md-success);">1 793 €</div></div>
+                  <div><div class="kpi-label">Solde dû</div><div style="font-family:Montserrat;font-weight:800;font-size:20px;color:var(--md-warning);">4 182 €</div></div>
+                  <div><div class="kpi-label">Probabilité</div><div style="font-family:Montserrat;font-weight:800;font-size:20px;color:var(--md-blue-dark);">90%</div></div>
+                  <div><div class="kpi-label">Signature prévue</div><div style="font-family:Montserrat;font-weight:700;font-size:14px;color:var(--md-blue-dark);">15/06/2026</div></div>
+                </div>
+                <div style="background:var(--md-bg);padding:10px 14px;border-radius:var(--radius-sm);margin-top:12px;font-size:13px;">
+                  <strong>CLASSIC PRS</strong> · Stand 12m² · P-LN-A12 · Salle Le Nôtre · Rangée A · 2 options (Logo Gold + Emailing)
+                </div>
+              </div>
+              <div class="prospect-section">
+                <h3>Timeline</h3>
+                <div class="timeline-item">
+                  <div class="timeline-icon event-stripe">💳</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Acompte 1 793 € payé via Stripe</div>
+                    <div class="timeline-meta">Aujourd'hui 14:32 · Stripe pi_3Abc... · Sellsy DV-2026-088 marqué partiellement payé</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-icon event-system">📨</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Devis Sellsy DV-2026-088 envoyé</div>
+                    <div class="timeline-meta">Aujourd'hui 14:20 · Stripe checkout session créée · sync Brevo OK</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-icon event-mail">📩</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Formulaire complet soumis (étape 2A)</div>
+                    <div class="timeline-meta">Aujourd'hui 14:15 · Pack CLASSIC · Booth P-LN-A12 réservé · CGV acceptées</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-icon event-system">✅</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Email vérifié (double opt-in)</div>
+                    <div class="timeline-meta">Hier 18:42 · token consommé</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-icon event-system">🌐</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Inscription via formulaire public</div>
+                    <div class="timeline-meta">Hier 18:35 · IP 92.184.x.x · Source : <strong>Affilié Broadcast Associés</strong> · UTM linkedin/cpc</div>
+                  </div>
+                </div>
+              </div>
+              <div class="prospect-section">
+                <h3>Note Claude / IA</h3>
+                <p style="font-size:13px;color:var(--md-text-muted);line-height:1.5;">Société classifiée automatiquement dans le pôle <strong>AUDIO & RADIO</strong> (confiance 0.95). NRJ a déjà été exposant en 2024. Probabilité de signature élevée. Reste à clôturer le solde sous 30 jours pour finaliser le statut "signé". Recommandation : envoyer le récap PDF + mémo logistique.</p>
+              </div>
+            </div>
+            <div>
+              <div class="prospect-section">
+                <h3>Synchronisations</h3>
+                <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:600;">Sellsy</span><span class="pill signe">À jour</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:600;">Brevo</span><span class="pill signe">À jour</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:600;">Stripe</span><span class="pill signe">Acompte OK</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:600;">Connectonair</span><span class="pill" style="background:var(--md-bg);color:var(--md-text-muted);">Non concerné</span></div>
+                </div>
+                <button class="btn btn-secondary btn-block btn-sm" style="margin-top:10px;">Tout resynchroniser</button>
+              </div>
+              <div class="prospect-section">
+                <h3>Affiliation</h3>
+                <div style="font-size:13px;line-height:1.6;">
+                  <div><strong>Apporteur :</strong> Broadcast Associés</div>
+                  <div><strong>Commission :</strong> 10% · 597,50 €</div>
+                  <div><strong>Statut :</strong> <span class="pill devis" style="font-size:10px;">Due (signature finale en attente)</span></div>
+                </div>
+              </div>
+              <div class="prospect-section">
+                <h3>Métadonnées</h3>
+                <div style="font-size:12px;color:var(--md-text-muted);line-height:1.6;">
+                  <div><strong>ID :</strong> prosp_8a4c1...</div>
+                  <div><strong>Saison :</strong> MDS 2026</div>
+                  <div><strong>Owner :</strong> Philippe C.</div>
+                  <div><strong>Source :</strong> Inscription web · Affilié</div>
+                  <div><strong>Langue :</strong> FR</div>
+                  <div><strong>VAT :</strong> FR45304256127 ✓ vérifié VIES</div>
+                  <div><strong>Test mode :</strong> Non</div>
+                  <div><strong>Créé :</strong> Hier 18:35</div>
+                </div>
+              </div>
+              <div class="prospect-section" style="background:#FCE3E4;border-color:#F5BCC0;">
+                <h3 style="color:#A8262B;">⚠️ Zone dangereuse</h3>
+                <button class="btn btn-ghost btn-sm btn-block" style="border-color:#F5BCC0;color:#A8262B;">📤 Exporter données contact</button>
+                <button class="btn btn-ghost btn-sm btn-block" style="margin-top:6px;border-color:#A8262B;color:#A8262B;">🗑️ Supprimer (RTBF)</button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ============= ADMIN — INSCRIPTIONS WEB (NOUVEAU EN v2.5) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Admin · Inscriptions web — file de qualification <span class="new-badge">NOUVEAU v2.5</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+        </div>
+      </div>
+      <div class="admin-shell">
+        <aside class="admin-sidebar">
+          <div class="admin-section-title">Pipeline</div>
+          <nav class="admin-nav">
+            <a href="#">📊 Dashboard</a>
+            <a href="#">👥 Prospects</a>
+            <a href="#">🏢 Sociétés</a>
+            <a href="#" class="active">📨 Inscriptions web <span class="badge">8</span></a>
+          </nav>
+        </aside>
+        <main class="admin-main">
+          <h1 style="font-size:22px;color:var(--md-blue-dark);font-weight:700;margin-bottom:6px;">Inscriptions web</h1>
+          <p style="color:var(--md-text-muted);font-size:13px;margin-bottom:18px;">File des inscriptions à qualifier ou rejeter avant transformation en prospect.</p>
+          <div class="admin-tabs">
+            <button class="admin-tab active">⏳ À qualifier <span class="count-badge">8</span></button>
+            <button class="admin-tab">⏰ En attente vérif <span style="background:var(--md-bg);color:var(--md-text-muted);font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;">3</span></button>
+            <button class="admin-tab">✅ Convertis (24)</button>
+            <button class="admin-tab">❌ Rejetés (5)</button>
+          </div>
+
+          <div class="admin-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Société (saisie / matchée)</th>
+                  <th>Contact</th>
+                  <th>Email</th>
+                  <th>Pôle (IA)</th>
+                  <th>Catégorie</th>
+                  <th>Affilié</th>
+                  <th>Reçu</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Podcast Deluxe Studios</strong><br><span style="font-size:10px;color:var(--md-magenta);">⚡ nouvelle société</span></td>
+                  <td>Hugo Martin · CEO</td>
+                  <td>hugo@pdstudios.com</td>
+                  <td><span class="pole-tag audio">🎙️ Audio</span><br><span style="font-size:10px;color:var(--md-text-muted);">conf. 0.92</span></td>
+                  <td>Standard</td>
+                  <td>—</td>
+                  <td>il y a 12 min</td>
+                  <td><button class="btn btn-primary btn-sm">✓ Qualifier</button> <button class="btn btn-ghost btn-sm">✗</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Webradio AI</strong><br><span style="font-size:10px;color:var(--md-success);">✓ matchée</span></td>
+                  <td>Sandra Lemoine · Founder</td>
+                  <td>s.lemoine@webradio.ai</td>
+                  <td><span class="pole-tag diffusion">📡 Diffusion</span><br><span style="font-size:10px;color:var(--md-text-muted);">conf. 0.88</span></td>
+                  <td><strong style="color:var(--md-magenta);">PRS</strong></td>
+                  <td>LaLettre.pro</td>
+                  <td>il y a 1h</td>
+                  <td><button class="btn btn-primary btn-sm">✓ Qualifier</button> <button class="btn btn-ghost btn-sm">✗</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Some random brand</strong><br><span style="font-size:10px;color:var(--md-warning);">⚠ pôle inconnu</span></td>
+                  <td>John Doe</td>
+                  <td>j.doe@somerandom.io</td>
+                  <td><span class="pole-tag" style="background:var(--md-bg);">❓ INCONNU</span><br><span style="font-size:10px;color:var(--md-text-muted);">conf. 0.31</span></td>
+                  <td>Non éligible</td>
+                  <td>—</td>
+                  <td>il y a 3h</td>
+                  <td><button class="btn btn-secondary btn-sm">Reclasser</button> <button class="btn btn-ghost btn-sm">✗</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Ferncast</strong><br><span style="font-size:10px;color:var(--md-success);">✓ matchée</span></td>
+                  <td>Markus Hartmann · Sales Director</td>
+                  <td>m.hartmann@ferncast.com</td>
+                  <td><span class="pole-tag diffusion">📡 Diffusion</span><br><span style="font-size:10px;color:var(--md-text-muted);">conf. 0.94</span></td>
+                  <td><strong style="color:var(--md-magenta);">PRS</strong></td>
+                  <td>—</td>
+                  <td>hier</td>
+                  <td><button class="btn btn-primary btn-sm">✓ Qualifier</button> <button class="btn btn-ghost btn-sm">✗</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ============= ADMIN — INVENTAIRE EMPLACEMENTS (NOUVEAU EN v2.5) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Admin · Inventaire emplacements (vue grille) <span class="new-badge">NOUVEAU v2.5</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+        </div>
+      </div>
+      <div class="admin-shell">
+        <aside class="admin-sidebar">
+          <div class="admin-section-title">Salon</div>
+          <nav class="admin-nav">
+            <a href="#" class="active">🪑 Emplacements</a>
+            <a href="#">🗺️ Plan Canva</a>
+            <a href="#">💰 Tarifs</a>
+            <a href="#">🛒 Catalogue Sellsy</a>
+          </nav>
+        </aside>
+        <main class="admin-main">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+            <div>
+              <h1 style="font-size:22px;color:var(--md-blue-dark);font-weight:700;">Inventaire emplacements</h1>
+              <p style="color:var(--md-text-muted);font-size:13px;">Paris · Carrousel du Louvre — 184 emplacements</p>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <a href="#" class="btn btn-ghost">🗺️ Voir le plan Canva</a>
+              <button class="btn btn-primary">+ Importer CSV</button>
+            </div>
+          </div>
+          <div class="filters-bar">
+            <span class="filter-chip active">Paris</span>
+            <span class="filter-chip">Marseille</span>
+            <span class="filter-chip">Bruxelles</span>
+            <span style="color:var(--md-text-muted);font-size:12px;">·</span>
+            <span class="filter-chip"><span style="width:10px;height:10px;background:#1FBF7A;border-radius:50%;display:inline-block;"></span> Disponibles · 102</span>
+            <span class="filter-chip"><span style="width:10px;height:10px;background:var(--md-warning);border-radius:50%;display:inline-block;"></span> Options · 6</span>
+            <span class="filter-chip"><span style="width:10px;height:10px;background:#0265B5;border-radius:50%;display:inline-block;"></span> Réservés · 47</span>
+            <span class="filter-chip"><span style="width:10px;height:10px;background:var(--md-magenta);border-radius:50%;display:inline-block;"></span> Signés · 14</span>
+          </div>
+          <div style="background:white;border-radius:var(--radius);border:1px solid var(--md-border);padding:18px;">
+            <h3 style="font-size:13px;color:var(--md-blue-dark);font-weight:700;margin-bottom:8px;">🎙️ AUDIO & RADIO · Salle Le Nôtre — Rangées A-B-C + scène PRS</h3>
+            <div class="booth-grid" style="margin-bottom:18px;">
+              <div class="booth-cell signed" title="P-LN-A12 · NRJ Group">A12</div>
+              <div class="booth-cell available">A14</div>
+              <div class="booth-cell available">A16</div>
+              <div class="booth-cell reserved" title="P-LN-A18 · Radio France">A18</div>
+              <div class="booth-cell signed" title="Europe 1">A20</div>
+              <div class="booth-cell available">A22</div>
+              <div class="booth-cell available">A24</div>
+              <div class="booth-cell available">A26</div>
+              <div class="booth-cell option" title="Réservé 30 min">B07</div>
+              <div class="booth-cell available">B09</div>
+              <div class="booth-cell available">B11</div>
+              <div class="booth-cell signed">B13</div>
+              <div class="booth-cell reserved">B15</div>
+              <div class="booth-cell available">B17</div>
+              <div class="booth-cell available">B19</div>
+              <div class="booth-cell available">B21</div>
+              <div class="booth-cell available">C03</div>
+              <div class="booth-cell available">C05</div>
+              <div class="booth-cell available">C07</div>
+              <div class="booth-cell available">C09</div>
+              <div class="booth-cell available">C11</div>
+              <div class="booth-cell available">C13</div>
+              <div class="booth-cell available">C15</div>
+              <div class="booth-cell available">C17</div>
+            </div>
+            <h3 style="font-size:13px;color:var(--md-blue-dark);font-weight:700;margin-bottom:8px;">📊 DATA & ADTECH · Salle Delorme + Le Nôtre</h3>
+            <div class="booth-grid" style="margin-bottom:18px;">
+              <div class="booth-cell signed">D-01</div>
+              <div class="booth-cell signed">D-02</div>
+              <div class="booth-cell reserved">D-03</div>
+              <div class="booth-cell available">D-04</div>
+              <div class="booth-cell available">D-05</div>
+              <div class="booth-cell available">D-06</div>
+              <div class="booth-cell available">D-07</div>
+              <div class="booth-cell available">D-08</div>
+              <div class="booth-cell available">D-09</div>
+              <div class="booth-cell available">D-10</div>
+              <div class="booth-cell available">D-11</div>
+              <div class="booth-cell available">D-12</div>
+              <div class="booth-cell reserved">D-13</div>
+              <div class="booth-cell available">D-14</div>
+              <div class="booth-cell available">D-15</div>
+              <div class="booth-cell available">D-16</div>
+            </div>
+            <div style="text-align:center;color:var(--md-text-muted);font-size:12px;">+ 4 autres pôles avec leurs salles (cliquer pour développer)</div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ============= ADMIN — ASSISTANT IA (NOUVEAU EN v2.7) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Admin · Assistant IA Claude (Haiku par défaut + escalation Sonnet) <span class="new-badge">NOUVEAU v2.7</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+          <span style="font-size:13px;opacity:0.85;margin-left:8px;">Admin · Assistant IA</span>
+        </div>
+        <div class="public-header-right">
+          <span style="font-size:13px;">Philippe C. · admin</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:280px 1fr;min-height:680px;">
+        <!-- Sidebar conversations -->
+        <aside style="background:white;border-right:1px solid var(--md-border);padding:14px;display:flex;flex-direction:column;gap:6px;">
+          <button class="btn btn-primary btn-block" style="margin-bottom:10px;">+ Nouvelle conversation</button>
+          <div style="font-size:10px;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.12em;font-weight:700;padding:6px 8px;">Aujourd'hui</div>
+          <a href="#" style="background:rgba(230,0,126,0.06);border:1px solid var(--md-magenta);padding:10px 12px;border-radius:8px;text-decoration:none;color:var(--md-blue-dark);font-size:13px;font-weight:600;">📞 Suivi NRJ + relance pôle radio</a>
+          <a href="#" style="padding:10px 12px;border-radius:8px;text-decoration:none;color:var(--md-text);font-size:13px;">Préparer pitch SATIS</a>
+          <a href="#" style="padding:10px 12px;border-radius:8px;text-decoration:none;color:var(--md-text);font-size:13px;">État du pipeline</a>
+          <div style="font-size:10px;color:var(--md-text-muted);text-transform:uppercase;letter-spacing:0.12em;font-weight:700;padding:6px 8px;margin-top:10px;">Hier</div>
+          <a href="#" style="padding:10px 12px;border-radius:8px;text-decoration:none;color:var(--md-text);font-size:13px;">Devis Lagardère PREMIUM</a>
+          <a href="#" style="padding:10px 12px;border-radius:8px;text-decoration:none;color:var(--md-text);font-size:13px;">Email relance Mediawan</a>
+          <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--md-border);font-size:11px;color:var(--md-text-muted);">
+            🪙 14 sessions ce mois · 0,28 € de coût IA
+          </div>
+        </aside>
+
+        <!-- Chat panel -->
+        <main style="display:flex;flex-direction:column;background:#FAFBFE;">
+          <div style="padding:14px 24px;border-bottom:1px solid var(--md-border);background:white;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div>
+              <h2 style="font-size:16px;color:var(--md-blue-dark);">📞 Suivi NRJ + relance pôle radio</h2>
+              <div style="font-size:11px;color:var(--md-text-muted);">Modèle : claude-haiku-4-5 · 8 messages · 3 240 tokens</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-sm">📤 Exporter</button>
+              <button class="btn btn-ghost btn-sm">🗑️</button>
+            </div>
+          </div>
+
+          <!-- Messages -->
+          <div style="flex:1;padding:20px 28px;overflow-y:auto;display:flex;flex-direction:column;gap:18px;">
+            <!-- Message user -->
+            <div style="align-self:flex-end;max-width:75%;background:var(--md-blue-dark);color:white;padding:10px 14px;border-radius:12px 12px 4px 12px;font-size:14px;">
+              Bonjour Claude. Fais-moi le récap de NRJ Group et propose-moi une relance pour aujourd'hui.
+            </div>
+
+            <!-- Message assistant -->
+            <div style="align-self:flex-start;max-width:90%;display:flex;gap:10px;align-items:flex-start;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--md-magenta);color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;">🤖</div>
+              <div style="background:white;border:1px solid var(--md-border);padding:14px 16px;border-radius:12px 12px 12px 4px;font-size:14px;line-height:1.6;">
+                <div style="font-size:11px;color:var(--md-text-muted);margin-bottom:6px;">🔍 Outils utilisés : <code>get_prospect_details</code>, <code>list_recent_activities</code></div>
+                <strong>NRJ Group · état au 30/04/2026</strong>
+                <ul style="margin:6px 0 8px 18px;line-height:1.7;">
+                  <li>Pack <strong>CLASSIC PRS</strong> (2 475 € HT) + Logo Gold + Emailing = <strong>5 975 € HT</strong></li>
+                  <li>Statut : <strong>Acompte payé</strong> (1 793 € HT le 28/04 via Stripe)</li>
+                  <li>Solde dû : <strong>4 182 € HT</strong> à régler avant signature</li>
+                  <li>Contact : Marie Lambert · m.lambert@nrj.fr · Directrice partenariats</li>
+                  <li>Source : inscription web via apporteur Broadcast Associés</li>
+                </ul>
+                <strong>Recommandation pour aujourd'hui :</strong>
+                <p style="margin:6px 0;">Marie a payé l'acompte mais n'a pas encore signé. Je suggère un email de confirmation amical qui (a) la remercie pour l'acompte, (b) rappelle le calendrier avant l'événement (J-127), (c) propose un point de 15 min pour finaliser. Tu veux que je rédige le mail ?</p>
+              </div>
+            </div>
+
+            <!-- Quick actions -->
+            <div style="margin-left:42px;display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-ghost btn-sm">✍️ Oui, rédige le mail</button>
+              <button class="btn btn-ghost btn-sm">⏰ Crée un rappel à J-7 du solde</button>
+              <button class="btn btn-ghost btn-sm">📞 Note de call</button>
+            </div>
+
+            <!-- Message user 2 -->
+            <div style="align-self:flex-end;max-width:75%;background:var(--md-blue-dark);color:white;padding:10px 14px;border-radius:12px 12px 4px 12px;font-size:14px;">
+              Oui rédige le mail, et crée un rappel pour vendredi prochain à 16h pour relancer si pas de réponse.
+            </div>
+
+            <!-- Message assistant 2 -->
+            <div style="align-self:flex-start;max-width:90%;display:flex;gap:10px;align-items:flex-start;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--md-magenta);color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;">🤖</div>
+              <div style="background:white;border:1px solid var(--md-border);padding:14px 16px;border-radius:12px 12px 12px 4px;font-size:14px;line-height:1.6;">
+                <div style="font-size:11px;color:var(--md-text-muted);margin-bottom:8px;">🔍 Outil utilisé : <code>create_reminder</code> · ⏰ Rappel créé pour le 02/05/2026 16:00</div>
+
+                <strong>✅ Rappel créé</strong> · "Relancer NRJ — Marie Lambert si pas de réponse acompte/signature" · 02/05/2026 16:00
+
+                <hr style="border:none;border-top:1px solid var(--md-border);margin:12px 0;">
+
+                <strong>Brouillon d'email :</strong>
+                <div style="background:var(--md-bg);padding:12px 14px;border-radius:8px;font-family:Georgia,serif;font-size:13px;line-height:1.6;margin-top:8px;">
+                  <strong>Objet :</strong> Confirmation de votre acompte MDS 2026 — prochaines étapes<br><br>
+                  Bonjour Marie,<br><br>
+                  Merci pour le règlement de votre acompte de 1 793 € reçu hier. Votre stand P-LN-A12 est définitivement réservé pour Paris le 15 décembre.<br><br>
+                  Pour clôturer la signature et bloquer définitivement votre emplacement (et vos options Logo Gold + Emailing), il reste à régler le solde de <strong>4 182 € HT</strong>. Pas d'urgence sur la date — vous avez jusqu'au 1er novembre.<br><br>
+                  Voulez-vous qu'on planifie un point de 15 min cette semaine pour faire le tour ensemble (logistique, badges équipe, options à confirmer) ? Je peux mardi 14h ou jeudi 11h.<br><br>
+                  À très vite,<br>
+                  Philippe
+                </div>
+                <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+                  <button class="btn btn-primary btn-sm">✉️ Ouvrir dans le composeur</button>
+                  <button class="btn btn-ghost btn-sm">✏️ Affiner</button>
+                  <button class="btn btn-ghost btn-sm">📋 Copier</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input -->
+          <div style="padding:14px 24px;border-top:1px solid var(--md-border);background:white;">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+              <span style="font-size:11px;color:var(--md-text-muted);">Suggestions :</span>
+              <button class="btn btn-ghost btn-sm" style="font-size:11px;">📊 Pipeline cette semaine</button>
+              <button class="btn btn-ghost btn-sm" style="font-size:11px;">⏰ Mes rappels du jour</button>
+              <button class="btn btn-ghost btn-sm" style="font-size:11px;">+ Nouveau prospect rapide</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end;">
+              <textarea placeholder="Demandez quelque chose, ou commencez une action…" style="flex:1;padding:10px 14px;border:1px solid var(--md-border);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;min-height:44px;max-height:120px;"></textarea>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--md-text-muted);cursor:pointer;">
+                  <input type="checkbox"> 💎 Mode approfondi (Sonnet)
+                </label>
+                <button class="btn btn-primary">Envoyer ↵</button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ============= PARTENAIRE — ASSISTANT IA (NOUVEAU EN v2.7) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Espace Partenaire · Assistant IA contextualisé (PRS vs MDS) <span class="new-badge">NOUVEAU v2.7</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+          <span style="font-size:13px;opacity:0.85;margin-left:8px;">Espace Partenaire</span>
+        </div>
+        <div class="public-header-right">
+          <span style="font-size:13px;">Marie Lambert · NRJ Group</span>
+        </div>
+      </div>
+      <div class="partner-shell">
+        <aside class="partner-sidebar">
+          <div class="partner-brand">PARTENAIRE 2026</div>
+          <div class="partner-company">NRJ Group</div>
+          <span class="partner-pole-tag" style="background:var(--pole-audio);">🎙️ AUDIO & RADIO</span>
+          <nav class="partner-nav">
+            <a href="#">📊 Tableau de bord</a>
+            <a href="#">📦 Ma commande</a>
+            <a href="#">✨ Mon profil partenaire</a>
+            <a href="#">🤝 Affiliation</a>
+            <a href="#">📚 Ressources & guide</a>
+            <a href="#">🛒 Options supplémentaires</a>
+            <div class="partner-nav-divider"></div>
+            <a href="#" class="active">🤖 Assistant IA</a>
+            <a href="#">💬 Contact équipe</a>
+          </nav>
+        </aside>
+        <main class="partner-main" style="background:#FAFBFE;display:flex;flex-direction:column;padding:0;">
+          <div style="padding:18px 28px;background:white;border-bottom:1px solid var(--md-border);">
+            <h2 class="partner-page-title" style="margin:0;">🤖 Assistant MDS</h2>
+            <p class="partner-page-sub" style="margin:0;">Posez vos questions sur votre commande, le salon, ou la logistique. Disponible 24h/24, en français ou anglais.</p>
+            <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span style="font-size:11px;background:#FFE6F1;color:var(--md-magenta);padding:3px 8px;border-radius:999px;font-weight:700;">⭐ Tarification PRS appliquée</span>
+              <span style="font-size:11px;color:var(--md-text-muted);">Vos tarifs préférentiels Paris Radio Show 2026 sont pris en compte automatiquement.</span>
+            </div>
+          </div>
+
+          <!-- Messages -->
+          <div style="flex:1;padding:20px 28px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;">
+            <!-- Bot welcome -->
+            <div style="align-self:flex-start;max-width:90%;display:flex;gap:10px;align-items:flex-start;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--md-magenta);color:white;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🤖</div>
+              <div style="background:white;border:1px solid var(--md-border);padding:14px 16px;border-radius:12px 12px 12px 4px;font-size:14px;line-height:1.6;">
+                Bonjour Marie 👋 Je suis l'assistant des MediaDays Solutions. Je peux vous aider avec :
+                <ul style="margin:8px 0 0 18px;line-height:1.6;">
+                  <li>Le détail de votre commande NRJ Group</li>
+                  <li>Les tarifs préférentiels exposants Paris Radio Show 2026</li>
+                  <li>Les infos pratiques du salon (horaires, accès, plan)</li>
+                  <li>Le guide partenaire et les options supplémentaires</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Suggestions -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-left:42px;">
+              <button class="btn btn-ghost btn-sm">📦 Voir ma commande</button>
+              <button class="btn btn-ghost btn-sm">💳 Solde restant</button>
+              <button class="btn btn-ghost btn-sm">📍 À quelle heure j'arrive Paris ?</button>
+              <button class="btn btn-ghost btn-sm">💰 Combien coûte le pack PREMIUM ?</button>
+            </div>
+
+            <!-- User question -->
+            <div style="align-self:flex-end;max-width:75%;background:var(--md-blue-dark);color:white;padding:10px 14px;border-radius:12px 12px 4px 12px;font-size:14px;">
+              Combien coûterait le pack PREMIUM si je voulais l'upgrade depuis CLASSIC ?
+            </div>
+
+            <!-- Bot answer (contextualisé PRS) -->
+            <div style="align-self:flex-start;max-width:90%;display:flex;gap:10px;align-items:flex-start;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--md-magenta);color:white;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🤖</div>
+              <div style="background:white;border:1px solid var(--md-border);padding:14px 16px;border-radius:12px 12px 12px 4px;font-size:14px;line-height:1.6;">
+                <div style="font-size:11px;color:var(--md-text-muted);margin-bottom:6px;">🔍 Outils : <code>get_my_order</code>, <code>get_pricing(category=prs_exhibitor)</code></div>
+
+                Avec votre statut <strong>exposant Paris Radio Show 2026</strong>, vous bénéficiez du tarif préférentiel sur tous les packs.
+
+                <div style="background:var(--md-bg);padding:12px 14px;border-radius:8px;margin:10px 0;">
+                  <strong>Upgrade CLASSIC → PREMIUM</strong><br>
+                  <small style="color:var(--md-text-muted);">Tarifs préférentiels PRS appliqués</small>
+                  <table style="width:100%;margin-top:8px;font-size:13px;">
+                    <tr><td>Pack CLASSIC actuel</td><td style="text-align:right;color:var(--md-text-muted);text-decoration:line-through;">2 475 € HT</td></tr>
+                    <tr><td><strong>Pack PREMIUM</strong></td><td style="text-align:right;font-weight:700;color:var(--md-blue-dark);">8 700 € HT</td></tr>
+                    <tr style="border-top:1px solid var(--md-border);"><td style="padding-top:6px;"><strong>Différence à régler</strong></td><td style="text-align:right;padding-top:6px;font-family:Montserrat;font-weight:800;color:var(--md-magenta);">+ 6 225 € HT</td></tr>
+                  </table>
+                </div>
+
+                Le pack PREMIUM inclut en plus de votre CLASSIC :
+                <ul style="margin:6px 0 0 18px;">
+                  <li>Temps de parole sur scène (10 min)</li>
+                  <li>Workshop ou Masterclass dédié (45 min, +1 000 € HT en option PRS)</li>
+                  <li>Espace privatif élargi</li>
+                </ul>
+
+                <p style="margin:10px 0 0;">Si vous voulez confirmer l'upgrade, je peux générer un avenant à votre devis et alerter Philippe pour qu'il vous recontacte. Dites le mot.</p>
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div style="margin-left:42px;display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm">✓ Demander l'upgrade</button>
+              <button class="btn btn-ghost btn-sm">📞 Plutôt me rappeler</button>
+              <button class="btn btn-ghost btn-sm">📄 Voir le détail PREMIUM</button>
+            </div>
+          </div>
+
+          <!-- Input -->
+          <div style="padding:14px 24px;border-top:1px solid var(--md-border);background:white;">
+            <div style="display:flex;gap:8px;align-items:flex-end;">
+              <textarea placeholder="Posez votre question…" style="flex:1;padding:10px 14px;border:1px solid var(--md-border);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;min-height:44px;max-height:120px;"></textarea>
+              <button class="btn btn-primary">Envoyer ↵</button>
+            </div>
+            <div style="font-size:10px;color:var(--md-text-muted);margin-top:6px;text-align:center;">
+              🔒 Vos données ne quittent pas l'app · 🇫🇷 Hébergé en Europe · Powered by Claude Haiku
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ============= ADMIN — TOKENS MCP (NOUVEAU EN v2.8) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Admin · Tokens MCP — accès Cowork à la DB de l'app <span class="new-badge">NOUVEAU v2.8</span></div>
+    <div class="app">
+      <div class="public-header">
+        <div class="logo-lockup">
+          <img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img">
+          <span class="logo-divider"></span>
+          <img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img">
+          <span style="font-size:13px;opacity:0.85;margin-left:8px;">Admin · Tokens MCP</span>
+        </div>
+        <div class="public-header-right">
+          <span style="font-size:13px;">Philippe C. · admin</span>
+        </div>
+      </div>
+      <div class="admin-shell">
+        <aside class="admin-sidebar">
+          <div class="admin-section-title">Réglages</div>
+          <nav class="admin-nav">
+            <a href="#">⚙️ Préférences</a>
+            <a href="#">🗓️ Saisons</a>
+            <a href="#">👤 Utilisateurs</a>
+            <a href="#" class="active">🔌 Tokens MCP</a>
+            <a href="#">🔄 Logs sync</a>
+            <a href="#">📜 Audit log</a>
+          </nav>
+        </aside>
+        <main class="admin-main">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+            <div>
+              <h1 style="font-size:22px;color:var(--md-blue-dark);font-weight:700;">🔌 Tokens MCP</h1>
+              <p style="color:var(--md-text-muted);font-size:13px;max-width:680px;">Tokens d'accès pour les clients MCP externes (Cowork, Claude Code) qui interrogent la base de l'app en <strong>lecture seule</strong>. Permet à Cowork de croiser le pipeline MDS avec Drive, Gmail et Calendar dans un même flux conversationnel.</p>
+            </div>
+            <button class="btn btn-primary">+ Créer un token</button>
+          </div>
+          <div style="background:var(--md-blue-dark);color:white;border-radius:var(--radius);padding:16px 20px;margin-bottom:18px;">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.7;margin-bottom:6px;">Endpoint MCP de l'app</div>
+            <div style="font-family:monospace;font-size:13px;background:rgba(255,255,255,0.1);padding:10px 14px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+              <span>https://mds-prospection.vercel.app/api/mcp</span>
+              <button style="background:rgba(255,255,255,0.15);color:white;border:none;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;">📋 Copier</button>
+            </div>
+            <div style="font-size:12px;opacity:0.85;margin-top:8px;">💡 Configurez ce endpoint dans les paramètres de Cowork → MCPs personnalisés, avec un token ci-dessous en Bearer.</div>
+          </div>
+          <div class="admin-table">
+            <table>
+              <thead>
+                <tr><th>Nom</th><th>Préfixe</th><th>Scopes</th><th>Dernier appel</th><th>Appels</th><th>Expire</th><th>Statut</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Cowork Phil iMac</strong></td>
+                  <td><code style="font-size:11px;">mds_pat_aB3xY9...</code></td>
+                  <td><span class="pill" style="background:#E0F2FF;color:#0265B5;font-size:10px;">mcp:read</span> <span class="pill" style="background:#FFF3DD;color:#8B5A00;font-size:10px;">finance</span></td>
+                  <td>il y a 3 min<br><span style="font-size:10px;color:var(--md-text-muted);">tool: pipeline_metrics</span></td>
+                  <td>847</td>
+                  <td>30/04/2027</td>
+                  <td><span class="pill signe">Actif</span></td>
+                  <td><a href="#" style="color:var(--md-text-muted);font-size:13px;">⋯</a></td>
+                </tr>
+                <tr>
+                  <td><strong>Cowork MacBook Pro</strong></td>
+                  <td><code style="font-size:11px;">mds_pat_kL2mN8...</code></td>
+                  <td><span class="pill" style="background:#E0F2FF;color:#0265B5;font-size:10px;">mcp:read</span></td>
+                  <td>hier<br><span style="font-size:10px;color:var(--md-text-muted);">tool: list_prospects</span></td>
+                  <td>312</td>
+                  <td>30/04/2027</td>
+                  <td><span class="pill signe">Actif</span></td>
+                  <td><a href="#" style="color:var(--md-text-muted);font-size:13px;">⋯</a></td>
+                </tr>
+                <tr>
+                  <td><strong>Claude Code dev</strong><br><span style="font-size:11px;color:var(--md-text-muted);">accès lecture pour debug</span></td>
+                  <td><code style="font-size:11px;">mds_pat_pQ4Zr1...</code></td>
+                  <td><span class="pill" style="background:#E0F2FF;color:#0265B5;font-size:10px;">mcp:read</span> <span class="pill" style="background:#E5E9F5;color:#2A3D6E;font-size:10px;">full_contacts</span></td>
+                  <td>il y a 4j</td>
+                  <td>56</td>
+                  <td>15/06/2026</td>
+                  <td><span class="pill signe">Actif</span></td>
+                  <td><a href="#" style="color:var(--md-text-muted);font-size:13px;">⋯</a></td>
+                </tr>
+                <tr style="opacity:0.5;">
+                  <td><strong>Test ancien token</strong></td>
+                  <td><code style="font-size:11px;">mds_pat_zT8wV3...</code></td>
+                  <td><span class="pill" style="background:#E0F2FF;color:#0265B5;font-size:10px;">mcp:read</span></td>
+                  <td>il y a 2 mois</td>
+                  <td>14</td>
+                  <td>—</td>
+                  <td><span class="pill perdu">Révoqué</span></td>
+                  <td>—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="prospect-section" style="margin:0;">
+              <h3>🛠️ Tools exposés (14)</h3>
+              <ul style="margin:0;padding-left:18px;font-size:12px;line-height:2;color:var(--md-text);">
+                <li><code>search</code> · recherche full-text</li>
+                <li><code>get_prospect(id)</code> · <code>get_company(id)</code></li>
+                <li><code>list_prospects(filters)</code> · paginé 100 max</li>
+                <li><code>pipeline_metrics(season_id?)</code></li>
+                <li><code>revenue_summary(period)</code> · scope finance requis</li>
+                <li><code>recent_activity(hours)</code></li>
+                <li><code>list_signups_pending</code> · <code>list_reminders</code></li>
+                <li><code>affiliate_performance(id?)</code></li>
+                <li><code>booth_availability(event, pole)</code></li>
+                <li><code>find_similar_companies(name)</code> · fuzzy</li>
+              </ul>
+            </div>
+            <div class="prospect-section" style="margin:0;">
+              <h3>📚 Resources exposées (9 URIs)</h3>
+              <ul style="margin:0;padding-left:18px;font-size:12px;line-height:2;color:var(--md-text);">
+                <li><code>mcp://app/spec</code></li>
+                <li><code>mcp://app/seasons/active</code> · <code>seasons/list</code></li>
+                <li><code>mcp://app/poles</code></li>
+                <li><code>mcp://app/pricing/{season_id}</code></li>
+                <li><code>mcp://app/addons/{season_id}</code></li>
+                <li><code>mcp://app/exhibitor_resources/{slug}</code></li>
+                <li><code>mcp://app/legal/cgv/{locale}</code></li>
+                <li><code>mcp://app/legal/privacy/{locale}</code></li>
+              </ul>
+            </div>
+          </div>
+          <div style="background:#E5E9F5;border-radius:var(--radius);padding:14px 18px;margin-top:18px;font-size:12px;color:#2A3D6E;line-height:1.6;">
+            <strong>🔒 Sécurité :</strong> Lecture seule absolue (rôle Postgres <code>mcp_readonly</code> qui ne peut faire que SELECT) · Rate limit 100 req/min par token · Chaque appel tracé dans l'audit log · Données sensibles (contacts perso, détails Stripe) protégées par scopes spécifiques · En mode test, le MCP retourne uniquement les données <code>is_test = true</code> · Tokens hashés bcrypt, affichés en clair une seule fois à la création.
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- ============= EMPTY / ERROR STATES ============= -->
+  <!-- ============================================ -->
+  <div class="mockup-section" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+    <div>
+      <div class="mockup-label">Empty state — dashboard Jour 1</div>
+      <div class="app">
+        <div class="public-header"><div class="logo-lockup"><img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img"><span class="logo-divider"></span><img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img"></div></div>
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">Pas encore de prospect</div>
+          <div class="empty-desc">Votre pipeline est vide. Importez votre liste existante ou ajoutez un prospect manuellement.</div>
+          <div style="display:flex;gap:8px;justify-content:center;">
+            <button class="btn btn-primary">+ Nouveau prospect</button>
+            <button class="btn btn-ghost">Importer CSV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mockup-label">Error state — paiement Stripe échoué</div>
+      <div class="app">
+        <div class="public-header"><div class="logo-lockup"><img src="_brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions 2026" class="logo-mds-img"><span class="logo-divider"></span><img src="_brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show 2026" class="logo-prs-img"></div></div>
+        <div class="empty-state">
+          <div class="empty-icon" style="color:var(--md-danger);opacity:1;">⚠️</div>
+          <div class="empty-title">Le paiement n'a pas pu aboutir</div>
+          <div class="empty-desc">Votre carte a été refusée. Aucun montant n'a été prélevé. Réessayez avec une autre carte ou choisissez un autre mode.</div>
+          <div style="display:flex;gap:8px;justify-content:center;">
+            <button class="btn btn-primary">Réessayer</button>
+            <button class="btn btn-ghost">Autre mode</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ============= VUES MOBILE 375px (NOUVEAU EN v2.9) ============= -->
+  <!-- ====================================================================== -->
+  <div class="mockup-section">
+    <div class="mockup-label">Vues mobile dédiées (iPhone 375px) <span class="new-badge">NOUVEAU v2.9</span></div>
+
+    <style>
+      .mobile-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(390px, 1fr)); gap:30px; justify-items:center; padding:20px 0; }
+      .phone { width: 375px; max-width: 100%; border-radius: 32px; background: #1a1a1a; padding: 8px; box-shadow: 0 12px 40px rgba(0,0,0,0.25); position: relative; }
+      .phone-screen { background: white; border-radius: 26px; overflow: hidden; height: 720px; overflow-y: auto; position: relative; }
+      .phone-screen::-webkit-scrollbar { width: 4px; }
+      .phone-screen::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
+      .phone-label { text-align:center; font-size:11px; color:var(--md-text-muted); margin-top:10px; font-weight:600; }
+      .phone .public-header { padding: 14px; gap: 8px; flex-direction: column; align-items: flex-start; border-radius: 0; }
+      .phone .public-hero { padding: 18px 14px; }
+      .phone .public-hero h1 { font-size: 18px; }
+      .phone .public-hero p { font-size: 11px; }
+      .phone .event-pill { font-size: 10px; padding: 3px 8px; }
+      .phone .badge-new { font-size: 9px; }
+      .phone .form-body { padding: 14px; }
+      .phone .form-grid { grid-template-columns: 1fr; gap: 10px; }
+      .phone .field input, .phone .field select { font-size: 13px; padding: 9px 11px; }
+      .phone .field label { font-size: 10px; }
+      .phone .stepper { padding: 8px 14px; gap: 4px; flex-wrap: nowrap; font-size: 10px; }
+      .phone .step .dot { width: 18px; height: 18px; font-size: 10px; }
+      .phone .step-divider { max-width: 14px; }
+      .phone .partner-shell, .phone .admin-shell { grid-template-columns: 1fr; min-height:auto; }
+      .phone .partner-main, .phone .admin-main { padding: 14px; }
+      .phone .pack-grid { grid-template-columns: 1fr; }
+      .phone .payment-paths { grid-template-columns: 1fr; }
+      .phone .ex-grid { grid-template-columns: 1fr; }
+      .phone .total-box { flex-direction: column; align-items: flex-start; padding: 12px 14px; }
+      .phone .total-amount { font-size: 22px; }
+      .phone .logo-prs-img, .phone .logo-mds-img { height: 28px; }
+      .phone .header-cta { font-size: 10px; padding: 5px 10px; }
+      .phone .lang-toggle button { font-size: 10px; padding: 4px 10px; }
+      .phone .btn { font-size: 12px; padding: 8px 12px; }
+      .phone .btn-lg { font-size: 13px; padding: 10px 18px; }
+      .phone .booth-list { grid-template-columns: 1fr 1fr; }
+      .phone .partner-page-title { font-size: 17px; }
+      .phone .partner-page-sub { font-size: 11px; }
+      .phone .public-header-right { width: 100%; justify-content: space-between; }
+    </style>
+
+    <div class="mobile-grid">
+
+      <!-- M1 — Inscription Step 1 -->
+      <div>
+        <div class="phone"><div class="phone-screen">
+          <div class="public-header">
+            <div class="logo-lockup">
+              <img src="_brand/MDS-LogoBlanc2026.svg" alt="MDS" class="logo-mds-img">
+              <span class="logo-divider"></span>
+              <img src="_brand/PRS-LogoBlanc2026.svg" alt="PRS" class="logo-prs-img">
+            </div>
+            <div class="public-header-right">
+              <a href="#" class="header-cta">Espace Partenaire</a>
+              <div class="lang-toggle"><button class="active">FR</button><button>EN</button></div>
+            </div>
+          </div>
+          <div class="public-hero">
+            <span class="badge-new">NEW · 2026</span>
+            <h1>Devenez partenaire MDS 2026</h1>
+            <p>Le rendez-vous où le marché audio/radio/podcast/vidéo converge.</p>
+            <div class="event-pills"><span class="event-pill">📍 Paris · 15 déc.</span></div>
+          </div>
+          <div class="stepper">
+            <div class="step active"><span class="dot">1</span></div>
+            <div class="step-divider"></div>
+            <div class="step"><span class="dot">2</span></div>
+            <div class="step-divider"></div>
+            <div class="step"><span class="dot">3</span></div>
+          </div>
+          <div class="form-body">
+            <div class="alert info" style="font-size:11px;padding:10px;margin-bottom:12px;"><span class="alert-icon">ℹ️</span><div>Événement <strong>B2B</strong>. Email pro requis.</div></div>
+            <div class="form-grid">
+              <div class="field full"><label>Email pro *</label><input type="email" value="marie.lambert@nrj.fr"></div>
+              <div class="field full"><label>Société *</label><input type="text" value="NRJ Group"></div>
+              <div class="field full"><label>Prénom *</label><input type="text" value="Marie"></div>
+              <div class="field full"><label>Nom *</label><input type="text" value="Lambert"></div>
+              <div class="field full"><label>Fonction *</label><input type="text" value="Dir. partenariats"></div>
+              <div class="field full" style="position:relative;"><label>Apporté par ?</label><input type="text" value="Broadcast Associés" readonly style="background:#F0F4FF;"></div>
+            </div>
+            <button class="btn btn-primary btn-block btn-lg" style="margin-top:14px;">Continuer →</button>
+          </div>
+        </div></div>
+        <div class="phone-label">Public · Étape 1</div>
+      </div>
+
+      <!-- M2 — Espace Partenaire Dashboard -->
+      <div>
+        <div class="phone"><div class="phone-screen">
+          <div class="public-header">
+            <div class="logo-lockup">
+              <img src="_brand/MDS-LogoBlanc2026.svg" alt="MDS" class="logo-mds-img">
+              <span class="logo-divider"></span>
+              <img src="_brand/PRS-LogoBlanc2026.svg" alt="PRS" class="logo-prs-img">
+            </div>
+            <div style="font-size:11px;color:white;opacity:0.85;">NRJ · Marie L.</div>
+          </div>
+          <aside style="background:var(--md-blue-dark);padding:10px 14px;display:flex;gap:6px;overflow-x:auto;flex-wrap:nowrap;">
+            <a href="#" style="flex-shrink:0;color:white;font-size:11px;padding:6px 10px;background:var(--md-magenta);border-radius:6px;text-decoration:none;font-weight:600;">📊 Dashboard</a>
+            <a href="#" style="flex-shrink:0;color:rgba(255,255,255,0.7);font-size:11px;padding:6px 10px;text-decoration:none;">📦 Commande</a>
+            <a href="#" style="flex-shrink:0;color:rgba(255,255,255,0.7);font-size:11px;padding:6px 10px;text-decoration:none;">✨ Profil</a>
+            <a href="#" style="flex-shrink:0;color:rgba(255,255,255,0.7);font-size:11px;padding:6px 10px;text-decoration:none;">🤖 IA</a>
+          </aside>
+          <main class="partner-main">
+            <h2 class="partner-page-title">Bienvenue Marie 👋</h2>
+            <p class="partner-page-sub">J-127 avant Paris · Carrousel du Louvre</p>
+            <div class="ex-card" style="margin-bottom:10px;padding:14px;">
+              <div class="ex-card-title" style="font-size:10px;">Ma réservation</div>
+              <div style="font-weight:600;font-size:13px;color:var(--md-blue-dark);margin-bottom:4px;">CLASSIC + 2 options</div>
+              <div style="font-size:11px;color:var(--md-text-muted);margin-bottom:8px;">P-LN-A12 · Le Nôtre · 12 m²</div>
+              <div class="ex-pay-status paid" style="padding:6px 10px;font-size:11px;"><span>✓</span><div>Acompte · <strong>1 793 €</strong></div></div>
+              <div class="ex-pay-status pending" style="padding:6px 10px;font-size:11px;"><span>⏳</span><div>Solde · <strong>4 182 €</strong></div></div>
+            </div>
+            <div class="ex-card" style="padding:14px;">
+              <div class="ex-card-title" style="font-size:10px;">À faire</div>
+              <div class="checklist-item pending" style="font-size:11px;">⬜ Profil partenaire <span style="margin-left:auto;font-size:10px;color:var(--md-magenta);">75%</span></div>
+              <div class="checklist-item pending" style="font-size:11px;">⬜ Logo HD (J-30)</div>
+              <div class="checklist-item done" style="font-size:11px;">✓ Acompte payé</div>
+            </div>
+          </main>
+        </div></div>
+        <div class="phone-label">Espace Partenaire — Dashboard</div>
+      </div>
+
+      <!-- M3 — Admin liste prospects -->
+      <div>
+        <div class="phone"><div class="phone-screen">
+          <div class="public-header">
+            <div class="logo-lockup">
+              <img src="_brand/MDS-LogoBlanc2026.svg" alt="MDS" class="logo-mds-img">
+              <span class="logo-divider"></span>
+              <img src="_brand/PRS-LogoBlanc2026.svg" alt="PRS" class="logo-prs-img">
+            </div>
+            <div style="font-size:11px;color:white;opacity:0.85;">Admin · Phil</div>
+          </div>
+          <aside style="background:white;border-bottom:1px solid var(--md-border);padding:10px 14px;display:flex;gap:4px;overflow-x:auto;flex-wrap:nowrap;">
+            <a href="#" style="flex-shrink:0;font-size:11px;padding:6px 10px;text-decoration:none;color:var(--md-text);">📊</a>
+            <a href="#" style="flex-shrink:0;font-size:11px;padding:6px 10px;text-decoration:none;color:white;background:var(--md-blue-dark);border-radius:6px;font-weight:600;">👥 Prospects</a>
+            <a href="#" style="flex-shrink:0;font-size:11px;padding:6px 8px;text-decoration:none;color:var(--md-text);">🏢</a>
+            <a href="#" style="flex-shrink:0;font-size:11px;padding:6px 8px;text-decoration:none;color:var(--md-text);">📨 8</a>
+            <a href="#" style="flex-shrink:0;font-size:11px;padding:6px 8px;text-decoration:none;color:var(--md-text);">🤖</a>
+          </aside>
+          <main class="admin-main">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <h1 style="font-size:16px;color:var(--md-blue-dark);font-weight:700;">Prospects · 142</h1>
+              <button class="btn btn-primary btn-sm">+</button>
+            </div>
+            <div class="filters-bar" style="padding:8px;">
+              <input type="text" placeholder="Rechercher…" style="flex:1;padding:6px 10px;border:1px solid var(--md-border);border-radius:6px;font-size:11px;">
+              <button style="background:var(--md-bg);border:none;padding:5px 8px;border-radius:6px;font-size:11px;">⚙️</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="background:white;border:1px solid var(--md-border);border-radius:8px;padding:10px 12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><strong style="font-size:13px;color:var(--md-blue-dark);">NRJ Group</strong><span class="pill acompte" style="font-size:10px;">Acompte</span></div>
+                <div style="font-size:10px;color:var(--md-text-muted);">CLASSIC PRS · 5 975 € · Phil</div>
+              </div>
+              <div style="background:white;border:1px solid var(--md-border);border-radius:8px;padding:10px 12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><strong style="font-size:13px;color:var(--md-blue-dark);">Radio France</strong><span class="pill signe" style="font-size:10px;">Signé</span></div>
+                <div style="font-size:10px;color:var(--md-text-muted);">PREMIUM · 20 500 €</div>
+              </div>
+              <div style="background:white;border:1px solid var(--md-border);border-radius:8px;padding:10px 12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><strong style="font-size:13px;color:var(--md-blue-dark);">Europe 1</strong><span class="pill devis" style="font-size:10px;">Devis</span></div>
+                <div style="font-size:10px;color:var(--md-text-muted);">CLASSIC · 14 800 €</div>
+              </div>
+              <div style="background:white;border:1px solid var(--md-border);border-radius:8px;padding:10px 12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><strong style="font-size:13px;color:var(--md-blue-dark);">RTL Group</strong><span class="pill contact" style="font-size:10px;">Contact</span></div>
+                <div style="font-size:10px;color:var(--md-text-muted);">— · B. Associés</div>
+              </div>
+            </div>
+          </main>
+        </div></div>
+        <div class="phone-label">Admin · Liste prospects</div>
+      </div>
+
+      <!-- M4 — Chat IA partenaire -->
+      <div>
+        <div class="phone"><div class="phone-screen">
+          <div class="public-header">
+            <div class="logo-lockup">
+              <img src="_brand/MDS-LogoBlanc2026.svg" alt="MDS" class="logo-mds-img">
+              <span class="logo-divider"></span>
+              <img src="_brand/PRS-LogoBlanc2026.svg" alt="PRS" class="logo-prs-img">
+            </div>
+            <div style="font-size:11px;color:white;opacity:0.85;">🤖 Assistant</div>
+          </div>
+          <div style="padding:12px 14px;background:white;border-bottom:1px solid var(--md-border);">
+            <h2 style="font-size:14px;color:var(--md-blue-dark);">🤖 Assistant MDS</h2>
+            <span style="font-size:10px;background:#FFE6F1;color:var(--md-magenta);padding:2px 6px;border-radius:999px;font-weight:700;">⭐ Tarif PRS appliqué</span>
+          </div>
+          <div style="padding:14px;background:#FAFBFE;display:flex;flex-direction:column;gap:10px;flex:1;">
+            <div style="display:flex;gap:6px;align-items:flex-start;">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--md-magenta);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">🤖</div>
+              <div style="background:white;border:1px solid var(--md-border);padding:10px 12px;border-radius:10px 10px 10px 2px;font-size:12px;line-height:1.5;">Bonjour Marie 👋 Je peux vous aider sur votre commande, vos tarifs PRS et les infos pratiques.</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:30px;">
+              <button class="btn btn-ghost" style="font-size:10px;padding:5px 8px;">📦 Commande</button>
+              <button class="btn btn-ghost" style="font-size:10px;padding:5px 8px;">💳 Solde</button>
+            </div>
+            <div style="align-self:flex-end;background:var(--md-blue-dark);color:white;padding:8px 11px;border-radius:10px 10px 2px 10px;font-size:12px;max-width:80%;">Combien si j'upgrade en PREMIUM ?</div>
+            <div style="display:flex;gap:6px;align-items:flex-start;">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--md-magenta);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">🤖</div>
+              <div style="background:white;border:1px solid var(--md-border);padding:10px 12px;border-radius:10px 10px 10px 2px;font-size:12px;line-height:1.5;">Avec votre tarif PRS, l'upgrade CLASSIC → PREMIUM coûte <strong>+6 225 € HT</strong>. Voulez-vous valider ?</div>
+            </div>
+          </div>
+          <div style="padding:10px 14px;border-top:1px solid var(--md-border);background:white;">
+            <div style="display:flex;gap:6px;">
+              <input type="text" placeholder="Posez votre question…" style="flex:1;padding:8px 10px;border:1px solid var(--md-border);border-radius:6px;font-size:12px;">
+              <button class="btn btn-primary btn-sm" style="font-size:11px;">↵</button>
+            </div>
+          </div>
+        </div></div>
+        <div class="phone-label">Espace Partenaire · Chat IA</div>
+      </div>
+
+      <!-- M5 — Étape 2A complète scrollable -->
+      <div>
+        <div class="phone"><div class="phone-screen">
+          <div class="public-header">
+            <div class="logo-lockup">
+              <img src="_brand/MDS-LogoBlanc2026.svg" alt="MDS" class="logo-mds-img">
+              <span class="logo-divider"></span>
+              <img src="_brand/PRS-LogoBlanc2026.svg" alt="PRS" class="logo-prs-img">
+            </div>
+            <div style="font-size:10px;color:white;opacity:0.85;">NRJ · Marie</div>
+          </div>
+          <div class="stepper">
+            <div class="step done"><span class="dot">✓</span></div>
+            <div class="step-divider"></div>
+            <div class="step done"><span class="dot">✓</span></div>
+            <div class="step-divider"></div>
+            <div class="step active"><span class="dot">3</span></div>
+          </div>
+          <div class="form-body">
+            <div class="alert success" style="padding:8px 10px;font-size:11px;margin-bottom:12px;"><span class="alert-icon">🎉</span><div>Tarif <strong>PRS -84%</strong> · Pôle 🎙️ AUDIO</div></div>
+            <h3 style="font-size:12px;color:var(--md-blue-dark);margin-bottom:8px;">1. Pack</h3>
+            <div class="pack-grid">
+              <div class="pack" style="padding:10px;"><div class="pack-name" style="font-size:12px;">ACCESS</div><div><span class="pack-price discount" style="font-size:16px;">1 980 €</span></div></div>
+              <div class="pack selected" style="padding:10px;"><div class="pack-name" style="font-size:12px;">CLASSIC</div><div><span class="pack-price discount" style="font-size:16px;">2 475 €</span></div></div>
+              <div class="pack" style="padding:10px;"><div class="pack-name" style="font-size:12px;">PREMIUM</div><div><span class="pack-price discount" style="font-size:16px;">8 700 €</span></div></div>
+            </div>
+            <h3 style="font-size:12px;color:var(--md-blue-dark);margin:14px 0 8px;">2. Emplacement</h3>
+            <button class="booth-canva-btn" style="font-size:11px;padding:6px 10px;width:100%;justify-content:center;margin-bottom:8px;">🗺️ Plan Canva</button>
+            <div class="booth-list">
+              <div class="booth-card selected" style="padding:8px;"><div class="booth-code" style="font-size:11px;">P-LN-A12</div><div class="booth-room" style="font-size:9px;">Le Nôtre A</div></div>
+              <div class="booth-card" style="padding:8px;"><div class="booth-code" style="font-size:11px;">P-LN-A14</div><div class="booth-room" style="font-size:9px;">Le Nôtre A</div></div>
+            </div>
+            <h3 style="font-size:12px;color:var(--md-blue-dark);margin:14px 0 8px;">3. Paiement</h3>
+            <div class="total-box">
+              <div><div class="total-label" style="font-size:10px;">Total</div><div class="total-amount">5 975 €</div></div>
+              <div><div class="total-label" style="font-size:10px;">Acompte 30%</div><div class="total-amount" style="color:var(--md-magenta);">1 793 €</div></div>
+            </div>
+            <div class="payment-paths">
+              <div class="pay-path" style="padding:10px;"><div class="pay-path-header"><span class="pay-path-radio"></span><span class="pay-path-name" style="font-size:11px;">📄 Devis différé</span></div></div>
+              <div class="pay-path selected" style="padding:10px;"><div class="pay-path-header"><span class="pay-path-radio"></span><span class="pay-path-name" style="font-size:11px;">💳 Devis + acompte</span></div></div>
+              <div class="pay-path" style="padding:10px;"><div class="pay-path-header"><span class="pay-path-radio"></span><span class="pay-path-name" style="font-size:11px;">⚡ Intégral</span></div></div>
+            </div>
+            <button class="btn btn-primary btn-block btn-lg" style="margin-top:12px;">Procéder →</button>
+          </div>
+        </div></div>
+        <div class="phone-label">Public · Étape 2A complète</div>
+      </div>
+
+    </div>
+  </div>
+
+  <p style="text-align:center;color:var(--md-text-muted);font-size:11px;margin-top:32px;">
+    Maquette MDS Prospection <strong>v2.11</strong> · 18 écrans desktop + 5 vues mobile · page d'accueil vidéo + logo contextuel + Editions HF · MDS gauche + PRS droite · responsive
+  </p>
+</div>
+</body>
+</html>
