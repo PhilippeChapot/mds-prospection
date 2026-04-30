@@ -1,0 +1,12 @@
+.next
+node_modules
+pnpm-lock.yaml
+*.min.js
+*.min.css
+public/brand
+public/video
+docs/Mockup.html
+supabase/.branches
+supabase/.temp
+.vercel
+.env*

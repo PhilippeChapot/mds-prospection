@@ -1,26 +1,108 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@plugin 'tailwindcss-animate';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * MDS Prospection — Design Tokens
+ * Source de verite : docs/DESIGN-TOKENS.md
+ * Couleurs MD officielles (extraites des SVG de public/brand/) :
+ *   bleu    #294294
+ *   magenta #E6007E
+ */
+
+@theme {
+  /* ---------------------------------- Brand --------------------------------- */
+  --color-md-blue: #294294;
+  --color-md-blue-bright: #0b3fa8;
+  --color-md-blue-dark: #031a56;
+  --color-md-blue-deep: #00124a;
+  --color-md-magenta: #e6007e;
+  --color-md-magenta-soft: #ff4da0;
+
+  /* --------------------------------- Surfaces ------------------------------- */
+  --color-md-bg: #f2f4fb;
+  --color-md-text: #0e1a3c;
+  --color-md-text-muted: #5c6a8a;
+  --color-md-border: #dce2f0;
+
+  /* ---------------------------------- Status -------------------------------- */
+  --color-md-success: #1fbf7a;
+  --color-md-warning: #f5a524;
+  --color-md-danger: #e5484d;
+
+  /* --------------------------------- Poles ---------------------------------- */
+  /* Reference SPEC §3.1 — taxonomie officielle v2.1 */
+  --color-pole-regies: #ffcdd2; /* REGIES_RETAIL_MEDIA */
+  --color-pole-audio: #f8bbd0; /* AUDIO_RADIO */
+  --color-pole-diffusion: #e1bee7; /* DIFFUSION_INFRA */
+  --color-pole-video: #bbdefb; /* VIDEO_CTV */
+  --color-pole-outdoor: #ffe0b2; /* OUTDOOR_DOOH */
+  --color-pole-data: #c8e6c9; /* DATA_ADTECH */
+  --color-pole-inconnu: #e5e7eb;
+
+  /* ---------------------------- Typographie -------------------------------- */
+  /* Les vars `--font-montserrat` et `--font-inter` sont posees */
+  /* par next/font/google dans le RootLayout. */
+  --font-display: var(--font-montserrat), 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: var(--font-inter), 'Helvetica Neue', Arial, sans-serif;
+
+  /* --------------------------------- Radius -------------------------------- */
+  --radius-md: 8px; /* boutons, inputs */
+  --radius-lg: 12px; /* cartes */
+  --radius-pill: 9999px; /* pills statut */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* --------------------- shadcn/ui — variables semantiques -------------------- */
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: var(--color-md-bg);
+    --foreground: var(--color-md-text);
+    --card: #ffffff;
+    --card-foreground: var(--color-md-text);
+    --popover: #ffffff;
+    --popover-foreground: var(--color-md-text);
+    --primary: var(--color-md-magenta);
+    --primary-foreground: #ffffff;
+    --secondary: var(--color-md-blue);
+    --secondary-foreground: #ffffff;
+    --muted: #eef1f9;
+    --muted-foreground: var(--color-md-text-muted);
+    --accent: var(--color-md-blue);
+    --accent-foreground: #ffffff;
+    --destructive: var(--color-md-danger);
+    --destructive-foreground: #ffffff;
+    --border: var(--color-md-border);
+    --input: var(--color-md-border);
+    --ring: var(--color-md-blue);
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss03';
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ----------------- Wordmark "mediada{y}s" — DESIGN-TOKENS §4 ---------------- */
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.wordmark .y {
+  color: var(--color-md-magenta);
+  font-style: italic;
+  transform: translateY(-3px);
+  display: inline-block;
 }

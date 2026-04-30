@@ -6,21 +6,87 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky",
+    "supabase": "supabase",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:push": "supabase db push",
+    "db:diff": "supabase db diff",
+    "db:types": "supabase gen types typescript --linked > src/lib/supabase/database.types.ts",
+    "seed:all": "tsx scripts/seed/index.ts",
+    "seed:season": "tsx scripts/seed/01_season.ts",
+    "seed:poles": "tsx scripts/seed/02_poles.ts",
+    "seed:tiers": "tsx scripts/seed/03_pricing_tiers.ts",
+    "seed:addons": "tsx scripts/seed/04_addon_options.ts",
+    "seed:settings": "tsx scripts/seed/05_app_settings.ts",
+    "ai:test-classification": "tsx scripts/test-ai-classification.ts"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,css,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@sentry/cli",
+      "@swc/core",
+      "esbuild",
+      "supabase"
+    ]
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.92.0",
+    "@hcaptcha/react-hcaptcha": "^2.0.2",
+    "@hookform/resolvers": "^5.2.2",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@sentry/nextjs": "^10.51.0",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.105.1",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "disposable-email-domains": "^1.0.62",
+    "free-email-domains": "^1.2.26",
+    "lucide-react": "^1.14.0",
     "next": "16.2.4",
+    "next-intl": "^4.11.0",
+    "papaparse": "^5.5.3",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.74.0",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^4.4.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.3",
+    "prettier-plugin-tailwindcss": "^0.8.0",
+    "supabase": "^2.98.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
