@@ -1,0 +1,33 @@
+{
+  "common": {
+    "language": "Language",
+    "fr": "Français",
+    "en": "English",
+    "loading": "Loading…",
+    "back": "Back",
+    "continue": "Continue",
+    "submit": "Submit",
+    "cancel": "Cancel"
+  },
+  "nav": {
+    "home": "Home",
+    "register": "Become a partner",
+    "login": "Partner area",
+    "styleguide": "Style guide"
+  },
+  "home": {
+    "tagline": "MediaDays Solutions 2026",
+    "subtitle": "The media industry rendezvous in Paris, Marseille and Brussels.",
+    "ctaPartner": "Become a partner",
+    "ctaLogin": "My area"
+  },
+  "styleguide": {
+    "title": "MD visual identity",
+    "intro": "Sanity check of MDS Prospection's colors, typography and shadcn component palette.",
+    "sectionColors": "Brand colors",
+    "sectionPoles": "Thematic poles",
+    "sectionStatus": "Pipeline statuses",
+    "sectionButtons": "Buttons",
+    "sectionTypography": "Typography"
+  }
+}

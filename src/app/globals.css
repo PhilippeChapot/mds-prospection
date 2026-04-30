@@ -1,5 +1,8 @@
 @import 'tailwindcss';
-@plugin 'tailwindcss-animate';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
 
 /*
  * MDS Prospection — Design Tokens
@@ -9,8 +12,9 @@
  *   magenta #E6007E
  */
 
+/* -------------------- Brand tokens — utilitaires Tailwind ------------------- */
+/* Genere `bg-md-blue`, `text-md-magenta`, `border-pole-audio`, etc.            */
 @theme {
-  /* ---------------------------------- Brand --------------------------------- */
   --color-md-blue: #294294;
   --color-md-blue-bright: #0b3fa8;
   --color-md-blue-dark: #031a56;
@@ -18,70 +22,157 @@
   --color-md-magenta: #e6007e;
   --color-md-magenta-soft: #ff4da0;
 
-  /* --------------------------------- Surfaces ------------------------------- */
   --color-md-bg: #f2f4fb;
   --color-md-text: #0e1a3c;
   --color-md-text-muted: #5c6a8a;
   --color-md-border: #dce2f0;
 
-  /* ---------------------------------- Status -------------------------------- */
   --color-md-success: #1fbf7a;
   --color-md-warning: #f5a524;
   --color-md-danger: #e5484d;
 
-  /* --------------------------------- Poles ---------------------------------- */
-  /* Reference SPEC §3.1 — taxonomie officielle v2.1 */
-  --color-pole-regies: #ffcdd2; /* REGIES_RETAIL_MEDIA */
-  --color-pole-audio: #f8bbd0; /* AUDIO_RADIO */
-  --color-pole-diffusion: #e1bee7; /* DIFFUSION_INFRA */
-  --color-pole-video: #bbdefb; /* VIDEO_CTV */
-  --color-pole-outdoor: #ffe0b2; /* OUTDOOR_DOOH */
-  --color-pole-data: #c8e6c9; /* DATA_ADTECH */
+  /* SPEC §3.1 — taxonomie officielle v2.1 */
+  --color-pole-regies: #ffcdd2;
+  --color-pole-audio: #f8bbd0;
+  --color-pole-diffusion: #e1bee7;
+  --color-pole-video: #bbdefb;
+  --color-pole-outdoor: #ffe0b2;
+  --color-pole-data: #c8e6c9;
   --color-pole-inconnu: #e5e7eb;
 
-  /* ---------------------------- Typographie -------------------------------- */
-  /* Les vars `--font-montserrat` et `--font-inter` sont posees */
-  /* par next/font/google dans le RootLayout. */
   --font-display: var(--font-montserrat), 'Helvetica Neue', Arial, sans-serif;
   --font-sans: var(--font-inter), 'Helvetica Neue', Arial, sans-serif;
-
-  /* --------------------------------- Radius -------------------------------- */
-  --radius-md: 8px; /* boutons, inputs */
-  --radius-lg: 12px; /* cartes */
-  --radius-pill: 9999px; /* pills statut */
 }
 
-/* --------------------- shadcn/ui — variables semantiques -------------------- */
-@layer base {
-  :root {
-    --background: var(--color-md-bg);
-    --foreground: var(--color-md-text);
-    --card: #ffffff;
-    --card-foreground: var(--color-md-text);
-    --popover: #ffffff;
-    --popover-foreground: var(--color-md-text);
-    --primary: var(--color-md-magenta);
-    --primary-foreground: #ffffff;
-    --secondary: var(--color-md-blue);
-    --secondary-foreground: #ffffff;
-    --muted: #eef1f9;
-    --muted-foreground: var(--color-md-text-muted);
-    --accent: var(--color-md-blue);
-    --accent-foreground: #ffffff;
-    --destructive: var(--color-md-danger);
-    --destructive-foreground: #ffffff;
-    --border: var(--color-md-border);
-    --input: var(--color-md-border);
-    --ring: var(--color-md-blue);
-  }
+/* -------------------- shadcn semantic mapping (inline) ---------------------- */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-heading: var(--font-display);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
 
+/* ------ shadcn semantic vars — override avec couleurs MD officielles ------- */
+:root {
+  --radius: 0.625rem;
+
+  --background: var(--color-md-bg);
+  --foreground: var(--color-md-text);
+
+  --card: #ffffff;
+  --card-foreground: var(--color-md-text);
+
+  --popover: #ffffff;
+  --popover-foreground: var(--color-md-text);
+
+  /* CTA principal = magenta MD */
+  --primary: var(--color-md-magenta);
+  --primary-foreground: #ffffff;
+
+  /* CTA secondaire = bleu MD */
+  --secondary: var(--color-md-blue);
+  --secondary-foreground: #ffffff;
+
+  --muted: #eef1f9;
+  --muted-foreground: var(--color-md-text-muted);
+
+  --accent: var(--color-md-blue);
+  --accent-foreground: #ffffff;
+
+  --destructive: var(--color-md-danger);
+  --destructive-foreground: #ffffff;
+
+  --border: var(--color-md-border);
+  --input: var(--color-md-border);
+  --ring: var(--color-md-blue);
+
+  /* Charts (reservoir pour reporting P5) — base sur les couleurs des poles */
+  --chart-1: var(--color-md-blue);
+  --chart-2: var(--color-md-magenta);
+  --chart-3: var(--color-md-success);
+  --chart-4: var(--color-md-warning);
+  --chart-5: var(--color-md-text-muted);
+
+  /* Sidebar (admin layout, P1) */
+  --sidebar: #ffffff;
+  --sidebar-foreground: var(--color-md-text);
+  --sidebar-primary: var(--color-md-magenta);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef1f9;
+  --sidebar-accent-foreground: var(--color-md-text);
+  --sidebar-border: var(--color-md-border);
+  --sidebar-ring: var(--color-md-blue);
+}
+
+/* Mode sombre — pas active en P0, mais on garde la structure pour plus tard. */
+.dark {
+  --background: var(--color-md-blue-deep);
+  --foreground: #ffffff;
+  --card: var(--color-md-blue-dark);
+  --card-foreground: #ffffff;
+  --popover: var(--color-md-blue-dark);
+  --popover-foreground: #ffffff;
+  --primary: var(--color-md-magenta);
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-md-blue-bright);
+  --secondary-foreground: #ffffff;
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: var(--color-md-blue-bright);
+  --accent-foreground: #ffffff;
+  --destructive: var(--color-md-danger);
+  --destructive-foreground: #ffffff;
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: var(--color-md-magenta);
+}
+
+/* --------------------------------- Base ------------------------------------ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
   body {
-    background: var(--background);
-    color: var(--foreground);
+    @apply bg-background text-foreground;
     font-family: var(--font-sans);
     font-feature-settings: 'cv11', 'ss03';
   }
-
   h1,
   h2,
   h3,

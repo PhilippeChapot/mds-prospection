@@ -1,0 +1,33 @@
+{
+  "common": {
+    "language": "Langue",
+    "fr": "Français",
+    "en": "English",
+    "loading": "Chargement…",
+    "back": "Retour",
+    "continue": "Continuer",
+    "submit": "Valider",
+    "cancel": "Annuler"
+  },
+  "nav": {
+    "home": "Accueil",
+    "register": "Devenir partenaire",
+    "login": "Espace partenaire",
+    "styleguide": "Charte"
+  },
+  "home": {
+    "tagline": "MediaDays Solutions 2026",
+    "subtitle": "Le rendez-vous des médias à Paris, Marseille et Bruxelles.",
+    "ctaPartner": "Devenir partenaire",
+    "ctaLogin": "Mon espace"
+  },
+  "styleguide": {
+    "title": "Charte visuelle MD",
+    "intro": "Validation de la cohérence des couleurs, polices et composants shadcn pour le projet MDS Prospection.",
+    "sectionColors": "Couleurs de marque",
+    "sectionPoles": "Pôles thématiques",
+    "sectionStatus": "Statuts pipeline",
+    "sectionButtons": "Boutons",
+    "sectionTypography": "Typographie"
+  }
+}
