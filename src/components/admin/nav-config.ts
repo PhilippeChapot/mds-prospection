@@ -91,6 +91,10 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: '/admin/mcp-tokens', label: 'Tokens MCP', emoji: '🔌', enabled: false, phase: 'P5' },
     ],
   },
+  {
+    title: 'Dev',
+    items: [{ href: '/admin/styleguide', label: 'Styleguide', emoji: '🎨', enabled: true }],
+  },
 ];
 
 /**
