@@ -1,14 +1,46 @@
 import createMiddleware from 'next-intl/middleware';
+import { NextResponse, type NextRequest } from 'next/server';
 import { routing } from '@/i18n/routing';
+import { updateSession } from '@/lib/supabase/middleware';
 
 /**
- * Next 16 — equivalent du middleware classique, renomme `proxy.ts`.
- * Detecte Accept-Language, persiste le choix dans le cookie `NEXT_LOCALE`,
- * redirige `/` vers `/fr` ou `/en` selon le navigateur.
+ * Next 16 — equivalent du middleware classique (renomme `proxy.ts`).
+ *
+ * Dispatch :
+ *   - `/admin/**`  -> refresh session Supabase + garde auth (sauf /admin/login)
+ *   - sinon        -> middleware next-intl (routes publiques /[locale]/**)
+ *
+ * Le check du role public.users.role se fait DANS le layout serveur
+ * `app/admin/(authenticated)/layout.tsx` (pas dans le proxy Edge — pour
+ * eviter une requete DB sur chaque hop).
  */
+
 const intlMiddleware = createMiddleware(routing);
 
-export default function proxy(request: Parameters<typeof intlMiddleware>[0]) {
+export default async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith('/admin')) {
+    const { supabaseResponse, user } = await updateSession(request);
+
+    const isLoginPage = pathname === '/admin/login' || pathname.startsWith('/admin/login/');
+    if (!user && !isLoginPage) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin/login';
+      url.searchParams.set('next', pathname);
+      return NextResponse.redirect(url);
+    }
+
+    if (user && isLoginPage) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin';
+      url.search = '';
+      return NextResponse.redirect(url);
+    }
+
+    return supabaseResponse;
+  }
+
   return intlMiddleware(request);
 }
 
@@ -18,7 +50,7 @@ export const config = {
    *  - `/api/*`     (pas de localisation des routes API)
    *  - `/_next/*`   (assets Next)
    *  - `/_vercel/*` (Vercel internal)
-   *  - fichiers du dossier public (SVG, images, video, robots, sitemap, brand, etc.)
+   *  - `/brand/*`, `/video/*`, fichiers du dossier public
    *  - le hook test Sentry (P0)
    */
   matcher:
