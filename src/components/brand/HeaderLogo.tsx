@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 /**
@@ -6,13 +5,17 @@ import { cn } from '@/lib/utils';
  *
  *   prs_exhibitor → uniquement logo PRS
  *   standard      → uniquement logo MDS
- *   non_eligible  → uniquement logo MDS (pas d'eligibilite PRS)
- *   undefined     → les deux logos (avant identification ou cote admin)
+ *   non_eligible  → les deux logos (fallback)
+ *   admin         → les deux logos (vue editoriale)
+ *   undefined     → les deux logos (anonyme avant identification)
  *
  * Ordre fige : MDS gauche / PRS droite. Variantes blanc/bleu selon le fond.
+ *
+ * On utilise un <img> plain plutot que next/image : les SVG ne tirent aucun
+ * benefice de l'optimisation Next, et un <img> simplifie les tests.
  */
 
-export type BrandCategory = 'prs_exhibitor' | 'standard' | 'non_eligible';
+export type BrandCategory = 'prs_exhibitor' | 'standard' | 'non_eligible' | 'admin';
 export type LogoTheme = 'light' | 'dark';
 
 interface HeaderLogoProps {
@@ -29,37 +32,34 @@ function logoSrc(brand: 'MDS' | 'PRS', theme: LogoTheme) {
 
 export function HeaderLogo({ category, theme = 'dark', className, size = 44 }: HeaderLogoProps) {
   const showMDS = category !== 'prs_exhibitor';
-  const showPRS = category === 'prs_exhibitor' || category === undefined;
+  const showPRS = category !== 'standard';
 
   return (
-    <div className={cn('flex items-center gap-3', className)}>
+    <div className={cn('flex items-center gap-3', className)} data-testid="header-logo">
       {showMDS && (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element -- SVG, pas de gain via next/image
+        <img
           src={logoSrc('MDS', theme)}
           alt="MediaDays Solutions 2026"
-          width={size * 2.5}
-          height={size}
-          priority
-          className="h-auto w-auto"
-          style={{ height: size }}
+          data-testid="header-logo-mds"
+          style={{ height: size, width: 'auto' }}
         />
       )}
       {showMDS && showPRS && (
         <span
+          data-testid="header-logo-divider"
           className="h-8 w-px"
           style={{ background: theme === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.15)' }}
           aria-hidden
         />
       )}
       {showPRS && (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element -- SVG, pas de gain via next/image
+        <img
           src={logoSrc('PRS', theme)}
           alt="Paris Radio Show 2026"
-          width={size * 2.5}
-          height={size}
-          priority
-          className="h-auto w-auto"
-          style={{ height: size }}
+          data-testid="header-logo-prs"
+          style={{ height: size, width: 'auto' }}
         />
       )}
     </div>
