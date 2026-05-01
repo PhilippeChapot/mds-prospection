@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Env vars factices pour permettre `next build` de tourner sans
+          # acceder a aucun service externe. Les routes API ne sont pas
+          # executees au build (route handlers sont dynamic par defaut).
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy_anon_key_for_ci
+          SUPABASE_SERVICE_ROLE_KEY: dummy_service_role_for_ci
+          NEXT_PUBLIC_DEFAULT_LOCALE: fr
+          NEXT_PUBLIC_SUPPORTED_LOCALES: fr,en
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          NEXT_PUBLIC_CANVA_PLAN_URL: https://canva.link/md26plan
+          # Sentry desactive en CI (DSN vide -> Sentry init est skip).
+          # Les sourcemaps ne sont uploadees que si SENTRY_AUTH_TOKEN est present.
+          CI: 'true'
