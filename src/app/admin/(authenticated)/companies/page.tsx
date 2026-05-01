@@ -4,7 +4,12 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { PoleBadge } from '@/components/admin/PoleBadge';
 import { CompanyAvatar } from '@/components/admin/CompanyAvatar';
 import { POLE_CODES, type PoleCode } from '@/lib/design-tokens';
+import type { Database } from '@/lib/supabase/database.types';
 import { cn } from '@/lib/utils';
+
+type CategoryTarif = Database['public']['Enums']['category_tarif'];
+
+const CATEGORY_VALUES: CategoryTarif[] = ['prs_exhibitor', 'standard', 'non_eligible'];
 
 export const metadata = { title: 'Societes' };
 
@@ -43,10 +48,11 @@ function formatDate(input: string | null): string {
 
 export default async function CompaniesPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
-  const poleFilter = params.pole && POLE_CODES.includes(params.pole as PoleCode) ? params.pole : '';
-  const categoryFilter =
-    params.category && ['prs_exhibitor', 'standard', 'non_eligible'].includes(params.category)
-      ? params.category
+  const poleFilter: PoleCode | '' =
+    params.pole && POLE_CODES.includes(params.pole as PoleCode) ? (params.pole as PoleCode) : '';
+  const categoryFilter: CategoryTarif | '' =
+    params.category && CATEGORY_VALUES.includes(params.category as CategoryTarif)
+      ? (params.category as CategoryTarif)
       : '';
 
   const supabase = await createSupabaseServerClient();

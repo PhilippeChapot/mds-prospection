@@ -1,0 +1,245 @@
+'use client';
+
+import { useActionState, useState } from 'react';
+import { useFormStatus } from 'react-dom';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { CompanyCombobox, type CompanyOption } from '@/components/admin/CompanyCombobox';
+import { POLE_CODES } from '@/lib/design-tokens';
+import { createProspectAction, type CreateProspectState } from './actions';
+
+type Owner = { id: string; label: string };
+
+const initialState: CreateProspectState = {};
+
+export function NewProspectForm({
+  companies,
+  owners,
+  currentUser,
+  prefillCompanyId,
+}: {
+  companies: CompanyOption[];
+  owners: Owner[];
+  currentUser: { id: string; full_name: string | null; email: string; role: 'admin' | 'sales' };
+  prefillCompanyId?: string;
+}) {
+  const [state, formAction] = useActionState(createProspectAction, initialState);
+  const [companyMode, setCompanyMode] = useState<'existing' | 'new'>('existing');
+
+  const initialCompany = prefillCompanyId
+    ? companies.find((c) => c.id === prefillCompanyId)
+    : undefined;
+
+  return (
+    <form action={formAction} className="space-y-6">
+      {/* SECTION SOCIETE */}
+      <Section title="Societe">
+        <Field label="Societe" htmlFor="company-trigger" error={state.fieldErrors?.company_id}>
+          <CompanyCombobox
+            options={companies}
+            initialId={initialCompany?.id}
+            initialName={initialCompany?.name}
+            onModeChange={setCompanyMode}
+          />
+        </Field>
+
+        {companyMode === 'new' && (
+          <div className="bg-muted/30 border-md-border space-y-3 rounded-md border border-dashed p-3">
+            <p className="text-md-text-muted text-xs">
+              Nouvelle societe : ces champs creeront une ligne dans <code>companies</code>.
+            </p>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <Field label="Nom" required error={state.fieldErrors?.company_name}>
+                <Input name="company_name" placeholder="NRJ Group" />
+              </Field>
+              <Field label="Domaine principal" error={state.fieldErrors?.company_primary_domain}>
+                <Input name="company_primary_domain" placeholder="nrj.fr" />
+              </Field>
+              <Field label="Pays (ISO 2)" error={state.fieldErrors?.company_country}>
+                <Input name="company_country" placeholder="FR" maxLength={2} />
+              </Field>
+              <Field label="Categorie" required error={state.fieldErrors?.company_category}>
+                <select
+                  name="company_category"
+                  className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Choisir…
+                  </option>
+                  <option value="prs_exhibitor">PRS exposant</option>
+                  <option value="standard">Standard</option>
+                  <option value="non_eligible">Non eligible</option>
+                </select>
+              </Field>
+              <Field label="Pole" required error={state.fieldErrors?.company_pole_code}>
+                <select
+                  name="company_pole_code"
+                  className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Choisir…
+                  </option>
+                  {POLE_CODES.map((code) => (
+                    <option key={code} value={code}>
+                      {code}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          </div>
+        )}
+      </Section>
+
+      {/* SECTION CONTACT */}
+      <Section title="Contact principal">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <Field label="Prenom" error={state.fieldErrors?.contact_first_name}>
+            <Input name="contact_first_name" />
+          </Field>
+          <Field label="Nom" error={state.fieldErrors?.contact_last_name}>
+            <Input name="contact_last_name" />
+          </Field>
+          <Field label="Email" required error={state.fieldErrors?.contact_email}>
+            <Input name="contact_email" type="email" required />
+          </Field>
+          <Field label="Telephone" error={state.fieldErrors?.contact_phone}>
+            <Input name="contact_phone" type="tel" />
+          </Field>
+          <Field label="Fonction / role" error={state.fieldErrors?.contact_role}>
+            <Input name="contact_role" placeholder="Direction marketing" />
+          </Field>
+        </div>
+      </Section>
+
+      {/* SECTION PROSPECT */}
+      <Section title="Prospect">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <Field label="Pack" error={state.fieldErrors?.pack_code}>
+            <select
+              name="pack_code"
+              className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
+              defaultValue="A_DEFINIR"
+            >
+              <option value="A_DEFINIR">A definir</option>
+              <option value="ACCESS">ACCESS</option>
+              <option value="CLASSIC">CLASSIC</option>
+              <option value="PREMIUM">PREMIUM</option>
+            </select>
+          </Field>
+
+          <Field label="Statut initial" error={state.fieldErrors?.status}>
+            <select
+              name="status"
+              className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
+              defaultValue="lead"
+            >
+              <option value="lead">Lead</option>
+              <option value="contact">En contact</option>
+              <option value="devis_envoye">Devis envoye</option>
+              <option value="acompte_paye">Acompte paye</option>
+              <option value="signe">Signe</option>
+              <option value="perdu">Perdu</option>
+            </select>
+          </Field>
+
+          <Field label="Montant estime (€ HT)" error={state.fieldErrors?.estimated_amount}>
+            <Input name="estimated_amount" placeholder="5 975" inputMode="decimal" />
+          </Field>
+
+          {currentUser.role === 'admin' ? (
+            <Field label="Owner" required error={state.fieldErrors?.owner_id}>
+              <select
+                name="owner_id"
+                className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
+                defaultValue={currentUser.id}
+              >
+                {owners.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : (
+            <Field label="Owner">
+              <input type="hidden" name="owner_id" value={currentUser.id} />
+              <div className="border-md-border bg-muted/40 rounded-md border px-3 py-2 text-sm">
+                {currentUser.full_name?.trim() || currentUser.email}{' '}
+                <span className="text-md-text-muted text-xs">(toi · sales)</span>
+              </div>
+            </Field>
+          )}
+        </div>
+
+        <Field label="Notes" error={state.fieldErrors?.notes}>
+          <Textarea name="notes" rows={3} placeholder="Contexte, prochaine action…" />
+        </Field>
+      </Section>
+
+      {state.error ? (
+        <p
+          role="alert"
+          className="border-md-danger/40 bg-md-danger/15 text-md-danger rounded-md border px-3 py-2 text-sm"
+        >
+          {state.error}
+        </p>
+      ) : null}
+
+      <div className="flex justify-end gap-3">
+        <Button asChild variant="ghost">
+          <Link href="/admin/prospects">Annuler</Link>
+        </Button>
+        <SubmitButton />
+      </div>
+    </form>
+  );
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? 'Creation…' : 'Creer le prospect'}
+    </Button>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="bg-card border-md-border space-y-3 rounded-xl border p-5 shadow-sm">
+      <h2 className="text-md-blue-dark text-sm font-bold tracking-wide uppercase">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function Field({
+  label,
+  required,
+  error,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={htmlFor}>
+        {label}
+        {required ? <span className="text-md-magenta ml-0.5">*</span> : null}
+      </Label>
+      {children}
+      {error ? <p className="text-md-danger text-xs">{error}</p> : null}
+    </div>
+  );
+}
