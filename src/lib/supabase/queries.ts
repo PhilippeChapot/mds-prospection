@@ -137,6 +137,99 @@ export async function listProspectsPaginated(opts: {
 }
 
 /**
+ * Liste paginee des companies + filtres (pole, categorie, pays, search).
+ */
+export type CompanyListItem = {
+  id: string;
+  name: string;
+  primary_domain: string | null;
+  country: string | null;
+  category: CategoryTarif;
+  was_prs_2026_exhibitor: boolean;
+  created_at: string;
+  pole: { code: string; name_fr: string } | null;
+};
+
+export async function listCompaniesPaginated(opts: {
+  q?: string;
+  poleCode?: string | null;
+  category?: CategoryTarif | null;
+  country?: string | null;
+  page?: number;
+  perPage?: number;
+}): Promise<{ rows: CompanyListItem[]; total: number; page: number; perPage: number }> {
+  const supabase = await createSupabaseServerClient();
+  const page = Math.max(1, opts.page ?? 1);
+  const perPage = opts.perPage ?? 50;
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+
+  // Resolve pole_id si filtre par code
+  let poleIdFilter: string | null = null;
+  if (opts.poleCode) {
+    const { data: poleRow } = await supabase
+      .from('poles')
+      .select('id')
+      .eq('code', opts.poleCode as Database['public']['Enums']['pole_code'])
+      .maybeSingle();
+    poleIdFilter = poleRow?.id ?? null;
+  }
+
+  let query = supabase
+    .from('companies')
+    .select(
+      'id, name, primary_domain, country, category, was_prs_2026_exhibitor, created_at, pole:poles(code, name_fr)',
+      { count: 'exact' },
+    )
+    .order('name', { ascending: true })
+    .range(from, to);
+
+  if (opts.q && opts.q.trim().length >= 2) {
+    const term = `%${opts.q.trim()}%`;
+    query = query.or(`name.ilike.${term},primary_domain.ilike.${term}`);
+  }
+  if (poleIdFilter) query = query.eq('pole_id', poleIdFilter);
+  if (opts.category) query = query.eq('category', opts.category);
+  if (opts.country) query = query.eq('country', opts.country.toUpperCase());
+
+  const { data, error, count } = await query;
+  if (error) {
+    console.error('[queries.listCompaniesPaginated]', error);
+    return { rows: [], total: 0, page, perPage };
+  }
+
+  const rows = (data ?? []).map((row) => ({
+    id: row.id,
+    name: row.name,
+    primary_domain: row.primary_domain,
+    country: row.country,
+    category: row.category,
+    was_prs_2026_exhibitor: row.was_prs_2026_exhibitor,
+    created_at: row.created_at,
+    pole: pickFirst(row.pole),
+  }));
+
+  return { rows, total: count ?? 0, page, perPage };
+}
+
+/**
+ * Liste les pays distincts presents en DB (pour le select filtre).
+ */
+export async function listDistinctCountries(): Promise<string[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('companies')
+    .select('country')
+    .not('country', 'is', null)
+    .order('country', { ascending: true });
+  const set = new Set<string>();
+  for (const row of data ?? []) {
+    if (row.country) set.add(row.country);
+  }
+  return [...set];
+}
+
+/**
  * Recherche simple par nom (auto-complete combobox creation prospect).
  */
 export async function searchCompaniesByName(query: string, limit = 10) {

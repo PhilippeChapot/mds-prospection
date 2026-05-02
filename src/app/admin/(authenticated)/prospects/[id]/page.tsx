@@ -7,6 +7,7 @@ import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { PoleBadge } from '@/components/admin/PoleBadge';
 import { StatusEditor } from '@/components/admin/StatusEditor';
 import { NotesEditor } from '@/components/admin/NotesEditor';
+import { updateProspectNotesAction } from './actions';
 import { ActivitiesSection, type ActivityRow } from '@/components/admin/ActivitiesSection';
 import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { DeleteProspectButton } from './DeleteButton';
@@ -234,7 +235,11 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
 
         {/* Notes */}
         <Section title="Notes" full>
-          <NotesEditor prospectId={id} initialNotes={prospect.notes ?? ''} />
+          <NotesEditor
+            entityId={id}
+            initialNotes={prospect.notes ?? ''}
+            action={updateProspectNotesAction}
+          />
         </Section>
       </div>
 

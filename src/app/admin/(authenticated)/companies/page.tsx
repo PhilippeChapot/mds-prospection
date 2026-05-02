@@ -1,26 +1,36 @@
 import Link from 'next/link';
-import { ArrowUpRight } from 'lucide-react';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { ArrowUpRight, Plus, Search, Upload } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { PoleBadge } from '@/components/admin/PoleBadge';
 import { CompanyAvatar } from '@/components/admin/CompanyAvatar';
 import { POLE_CODES, type PoleCode } from '@/lib/design-tokens';
+import { listCompaniesPaginated, listDistinctCountries } from '@/lib/supabase/queries';
+import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import type { Database } from '@/lib/supabase/database.types';
 import { cn } from '@/lib/utils';
+
+export const metadata = { title: 'Societes' };
 
 type CategoryTarif = Database['public']['Enums']['category_tarif'];
 
 const CATEGORY_VALUES: CategoryTarif[] = ['prs_exhibitor', 'standard', 'non_eligible'];
 
-export const metadata = { title: 'Societes' };
-
-type SearchParams = Promise<{ pole?: string; category?: string }>;
-
-const CATEGORY_LABELS: Record<string, string> = {
-  all: 'Toutes',
+const CATEGORY_LABELS: Record<CategoryTarif, string> = {
   prs_exhibitor: 'PRS exposant',
   standard: 'Standard',
   non_eligible: 'Non eligible',
 };
+
+const PER_PAGE = 50;
+
+type SearchParams = Promise<{
+  q?: string;
+  pole?: string;
+  category?: string;
+  country?: string;
+  page?: string;
+}>;
 
 function initialsOf(name: string): string {
   const parts = name
@@ -46,106 +56,136 @@ function formatDate(input: string | null): string {
   }
 }
 
+function buildHref(params: Record<string, string | undefined>): string {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== '') sp.set(k, v);
+  }
+  const qs = sp.toString();
+  return qs ? `/admin/companies?${qs}` : '/admin/companies';
+}
+
 export default async function CompaniesPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireAdminProfile();
   const params = await searchParams;
+
+  const q = params.q?.trim() ?? '';
   const poleFilter: PoleCode | '' =
     params.pole && POLE_CODES.includes(params.pole as PoleCode) ? (params.pole as PoleCode) : '';
   const categoryFilter: CategoryTarif | '' =
     params.category && CATEGORY_VALUES.includes(params.category as CategoryTarif)
       ? (params.category as CategoryTarif)
       : '';
+  const countryFilter = params.country?.trim().toUpperCase() ?? '';
+  const page = Math.max(1, Number(params.page ?? '1'));
 
-  const supabase = await createSupabaseServerClient();
+  const [{ rows, total }, countries] = await Promise.all([
+    listCompaniesPaginated({
+      q: q || undefined,
+      poleCode: poleFilter || null,
+      category: categoryFilter || null,
+      country: countryFilter || null,
+      page,
+      perPage: PER_PAGE,
+    }),
+    listDistinctCountries(),
+  ]);
 
-  // Sanity check : COUNT(*) total companies (M3.4 — confirme que le seed P0 est bien en DB)
-  const { count: totalCount } = await supabase
-    .from('companies')
-    .select('id', { count: 'exact', head: true });
-  console.log('[admin/companies] sanity COUNT(*) public.companies =', totalCount);
-
-  // Resolve pole_id from pole_code if filter provided
-  let poleIdFilter: string | null = null;
-  if (poleFilter) {
-    const { data: poleRow } = await supabase
-      .from('poles')
-      .select('id')
-      .eq('code', poleFilter)
-      .maybeSingle();
-    poleIdFilter = poleRow?.id ?? null;
-  }
-
-  let query = supabase
-    .from('companies')
-    .select(
-      'id, name, primary_domain, country, category, was_prs_2026_exhibitor, created_at, pole:poles(code, name_fr)',
-    )
-    .order('name', { ascending: true });
-
-  if (poleIdFilter) query = query.eq('pole_id', poleIdFilter);
-  if (categoryFilter) query = query.eq('category', categoryFilter);
-
-  const { data: companies, error } = await query;
-  if (error) {
-    console.error('[admin/companies] fetch error:', error);
-  }
-  const rows = companies ?? [];
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const hasFilters = Boolean(q || poleFilter || categoryFilter || countryFilter);
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-md-blue-dark font-[family-name:var(--font-montserrat)] text-2xl font-extrabold tracking-tight">
-            Societes · {rows.length}
+            Societes · {total}
           </h1>
           <p className="text-md-text-muted text-sm">
-            Donnees reelles depuis Supabase (table <code className="text-xs">public.companies</code>
-            ) · total en base : <strong>{totalCount ?? '?'}</strong> societes.
+            Donnees reelles depuis Supabase. Tu peux creer ou importer.
           </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/companies/import">
+              <Upload className="size-4" aria-hidden />
+              Importer CSV
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/companies/new">
+              <Plus className="size-4" aria-hidden />
+              Nouvelle societe
+            </Link>
+          </Button>
         </div>
       </div>
 
       {/* Filtres URL — server-side */}
-      <form className="bg-card border-md-border flex flex-wrap items-center gap-2 rounded-xl border p-3 shadow-sm">
-        <label className="flex items-center gap-2 text-xs">
-          <span className="text-md-text-muted font-semibold tracking-wider uppercase">Pole</span>
-          <select
-            name="pole"
-            defaultValue={poleFilter}
-            className="border-md-border rounded-md border bg-white px-2.5 py-1.5 text-xs"
-          >
-            <option value="">Tous</option>
-            {POLE_CODES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </select>
-        </label>
+      <form
+        method="get"
+        className="bg-card border-md-border flex flex-wrap items-center gap-2 rounded-xl border p-3 shadow-sm"
+      >
+        <div className="relative min-w-[260px] flex-1">
+          <Search
+            className="text-md-text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2"
+            aria-hidden
+          />
+          <Input
+            name="q"
+            defaultValue={q}
+            placeholder="Rechercher par nom ou domaine…"
+            className="pl-9"
+          />
+        </div>
 
-        <label className="flex items-center gap-2 text-xs">
-          <span className="text-md-text-muted font-semibold tracking-wider uppercase">
-            Categorie
-          </span>
-          <select
-            name="category"
-            defaultValue={categoryFilter}
-            className="border-md-border rounded-md border bg-white px-2.5 py-1.5 text-xs"
-          >
-            <option value="">Toutes</option>
-            <option value="prs_exhibitor">PRS exposant</option>
-            <option value="standard">Standard</option>
-            <option value="non_eligible">Non eligible</option>
-          </select>
-        </label>
+        <select
+          name="pole"
+          defaultValue={poleFilter}
+          className="border-md-border rounded-md border bg-white px-2.5 py-1.5 text-xs"
+        >
+          <option value="">Tous poles</option>
+          {POLE_CODES.map((code) => (
+            <option key={code} value={code}>
+              {code}
+            </option>
+          ))}
+        </select>
+
+        <select
+          name="category"
+          defaultValue={categoryFilter}
+          className="border-md-border rounded-md border bg-white px-2.5 py-1.5 text-xs"
+        >
+          <option value="">Toutes categories</option>
+          {CATEGORY_VALUES.map((c) => (
+            <option key={c} value={c}>
+              {CATEGORY_LABELS[c]}
+            </option>
+          ))}
+        </select>
+
+        <select
+          name="country"
+          defaultValue={countryFilter}
+          className="border-md-border rounded-md border bg-white px-2.5 py-1.5 text-xs"
+        >
+          <option value="">Tous pays</option>
+          {countries.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
 
         <button
           type="submit"
-          className="bg-md-blue text-md-blue-foreground rounded-md px-3 py-1.5 text-xs font-semibold text-white"
+          className="bg-md-blue rounded-md px-3 py-1.5 text-xs font-semibold text-white"
         >
           Appliquer
         </button>
 
-        {(poleFilter || categoryFilter) && (
+        {hasFilters && (
           <Link
             href="/admin/companies"
             className="text-md-text-muted hover:text-md-text text-xs underline"
@@ -177,79 +217,170 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
                   </td>
                 </tr>
               ) : (
-                rows.map((row) => {
-                  // Supabase rend la relation `pole` soit comme objet, soit comme tableau
-                  // selon la cardinalite inferee. On normalise en objet ou null.
-                  const rawPole = row.pole as
-                    | { code: PoleCode; name_fr: string }
-                    | { code: PoleCode; name_fr: string }[]
-                    | null;
-                  const pole = Array.isArray(rawPole) ? (rawPole[0] ?? null) : rawPole;
-                  return (
-                    <tr key={row.id} className="border-md-border hover:bg-muted/30 border-t">
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/admin/companies/${row.id}`}
-                          className="flex items-center gap-3 hover:underline"
-                        >
-                          <CompanyAvatar initials={initialsOf(row.name)} />
-                          <div className="min-w-0">
-                            <div className="text-md-text truncate font-semibold">{row.name}</div>
-                            {row.was_prs_2026_exhibitor ? (
-                              <div className="text-md-magenta text-[10px] font-bold tracking-wider uppercase">
-                                Exposant PRS 2026
-                              </div>
-                            ) : null}
-                          </div>
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        {pole ? (
-                          <PoleBadge code={pole.code} />
-                        ) : (
-                          <span className="text-md-text-muted text-xs">—</span>
+                rows.map((row) => (
+                  <tr key={row.id} className="border-md-border hover:bg-muted/30 border-t">
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/companies/${row.id}`}
+                        className="flex items-center gap-3 hover:underline"
+                      >
+                        <CompanyAvatar initials={initialsOf(row.name)} />
+                        <div className="min-w-0">
+                          <div className="text-md-text truncate font-semibold">{row.name}</div>
+                          {row.was_prs_2026_exhibitor ? (
+                            <div className="text-md-magenta text-[10px] font-bold tracking-wider uppercase">
+                              Exposant PRS 2026
+                            </div>
+                          ) : null}
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">
+                      {row.pole ? (
+                        <PoleBadge code={row.pole.code as PoleCode} />
+                      ) : (
+                        <span className="text-md-text-muted text-xs">—</span>
+                      )}
+                    </td>
+                    <td className="text-md-text px-4 py-3 text-xs">
+                      {row.country ?? <span className="text-md-text-muted">—</span>}
+                    </td>
+                    <td className="text-md-text px-4 py-3 font-mono text-xs">
+                      {row.primary_domain ?? <span className="text-md-text-muted">—</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={cn(
+                          'rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap',
+                          row.category === 'prs_exhibitor'
+                            ? 'bg-md-magenta/10 text-md-magenta'
+                            : row.category === 'standard'
+                              ? 'bg-md-blue/10 text-md-blue'
+                              : 'bg-muted text-md-text-muted',
                         )}
-                      </td>
-                      <td className="text-md-text px-4 py-3 text-xs">
-                        {row.country ?? <span className="text-md-text-muted">—</span>}
-                      </td>
-                      <td className="text-md-text px-4 py-3 font-mono text-xs">
-                        {row.primary_domain ?? <span className="text-md-text-muted">—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            'rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap',
-                            row.category === 'prs_exhibitor'
-                              ? 'bg-md-magenta/10 text-md-magenta'
-                              : row.category === 'standard'
-                                ? 'bg-md-blue/10 text-md-blue'
-                                : 'bg-muted text-md-text-muted',
-                          )}
-                        >
-                          {CATEGORY_LABELS[row.category] ?? row.category}
-                        </span>
-                      </td>
-                      <td className="text-md-text-muted px-4 py-3 text-xs">
-                        {formatDate(row.created_at)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          href={`/admin/companies/${row.id}`}
-                          className="text-md-blue inline-flex items-center gap-1 text-xs font-semibold hover:underline"
-                        >
-                          Voir
-                          <ArrowUpRight className="size-3.5" aria-hidden />
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })
+                      >
+                        {CATEGORY_LABELS[row.category]}
+                      </span>
+                    </td>
+                    <td className="text-md-text-muted px-4 py-3 text-xs">
+                      {formatDate(row.created_at)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/admin/companies/${row.id}`}
+                        className="text-md-blue inline-flex items-center gap-1 text-xs font-semibold hover:underline"
+                      >
+                        Voir
+                        <ArrowUpRight className="size-3.5" aria-hidden />
+                      </Link>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          buildHref={(p) => buildHref({ ...params, page: String(p) })}
+        />
+      )}
     </div>
   );
+}
+
+function Pagination({
+  currentPage,
+  totalPages,
+  buildHref,
+}: {
+  currentPage: number;
+  totalPages: number;
+  buildHref: (page: number) => string;
+}) {
+  const pages = pageRange(currentPage, totalPages);
+  return (
+    <nav className="flex items-center justify-between text-xs" aria-label="Pagination">
+      <span className="text-md-text-muted">
+        Page {currentPage} / {totalPages}
+      </span>
+      <div className="flex gap-1">
+        {currentPage > 1 ? (
+          <PaginationLink href={buildHref(currentPage - 1)}>‹</PaginationLink>
+        ) : (
+          <PaginationDisabled>‹</PaginationDisabled>
+        )}
+        {pages.map((p, i) =>
+          p === '…' ? (
+            <span key={`ellipsis-${i}`} className="text-md-text-muted px-2 py-1">
+              …
+            </span>
+          ) : (
+            <PaginationLink key={p} href={buildHref(p)} active={p === currentPage}>
+              {p}
+            </PaginationLink>
+          ),
+        )}
+        {currentPage < totalPages ? (
+          <PaginationLink href={buildHref(currentPage + 1)}>›</PaginationLink>
+        ) : (
+          <PaginationDisabled>›</PaginationDisabled>
+        )}
+      </div>
+    </nav>
+  );
+}
+
+function PaginationLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'rounded-md border px-2 py-1 text-[11px] font-semibold transition',
+        active
+          ? 'border-md-magenta/40 bg-md-magenta/10 text-md-magenta'
+          : 'border-md-border hover:bg-muted bg-white',
+      )}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function PaginationDisabled({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="border-md-border text-md-text-muted rounded-md border bg-white px-2 py-1 text-[11px] font-semibold opacity-40">
+      {children}
+    </span>
+  );
+}
+
+function pageRange(current: number, total: number): (number | '…')[] {
+  const window = 1;
+  const items = new Set<number>([1, total, current]);
+  for (let i = 1; i <= window; i += 1) {
+    if (current - i >= 1) items.add(current - i);
+    if (current + i <= total) items.add(current + i);
+  }
+  const sorted = [...items].sort((a, b) => a - b);
+  const out: (number | '…')[] = [];
+  let prev = 0;
+  for (const p of sorted) {
+    if (prev && p - prev > 1) out.push('…');
+    out.push(p);
+    prev = p;
+  }
+  return out;
 }

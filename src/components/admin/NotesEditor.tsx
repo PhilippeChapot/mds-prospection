@@ -3,17 +3,28 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { updateProspectNotesAction } from '@/app/admin/(authenticated)/prospects/[id]/actions';
 import { cn } from '@/lib/utils';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
+/**
+ * Editeur de notes inline avec debounce 500ms.
+ * Generique : on lui passe l'action serveur a appeler (entityId, notes) -> Promise<void>.
+ */
 export function NotesEditor({
-  prospectId,
+  entityId,
   initialNotes,
+  action,
+  placeholder,
+  rows = 5,
+  maxLength = 4000,
 }: {
-  prospectId: string;
+  entityId: string;
   initialNotes: string;
+  action: (entityId: string, notes: string) => Promise<void>;
+  placeholder?: string;
+  rows?: number;
+  maxLength?: number;
 }) {
   const [value, setValue] = useState(initialNotes);
   const [saveState, setSaveState] = useState<SaveState>('idle');
@@ -37,7 +48,7 @@ export function NotesEditor({
       }
       startTransition(async () => {
         try {
-          await updateProspectNotesAction(prospectId, next);
+          await action(entityId, next);
           lastSavedRef.current = next;
           setSaveState('saved');
         } catch {
@@ -51,8 +62,8 @@ export function NotesEditor({
     <div className="space-y-2">
       <Textarea
         value={value}
-        rows={5}
-        placeholder="Contexte, prochaine action, points cles…"
+        rows={rows}
+        placeholder={placeholder ?? 'Contexte, prochaine action, points cles…'}
         onChange={(e) => {
           setValue(e.target.value);
           scheduleSave(e.target.value);
@@ -74,8 +85,8 @@ export function NotesEditor({
         {saveState === 'error' && (
           <span className="text-md-danger">Erreur de sauvegarde — reessayez.</span>
         )}
-        <span className={cn('ml-auto', value.length > 3500 && 'text-md-warning')}>
-          {value.length} / 4000
+        <span className={cn('ml-auto', value.length > maxLength * 0.9 && 'text-md-warning')}>
+          {value.length} / {maxLength}
         </span>
       </div>
     </div>
