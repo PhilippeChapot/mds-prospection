@@ -7,7 +7,10 @@
     "back": "Back",
     "continue": "Continue",
     "submit": "Submit",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "allRightsReserved": "All rights reserved.",
+    "required": "Required",
+    "optional": "Optional"
   },
   "nav": {
     "home": "Home",
@@ -15,11 +18,133 @@
     "login": "Partner area",
     "styleguide": "Style guide"
   },
+  "publicNav": {
+    "home": "Home",
+    "switchLanguage": "Switch language",
+    "locale_fr": "Français",
+    "locale_en": "English",
+    "exhibitorSpace": "Exhibitor area",
+    "exhibitorSpaceComingSoon": "Exhibitor area — coming soon",
+    "publisher": "Publisher",
+    "legalSection": "Legal",
+    "terms": "Terms & conditions",
+    "legalNotice": "Legal notice",
+    "privacyPolicy": "Privacy policy",
+    "eventsSection": "2026 events",
+    "eventMarseille": "MediaDays Marseille — December 10, 2026",
+    "eventParis": "Paris Radio Show — December 15, 2026"
+  },
   "home": {
-    "tagline": "MediaDays Solutions 2026",
-    "subtitle": "The media industry rendezvous in Paris, Marseille and Brussels.",
-    "ctaPartner": "Become a partner",
-    "ctaLogin": "My area"
+    "eyebrow": "2026 edition",
+    "tagline": "Where the French media industry meets",
+    "subtitle": "Two professional days dedicated to the radio, podcast, video and digital media ecosystem.",
+    "ctaExhibitor": "Register as an exhibitor",
+    "ctaPartner": "Register as a partner",
+    "ctaLogin": "My area",
+    "event1": {
+      "title": "MediaDays Marseille",
+      "date": "Thursday, December 10, 2026",
+      "location": "Marseille — venue TBC"
+    },
+    "event2": {
+      "title": "Paris Radio Show",
+      "date": "Tuesday, December 15, 2026",
+      "location": "Carrousel du Louvre, Paris"
+    },
+    "reassureTitle": "A platform built for media professionals",
+    "reassureBody": "Quick double-opt-in registration, GDPR-compliant. Your data stays in France."
+  },
+  "signup": {
+    "step1": {
+      "heading": "Registration — step 1 of 2",
+      "subheading": "Two minutes: we identify you, send a confirmation email, then we build your offer together.",
+      "labelEmail": "Work email",
+      "labelCompany": "Company",
+      "labelCompanyPlaceholder": "Type your company name…",
+      "labelCompanyCreate": "Create company \"{name}\"",
+      "labelCountry": "Country",
+      "labelFirstName": "First name",
+      "labelLastName": "Last name",
+      "labelPhone": "Phone",
+      "labelCategory": "You are…",
+      "categoryExhibitor": "Exhibitor",
+      "categoryPartner": "Partner",
+      "consentRgpd": "I have read and accept the <link>privacy policy</link> and terms of use of MediaDays Solutions.",
+      "consentMarketing": "I agree to receive commercial communications from MediaDays Solutions and Editions HF (newsletter, events, offers). I can unsubscribe at any time.",
+      "submit": "Continue",
+      "submitLoading": "Submitting…"
+    },
+    "tooltips": {
+      "emailLabel": "Why a work email?",
+      "emailBody": "Please use your work email address. Avoid personal Gmail, Hotmail or Yahoo addresses: we verify that your email is linked to your business activity to ensure quality registrations and prevent duplicates.",
+      "categoryLabel": "What is the difference?",
+      "categoryBody": "Exhibitor: company offering audio, radio, podcast products/services (sales houses, service providers, studios, equipment manufacturers...) that wants a physical booth at Paris Radio Show 2026 on December 15, 2026 at Carrousel du Louvre. Partner: company wishing to support MediaDays Solutions 2026 (with or without physical presence). Several partnership levels available (main sponsor, pole sponsor, media partner)."
+    },
+    "checkEmail": {
+      "heading": "Check your inbox",
+      "body": "We just sent you an email to confirm your address. Click the link in the email to move on to step 2.",
+      "spamHint": "Don't forget to check your spam folder (and add philippe@mediadays.solutions to your contacts for future emails).",
+      "resend": "Resend email",
+      "resendCooldown": "You can resend in {seconds}s",
+      "resendDone": "Email resent ✓",
+      "resendMaxed": "Resend limit reached. Contact us if needed.",
+      "wrongEmail": "Wrong address?",
+      "wrongEmailLink": "Start registration over"
+    },
+    "step2": {
+      "expired": {
+        "heading": "Link expired",
+        "body": "Your confirmation link has expired (24h validity). Please start the registration over.",
+        "cta": "Start over"
+      },
+      "alreadyConverted": {
+        "heading": "Registration already finalized",
+        "body": "Your file is being processed by our team. We will get back to you within 48 business hours."
+      },
+      "caseA": {
+        "heading": "Welcome {firstName}!",
+        "subheading": "As a Paris Radio Show exhibitor, here is your dedicated offer:",
+        "step1Title": "Pack & shows",
+        "step2Title": "Booth & options",
+        "step3Title": "Payment"
+      },
+      "caseB": {
+        "heading": "Thank you for your interest, {firstName}!",
+        "subheading": "Tell us about your project — our team will get back to you within 48 business hours.",
+        "submit": "Send my request"
+      }
+    },
+    "thankYou": {
+      "heading": "All set!",
+      "bodyDevisSepa": "Your registration has been received. You will receive your quote by email within 48 business hours.",
+      "bodyStripePending": "Your registration has been received. You will receive your secure payment link by email within 48 business hours.",
+      "bodyCaseB": "Your request has been received. Our team will get back to you within 48 business hours to discuss your project.",
+      "ctaHome": "Back to home"
+    }
+  },
+  "legal": {
+    "lastUpdated": "Last updated: {date}",
+    "tableOfContents": "Table of contents"
+  },
+  "errors": {
+    "generic": "An error occurred. Please try again or contact us.",
+    "captcha": "Anti-spam check failed. Please try again.",
+    "emailUndeliverable": "This email seems undeliverable. Please check your input or use another work email.",
+    "emailDuplicateRecent": "A registration is already in progress for this email. Check your inbox (and spam folder).",
+    "emailDuplicateProspect": "This email is already linked to an account. Please contact philippe@mediadays.solutions.",
+    "rateLimited": "Too many attempts. Please wait a few minutes.",
+    "required": "This field is required.",
+    "invalidEmail": "Invalid email.",
+    "invalidPhone": "Invalid phone number.",
+    "tooLong": "Too long (max {max} characters).",
+    "tooShort": "Too short (min {min} characters).",
+    "consentRgpdRequired": "You must accept the privacy policy to continue."
+  },
+  "success": {
+    "signupCreated": "Registration saved. Check your email.",
+    "doiResent": "Email resent.",
+    "step2Saved": "Step saved.",
+    "step2Submitted": "Registration finalized."
   },
   "styleguide": {
     "title": "MD visual identity",

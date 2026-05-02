@@ -26,7 +26,8 @@
     "seed:addons": "tsx scripts/seed/03_addon_options.ts",
     "seed:settings": "tsx scripts/seed/04_app_settings.ts",
     "seed:prs": "tsx scripts/seed/05_prs_exhibitors.ts",
-    "ai:test-classification": "tsx scripts/test-ai-classification.ts"
+    "ai:test-classification": "tsx scripts/test-ai-classification.ts",
+    "canva:resolve": "tsx scripts/resolve-canva-url.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
@@ -61,6 +62,7 @@
     "cmdk": "^1.1.1",
     "disposable-email-domains": "^1.0.62",
     "free-email-domains": "^1.2.26",
+    "jose": "^6.2.3",
     "lucide-react": "^1.14.0",
     "next": "16.2.4",
     "next-intl": "^4.11.0",

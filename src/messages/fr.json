@@ -7,7 +7,10 @@
     "back": "Retour",
     "continue": "Continuer",
     "submit": "Valider",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "allRightsReserved": "Tous droits réservés.",
+    "required": "Requis",
+    "optional": "Facultatif"
   },
   "nav": {
     "home": "Accueil",
@@ -15,11 +18,133 @@
     "login": "Espace partenaire",
     "styleguide": "Charte"
   },
+  "publicNav": {
+    "home": "Accueil",
+    "switchLanguage": "Changer de langue",
+    "locale_fr": "Français",
+    "locale_en": "English",
+    "exhibitorSpace": "Espace Exposant",
+    "exhibitorSpaceComingSoon": "Espace Exposant — bientôt disponible",
+    "publisher": "Éditeur",
+    "legalSection": "Mentions légales",
+    "terms": "Conditions générales",
+    "legalNotice": "Mentions légales",
+    "privacyPolicy": "Politique de confidentialité",
+    "eventsSection": "Événements 2026",
+    "eventMarseille": "MediaDays Marseille — 10 décembre 2026",
+    "eventParis": "Paris Radio Show — 15 décembre 2026"
+  },
   "home": {
-    "tagline": "MediaDays Solutions 2026",
-    "subtitle": "Le rendez-vous des médias à Paris, Marseille et Bruxelles.",
-    "ctaPartner": "Devenir partenaire",
-    "ctaLogin": "Mon espace"
+    "eyebrow": "Édition 2026",
+    "tagline": "Le rendez-vous des médias français",
+    "subtitle": "Deux journées professionnelles dédiées aux acteurs de la radio, du podcast, de la vidéo et du média numérique.",
+    "ctaExhibitor": "M'inscrire comme exposant",
+    "ctaPartner": "M'inscrire comme partenaire",
+    "ctaLogin": "Mon espace",
+    "event1": {
+      "title": "MediaDays Marseille",
+      "date": "Jeudi 10 décembre 2026",
+      "location": "Marseille — lieu à confirmer"
+    },
+    "event2": {
+      "title": "Paris Radio Show",
+      "date": "Mardi 15 décembre 2026",
+      "location": "Carrousel du Louvre, Paris"
+    },
+    "reassureTitle": "Une plateforme dédiée aux professionnels",
+    "reassureBody": "Inscription rapide, vérifiée par double opt-in, RGPD-compliant. Vos données restent en France."
+  },
+  "signup": {
+    "step1": {
+      "heading": "Inscription — étape 1 sur 2",
+      "subheading": "En 2 minutes : on vous identifie, on vous envoie un email de confirmation, puis on construit ensemble votre offre.",
+      "labelEmail": "Email professionnel",
+      "labelCompany": "Société",
+      "labelCompanyPlaceholder": "Tapez le nom de votre société…",
+      "labelCompanyCreate": "Créer la société « {name} »",
+      "labelCountry": "Pays",
+      "labelFirstName": "Prénom",
+      "labelLastName": "Nom",
+      "labelPhone": "Téléphone",
+      "labelCategory": "Vous êtes…",
+      "categoryExhibitor": "Exposant",
+      "categoryPartner": "Partenaire",
+      "consentRgpd": "J'ai lu et j'accepte la <link>politique de confidentialité</link> et les conditions d'utilisation de MediaDays Solutions.",
+      "consentMarketing": "J'accepte de recevoir des communications commerciales de MediaDays Solutions et Editions HF (newsletter, événements, offres). Je peux me désinscrire à tout moment.",
+      "submit": "Continuer",
+      "submitLoading": "Envoi en cours…"
+    },
+    "tooltips": {
+      "emailLabel": "Pourquoi un email professionnel ?",
+      "emailBody": "Utilisez votre adresse email professionnelle (votre email d'entreprise). Évitez les adresses Gmail, Hotmail ou Yahoo personnelles : nous vérifions que l'email est rattaché à votre activité professionnelle pour garantir la qualité des inscriptions et éviter les doublons.",
+      "categoryLabel": "Quelle est la différence ?",
+      "categoryBody": "Exposant : société proposant des produits/services audio, radio, podcast (régies, prestataires, studios, équipementiers...) qui souhaite avoir un emplacement physique pendant le salon Paris Radio Show 2026 du 15 décembre 2026 au Carrousel du Louvre. Partenaire : société souhaitant soutenir l'événement MediaDays Solutions 2026 (avec ou sans présence physique). Plusieurs niveaux de partenariat possibles (sponsor principal, sponsor pôle, partenaire média)."
+    },
+    "checkEmail": {
+      "heading": "Vérifiez votre boîte mail",
+      "body": "Nous venons de vous envoyer un email pour confirmer votre adresse. Cliquez sur le lien dans l'email pour passer à l'étape 2.",
+      "spamHint": "Pensez à vérifier vos spams (et ajouter philippe@mediadays.solutions à vos contacts pour les prochains envois).",
+      "resend": "Renvoyer l'email",
+      "resendCooldown": "Vous pourrez renvoyer dans {seconds}s",
+      "resendDone": "Email renvoyé ✓",
+      "resendMaxed": "Limite de renvois atteinte. Contactez-nous si besoin.",
+      "wrongEmail": "Mauvaise adresse ?",
+      "wrongEmailLink": "Recommencer l'inscription"
+    },
+    "step2": {
+      "expired": {
+        "heading": "Lien expiré",
+        "body": "Votre lien de confirmation a expiré (validité 24 h). Recommencez l'inscription depuis le début.",
+        "cta": "Recommencer"
+      },
+      "alreadyConverted": {
+        "heading": "Inscription déjà finalisée",
+        "body": "Votre dossier est en cours de traitement par notre équipe. Vous serez recontacté sous 48h ouvrées."
+      },
+      "caseA": {
+        "heading": "Bienvenue {firstName} !",
+        "subheading": "En tant qu'exposant Paris Radio Show, voici votre offre dédiée :",
+        "step1Title": "Pack & salons",
+        "step2Title": "Emplacement & options",
+        "step3Title": "Paiement"
+      },
+      "caseB": {
+        "heading": "Merci pour votre intérêt {firstName} !",
+        "subheading": "Précisez votre projet, notre équipe revient vers vous sous 48h ouvrées.",
+        "submit": "Envoyer ma demande"
+      }
+    },
+    "thankYou": {
+      "heading": "C'est noté !",
+      "bodyDevisSepa": "Votre inscription a bien été reçue. Vous recevrez votre devis par email sous 48h ouvrées.",
+      "bodyStripePending": "Votre inscription a bien été reçue. Vous recevrez par email votre lien de paiement sécurisé sous 48h ouvrées.",
+      "bodyCaseB": "Votre demande a bien été reçue. Notre équipe revient vers vous sous 48h ouvrées pour discuter de votre projet.",
+      "ctaHome": "Retour à l'accueil"
+    }
+  },
+  "legal": {
+    "lastUpdated": "Dernière mise à jour : {date}",
+    "tableOfContents": "Sommaire"
+  },
+  "errors": {
+    "generic": "Une erreur est survenue. Réessayez ou contactez-nous.",
+    "captcha": "Vérification anti-spam échouée. Réessayez.",
+    "emailUndeliverable": "Cet email semble injoignable. Vérifiez votre saisie ou utilisez un autre email professionnel.",
+    "emailDuplicateRecent": "Une inscription est déjà en cours pour cet email. Vérifiez votre boîte mail (et vos spams).",
+    "emailDuplicateProspect": "Cet email est déjà associé à un compte. Contactez philippe@mediadays.solutions.",
+    "rateLimited": "Trop de tentatives. Patientez quelques minutes.",
+    "required": "Ce champ est requis.",
+    "invalidEmail": "Email invalide.",
+    "invalidPhone": "Numéro de téléphone invalide.",
+    "tooLong": "Trop long (max {max} caractères).",
+    "tooShort": "Trop court (min {min} caractères).",
+    "consentRgpdRequired": "Vous devez accepter la politique de confidentialité pour continuer."
+  },
+  "success": {
+    "signupCreated": "Inscription enregistrée. Vérifiez votre email.",
+    "doiResent": "Email renvoyé.",
+    "step2Saved": "Étape enregistrée.",
+    "step2Submitted": "Inscription finalisée."
   },
   "styleguide": {
     "title": "Charte visuelle MD",

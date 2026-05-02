@@ -45,3 +45,4 @@ next-env.d.ts
 # Autorise les templates env (sans secrets)
 !.env.local.example
 !.env.example
+.env*.local

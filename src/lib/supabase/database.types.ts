@@ -1273,6 +1273,7 @@ export type Database = {
           affiliate_id: string | null;
           affiliate_input_raw: string | null;
           ai_classification: Json | null;
+          category: string | null;
           cgv_accepted_at: string | null;
           cgv_version: number | null;
           company_name_input: string | null;
@@ -1283,6 +1284,8 @@ export type Database = {
           converted_to_prospect_id: string | null;
           created_at: string;
           derived_category: Database['public']['Enums']['category_tarif'];
+          doi_token: string | null;
+          doi_token_expires_at: string | null;
           email: string;
           email_domain: string | null;
           email_validation_status: Database['public']['Enums']['email_validation_status'];
@@ -1292,7 +1295,11 @@ export type Database = {
           language: Database['public']['Enums']['language_code'];
           marketing_consent: boolean;
           matched_company_id: string | null;
+          neverbounce_result: string | null;
+          referrer: string | null;
           status: Database['public']['Enums']['signup_status'];
+          step2_payload: Json | null;
+          step2_submitted_at: string | null;
           user_agent: string | null;
           utm_campaign: string | null;
           utm_medium: string | null;
@@ -1305,6 +1312,7 @@ export type Database = {
           affiliate_id?: string | null;
           affiliate_input_raw?: string | null;
           ai_classification?: Json | null;
+          category?: string | null;
           cgv_accepted_at?: string | null;
           cgv_version?: number | null;
           company_name_input?: string | null;
@@ -1315,6 +1323,8 @@ export type Database = {
           converted_to_prospect_id?: string | null;
           created_at?: string;
           derived_category?: Database['public']['Enums']['category_tarif'];
+          doi_token?: string | null;
+          doi_token_expires_at?: string | null;
           email: string;
           email_domain?: string | null;
           email_validation_status: Database['public']['Enums']['email_validation_status'];
@@ -1324,7 +1334,11 @@ export type Database = {
           language?: Database['public']['Enums']['language_code'];
           marketing_consent?: boolean;
           matched_company_id?: string | null;
+          neverbounce_result?: string | null;
+          referrer?: string | null;
           status?: Database['public']['Enums']['signup_status'];
+          step2_payload?: Json | null;
+          step2_submitted_at?: string | null;
           user_agent?: string | null;
           utm_campaign?: string | null;
           utm_medium?: string | null;
@@ -1337,6 +1351,7 @@ export type Database = {
           affiliate_id?: string | null;
           affiliate_input_raw?: string | null;
           ai_classification?: Json | null;
+          category?: string | null;
           cgv_accepted_at?: string | null;
           cgv_version?: number | null;
           company_name_input?: string | null;
@@ -1347,6 +1362,8 @@ export type Database = {
           converted_to_prospect_id?: string | null;
           created_at?: string;
           derived_category?: Database['public']['Enums']['category_tarif'];
+          doi_token?: string | null;
+          doi_token_expires_at?: string | null;
           email?: string;
           email_domain?: string | null;
           email_validation_status?: Database['public']['Enums']['email_validation_status'];
@@ -1356,7 +1373,11 @@ export type Database = {
           language?: Database['public']['Enums']['language_code'];
           marketing_consent?: boolean;
           matched_company_id?: string | null;
+          neverbounce_result?: string | null;
+          referrer?: string | null;
           status?: Database['public']['Enums']['signup_status'];
+          step2_payload?: Json | null;
+          step2_submitted_at?: string | null;
           user_agent?: string | null;
           utm_campaign?: string | null;
           utm_medium?: string | null;
@@ -1741,7 +1762,14 @@ export type Database = {
         | 'meeting'
         | 'other';
       season_status: 'planning' | 'active' | 'archived';
-      signup_status: 'awaiting_verification' | 'verified' | 'expired' | 'rejected' | 'converted';
+      signup_status:
+        | 'awaiting_verification'
+        | 'verified'
+        | 'expired'
+        | 'rejected'
+        | 'converted'
+        | 'step2_started'
+        | 'step2_completed';
       sync_op: 'create' | 'update' | 'pull' | 'check';
       sync_status: 'success' | 'pending' | 'error';
       sync_target: 'sellsy' | 'brevo' | 'connectonair';
@@ -1946,7 +1974,15 @@ export const Constants = {
       reminder_source: ['manual', 'ai_assistant'],
       reminder_type: ['call_back', 'send_email', 'follow_up', 'check_payment', 'meeting', 'other'],
       season_status: ['planning', 'active', 'archived'],
-      signup_status: ['awaiting_verification', 'verified', 'expired', 'rejected', 'converted'],
+      signup_status: [
+        'awaiting_verification',
+        'verified',
+        'expired',
+        'rejected',
+        'converted',
+        'step2_started',
+        'step2_completed',
+      ],
       sync_op: ['create', 'update', 'pull', 'check'],
       sync_status: ['success', 'pending', 'error'],
       sync_target: ['sellsy', 'brevo', 'connectonair'],
