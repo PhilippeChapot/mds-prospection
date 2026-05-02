@@ -9,6 +9,7 @@ import { listCompaniesPaginated, listDistinctCountries } from '@/lib/supabase/qu
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import type { Database } from '@/lib/supabase/database.types';
 import { cn } from '@/lib/utils';
+import { CompaniesExportButton } from './CompaniesExportButton';
 
 export const metadata = { title: 'Societes' };
 
@@ -106,6 +107,14 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <CompaniesExportButton
+            filters={{
+              q: q || undefined,
+              pole: poleFilter || undefined,
+              category: categoryFilter || undefined,
+              country: countryFilter || undefined,
+            }}
+          />
           <Button asChild variant="outline">
             <Link href="/admin/companies/import">
               <Upload className="size-4" aria-hidden />

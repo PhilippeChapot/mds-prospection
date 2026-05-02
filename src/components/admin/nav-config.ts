@@ -87,7 +87,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: '/admin/seasons', label: 'Saisons', emoji: '🗓️', enabled: false, phase: 'P5' },
       { href: '/admin/users', label: 'Utilisateurs', emoji: '👤', enabled: false, phase: 'P5' },
       { href: '/admin/sync-logs', label: 'Logs sync', emoji: '🔄', enabled: false, phase: 'P4' },
-      { href: '/admin/audit-log', label: 'Audit log', emoji: '📜', enabled: false, phase: 'P5' },
+      { href: '/admin/audit-log', label: 'Audit log', emoji: '📜', enabled: true },
       { href: '/admin/mcp-tokens', label: 'Tokens MCP', emoji: '🔌', enabled: false, phase: 'P5' },
     ],
   },

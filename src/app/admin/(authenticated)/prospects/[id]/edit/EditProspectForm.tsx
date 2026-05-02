@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useFieldErrors } from '@/components/admin/use-field-errors';
 import { updateProspectAction, type UpdateProspectState } from './actions';
 
 type Owner = { id: string; label: string };
@@ -41,9 +42,15 @@ export function EditProspectForm({
   currentUser: { id: string; full_name: string | null; email: string; role: 'admin' | 'sales' };
 }) {
   const [state, formAction] = useActionState(updateProspectAction, initialState);
+  const { errors, clear } = useFieldErrors(state.fieldErrors);
+
+  function handleAnyChange(e: React.ChangeEvent<HTMLFormElement>) {
+    const t = e.target as Partial<{ name: string }>;
+    if (t.name) clear(t.name);
+  }
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} onChange={handleAnyChange} className="space-y-6">
       <input type="hidden" name="prospect_id" value={prospect.id} />
 
       <Section title="Societe">
@@ -63,7 +70,7 @@ export function EditProspectForm({
             <Field label="Nom">
               <Input name="contact_last_name" defaultValue={prospect.contact.last_name ?? ''} />
             </Field>
-            <Field label="Email" required error={state.fieldErrors?.contact_email}>
+            <Field label="Email" required error={errors.contact_email}>
               <Input
                 name="contact_email"
                 type="email"

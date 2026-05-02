@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RealProspectsTable } from '@/components/admin/RealProspectsTable';
+import { ProspectsListClient } from './ProspectsListClient';
+import { SavedViewsBar } from '@/components/admin/SavedViewsBar';
 import {
   PROSPECT_STATUSES,
   listProspectsPaginated,
@@ -32,8 +33,6 @@ type SearchParams = Promise<{
   pole?: string;
   owner?: string;
   page?: string;
-  sort?: string;
-  dir?: string;
 }>;
 
 export default async function ProspectsListPage({ searchParams }: { searchParams: SearchParams }) {
@@ -47,8 +46,6 @@ export default async function ProspectsListPage({ searchParams }: { searchParams
   const poleCode =
     params.pole && (POLE_CODES as readonly string[]).includes(params.pole) ? params.pole : null;
 
-  // Sales = filtre force sur ses propres prospects (RLS le bloque deja, mais on
-  // matche aussi le filtre UI pour rester coherent).
   const ownerFilter = profile.role === 'admin' ? (params.owner ?? null) : profile.id;
   const page = Math.max(1, Number(params.page ?? '1'));
   const q = params.q?.trim() ?? '';
@@ -62,7 +59,6 @@ export default async function ProspectsListPage({ searchParams }: { searchParams
     perPage: PER_PAGE,
   });
 
-  // Liste des owners pour le select admin (uniquement admin/sales actifs).
   let owners: { id: string; label: string }[] = [];
   if (profile.role === 'admin') {
     const supabase = await createSupabaseServerClient();
@@ -85,17 +81,16 @@ export default async function ProspectsListPage({ searchParams }: { searchParams
         <h1 className="text-md-blue-dark font-[family-name:var(--font-montserrat)] text-2xl font-extrabold tracking-tight">
           Prospects · {total}
         </h1>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild>
-            <Link href="/admin/prospects/new">
-              <Plus className="size-4" aria-hidden />
-              Nouveau prospect
-            </Link>
-          </Button>
-        </div>
+        <Button asChild>
+          <Link href="/admin/prospects/new">
+            <Plus className="size-4" aria-hidden />
+            Nouveau prospect
+          </Link>
+        </Button>
       </div>
 
-      {/* Filtres URL — server-side via form GET */}
+      <SavedViewsBar currentUserId={profile.id} />
+
       <form
         method="get"
         className="bg-card border-md-border flex flex-wrap items-center gap-2 rounded-xl border p-3 shadow-sm"
@@ -171,9 +166,18 @@ export default async function ProspectsListPage({ searchParams }: { searchParams
         )}
       </form>
 
-      <RealProspectsTable rows={rows} />
+      <ProspectsListClient
+        rows={rows}
+        owners={owners}
+        currentRole={profile.role}
+        filters={{
+          q: q || undefined,
+          status: status ?? undefined,
+          pole: poleCode ?? undefined,
+          owner: ownerFilter ?? undefined,
+        }}
+      />
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <Pagination
           currentPage={page}

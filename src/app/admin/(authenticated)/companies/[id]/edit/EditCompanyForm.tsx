@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { POLE_CODES } from '@/lib/design-tokens';
+import { useFieldErrors } from '@/components/admin/use-field-errors';
 import { updateCompanyAction, type UpdateCompanyState } from './actions';
 
 const initialState: UpdateCompanyState = {};
@@ -23,24 +24,30 @@ export type EditableCompany = {
 
 export function EditCompanyForm({ company }: { company: EditableCompany }) {
   const [state, formAction] = useActionState(updateCompanyAction, initialState);
+  const { errors, clear } = useFieldErrors(state.fieldErrors);
+
+  function handleAnyChange(e: React.ChangeEvent<HTMLFormElement>) {
+    const t = e.target as Partial<{ name: string }>;
+    if (t.name) clear(t.name);
+  }
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} onChange={handleAnyChange} className="space-y-6">
       <input type="hidden" name="company_id" value={company.id} />
 
       <Section title="Identite">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Field label="Nom" required error={state.fieldErrors?.name}>
+          <Field label="Nom" required error={errors.name}>
             <Input name="name" required defaultValue={company.name} />
           </Field>
-          <Field label="Domaine principal" error={state.fieldErrors?.primary_domain}>
+          <Field label="Domaine principal" error={errors.primary_domain}>
             <Input name="primary_domain" defaultValue={company.primary_domain ?? ''} />
           </Field>
-          <Field label="Pays (ISO 2)" error={state.fieldErrors?.country}>
+          <Field label="Pays (ISO 2)" required error={errors.country}>
             <Input
               name="country"
               maxLength={2}
-              defaultValue={company.country ?? ''}
+              defaultValue={company.country ?? 'FR'}
               placeholder="FR"
             />
           </Field>
@@ -49,7 +56,7 @@ export function EditCompanyForm({ company }: { company: EditableCompany }) {
 
       <Section title="Classification">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Field label="Categorie" required error={state.fieldErrors?.category}>
+          <Field label="Categorie" required error={errors.category}>
             <select
               name="category"
               required
@@ -61,7 +68,7 @@ export function EditCompanyForm({ company }: { company: EditableCompany }) {
               <option value="non_eligible">Non eligible</option>
             </select>
           </Field>
-          <Field label="Pole" required error={state.fieldErrors?.pole_code}>
+          <Field label="Pole" required error={errors.pole_code}>
             <select
               name="pole_code"
               required

@@ -3,55 +3,34 @@
  * Tous fonctionnent en SSR (server components / server actions) avec
  * createSupabaseServerClient — donc RLS appliquee en fonction du user
  * connecte (admin = tout, sales = ses prospects).
+ *
+ * Les types et constantes "safe pour client" sont dans ./constants.ts
+ * (re-exportes ici pour retro-compatibilite). Ce fichier importe
+ * `next/headers` via createSupabaseServerClient -> ne PAS importer
+ * depuis un Client Component.
  */
 import { createSupabaseServerClient } from './server';
 import type { Database } from './database.types';
+import {
+  PROSPECT_STATUSES,
+  PACK_CODES,
+  PACK_LABEL,
+  type ProspectStatus,
+  type PackCode,
+  type CategoryTarif,
+  type ProspectListItem,
+  type CompanyListItem,
+} from './constants';
 
-export type ProspectStatus = Database['public']['Enums']['prospect_status'];
-export type PackCode = Database['public']['Enums']['pack_code'];
-export type CategoryTarif = Database['public']['Enums']['category_tarif'];
-
-export const PROSPECT_STATUSES: ProspectStatus[] = [
-  'lead',
-  'contact',
-  'devis_envoye',
-  'acompte_paye',
-  'signe',
-  'perdu',
-];
-
-export const PACK_CODES: PackCode[] = ['ACCESS', 'CLASSIC', 'PREMIUM', 'A_DEFINIR'];
-
-export const PACK_LABEL: Record<PackCode, string> = {
-  ACCESS: 'ACCESS',
-  CLASSIC: 'CLASSIC',
-  PREMIUM: 'PREMIUM',
-  A_DEFINIR: 'A definir',
-};
-
-export type ProspectListItem = {
-  id: string;
-  status: ProspectStatus;
-  pack_code: PackCode;
-  estimated_amount: number | null;
-  owner_id: string | null;
-  affiliate_id: string | null;
-  created_at: string;
-  last_activity_at: string;
-  company: {
-    id: string;
-    name: string;
-    category: CategoryTarif;
-    was_prs_2026_exhibitor: boolean;
-    pole: { code: string; name_fr: string } | null;
-  } | null;
-  contact: {
-    id: string;
-    first_name: string | null;
-    last_name: string | null;
-    email: string;
-  } | null;
-  owner: { id: string; full_name: string | null; email: string } | null;
+export {
+  PROSPECT_STATUSES,
+  PACK_CODES,
+  PACK_LABEL,
+  type ProspectStatus,
+  type PackCode,
+  type CategoryTarif,
+  type ProspectListItem,
+  type CompanyListItem,
 };
 
 const PROSPECT_LIST_SELECT = `
@@ -139,17 +118,6 @@ export async function listProspectsPaginated(opts: {
 /**
  * Liste paginee des companies + filtres (pole, categorie, pays, search).
  */
-export type CompanyListItem = {
-  id: string;
-  name: string;
-  primary_domain: string | null;
-  country: string | null;
-  category: CategoryTarif;
-  was_prs_2026_exhibitor: boolean;
-  created_at: string;
-  pole: { code: string; name_fr: string } | null;
-};
-
 export async function listCompaniesPaginated(opts: {
   q?: string;
   poleCode?: string | null;

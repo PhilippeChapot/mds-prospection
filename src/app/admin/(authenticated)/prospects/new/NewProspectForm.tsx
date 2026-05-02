@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CompanyCombobox, type CompanyOption } from '@/components/admin/CompanyCombobox';
+import { useFieldErrors } from '@/components/admin/use-field-errors';
 import { POLE_CODES } from '@/lib/design-tokens';
 import { createProspectAction, type CreateProspectState } from './actions';
 
@@ -27,17 +28,23 @@ export function NewProspectForm({
   prefillCompanyId?: string;
 }) {
   const [state, formAction] = useActionState(createProspectAction, initialState);
+  const { errors, clear } = useFieldErrors(state.fieldErrors);
   const [companyMode, setCompanyMode] = useState<'existing' | 'new'>('existing');
 
   const initialCompany = prefillCompanyId
     ? companies.find((c) => c.id === prefillCompanyId)
     : undefined;
 
+  function handleAnyChange(e: React.ChangeEvent<HTMLFormElement>) {
+    const t = e.target as Partial<{ name: string }>;
+    if (t.name) clear(t.name);
+  }
+
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} onChange={handleAnyChange} className="space-y-6">
       {/* SECTION SOCIETE */}
       <Section title="Societe">
-        <Field label="Societe" htmlFor="company-trigger" error={state.fieldErrors?.company_id}>
+        <Field label="Societe" htmlFor="company-trigger" error={errors.company_id}>
           <CompanyCombobox
             options={companies}
             initialId={initialCompany?.id}
@@ -52,16 +59,16 @@ export function NewProspectForm({
               Nouvelle societe : ces champs creeront une ligne dans <code>companies</code>.
             </p>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <Field label="Nom" required error={state.fieldErrors?.company_name}>
+              <Field label="Nom" required error={errors.company_name}>
                 <Input name="company_name" placeholder="NRJ Group" />
               </Field>
-              <Field label="Domaine principal" error={state.fieldErrors?.company_primary_domain}>
+              <Field label="Domaine principal" error={errors.company_primary_domain}>
                 <Input name="company_primary_domain" placeholder="nrj.fr" />
               </Field>
-              <Field label="Pays (ISO 2)" error={state.fieldErrors?.company_country}>
-                <Input name="company_country" placeholder="FR" maxLength={2} />
+              <Field label="Pays (ISO 2)" required error={errors.company_country}>
+                <Input name="company_country" placeholder="FR" maxLength={2} defaultValue="FR" />
               </Field>
-              <Field label="Categorie" required error={state.fieldErrors?.company_category}>
+              <Field label="Categorie" required error={errors.company_category}>
                 <select
                   name="company_category"
                   className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
@@ -75,7 +82,7 @@ export function NewProspectForm({
                   <option value="non_eligible">Non eligible</option>
                 </select>
               </Field>
-              <Field label="Pole" required error={state.fieldErrors?.company_pole_code}>
+              <Field label="Pole" required error={errors.company_pole_code}>
                 <select
                   name="company_pole_code"
                   className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
@@ -99,19 +106,19 @@ export function NewProspectForm({
       {/* SECTION CONTACT */}
       <Section title="Contact principal">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Field label="Prenom" error={state.fieldErrors?.contact_first_name}>
+          <Field label="Prenom" error={errors.contact_first_name}>
             <Input name="contact_first_name" />
           </Field>
-          <Field label="Nom" error={state.fieldErrors?.contact_last_name}>
+          <Field label="Nom" error={errors.contact_last_name}>
             <Input name="contact_last_name" />
           </Field>
-          <Field label="Email" required error={state.fieldErrors?.contact_email}>
+          <Field label="Email" required error={errors.contact_email}>
             <Input name="contact_email" type="email" required />
           </Field>
-          <Field label="Telephone" error={state.fieldErrors?.contact_phone}>
+          <Field label="Telephone" error={errors.contact_phone}>
             <Input name="contact_phone" type="tel" />
           </Field>
-          <Field label="Fonction / role" error={state.fieldErrors?.contact_role}>
+          <Field label="Fonction / role" error={errors.contact_role}>
             <Input name="contact_role" placeholder="Direction marketing" />
           </Field>
         </div>
@@ -120,7 +127,7 @@ export function NewProspectForm({
       {/* SECTION PROSPECT */}
       <Section title="Prospect">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Field label="Pack" error={state.fieldErrors?.pack_code}>
+          <Field label="Pack" error={errors.pack_code}>
             <select
               name="pack_code"
               className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
@@ -133,7 +140,7 @@ export function NewProspectForm({
             </select>
           </Field>
 
-          <Field label="Statut initial" error={state.fieldErrors?.status}>
+          <Field label="Statut initial" error={errors.status}>
             <select
               name="status"
               className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
@@ -148,12 +155,12 @@ export function NewProspectForm({
             </select>
           </Field>
 
-          <Field label="Montant estime (€ HT)" error={state.fieldErrors?.estimated_amount}>
+          <Field label="Montant estime (€ HT)" error={errors.estimated_amount}>
             <Input name="estimated_amount" placeholder="5 975" inputMode="decimal" />
           </Field>
 
           {currentUser.role === 'admin' ? (
-            <Field label="Owner" required error={state.fieldErrors?.owner_id}>
+            <Field label="Owner" required error={errors.owner_id}>
               <select
                 name="owner_id"
                 className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
@@ -177,7 +184,7 @@ export function NewProspectForm({
           )}
         </div>
 
-        <Field label="Notes" error={state.fieldErrors?.notes}>
+        <Field label="Notes" error={errors.notes}>
           <Textarea name="notes" rows={3} placeholder="Contexte, prochaine action…" />
         </Field>
       </Section>
