@@ -145,6 +145,12 @@ export async function sendDoiEmail(input: SendDoiInput): Promise<void> {
       doiUrl,
     },
     tags: ['doi', `locale:${input.locale}`],
+    // BUG FIX P3 M3 : le compte Brevo de Phil utilise un tracking domain
+    // custom (r.mail.connectonair.com) qui 404 au clic sur les liens DOI.
+    // -> on bypass le tracking pour CE template uniquement.
+    // Pour les futurs emails marketing (P5 lifecycle), on laissera le tracking
+    // actif (utile pour mesurer l'engagement). disableTracking par defaut = false.
+    disableTracking: true,
   });
 }
 
