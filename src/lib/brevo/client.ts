@@ -37,16 +37,32 @@ export interface SendTransactionalEmailParams {
   replyTo?: BrevoRecipient;
   tags?: string[];
   /**
-   * Headers personnalises ajoutes au mail (X-Mailin-*, X-Sib-*, etc).
-   * Voir Brevo doc : https://developers.brevo.com/reference/sendtransacemail
+   * Headers personnalises ajoutes au mail.
+   *
+   * IMPORTANT : Brevo REJETTE avec 400 "Invalid headers" tout header dont
+   * le nom commence par `sib-`, `mailin-`, `x-mailin-`, ou `x-sib-` (case
+   * insensitive). Ces prefixes sont reserves au runtime interne Brevo.
+   * On filtre defensivement avant l'envoi.
+   *
+   * Doc : https://developers.brevo.com/reference/sendtransacemail
    */
   headers?: Record<string, string | number | boolean>;
   /**
-   * Si true, injecte les headers qui desactivent le tracking de clic et
-   * d'ouverture pour CE mail uniquement (sans toucher la config compte).
+   * NO-OP en P3.
    *
-   * Cas d'usage P3 : le DOI passe par le tracker custom du compte Brevo
-   * (configure pour Connectonair) et 404 au clic. On bypass.
+   * Le tracking transactionnel ne se desactive PAS via headers API
+   * (Brevo rejette tout header X-Mailin-Track* / X-Sib-Track* avec
+   * 400 "Invalid headers"). Cf. test reel commit 5988387 -> revert ici.
+   *
+   * Pour desactiver le tracking d'un template :
+   *   - soit au niveau compte : Brevo dashboard > Settings > Tracking
+   *     (impacte tous les templates)
+   *   - soit configurer un custom tracking domain qui resout correctement
+   *     (l'erreur P3 venait du domaine `r.mail.connectonair.com` qui 404)
+   *
+   * On garde la prop dans l'interface pour garder la trace de l'intention
+   * dans le code appelant et pouvoir la cabler proprement plus tard si
+   * Brevo ouvre un mecanisme officiel.
    */
   disableTracking?: boolean;
 }
@@ -71,33 +87,38 @@ function getDefaultSender(): BrevoSender {
 }
 
 /**
- * Headers a injecter quand disableTracking=true.
- *
- * On envoie a la fois les noms canoniques (X-Mailin-*) et les variantes
- * X-Sib-* historiques pour maximiser la compat (rebranding Sendinblue ->
- * Brevo + variations selon comptes).
- *
- * X-Mailin-Track desactive tout d'un coup ; X-Mailin-Track-Clicks et
- * X-Mailin-Track-Opens controlent finement. On envoie les 3.
+ * Prefixes interdits par Brevo dans le champ `headers` du payload API.
+ * Tout header (case insensitive) commencant par un de ces prefixes
+ * declenche un 400 "Invalid headers".
  */
-const TRACKING_DISABLED_HEADERS: Record<string, boolean> = {
-  'X-Mailin-Track': false,
-  'X-Mailin-Track-Clicks': false,
-  'X-Mailin-Track-Opens': false,
-  'X-Sib-Track-Click': false,
-  'X-Sib-Track-Open': false,
-};
+const FORBIDDEN_HEADER_PREFIXES = ['sib-', 'mailin-', 'x-mailin-', 'x-sib-'];
+
+function sanitizeHeaders(
+  raw: Record<string, string | number | boolean> | undefined,
+): Record<string, string | number | boolean> | undefined {
+  if (!raw) return undefined;
+  const cleaned: Record<string, string | number | boolean> = {};
+  for (const [name, value] of Object.entries(raw)) {
+    const lower = name.toLowerCase();
+    const forbidden = FORBIDDEN_HEADER_PREFIXES.some((p) => lower.startsWith(p));
+    if (forbidden) {
+      console.warn(
+        '[brevo] header "%s" filtered out (forbidden prefix sib-/mailin-/x-mailin-/x-sib-)',
+        name,
+      );
+      continue;
+    }
+    cleaned[name] = value;
+  }
+  return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+}
 
 export async function sendTransactionalEmail(
   input: SendTransactionalEmailParams,
 ): Promise<SendTransactionalEmailResult> {
   const apiKey = getApiKey();
   const sender = input.sender ?? getDefaultSender();
-
-  const headers: Record<string, string | number | boolean> = {
-    ...(input.disableTracking ? TRACKING_DISABLED_HEADERS : {}),
-    ...(input.headers ?? {}),
-  };
+  const headers = sanitizeHeaders(input.headers);
 
   const payload = {
     sender,
@@ -106,7 +127,7 @@ export async function sendTransactionalEmail(
     params: input.params ?? {},
     ...(input.replyTo ? { replyTo: input.replyTo } : {}),
     ...(input.tags ? { tags: input.tags } : {}),
-    ...(Object.keys(headers).length > 0 ? { headers } : {}),
+    ...(headers ? { headers } : {}),
   };
 
   const response = await fetch(`${BREVO_API_BASE}/smtp/email`, {
