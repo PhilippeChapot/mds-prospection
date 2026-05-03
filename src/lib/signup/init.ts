@@ -110,11 +110,20 @@ interface BuildDoiUrlInput {
   token: string;
 }
 
+/**
+ * URL DOI dans l'email Brevo : pointe vers la route handler /api/signup/verify
+ * (qui verify + set cookie + redirect 302 vers /[locale]/inscription-exposant/step2).
+ *
+ * On evite de mettre le token dans une page Server Component car Next 15+
+ * interdit cookies().set() depuis un SC. Une route handler peut faire les deux.
+ *
+ * `locale` est passe en query pour que le redirect post-verify aille a la
+ * bonne locale meme si la lecture DB rate (best-effort fallback).
+ */
 export function buildDoiUrl({ locale, token }: BuildDoiUrlInput): string {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-  // Slug FR : /inscription-exposant/<token> ; EN : /exhibitor-registration/<token>.
-  const slug = locale === 'fr' ? 'inscription-exposant' : 'exhibitor-registration';
-  return `${base}/${locale}/${slug}/${encodeURIComponent(token)}`;
+  const params = new URLSearchParams({ token, locale });
+  return `${base}/api/signup/verify?${params.toString()}`;
 }
 
 interface SendDoiInput {

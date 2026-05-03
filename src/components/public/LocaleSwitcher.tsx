@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Globe } from 'lucide-react';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,6 @@ export function LocaleSwitcher() {
   const t = useTranslations('publicNav');
   const router = useRouter();
   const pathname = usePathname();
-  const params = useParams();
   const searchParams = useSearchParams();
   const currentLocale = useLocale() as AppLocale;
   const [isPending, startTransition] = useTransition();
@@ -37,7 +36,7 @@ export function LocaleSwitcher() {
       // mapping, le type strict de pathnames n'apporte rien ici.
       router.replace(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { pathname: pathname as any, params: params as any, query },
+        { pathname: pathname as any, query },
         { locale },
       );
     });

@@ -23,9 +23,9 @@ export const PATHNAMES = {
     fr: '/inscription-exposant/verifiez-votre-email',
     en: '/exhibitor-registration/check-email',
   },
-  '/inscription-exposant/[token]': {
-    fr: '/inscription-exposant/[token]',
-    en: '/exhibitor-registration/[token]',
+  '/inscription-exposant/step2': {
+    fr: '/inscription-exposant/etape-2',
+    en: '/exhibitor-registration/step-2',
   },
   '/merci': {
     fr: '/merci',
