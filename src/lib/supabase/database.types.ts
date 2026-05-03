@@ -1011,6 +1011,7 @@ export type Database = {
           description_short_fr: string | null;
           id: string;
           is_active: boolean;
+          marseille_supplement_eur_ht: number | null;
           pack_code: Database['public']['Enums']['pack_code'];
           pole_restrictions: string[] | null;
           price_eur_ht: number;
@@ -1026,6 +1027,7 @@ export type Database = {
           description_short_fr?: string | null;
           id?: string;
           is_active?: boolean;
+          marseille_supplement_eur_ht?: number | null;
           pack_code: Database['public']['Enums']['pack_code'];
           pole_restrictions?: string[] | null;
           price_eur_ht: number;
@@ -1041,6 +1043,7 @@ export type Database = {
           description_short_fr?: string | null;
           id?: string;
           is_active?: boolean;
+          marseille_supplement_eur_ht?: number | null;
           pack_code?: Database['public']['Enums']['pack_code'];
           pole_restrictions?: string[] | null;
           price_eur_ht?: number;

@@ -82,7 +82,6 @@ export default async function Step2Page({ params }: PageProps) {
       </p>
       {isCaseA ? (
         <Step2WizardCaseA
-          signupId={signup.id}
           locale={locale as 'fr' | 'en'}
           firstName={firstName}
           companyName={companyName}
@@ -91,7 +90,6 @@ export default async function Step2Page({ params }: PageProps) {
         />
       ) : (
         <Step2WizardCaseB
-          signupId={signup.id}
           locale={locale as 'fr' | 'en'}
           firstName={firstName}
           companyName={companyName}

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
-import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle, Lock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,18 +14,13 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  PAYMENT_PATHS,
-  type PaymentPath,
-  type BoothEvent,
-  step2CaseASchema,
-} from '@/lib/signup/step2-schema';
-import type { Step2Data, AddonOption, BoothOption, PricingTier } from '@/lib/signup/step2-data';
+import { PAYMENT_PATHS, type PaymentPath, step2CaseASchema } from '@/lib/signup/step2-schema';
+import type { Step2Data, AddonOption, PricingTier } from '@/lib/signup/step2-data';
 import { cn } from '@/lib/utils';
 
 interface Props {
-  signupId: string;
   locale: 'fr' | 'en';
   firstName: string;
   companyName: string;
@@ -36,8 +31,9 @@ interface Props {
 interface DraftA {
   packCode?: 'ACCESS' | 'CLASSIC' | 'PREMIUM';
   pricingTierId?: string;
-  salons: BoothEvent[];
-  boothId?: string;
+  // Paris est TOUJOURS selectionne (impose par l'UI). Pas dans le state.
+  marseilleSelected: boolean;
+  boothPreferences: [string, string, string];
   addonIds: string[];
   paymentPath?: PaymentPath;
   cgvAccepted: boolean;
@@ -45,17 +41,28 @@ interface DraftA {
 
 const VAT_RATE_FR = 0.2;
 
+function emptyBoothPreferences(): [string, string, string] {
+  return ['', '', ''];
+}
+
 export function Step2WizardCaseA({ locale, firstName, companyName, data, initialDraft }: Props) {
   const t = useTranslations('signup.step2.caseA');
   const router = useRouter();
 
   const [draft, setDraft] = useState<DraftA>(() => {
-    const d = initialDraft as Partial<DraftA>;
+    const d = initialDraft as Partial<DraftA> & { boothPreferences?: string[] };
+    const prefs = Array.isArray(d.boothPreferences)
+      ? ([
+          d.boothPreferences[0] ?? '',
+          d.boothPreferences[1] ?? '',
+          d.boothPreferences[2] ?? '',
+        ] as [string, string, string])
+      : emptyBoothPreferences();
     return {
       packCode: d.packCode,
       pricingTierId: d.pricingTierId,
-      salons: Array.isArray(d.salons) ? (d.salons as BoothEvent[]) : [],
-      boothId: d.boothId,
+      marseilleSelected: d.marseilleSelected === true,
+      boothPreferences: prefs,
       addonIds: Array.isArray(d.addonIds) ? (d.addonIds as string[]) : [],
       paymentPath: d.paymentPath,
       cgvAccepted: false,
@@ -70,56 +77,56 @@ export function Step2WizardCaseA({ locale, firstName, companyName, data, initial
     [data.pricingTiers],
   );
 
-  const filteredBooths = useMemo(() => {
-    if (draft.salons.length === 0) return [];
-    return data.booths.filter((b) => draft.salons.includes(b.event as BoothEvent));
-  }, [data.booths, draft.salons]);
-
-  const filteredAddons = useMemo(() => {
-    if (draft.salons.length === 0) return [];
-    return data.addons.filter((a) => {
-      if (a.scope === 'both') return true;
-      if (a.scope === 'prs_only') return draft.salons.includes('paris');
-      if (a.scope === 'mds_only') return draft.salons.includes('marseille');
-      return false;
-    });
-  }, [data.addons, draft.salons]);
-
   const selectedTier = useMemo(
     () => tiers.find((p) => p.id === draft.pricingTierId),
     [tiers, draft.pricingTierId],
   );
+
+  // Addons : Paris est toujours present => prs_only et both passent.
+  // Marseille passe si marseilleSelected => mds_only s'affiche.
+  const filteredAddons = useMemo(() => {
+    return data.addons.filter((a) => {
+      if (a.scope === 'both') return true;
+      if (a.scope === 'prs_only') return true; // Paris toujours selectionne
+      if (a.scope === 'mds_only') return draft.marseilleSelected;
+      return false;
+    });
+  }, [data.addons, draft.marseilleSelected]);
+
   const selectedAddons = useMemo(
     () => data.addons.filter((a) => draft.addonIds.includes(a.id)),
     [data.addons, draft.addonIds],
   );
 
+  const marseilleSupplement = useMemo(() => {
+    if (!draft.marseilleSelected) return 0;
+    return selectedTier?.marseilleSupplementEurHt ?? 0;
+  }, [draft.marseilleSelected, selectedTier]);
+
   const totalHt = useMemo(() => {
     const packPrice = selectedTier?.priceEurHt ?? 0;
     const addonsTotal = selectedAddons.reduce((acc, a) => acc + a.priceEurHt, 0);
-    return packPrice + addonsTotal;
-  }, [selectedTier, selectedAddons]);
+    return packPrice + marseilleSupplement + addonsTotal;
+  }, [selectedTier, selectedAddons, marseilleSupplement]);
 
-  // En P3 : TVA 20% si FR (par defaut), 0% sinon. La VAT VIES est P4.
-  // Pour P3, on ne sait pas le pays exposant ici (pas dans le signup row).
-  // -> On affiche TVA 20% par defaut. L'admin verra le pays a la conversion.
   const vatRate = VAT_RATE_FR;
   const totalVat = totalHt * vatRate;
   const totalTtc = totalHt + totalVat;
 
-  const section1Valid = !!draft.packCode && !!draft.pricingTierId && draft.salons.length > 0;
-  const section2Valid = section1Valid && !!draft.boothId;
+  const allBoothPrefsFilled = draft.boothPreferences.every((p) => p.trim().length > 0);
+  const section1Valid = !!draft.packCode && !!draft.pricingTierId;
+  const section2Valid = section1Valid && allBoothPrefsFilled;
   const section3Valid = section2Valid && !!draft.paymentPath && draft.cgvAccepted;
 
-  // Auto-save partiel a chaque changement (debounce 800ms).
-  // setTimeout est dans un callback async -> respecte react-hooks/set-state-in-effect.
+  // Auto-save partiel debounce 800ms.
   useEffect(() => {
     const payload = {
       mode: 'caseA' as const,
       packCode: draft.packCode,
       pricingTierId: draft.pricingTierId,
-      salons: draft.salons,
-      boothId: draft.boothId,
+      parisSelected: true,
+      marseilleSelected: draft.marseilleSelected,
+      boothPreferences: draft.boothPreferences.filter((p) => p.trim().length > 0),
       addonIds: draft.addonIds,
       paymentPath: draft.paymentPath,
     };
@@ -130,15 +137,15 @@ export function Step2WizardCaseA({ locale, firstName, companyName, data, initial
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
       }).catch(() => {
-        // Silent — best effort. L'utilisateur peut quand meme submit.
+        /* best effort */
       });
     }, 800);
     return () => clearTimeout(id);
   }, [
     draft.packCode,
     draft.pricingTierId,
-    draft.salons,
-    draft.boothId,
+    draft.marseilleSelected,
+    draft.boothPreferences,
     draft.addonIds,
     draft.paymentPath,
   ]);
@@ -151,8 +158,9 @@ export function Step2WizardCaseA({ locale, firstName, companyName, data, initial
       mode: 'caseA',
       packCode: draft.packCode,
       pricingTierId: draft.pricingTierId,
-      salons: draft.salons,
-      boothId: draft.boothId,
+      parisSelected: true,
+      marseilleSelected: draft.marseilleSelected,
+      boothPreferences: draft.boothPreferences,
       addonIds: draft.addonIds,
       paymentPath: draft.paymentPath,
       cgvAccepted: draft.cgvAccepted,
@@ -175,42 +183,31 @@ export function Step2WizardCaseA({ locale, firstName, companyName, data, initial
         setSubmitting(false);
         return;
       }
-      const data = (await res.json()) as { success: boolean; ref?: string };
-      if (!data.success || !data.ref) {
+      const result = (await res.json()) as { success: boolean; ref?: string };
+      if (!result.success || !result.ref) {
         setSubmitError(t('needAllStepsValid'));
         setSubmitting(false);
         return;
       }
-      router.push({ pathname: '/merci', query: { s: data.ref } });
+      router.push({ pathname: '/merci', query: { s: result.ref } });
     } catch {
       setSubmitError(t('needAllStepsValid'));
       setSubmitting(false);
     }
   }
 
-  function chooseSalons(event: BoothEvent, checked: boolean) {
-    setDraft((d) => {
-      const next = checked
-        ? [...new Set([...d.salons, event])]
-        : d.salons.filter((e) => e !== event);
-      // Reset booth si la selection change (le booth peut ne plus etre valide)
-      const boothStillValid =
-        d.boothId &&
-        data.booths.some((b) => b.id === d.boothId && next.includes(b.event as BoothEvent));
-      return {
-        ...d,
-        salons: next,
-        boothId: boothStillValid ? d.boothId : undefined,
-        addonIds: d.addonIds.filter((id) => {
-          const a = data.addons.find((x) => x.id === id);
-          if (!a) return false;
-          if (a.scope === 'both') return true;
-          if (a.scope === 'prs_only') return next.includes('paris');
-          if (a.scope === 'mds_only') return next.includes('marseille');
-          return false;
-        }),
-      };
-    });
+  function toggleMarseille(checked: boolean) {
+    setDraft((d) => ({
+      ...d,
+      marseilleSelected: checked,
+      // Si on decoche Marseille, virer les addons mds_only.
+      addonIds: checked
+        ? d.addonIds
+        : d.addonIds.filter((id) => {
+            const a = data.addons.find((x) => x.id === id);
+            return a?.scope !== 'mds_only';
+          }),
+    }));
   }
 
   function chooseAddon(addonId: string, checked: boolean) {
@@ -228,6 +225,14 @@ export function Step2WizardCaseA({ locale, firstName, companyName, data, initial
       packCode: tier.packCode as 'ACCESS' | 'CLASSIC' | 'PREMIUM',
       pricingTierId: tier.id,
     }));
+  }
+
+  function setBoothPref(idx: 0 | 1 | 2, value: string) {
+    setDraft((d) => {
+      const next = [...d.boothPreferences] as [string, string, string];
+      next[idx] = value;
+      return { ...d, boothPreferences: next };
+    });
   }
 
   return (
@@ -256,25 +261,6 @@ export function Step2WizardCaseA({ locale, firstName, companyName, data, initial
               </span>
             </AccordionTrigger>
             <AccordionContent className="space-y-6">
-              {/* Salons */}
-              <fieldset className="space-y-3">
-                <legend className="text-md-text text-sm font-semibold">{t('salonsLegend')}</legend>
-                <div className="grid gap-2">
-                  <SalonCheckbox
-                    id="salon-paris"
-                    checked={draft.salons.includes('paris')}
-                    onChange={(c) => chooseSalons('paris', c)}
-                    label={t('salonParis')}
-                  />
-                  <SalonCheckbox
-                    id="salon-marseille"
-                    checked={draft.salons.includes('marseille')}
-                    onChange={(c) => chooseSalons('marseille', c)}
-                    label={t('salonMarseille')}
-                  />
-                </div>
-              </fieldset>
-
               {/* Pack */}
               <fieldset className="space-y-3">
                 <legend className="text-md-text text-sm font-semibold">{t('packLegend')}</legend>
@@ -291,6 +277,34 @@ export function Step2WizardCaseA({ locale, firstName, companyName, data, initial
                 </div>
               </fieldset>
 
+              {/* Salons */}
+              <fieldset className="space-y-3">
+                <legend className="text-md-text text-sm font-semibold">{t('salonsLegend')}</legend>
+                <div className="grid gap-2">
+                  {/* Paris : pre-coche, disabled */}
+                  <div className="border-md-magenta bg-md-magenta/5 flex items-start gap-3 rounded-md border p-3">
+                    <div className="mt-0.5">
+                      <Checkbox checked disabled aria-label={t('salonParis')} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-md-text text-sm font-medium">{t('salonParis')}</p>
+                      <p className="text-md-text-muted mt-0.5 flex items-center gap-1 text-xs">
+                        <Lock className="h-3 w-3" aria-hidden />
+                        {t('salonParisIncluded')}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Marseille : optionnel, supplement live */}
+                  <MarseilleCheckbox
+                    checked={draft.marseilleSelected}
+                    supplement={selectedTier?.marseilleSupplementEurHt ?? null}
+                    onChange={toggleMarseille}
+                    disabled={!selectedTier}
+                  />
+                </div>
+              </fieldset>
+
               <NextButton
                 disabled={!section1Valid}
                 onClick={() => setOpenSection('booth')}
@@ -299,7 +313,7 @@ export function Step2WizardCaseA({ locale, firstName, companyName, data, initial
             </AccordionContent>
           </AccordionItem>
 
-          {/* === Section 2 — Booth & Options === */}
+          {/* === Section 2 — Emplacement & Options === */}
           <AccordionItem value="booth">
             <AccordionTrigger disabled={!section1Valid}>
               <span className="flex items-center gap-2">
@@ -324,27 +338,35 @@ export function Step2WizardCaseA({ locale, firstName, companyName, data, initial
                 </div>
               )}
 
-              {/* Booth select */}
-              <fieldset className="space-y-2">
-                <legend className="text-md-text text-sm font-semibold">{t('boothLegend')}</legend>
-                {filteredBooths.length === 0 ? (
-                  <p className="text-md-text-muted text-xs">{t('boothNoneAvailable')}</p>
-                ) : (
-                  <select
-                    value={draft.boothId ?? ''}
-                    onChange={(e) =>
-                      setDraft((d) => ({ ...d, boothId: e.target.value || undefined }))
-                    }
-                    className="border-md-border focus:border-md-blue focus:ring-md-blue/20 h-10 w-full rounded-md border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
-                  >
-                    <option value="">—</option>
-                    {filteredBooths.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {boothLabel(b)}
-                      </option>
-                    ))}
-                  </select>
-                )}
+              {/* Booth preferences (3 inputs texte) */}
+              <fieldset className="space-y-3">
+                <legend className="text-md-text text-sm font-semibold">
+                  {t('boothPreferencesLegend')}
+                </legend>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <BoothPrefInput
+                    idx={0}
+                    label={t('boothPreference1')}
+                    value={draft.boothPreferences[0]}
+                    placeholder={t('boothPreferencesPlaceholder')}
+                    onChange={(v) => setBoothPref(0, v)}
+                  />
+                  <BoothPrefInput
+                    idx={1}
+                    label={t('boothPreference2')}
+                    value={draft.boothPreferences[1]}
+                    placeholder={t('boothPreferencesPlaceholder')}
+                    onChange={(v) => setBoothPref(1, v)}
+                  />
+                  <BoothPrefInput
+                    idx={2}
+                    label={t('boothPreference3')}
+                    value={draft.boothPreferences[2]}
+                    placeholder={t('boothPreferencesPlaceholder')}
+                    onChange={(v) => setBoothPref(2, v)}
+                  />
+                </div>
+                <p className="text-md-text-muted text-xs italic">{t('boothPreferencesHelp')}</p>
               </fieldset>
 
               {/* Addons */}
@@ -393,6 +415,8 @@ export function Step2WizardCaseA({ locale, firstName, companyName, data, initial
               {/* Recap HT/TVA/TTC */}
               <SummaryBox
                 tier={selectedTier}
+                marseilleSelected={draft.marseilleSelected}
+                marseilleSupplement={marseilleSupplement}
                 addons={selectedAddons}
                 totalHt={totalHt}
                 vatRate={vatRate}
@@ -456,25 +480,79 @@ export function Step2WizardCaseA({ locale, firstName, companyName, data, initial
 
 // ===== Sub-components =====
 
-function SalonCheckbox({
-  id,
+function MarseilleCheckbox({
   checked,
+  supplement,
   onChange,
-  label,
+  disabled,
 }: {
-  id: string;
   checked: boolean;
+  supplement: number | null;
   onChange: (c: boolean) => void;
-  label: string;
+  disabled: boolean;
 }) {
+  const t = useTranslations('signup.step2.caseA');
+  const id = 'salon-marseille';
+  const unavailable = supplement == null;
+
   return (
     <label
       htmlFor={id}
-      className="border-md-border has-[input[data-state=checked]]:border-md-magenta has-[input[data-state=checked]]:bg-md-magenta/5 flex cursor-pointer items-center gap-3 rounded-md border bg-white p-3 transition-colors"
+      className={cn(
+        'border-md-border has-[input[data-state=checked]]:border-md-magenta has-[input[data-state=checked]]:bg-md-magenta/5 flex cursor-pointer items-start gap-3 rounded-md border bg-white p-3 transition-colors',
+        (disabled || unavailable) && 'cursor-not-allowed opacity-60',
+      )}
     >
-      <Checkbox id={id} checked={checked} onCheckedChange={(c) => onChange(c === true)} />
-      <span className="text-md-text text-sm">{label}</span>
+      <div className="mt-0.5">
+        <Checkbox
+          id={id}
+          checked={checked}
+          disabled={disabled || unavailable}
+          onCheckedChange={(c) => onChange(c === true)}
+        />
+      </div>
+      <div className="flex-1">
+        <p className="text-md-text text-sm font-medium">{t('salonMarseille')}</p>
+        <p className="text-md-text-muted mt-0.5 text-xs">
+          {unavailable
+            ? disabled
+              ? '—'
+              : t('salonMarseilleUnavailable')
+            : t('salonMarseilleAdd', { price: formatEur(supplement) })}
+        </p>
+      </div>
     </label>
+  );
+}
+
+function BoothPrefInput({
+  idx,
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  idx: number;
+  label: string;
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+}) {
+  const id = `booth-pref-${idx}`;
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-md-text text-xs font-semibold">
+        {label} <span className="text-md-magenta">*</span>
+      </Label>
+      <Input
+        id={id}
+        value={value}
+        placeholder={placeholder}
+        maxLength={20}
+        onChange={(e) => onChange(e.target.value.toUpperCase())}
+        className="uppercase"
+      />
+    </div>
   );
 }
 
@@ -523,7 +601,6 @@ function AddonsList({
   if (addons.length === 0) {
     return <p className="text-md-text-muted text-xs">—</p>;
   }
-  // Group by category
   const grouped = addons.reduce<Record<string, AddonOption[]>>((acc, a) => {
     (acc[a.category] = acc[a.category] || []).push(a);
     return acc;
@@ -594,6 +671,8 @@ function PaymentRadio({ path }: { path: PaymentPath }) {
 
 function SummaryBox({
   tier,
+  marseilleSelected,
+  marseilleSupplement,
   addons,
   totalHt,
   vatRate,
@@ -602,6 +681,8 @@ function SummaryBox({
   locale,
 }: {
   tier?: PricingTier;
+  marseilleSelected: boolean;
+  marseilleSupplement: number;
   addons: AddonOption[];
   totalHt: number;
   vatRate: number;
@@ -620,11 +701,15 @@ function SummaryBox({
   return (
     <div className="bg-md-bg-soft/60 space-y-2 rounded-md p-4 text-sm">
       <div className="flex items-center justify-between">
-        <span className="text-md-text">
-          Pack {tier.packCode} {locale === 'fr' ? '(prs_exhibitor)' : '(PRS exhibitor)'}
-        </span>
+        <span className="text-md-text">{t('summaryPackLine', { pack: tier.packCode })}</span>
         <span className="text-md-text font-medium">{formatEur(tier.priceEurHt)} €</span>
       </div>
+      {marseilleSelected && marseilleSupplement > 0 && (
+        <div className="flex items-center justify-between">
+          <span className="text-md-text">{t('summaryMarseille')}</span>
+          <span className="text-md-text font-medium">+{formatEur(marseilleSupplement)} €</span>
+        </div>
+      )}
       {addons.map((a) => (
         <div key={a.id} className="flex items-center justify-between">
           <span className="text-md-text-muted">+ {locale === 'fr' ? a.nameFr : a.nameEn}</span>
@@ -670,17 +755,6 @@ function NextButton({
       </Button>
     </div>
   );
-}
-
-function boothLabel(b: BoothOption): string {
-  const parts = [
-    b.event === 'paris' ? 'Paris' : b.event === 'marseille' ? 'Marseille' : 'Bruxelles',
-    b.code,
-  ];
-  if (b.label) parts.push(b.label);
-  if (b.surfaceM2) parts.push(`${b.surfaceM2} m²`);
-  if (b.poleCode) parts.push(b.poleCode);
-  return parts.join(' · ');
 }
 
 function formatEur(amount: number): string {

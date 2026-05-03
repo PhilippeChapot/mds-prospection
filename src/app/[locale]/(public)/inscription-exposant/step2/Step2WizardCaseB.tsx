@@ -21,7 +21,6 @@ import {
 } from '@/lib/signup/step2-schema';
 
 interface Props {
-  signupId: string;
   locale: 'fr' | 'en';
   firstName: string;
   companyName: string;

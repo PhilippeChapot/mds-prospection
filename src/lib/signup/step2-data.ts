@@ -18,6 +18,11 @@ export interface PricingTier {
   packCode: 'ACCESS' | 'CLASSIC' | 'PREMIUM' | 'A_DEFINIR';
   category: 'prs_exhibitor' | 'standard';
   priceEurHt: number;
+  /**
+   * Supplement HT pour ajouter MDS Marseille au pack PRS.
+   * null = Marseille non disponible pour ce (pack, category).
+   */
+  marseilleSupplementEurHt: number | null;
   descriptionShortFr: string | null;
   descriptionShortEn: string | null;
   descriptionFullFr: string | null;
@@ -79,7 +84,7 @@ export async function loadStep2Data(): Promise<Step2Data | null> {
     supabase
       .from('pricing_tiers')
       .select(
-        'id, pack_code, category, price_eur_ht, description_short_fr, description_short_en, description_full_fr, description_full_en',
+        'id, pack_code, category, price_eur_ht, marseille_supplement_eur_ht, description_short_fr, description_short_en, description_full_fr, description_full_en',
       )
       .eq('season_id', season.id)
       .eq('is_active', true)
@@ -107,6 +112,8 @@ export async function loadStep2Data(): Promise<Step2Data | null> {
     packCode: t.pack_code,
     category: t.category as 'prs_exhibitor' | 'standard',
     priceEurHt: Number(t.price_eur_ht),
+    marseilleSupplementEurHt:
+      t.marseille_supplement_eur_ht != null ? Number(t.marseille_supplement_eur_ht) : null,
     descriptionShortFr: t.description_short_fr,
     descriptionShortEn: t.description_short_en,
     descriptionFullFr: t.description_full_fr,

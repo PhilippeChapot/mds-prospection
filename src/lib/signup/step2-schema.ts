@@ -19,21 +19,43 @@ export const BOOTH_EVENTS = ['paris', 'marseille'] as const;
 export type BoothEvent = (typeof BOOTH_EVENTS)[number];
 
 // ----- Cas A : payload final -----
+//
+// Realite business P3 :
+//   - Paris est TOUJOURS selectionne (parisSelected=true force par l'UI).
+//   - Marseille est OPTIONNEL (supplement HT depend du pack).
+//   - L'emplacement physique se choisit en 3 preferences textuelles
+//     (boothPreferences = ["B3", "C5", "D2"]) — booth_inventory reste
+//     vide en P3, l'admin assignera manuellement en P4.
 export const step2CaseASchema = z.object({
   mode: z.literal('caseA'),
   packCode: z.enum(['ACCESS', 'CLASSIC', 'PREMIUM']),
   pricingTierId: z.string().uuid(),
-  salons: z.array(z.enum(BOOTH_EVENTS)).min(1),
-  boothId: z.string().uuid(),
+  parisSelected: z.literal(true),
+  marseilleSelected: z.boolean(),
+  boothPreferences: z.tuple([
+    z.string().trim().min(1).max(20),
+    z.string().trim().min(1).max(20),
+    z.string().trim().min(1).max(20),
+  ]),
   addonIds: z.array(z.string().uuid()),
   paymentPath: z.enum(PAYMENT_PATHS),
   cgvAccepted: z.literal(true),
 });
 export type Step2CaseAPayload = z.infer<typeof step2CaseASchema>;
 
-// ----- Cas A : payload partiel (save autorise tous les champs optionnels) -----
-export const step2CaseAPartialSchema = step2CaseASchema.partial().extend({
+// ----- Cas A : payload partiel (save autorise champs optionnels)
+// On garde literal(true) sur parisSelected mais facultatif dans le partial,
+// et boothPreferences en array de 0..3 strings au lieu du tuple strict.
+export const step2CaseAPartialSchema = z.object({
   mode: z.literal('caseA'),
+  packCode: z.enum(['ACCESS', 'CLASSIC', 'PREMIUM']).optional(),
+  pricingTierId: z.string().uuid().optional(),
+  parisSelected: z.boolean().optional(),
+  marseilleSelected: z.boolean().optional(),
+  boothPreferences: z.array(z.string().trim().max(20)).max(3).optional(),
+  addonIds: z.array(z.string().uuid()).optional(),
+  paymentPath: z.enum(PAYMENT_PATHS).optional(),
+  cgvAccepted: z.boolean().optional(),
 });
 export type Step2CaseAPartialPayload = z.infer<typeof step2CaseAPartialSchema>;
 
