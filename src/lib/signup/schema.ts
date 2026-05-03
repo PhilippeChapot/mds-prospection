@@ -47,26 +47,18 @@ export const signupStep1Schema = z.object({
   companyCountry: z.enum(SUPPORTED_COUNTRIES),
   firstName: z.string().trim().min(1).max(80),
   lastName: z.string().trim().min(1).max(80),
-  phone: z
-    .string()
-    .trim()
-    .max(40)
-    .optional()
-    .nullable()
-    .transform((v) => (v && v.length > 0 ? v : null)),
+  phone: z.string().trim().max(40).nullable(),
   category: z.enum(SIGNUP_CATEGORIES),
-  consentRgpd: z.literal(true, {
-    message: 'consentRgpdRequired',
-  }),
-  consentMarketing: z.boolean().default(false),
-  hcaptchaToken: z.string().optional().nullable(),
-  honeypot: z.string().max(0).optional().nullable(),
+  consentRgpd: z.boolean().refine((v) => v === true, { message: 'consentRgpdRequired' }),
+  consentMarketing: z.boolean(),
+  hcaptchaToken: z.string().nullable(),
+  honeypot: z.string().max(0, { message: 'honeypot' }).nullable(),
   locale: z.enum(SIGNUP_LOCALES),
   // Champs de tracking optionnels (remplis cote client depuis URL).
-  utmSource: z.string().max(120).optional().nullable(),
-  utmMedium: z.string().max(120).optional().nullable(),
-  utmCampaign: z.string().max(120).optional().nullable(),
-  referrer: z.string().max(500).optional().nullable(),
+  utmSource: z.string().max(120).nullable(),
+  utmMedium: z.string().max(120).nullable(),
+  utmCampaign: z.string().max(120).nullable(),
+  referrer: z.string().max(500).nullable(),
 });
 
 export type SignupStep1Input = z.infer<typeof signupStep1Schema>;

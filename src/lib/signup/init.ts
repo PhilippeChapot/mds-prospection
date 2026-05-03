@@ -1,0 +1,271 @@
+/**
+ * Logique metier de POST /api/signup/init.
+ *
+ * Decouple de la route handler pour pouvoir etre testee/reutilisee
+ * (resend-doi reuse une partie des helpers).
+ */
+
+import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { verifyHCaptchaToken } from '@/lib/hcaptcha/verify';
+import { verifyEmailDeliverability, isDeliverable } from '@/lib/neverbounce/verify';
+import { classifySignup, extractEmailDomain } from '@/lib/ai/classify-signup';
+import { signDoiToken, computeDoiExpiresAt } from '@/lib/doi/jwt';
+import { sendTransactionalEmail, getDoiTemplateId } from '@/lib/brevo/client';
+import freeProviders from 'free-email-domains';
+import disposableProviders from 'disposable-email-domains';
+import type { SignupStep1Input, SignupInitErrorCode } from './schema';
+
+export interface InitSignupResult {
+  ok: boolean;
+  signupId?: string;
+  error?: SignupInitErrorCode;
+}
+
+const FREE_PROVIDER_SET = new Set<string>(freeProviders as string[]);
+const DISPOSABLE_PROVIDER_SET = new Set<string>(disposableProviders as string[]);
+
+/**
+ * Map NeverBounce result + domain heuristics -> public.email_validation_status enum.
+ */
+function mapEmailValidationStatus(
+  neverBounceResult: string,
+  emailDomain: string | null,
+): 'valid' | 'free_provider' | 'disposable' | 'domain_mismatch' {
+  if (neverBounceResult === 'disposable') return 'disposable';
+  if (emailDomain && DISPOSABLE_PROVIDER_SET.has(emailDomain)) return 'disposable';
+  if (emailDomain && FREE_PROVIDER_SET.has(emailDomain)) return 'free_provider';
+  return 'valid';
+}
+
+/**
+ * Calcule la categorie tarifaire derivee depuis category declaree
+ * + statut PRS de la societe matchee.
+ *
+ *   exposant + societe PRS connue          -> prs_exhibitor (Cas A)
+ *   exposant + societe non PRS / inconnue  -> standard      (Cas B)
+ *   partenaire                              -> standard      (Cas B)
+ */
+async function deriveCategory(
+  category: 'exposant' | 'partenaire',
+  companyId: string | null,
+): Promise<'prs_exhibitor' | 'standard' | 'non_eligible'> {
+  if (category === 'partenaire') return 'standard';
+  if (!companyId) return 'standard';
+
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from('companies')
+    .select('was_prs_2026_exhibitor')
+    .eq('id', companyId)
+    .maybeSingle();
+
+  if (error || !data) return 'standard';
+  return data.was_prs_2026_exhibitor ? 'prs_exhibitor' : 'standard';
+}
+
+/**
+ * Anti-doublon : verifie qu'aucun signup pending dans les 24h pour cet email
+ * + qu'aucun contact deja lie a un prospect actif.
+ */
+async function checkDuplicates(email: string): Promise<SignupInitErrorCode | null> {
+  const supabase = getSupabaseServiceClient();
+  const lowerEmail = email.toLowerCase();
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  // 1. Pending signup recent ?
+  const { data: pending } = await supabase
+    .from('public_signup_attempts')
+    .select('id')
+    .ilike('email', lowerEmail)
+    .eq('status', 'awaiting_verification')
+    .gte('created_at', since)
+    .limit(1);
+
+  if (pending && pending.length > 0) {
+    return 'email_duplicate_recent';
+  }
+
+  // 2. Contact deja lie a un prospect actif ?
+  // On filtre sur les statuts non-finaux (lead/qualified/quoted/etc, exclut 'lost').
+  const { data: contacts } = await supabase
+    .from('contacts')
+    .select('id, prospects:prospects!primary_contact_id(id, status)')
+    .ilike('email', lowerEmail)
+    .limit(5);
+
+  if (contacts && contacts.length > 0) {
+    for (const contact of contacts) {
+      const prospects = contact.prospects as Array<{ status: string }> | null;
+      if (prospects && prospects.some((p) => p.status !== 'lost')) {
+        return 'email_duplicate_prospect';
+      }
+    }
+  }
+
+  return null;
+}
+
+interface BuildDoiUrlInput {
+  locale: 'fr' | 'en';
+  token: string;
+}
+
+export function buildDoiUrl({ locale, token }: BuildDoiUrlInput): string {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  // Slug FR : /inscription-exposant/<token> ; EN : /exhibitor-registration/<token>.
+  const slug = locale === 'fr' ? 'inscription-exposant' : 'exhibitor-registration';
+  return `${base}/${locale}/${slug}/${encodeURIComponent(token)}`;
+}
+
+interface SendDoiInput {
+  email: string;
+  firstName: string;
+  locale: 'fr' | 'en';
+  token: string;
+}
+
+export async function sendDoiEmail(input: SendDoiInput): Promise<void> {
+  const templateId = getDoiTemplateId(input.locale);
+  const doiUrl = buildDoiUrl({ locale: input.locale, token: input.token });
+
+  await sendTransactionalEmail({
+    to: [{ email: input.email, name: input.firstName }],
+    templateId,
+    params: {
+      firstName: input.firstName,
+      doiUrl,
+    },
+    tags: ['doi', `locale:${input.locale}`],
+  });
+}
+
+interface InitSignupContext {
+  ip: string;
+  userAgent: string | null;
+}
+
+export async function initSignup(
+  input: SignupStep1Input,
+  ctx: InitSignupContext,
+): Promise<InitSignupResult> {
+  // 1. Honeypot rempli -> 200 silencieux pour ne pas reveler la regle au bot.
+  if (input.honeypot && input.honeypot.length > 0) {
+    return { ok: true, signupId: 'honeypot-noop' };
+  }
+
+  // 2. hCaptcha
+  const captcha = await verifyHCaptchaToken(input.hcaptchaToken ?? null, ctx.ip);
+  if (!captcha.success) {
+    return { ok: false, error: 'captcha_failed' };
+  }
+
+  // 3. NeverBounce
+  const nb = await verifyEmailDeliverability(input.email);
+  if (!isDeliverable(nb.result)) {
+    return { ok: false, error: 'email_undeliverable' };
+  }
+
+  // 4. Anti-doublon
+  const dup = await checkDuplicates(input.email);
+  if (dup) {
+    return { ok: false, error: dup };
+  }
+
+  // 5. Classification IA (best-effort, swallow errors)
+  const emailDomain = extractEmailDomain(input.email);
+  const aiResult = await classifySignup({
+    companyName: input.companyName,
+    companyCountry: input.companyCountry,
+    contactFirstName: input.firstName,
+    contactLastName: input.lastName,
+    category: input.category,
+    emailDomain,
+  });
+
+  // 6. Derived category (Cas A vs Cas B)
+  const derivedCategory = await deriveCategory(input.category, input.companyId ?? null);
+
+  // 7. INSERT signup (status=awaiting_verification, doi_token vide pour l'instant)
+  const supabase = getSupabaseServiceClient();
+  const emailValidationStatus = mapEmailValidationStatus(nb.result, emailDomain);
+  const isNewCompany = !input.companyId;
+
+  const { data: inserted, error: insertError } = await supabase
+    .from('public_signup_attempts')
+    .insert({
+      email: input.email,
+      email_domain: emailDomain,
+      email_validation_status: emailValidationStatus,
+      neverbounce_result: nb.result,
+      company_name_input: input.companyName,
+      matched_company_id: input.companyId ?? null,
+      is_new_company: isNewCompany,
+      contact_first_name: input.firstName,
+      contact_last_name: input.lastName,
+      contact_phone: input.phone,
+      category: input.category,
+      derived_category: derivedCategory,
+      language: input.locale === 'fr' ? 'FR' : 'EN',
+      marketing_consent: input.consentMarketing,
+      ai_classification: aiResult
+        ? {
+            pole_code: aiResult.poleCode,
+            confidence: aiResult.confidence,
+            reasoning: aiResult.reasoning,
+            model: aiResult.modelUsed,
+            tokens_in: aiResult.tokensIn,
+            tokens_out: aiResult.tokensOut,
+            classified_at: new Date().toISOString(),
+          }
+        : null,
+      ip_address: ctx.ip === 'unknown' ? null : ctx.ip,
+      user_agent: ctx.userAgent,
+      referrer: input.referrer ?? null,
+      utm_source: input.utmSource ?? null,
+      utm_medium: input.utmMedium ?? null,
+      utm_campaign: input.utmCampaign ?? null,
+      status: 'awaiting_verification',
+    })
+    .select('id')
+    .single();
+
+  if (insertError || !inserted) {
+    console.error('[signup/init] INSERT failed', insertError);
+    return { ok: false, error: 'internal_error' };
+  }
+
+  const signupId = inserted.id;
+
+  // 8. Genere le DOI token JWT + UPDATE le signup avec le token
+  const doiToken = await signDoiToken({ signupId, email: input.email });
+  const expiresAt = computeDoiExpiresAt();
+
+  const { error: updateError } = await supabase
+    .from('public_signup_attempts')
+    .update({
+      doi_token: doiToken,
+      doi_token_expires_at: expiresAt.toISOString(),
+      verification_sent_at: new Date().toISOString(),
+    })
+    .eq('id', signupId);
+
+  if (updateError) {
+    console.error('[signup/init] UPDATE doi_token failed', updateError);
+    return { ok: false, error: 'internal_error' };
+  }
+
+  // 9. Envoi email DOI Brevo (best-effort — si KO, on log mais on retourne ok=true
+  //    pour ne pas re-creer un duplicate signup. L'admin peut renvoyer manuellement).
+  try {
+    await sendDoiEmail({
+      email: input.email,
+      firstName: input.firstName,
+      locale: input.locale,
+      token: doiToken,
+    });
+  } catch (err) {
+    console.error('[signup/init] Brevo send failed (signup created, retry possible)', err);
+  }
+
+  return { ok: true, signupId };
+}
