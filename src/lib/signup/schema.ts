@@ -74,6 +74,8 @@ export type SignupInitErrorCode =
   | 'invalid_payload'
   | 'captcha_failed'
   | 'email_undeliverable'
+  | 'email_free_provider'
+  | 'email_disposable'
   | 'email_duplicate_recent'
   | 'email_duplicate_prospect'
   | 'rate_limited'

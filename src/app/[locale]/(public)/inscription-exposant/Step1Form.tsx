@@ -129,6 +129,10 @@ export function Step1Form({
         return tErrors('captcha');
       case 'email_undeliverable':
         return tErrors('emailUndeliverable');
+      case 'email_free_provider':
+        return tErrors('emailFreeProvider');
+      case 'email_disposable':
+        return tErrors('emailDisposable');
       case 'email_duplicate_recent':
         return tErrors('emailDuplicateRecent');
       case 'email_duplicate_prospect':

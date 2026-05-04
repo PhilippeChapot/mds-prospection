@@ -201,6 +201,8 @@
     "generic": "Une erreur est survenue. Réessayez ou contactez-nous.",
     "captcha": "Vérification anti-spam échouée. Réessayez.",
     "emailUndeliverable": "Cet email semble injoignable. Vérifiez votre saisie ou utilisez un autre email professionnel.",
+    "emailFreeProvider": "Cet email semble être une adresse personnelle (Gmail, Yahoo, Hotmail, etc.). Pour valider votre inscription professionnelle MediaDays Solutions 2026, veuillez utiliser votre adresse email d'entreprise.",
+    "emailDisposable": "Cet email semble être une adresse jetable. Veuillez utiliser une adresse email pérenne pour finaliser votre inscription.",
     "emailDuplicateRecent": "Une inscription est déjà en cours pour cet email. Vérifiez votre boîte mail (et vos spams).",
     "emailDuplicateProspect": "Cet email est déjà associé à un compte. Contactez philippe@mediadays.solutions.",
     "rateLimited": "Trop de tentatives. Patientez quelques minutes.",

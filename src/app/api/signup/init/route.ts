@@ -58,7 +58,10 @@ export async function POST(request: Request) {
     const status =
       result.error === 'email_duplicate_recent' || result.error === 'email_duplicate_prospect'
         ? 409
-        : result.error === 'captcha_failed' || result.error === 'email_undeliverable'
+        : result.error === 'captcha_failed' ||
+            result.error === 'email_undeliverable' ||
+            result.error === 'email_free_provider' ||
+            result.error === 'email_disposable'
           ? 422
           : 500;
     return NextResponse.json({ success: false, error: result.error }, { status });

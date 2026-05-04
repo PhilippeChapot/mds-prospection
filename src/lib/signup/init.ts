@@ -178,6 +178,20 @@ export async function initSignup(
     return { ok: false, error: 'email_undeliverable' };
   }
 
+  // 3.bis Hard-reject free-providers (gmail/yahoo/hotmail/etc) + jetables.
+  // Renforce la promesse de la bulle info etape 1 ("nous verifions que l'email
+  // est rattache a votre activite professionnelle"). Filtre cote app, en plus
+  // du status email_validation_status='free_provider' deja stocke pour audit.
+  const freeProviderDomain = extractEmailDomain(input.email);
+  if (freeProviderDomain && FREE_PROVIDER_SET.has(freeProviderDomain)) {
+    console.log('[signup/init] reject email=%s reason=email_free_provider', input.email);
+    return { ok: false, error: 'email_free_provider' };
+  }
+  if (freeProviderDomain && DISPOSABLE_PROVIDER_SET.has(freeProviderDomain)) {
+    console.log('[signup/init] reject email=%s reason=email_disposable', input.email);
+    return { ok: false, error: 'email_disposable' };
+  }
+
   // 4. Anti-doublon
   const dup = await checkDuplicates(input.email);
   if (dup) {

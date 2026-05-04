@@ -201,6 +201,8 @@
     "generic": "An error occurred. Please try again or contact us.",
     "captcha": "Anti-spam check failed. Please try again.",
     "emailUndeliverable": "This email seems undeliverable. Please check your input or use another work email.",
+    "emailFreeProvider": "This email looks like a personal address (Gmail, Yahoo, Hotmail, etc.). To validate your professional registration to MediaDays Solutions 2026, please use your company email address.",
+    "emailDisposable": "This email appears to be a disposable address. Please use a permanent email address to complete your registration.",
     "emailDuplicateRecent": "A registration is already in progress for this email. Check your inbox (and spam folder).",
     "emailDuplicateProspect": "This email is already linked to an account. Please contact philippe@mediadays.solutions.",
     "rateLimited": "Too many attempts. Please wait a few minutes.",
