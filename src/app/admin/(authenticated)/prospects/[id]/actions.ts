@@ -76,6 +76,23 @@ export async function deleteProspectAction(prospectId: string) {
 }
 
 /**
+ * Emet un document Sellsy (devis / proforma / facture) selon le
+ * payment_path du prospect. Idempotent : si le document du type
+ * correspondant existe deja, runPostConversion ne reemet pas.
+ *
+ * Utilise par le bouton "Emettre devis Sellsy" sur fiche prospect.
+ */
+export async function emitSellsyDocumentAction(prospectId: string) {
+  const profile = await requireAdminProfile();
+  if (profile.role !== 'admin') {
+    throw new Error('Seul un admin peut emettre un document Sellsy.');
+  }
+  const { runPostConversion } = await import('@/lib/sellsy/post-conversion');
+  await runPostConversion(prospectId);
+  revalidatePath(`/admin/prospects/${prospectId}`);
+}
+
+/**
  * Resynchronise un prospect avec Sellsy (et Brevo/Stripe en P4 M4-M6).
  * Utile pour relancer manuellement apres une erreur de sync.
  */

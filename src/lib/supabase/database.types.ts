@@ -96,6 +96,7 @@ export type Database = {
           price_eur_ht: number;
           scope: Database['public']['Enums']['addon_scope'];
           season_id: string;
+          sellsy_item_id: number | null;
           sellsy_sku: string | null;
           unit: Database['public']['Enums']['attachment_unit'];
         };
@@ -113,6 +114,7 @@ export type Database = {
           price_eur_ht: number;
           scope?: Database['public']['Enums']['addon_scope'];
           season_id: string;
+          sellsy_item_id?: number | null;
           sellsy_sku?: string | null;
           unit?: Database['public']['Enums']['attachment_unit'];
         };
@@ -130,6 +132,7 @@ export type Database = {
           price_eur_ht?: number;
           scope?: Database['public']['Enums']['addon_scope'];
           season_id?: string;
+          sellsy_item_id?: number | null;
           sellsy_sku?: string | null;
           unit?: Database['public']['Enums']['attachment_unit'];
         };
@@ -1028,6 +1031,7 @@ export type Database = {
           pole_restrictions: string[] | null;
           price_eur_ht: number;
           season_id: string;
+          sellsy_item_id: number | null;
           sellsy_sku: string | null;
         };
         Insert: {
@@ -1044,6 +1048,7 @@ export type Database = {
           pole_restrictions?: string[] | null;
           price_eur_ht: number;
           season_id: string;
+          sellsy_item_id?: number | null;
           sellsy_sku?: string | null;
         };
         Update: {
@@ -1060,6 +1065,7 @@ export type Database = {
           pole_restrictions?: string[] | null;
           price_eur_ht?: number;
           season_id?: string;
+          sellsy_item_id?: number | null;
           sellsy_sku?: string | null;
         };
         Relationships: [

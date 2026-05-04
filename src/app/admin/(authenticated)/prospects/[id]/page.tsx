@@ -38,6 +38,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
       id, status, pack_code, estimated_amount, notes, owner_id, affiliate_id,
       is_test, last_synced_sellsy_at, last_synced_brevo_at, last_synced_stripe_at,
       last_sync_error_message, last_sync_error_provider, last_sync_error_at,
+      sellsy_devis_id, sellsy_proforma_id, sellsy_invoice_id,
       created_at, updated_at, last_activity_at,
       company:companies!inner(id, name, primary_domain, country, category, was_prs_2026_exhibitor, pole:poles(code, name_fr)),
       contact:contacts(id, first_name, last_name, email, phone, role),
@@ -183,6 +184,11 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
       <SyncBadgesSection
         prospectId={id}
         isTest={prospect.is_test}
+        hasSellsyDocument={
+          !!prospect.sellsy_devis_id ||
+          !!prospect.sellsy_proforma_id ||
+          !!prospect.sellsy_invoice_id
+        }
         sellsy={{
           lastSyncedAt: prospect.last_synced_sellsy_at,
           errorMessage:

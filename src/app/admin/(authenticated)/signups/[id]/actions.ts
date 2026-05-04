@@ -22,7 +22,7 @@ import { classifySignup, extractEmailDomain } from '@/lib/ai/classify-signup';
 import { signDoiToken, computeDoiExpiresAt } from '@/lib/doi/jwt';
 import { generateShortToken, computeShortTokenExpiresAt } from '@/lib/doi/short-token';
 import { sendDoiEmail } from '@/lib/signup/init';
-import { syncProspectToSellsy } from '@/lib/sellsy/sync-prospect';
+import { runPostConversion } from '@/lib/sellsy/post-conversion';
 
 export type ActionResult<T = void> =
   | { success: true; data?: T }
@@ -230,13 +230,15 @@ export async function convertSignupToProspect(
   revalidatePath('/admin/prospects');
   revalidatePath(`/admin/prospects/${newProspect.id}`);
 
-  // Trigger sync Sellsy en background (non bloquant pour la redirection).
-  // L'utilisateur arrive sur /admin/prospects/[id] avec un badge "pending"
-  // qui devient "synced" ou "error" apres ~30s (refresh manuel pour l'instant ;
-  // realtime Supabase en P5+ si besoin).
-  void syncProspectToSellsy(newProspect.id).catch((err) => {
+  // Trigger workflow post-conversion en background (non bloquant) :
+  //   1. sync Sellsy (company + individual + opportunity) — P4 M2
+  //   2. emission devis/proforma/facture selon payment_path — P4 M3
+  //   3. email Resend devis_concierge si devis_sepa — P4 M3
+  // L'utilisateur arrive sur /admin/prospects/[id] avec badge "pending"
+  // qui devient "synced" / "error" apres ~30s (refresh manuel pour l'instant).
+  void runPostConversion(newProspect.id).catch((err) => {
     console.error(
-      '[signups/convert] background-sync-failed prospect_id=%s msg=%s',
+      '[signups/convert] background-post-conversion-failed prospect_id=%s msg=%s',
       newProspect.id,
       err instanceof Error ? err.message : String(err),
     );

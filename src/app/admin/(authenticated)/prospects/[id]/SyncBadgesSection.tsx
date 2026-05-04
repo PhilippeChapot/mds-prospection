@@ -3,9 +3,17 @@
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { CheckCircle2, Loader2, AlertCircle, Clock, MinusCircle, RefreshCw } from 'lucide-react';
+import {
+  CheckCircle2,
+  Loader2,
+  AlertCircle,
+  Clock,
+  MinusCircle,
+  RefreshCw,
+  FileText,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { resyncProspectAction } from './actions';
+import { resyncProspectAction, emitSellsyDocumentAction } from './actions';
 import { cn } from '@/lib/utils';
 
 type SyncStatus = 'pending' | 'synced' | 'error' | 'skipped' | 'not-implemented';
@@ -13,6 +21,7 @@ type SyncStatus = 'pending' | 'synced' | 'error' | 'skipped' | 'not-implemented'
 interface Props {
   prospectId: string;
   isTest: boolean;
+  hasSellsyDocument: boolean;
   sellsy: {
     lastSyncedAt: string | null;
     errorMessage: string | null;
@@ -26,16 +35,42 @@ interface Props {
   };
 }
 
-export function SyncBadgesSection({ prospectId, isTest, sellsy, stripe, brevo }: Props) {
+export function SyncBadgesSection({
+  prospectId,
+  isTest,
+  hasSellsyDocument,
+  sellsy,
+  stripe,
+  brevo,
+}: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [emitting, startEmit] = useTransition();
 
   function handleResync() {
     startTransition(async () => {
       try {
         await resyncProspectAction(prospectId);
         toast.success('Resynchronisation lancée. Refresh dans quelques secondes…');
-        // Refresh apres un court delai pour laisser le temps a la sync de completer.
+        setTimeout(() => router.refresh(), 3000);
+      } catch (err) {
+        toast.error(`Échec : ${(err as Error).message}`);
+      }
+    });
+  }
+
+  function handleEmitDocument() {
+    if (
+      !confirm(
+        "Émettre le document Sellsy (devis / proforma / facture selon le parcours de paiement) et envoyer l'email au prospect ?",
+      )
+    ) {
+      return;
+    }
+    startEmit(async () => {
+      try {
+        await emitSellsyDocumentAction(prospectId);
+        toast.success('Document Sellsy émis. Refresh dans quelques secondes…');
         setTimeout(() => router.refresh(), 3000);
       } catch (err) {
         toast.error(`Échec : ${(err as Error).message}`);
@@ -62,25 +97,48 @@ export function SyncBadgesSection({ prospectId, isTest, sellsy, stripe, brevo }:
         <h2 className="text-md-text-muted text-[10px] font-bold tracking-widest uppercase">
           Synchronisations externes
         </h2>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleResync}
-          disabled={pending || isTest}
-          title={
-            isTest
-              ? 'Mode TEST : syncs externes désactivées'
-              : 'Re-déclencher les syncs Sellsy / Brevo / Stripe'
-          }
-        >
-          {pending ? (
-            <Loader2 className="size-3.5 animate-spin" aria-hidden />
-          ) : (
-            <RefreshCw className="size-3.5" aria-hidden />
+        <div className="flex flex-wrap items-center gap-2">
+          {!hasSellsyDocument && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleEmitDocument}
+              disabled={emitting || isTest}
+              className="bg-md-magenta hover:bg-md-magenta-soft"
+              title={
+                isTest
+                  ? 'Mode TEST : émission désactivée'
+                  : 'Créer le devis/facture Sellsy + envoyer email au prospect'
+              }
+            >
+              {emitting ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              ) : (
+                <FileText className="size-3.5" aria-hidden />
+              )}
+              Émettre devis Sellsy
+            </Button>
           )}
-          Resynchroniser
-        </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleResync}
+            disabled={pending || isTest}
+            title={
+              isTest
+                ? 'Mode TEST : syncs externes désactivées'
+                : 'Re-déclencher les syncs Sellsy / Brevo / Stripe'
+            }
+          >
+            {pending ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+            ) : (
+              <RefreshCw className="size-3.5" aria-hidden />
+            )}
+            Resynchroniser
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-3">
