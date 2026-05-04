@@ -9,16 +9,23 @@ export const metadata = {
 const ERROR_MESSAGES: Record<string, string> = {
   unauthorized: 'Acces non autorise. Votre compte n’a pas les droits admin.',
   expired: 'Session expiree. Reconnectez-vous.',
+  invalid_callback: 'Lien invalide ou expiré. Recommencez la procédure.',
+  signups_admin_only: '/admin/signups réservé aux admins.',
+};
+
+const SUCCESS_MESSAGES: Record<string, string> = {
+  ok: 'Mot de passe mis à jour. Connectez-vous avec votre nouveau mot de passe.',
 };
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; reset?: string }>;
 }) {
   const params = await searchParams;
   const next = params.next && params.next.startsWith('/admin') ? params.next : '/admin';
   const prefilledError = params.error ? ERROR_MESSAGES[params.error] : undefined;
+  const prefilledSuccess = params.reset ? SUCCESS_MESSAGES[params.reset] : undefined;
 
   return (
     <main className="from-md-blue-deep via-md-blue-dark to-md-blue flex min-h-svh flex-col bg-gradient-to-br">
@@ -41,6 +48,14 @@ export default async function LoginPage({
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl backdrop-blur-sm sm:p-8">
+            {prefilledSuccess && (
+              <p
+                role="status"
+                className="border-md-success/40 bg-md-success/15 text-md-success-foreground mb-4 rounded-md border px-3 py-2 text-sm text-white"
+              >
+                {prefilledSuccess}
+              </p>
+            )}
             <LoginForm next={next} prefilledError={prefilledError} />
           </div>
 

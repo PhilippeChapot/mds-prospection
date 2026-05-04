@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,13 +38,12 @@ export function LoginForm({ next, prefilledError }: { next: string; prefilledErr
           <Label htmlFor="password" className="text-white/90">
             Mot de passe
           </Label>
-          <span
-            aria-disabled="true"
-            className="cursor-not-allowed text-xs text-white/40"
-            title="Disponible en P5"
+          <Link
+            href="/auth/forgot-password"
+            className="text-xs text-white/60 hover:text-white/90 hover:underline"
           >
-            Mot de passe oublie ?
-          </span>
+            Mot de passe oublié ?
+          </Link>
         </div>
         <Input
           id="password"

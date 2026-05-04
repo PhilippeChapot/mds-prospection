@@ -54,5 +54,5 @@ export const config = {
    *  - le hook test Sentry (P0)
    */
   matcher:
-    '/((?!api|_next|_vercel|brand|video|sentry-test|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\..*).*)',
+    '/((?!api|_next|_vercel|auth|brand|video|sentry-test|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\..*).*)',
 };
