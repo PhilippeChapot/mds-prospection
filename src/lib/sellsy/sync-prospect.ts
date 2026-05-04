@@ -354,13 +354,17 @@ async function findOrCreateSellsyCompany(company: ProspectForSync['company']): P
 /**
  * Search Sellsy companies par nom (filtre obligatoirement wrappe en `filters`).
  * Retourne les candidats Sellsy (jusqu'a 20). Vide si rien.
+ *
+ * Quirks Sellsy V2 confirmes via curl par Phil :
+ *   - `filters` doit etre dans le body (sinon "filters est manquant")
+ *   - `limit`, `offset`, `order_by`, `order_direction` doivent etre en
+ *     query params (sinon "Ce champ est inconnu" sur le body).
  */
 async function searchSellsyCompaniesByName(name: string): Promise<SellsyCompany[]> {
-  const res = await sellsyFetch<SellsySearchResponse<SellsyCompany>>('/companies/search', {
+  const res = await sellsyFetch<SellsySearchResponse<SellsyCompany>>('/companies/search?limit=20', {
     method: 'POST',
     body: JSON.stringify({
       filters: { name },
-      limit: 20,
     }),
   });
   return res.data ?? [];
@@ -406,13 +410,16 @@ async function findOrCreateSellsyIndividual(
 }
 
 async function searchSellsyIndividualByEmail(email: string): Promise<SellsyIndividual | null> {
-  const res = await sellsyFetch<SellsySearchResponse<SellsyIndividual>>('/individuals/search', {
-    method: 'POST',
-    body: JSON.stringify({
-      filters: { email },
-      limit: 1,
-    }),
-  });
+  // limit en query param (cf. note Sellsy V2 sur searchSellsyCompaniesByName).
+  const res = await sellsyFetch<SellsySearchResponse<SellsyIndividual>>(
+    '/individuals/search?limit=1',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        filters: { email },
+      }),
+    },
+  );
   return res.data?.[0] ?? null;
 }
 
