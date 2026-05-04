@@ -58,6 +58,15 @@
     "step1": {
       "heading": "Registration — step 1 of 2",
       "subheading": "Two minutes: we identify you, send a confirmation email, then we build your offer together.",
+      "rebound": {
+        "expired": "Your confirmation link has expired or has been replaced by a newer one. Please start the registration over below.",
+        "invalid": "The link you followed is invalid. Please start the registration over below.",
+        "notfound": "Registration not found. Please start over below.",
+        "error": "An error occurred — please start the registration over."
+      },
+      "noscript": {
+        "message": "JavaScript is required to complete your registration. Please enable JavaScript in your browser or contact philippe@mediadays.solutions."
+      },
       "labelEmail": "Work email",
       "labelCompany": "Company",
       "labelCompanyPlaceholder": "Type your company name…",
@@ -93,8 +102,8 @@
     },
     "step2": {
       "expired": {
-        "heading": "Link expired",
-        "body": "Your confirmation link has expired (24h validity). Please start the registration over.",
+        "heading": "Link expired or registration cancelled",
+        "body": "To restart your registration, please start over from the beginning.",
         "cta": "Start over"
       },
       "alreadyConverted": {
@@ -207,6 +216,12 @@
     "doiResent": "Email resent.",
     "step2Saved": "Step saved.",
     "step2Submitted": "Registration finalized."
+  },
+  "notFound": {
+    "eyebrow": "Error 404",
+    "heading": "Page not found",
+    "body": "The page you're looking for doesn't exist or has been moved. Please check the URL or go back to the homepage.",
+    "cta": "Back to homepage"
   },
   "styleguide": {
     "title": "MD visual identity",

@@ -58,6 +58,15 @@
     "step1": {
       "heading": "Inscription — étape 1 sur 2",
       "subheading": "En 2 minutes : on vous identifie, on vous envoie un email de confirmation, puis on construit ensemble votre offre.",
+      "rebound": {
+        "expired": "Votre lien de confirmation a expiré ou a été remplacé par un lien plus récent. Recommencez l'inscription depuis le début ci-dessous.",
+        "invalid": "Le lien que vous avez suivi est invalide. Recommencez l'inscription depuis le début ci-dessous.",
+        "notfound": "Inscription introuvable. Recommencez depuis le début ci-dessous.",
+        "error": "Une erreur est survenue, veuillez recommencer l'inscription."
+      },
+      "noscript": {
+        "message": "JavaScript est requis pour finaliser votre inscription. Activez JavaScript dans votre navigateur ou contactez philippe@mediadays.solutions."
+      },
       "labelEmail": "Email professionnel",
       "labelCompany": "Société",
       "labelCompanyPlaceholder": "Tapez le nom de votre société…",
@@ -93,9 +102,9 @@
     },
     "step2": {
       "expired": {
-        "heading": "Lien expiré",
-        "body": "Votre lien de confirmation a expiré (validité 24 h). Recommencez l'inscription depuis le début.",
-        "cta": "Recommencer"
+        "heading": "Lien expiré ou inscription annulée",
+        "body": "Pour relancer votre inscription, recommencez depuis le début.",
+        "cta": "Recommencer l'inscription"
       },
       "alreadyConverted": {
         "heading": "Inscription déjà finalisée",
@@ -207,6 +216,12 @@
     "doiResent": "Email renvoyé.",
     "step2Saved": "Étape enregistrée.",
     "step2Submitted": "Inscription finalisée."
+  },
+  "notFound": {
+    "eyebrow": "Erreur 404",
+    "heading": "Page introuvable",
+    "body": "La page que vous cherchez n'existe pas ou a été déplacée. Vérifiez l'URL ou retournez à l'accueil.",
+    "cta": "Retour à l'accueil"
   },
   "styleguide": {
     "title": "Charte visuelle MD",

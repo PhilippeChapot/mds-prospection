@@ -49,12 +49,11 @@ export default async function Step2Page({ params }: PageProps) {
     notFound();
   }
 
-  if (
-    signup.status === 'converted' ||
-    signup.status === 'rejected' ||
-    signup.status === 'expired'
-  ) {
+  if (signup.status === 'converted') {
     return <AlreadyDone />;
+  }
+  if (signup.status === 'rejected' || signup.status === 'expired') {
+    return <ExpiredOrRejected />;
   }
 
   const data = await loadStep2Data();
@@ -112,6 +111,21 @@ function AlreadyDone() {
         <p className="text-md-text-muted">{t('body')}</p>
         <Button asChild variant="outline">
           <Link href="/">↩</Link>
+        </Button>
+      </Card>
+    </section>
+  );
+}
+
+function ExpiredOrRejected() {
+  const t = useTranslations('signup.step2.expired');
+  return (
+    <section className="mx-auto max-w-xl px-4 py-16">
+      <Card className="border-md-border space-y-4 p-8 text-center">
+        <h1 className="text-md-text text-2xl font-bold">{t('heading')}</h1>
+        <p className="text-md-text-muted">{t('body')}</p>
+        <Button asChild className="bg-md-magenta hover:bg-md-magenta-soft">
+          <Link href="/inscription-exposant">{t('cta')}</Link>
         </Button>
       </Card>
     </section>
