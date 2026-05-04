@@ -157,37 +157,31 @@ export async function sellsyFetch<T = unknown>(
       body = await response.text().catch(() => null);
     }
 
-    // Sellsy V2 retourne souvent { error, message, details: [...] } sur les
-    // erreurs de validation 400. Le champ `details` contient l'info utile
-    // (champ fautif + raison) — on le serialise en JSON pour ne pas le
-    // perdre dans "[Object]" du formattage console default.
-    const errorMsg =
-      typeof body === 'object' && body && 'error' in body
-        ? (body as { error: string }).error
-        : String(body).slice(0, 200);
-    const details =
-      typeof body === 'object' && body && 'details' in body
-        ? JSON.stringify((body as { details: unknown }).details, null, 2)
-        : null;
-
-    if (details) {
-      console.error(
-        '[sellsy/client] error path=%s status=%d ms=%d msg=%s details=%s',
-        path,
-        response.status,
-        elapsedMs,
-        errorMsg,
-        details,
-      );
-    } else {
-      console.error(
-        '[sellsy/client] error path=%s status=%d ms=%d msg=%s',
-        path,
-        response.status,
-        elapsedMs,
-        errorMsg,
-      );
+    // Sellsy V2 retourne sur erreur 400 une structure imbriquee qu'il faut
+    // serialiser EN ENTIER pour voir les details (le champ `error` contient
+    // un objet { code, message, details: [...] }, pas une string). Sans
+    // JSON.stringify, Node truncate les nested objects en "[Object]" et on
+    // perd toute l'info utile.
+    let bodySerialized: string;
+    try {
+      bodySerialized = JSON.stringify(body, null, 2);
+    } catch {
+      bodySerialized = String(body);
     }
+    // Truncate pour eviter logs gigantesques (Sellsy peut envoyer des stack
+    // traces verbeuses sur 500). 4KB est largement suffisant pour un payload
+    // de validation 400.
+    if (bodySerialized.length > 4000) {
+      bodySerialized = bodySerialized.slice(0, 4000) + '\n... [truncated]';
+    }
+
+    console.error(
+      '[sellsy/client] error path=%s status=%d ms=%d body=%s',
+      path,
+      response.status,
+      elapsedMs,
+      bodySerialized,
+    );
 
     throw new SellsyError(
       `Sellsy fetch ${path} failed (${response.status})`,
