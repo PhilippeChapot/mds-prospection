@@ -249,27 +249,25 @@ async function runSyncSteps(prospect: ProspectForSync): Promise<void> {
   }
 
   // ----- Step 4 : Individual (contact) -----
-  if (prospect.contact && !prospect.contact.sellsy_contact_id) {
-    const individualSellsyId = await findOrCreateSellsyIndividual(
-      prospect.contact,
-      companySellsyId,
-    );
+  let contactSellsyId: string | null = prospect.contact?.sellsy_contact_id ?? null;
+  if (prospect.contact && !contactSellsyId) {
+    contactSellsyId = await findOrCreateSellsyIndividual(prospect.contact, companySellsyId);
     await supabase
       .from('contacts')
-      .update({ sellsy_contact_id: individualSellsyId, last_synced_sellsy_at: nowIso })
+      .update({ sellsy_contact_id: contactSellsyId, last_synced_sellsy_at: nowIso })
       .eq('id', prospect.contact.id);
   } else if (prospect.contact) {
     console.log(
       '%s contact-existing prospect_id=%s sellsy_contact_id=%s',
       LOG_PREFIX,
       prospect.id,
-      prospect.contact.sellsy_contact_id,
+      contactSellsyId,
     );
   }
 
   // ----- Step 5 : Opportunity -----
   if (!prospect.sellsy_opportunity_id) {
-    const oppId = await createSellsyOpportunity(prospect, companySellsyId);
+    const oppId = await createSellsyOpportunity(prospect, companySellsyId, contactSellsyId);
     await supabase.from('prospects').update({ sellsy_opportunity_id: oppId }).eq('id', prospect.id);
   } else {
     console.log(
@@ -453,13 +451,24 @@ async function searchSellsyIndividualByEmail(email: string): Promise<SellsyIndiv
 async function createSellsyOpportunity(
   prospect: ProspectForSync,
   companySellsyId: string,
+  contactSellsyId: string | null,
 ): Promise<string> {
   const opportunityName = `${prospect.company.name} — Inscription MDS 2026`;
 
-  // Sellsy V2 attend pipeline + step en objets imbriques (pas pipeline_id
-  // snake_case). Cf. erreur "le champ 'pipeline' est manquant".
-  // step.id = 1ere etape du pipeline (prefetche en cache au 1er sync).
+  // Format Sellsy V2 confirme par curl :
+  //   - pipeline: NUMBER direct (pas { id: ... })
+  //   - step: NUMBER direct (idem)
+  //   - related: array obligatoire avec objets typés [{ type, id }, ...]
+  //   - company_id en plus n'est PAS reconnu (la relation passe par `related`)
+  // Test curl 2025-05-05 : POST /opportunities a cree id 2357486 avec ce format.
   const stepId = await getFirstSellsyStepId(SELLSY_PIPELINE_ID);
+
+  const related: Array<{ type: 'company' | 'individual'; id: number }> = [
+    { type: 'company', id: Number(companySellsyId) },
+  ];
+  if (contactSellsyId) {
+    related.push({ type: 'individual', id: Number(contactSellsyId) });
+  }
 
   // Note : champ `source` retire (Sellsy V2 attend probablement un source_id
   // numerique referencant une Source dans le compte, pas une string libre).
@@ -469,9 +478,9 @@ async function createSellsyOpportunity(
   const payload = {
     name: opportunityName,
     type: 'in_progress',
-    pipeline: { id: SELLSY_PIPELINE_ID },
-    step: { id: stepId },
-    company_id: Number(companySellsyId),
+    pipeline: SELLSY_PIPELINE_ID,
+    step: stepId,
+    related,
     ...(prospect.estimated_amount != null
       ? { estimated_amount: { value: String(prospect.estimated_amount), currency: 'EUR' } }
       : {}),
