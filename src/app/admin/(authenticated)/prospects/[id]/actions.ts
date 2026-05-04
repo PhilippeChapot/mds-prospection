@@ -76,6 +76,23 @@ export async function deleteProspectAction(prospectId: string) {
 }
 
 /**
+ * Resynchronise un prospect avec Sellsy (et Brevo/Stripe en P4 M4-M6).
+ * Utile pour relancer manuellement apres une erreur de sync.
+ */
+export async function resyncProspectAction(prospectId: string) {
+  const profile = await requireAdminProfile();
+  if (profile.role !== 'admin') {
+    throw new Error('Seul un admin peut resynchroniser un prospect.');
+  }
+  // Import dynamique pour eviter d'embarquer le helper Sellsy dans le bundle
+  // SSR de toutes les pages admin.
+  const { syncProspectToSellsy } = await import('@/lib/sellsy/sync-prospect');
+  await syncProspectToSellsy(prospectId);
+  // Brevo + Stripe seront ajoutes ici en P4 M4 / M6.
+  revalidatePath(`/admin/prospects/${prospectId}`);
+}
+
+/**
  * Toggle is_test (admin only). Quand true, tous les helpers de sync P4
  * (Sellsy, Stripe, Brevo, VIES) bypass via assertSyncAllowed() qui throw
  * SyncSkippedError.

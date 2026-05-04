@@ -22,6 +22,7 @@ import { classifySignup, extractEmailDomain } from '@/lib/ai/classify-signup';
 import { signDoiToken, computeDoiExpiresAt } from '@/lib/doi/jwt';
 import { generateShortToken, computeShortTokenExpiresAt } from '@/lib/doi/short-token';
 import { sendDoiEmail } from '@/lib/signup/init';
+import { syncProspectToSellsy } from '@/lib/sellsy/sync-prospect';
 
 export type ActionResult<T = void> =
   | { success: true; data?: T }
@@ -228,6 +229,18 @@ export async function convertSignupToProspect(
   revalidatePath(`/admin/signups/${signupId}`);
   revalidatePath('/admin/prospects');
   revalidatePath(`/admin/prospects/${newProspect.id}`);
+
+  // Trigger sync Sellsy en background (non bloquant pour la redirection).
+  // L'utilisateur arrive sur /admin/prospects/[id] avec un badge "pending"
+  // qui devient "synced" ou "error" apres ~30s (refresh manuel pour l'instant ;
+  // realtime Supabase en P5+ si besoin).
+  void syncProspectToSellsy(newProspect.id).catch((err) => {
+    console.error(
+      '[signups/convert] background-sync-failed prospect_id=%s msg=%s',
+      newProspect.id,
+      err instanceof Error ? err.message : String(err),
+    );
+  });
 
   return { success: true, data: { prospectId: newProspect.id } };
 }

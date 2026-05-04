@@ -12,6 +12,7 @@ import { ActivitiesSection, type ActivityRow } from '@/components/admin/Activiti
 import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { DeleteProspectButton } from './DeleteButton';
 import { IsTestToggle } from './IsTestToggle';
+import { SyncBadgesSection } from './SyncBadgesSection';
 import { PACK_LABEL } from '@/lib/supabase/queries';
 import type { PoleCode } from '@/lib/design-tokens';
 import type { Database } from '@/lib/supabase/database.types';
@@ -177,6 +178,23 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           </span>
         </div>
       </div>
+
+      {/* Synchronisations externes (Sellsy / Stripe / Brevo) — P4 */}
+      <SyncBadgesSection
+        prospectId={id}
+        isTest={prospect.is_test}
+        sellsy={{
+          lastSyncedAt: prospect.last_synced_sellsy_at,
+          errorMessage:
+            prospect.last_sync_error_provider === 'sellsy'
+              ? prospect.last_sync_error_message
+              : null,
+          errorAt:
+            prospect.last_sync_error_provider === 'sellsy' ? prospect.last_sync_error_at : null,
+        }}
+        stripe={{ lastSyncedAt: prospect.last_synced_stripe_at }}
+        brevo={{ lastSyncedAt: prospect.last_synced_brevo_at }}
+      />
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Coordonnees */}
