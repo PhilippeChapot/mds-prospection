@@ -80,8 +80,22 @@ const LOG_PREFIX = '[sellsy/sync-prospect]';
  * env var ou en app_settings.sellsy_pipeline_id.
  *
  * Decouvert via GET /v2/opportunities/pipelines (test curl par Phil).
+ *
+ * Format payload : Sellsy V2 attend des objets imbriques pour les
+ * relations, pas des _id snake_case (cf. erreur "le champ 'pipeline' est
+ * manquant" sur tentative pipeline_id=775). Idem pour step.
  */
 const SELLSY_PIPELINE_ID = 775;
+
+// Cache du premier step du pipeline (lazy fetch au 1er sync).
+let cachedFirstStepId: number | null = null;
+
+/**
+ * Reset le cache du step (utilise par vitest entre les tests).
+ */
+export function _resetSellsyPipelineCacheForTests() {
+  cachedFirstStepId = null;
+}
 
 /**
  * Point d'entree principal. Le caller appelle en background :
@@ -442,20 +456,21 @@ async function createSellsyOpportunity(
 ): Promise<string> {
   const opportunityName = `${prospect.company.name} — Inscription MDS 2026`;
 
+  // Sellsy V2 attend pipeline + step en objets imbriques (pas pipeline_id
+  // snake_case). Cf. erreur "le champ 'pipeline' est manquant".
+  // step.id = 1ere etape du pipeline (prefetche en cache au 1er sync).
+  const stepId = await getFirstSellsyStepId(SELLSY_PIPELINE_ID);
+
   // Note : champ `source` retire (Sellsy V2 attend probablement un source_id
   // numerique referencant une Source dans le compte, pas une string libre).
   // L'origine de l'opportunite est trace via la note + source_detail cote
   // MDS, c'est suffisant pour P4 M2. A reintegrer en finitions si Phil veut
   // (necessite de lister GET /v2/opportunities/sources et mapper l'id).
-  //
-  // pipeline_id obligatoire : Sellsy V2 attache toute opportunite a un
-  // pipeline (workflow de stages). Default 775 ("defaut" chez Phil, 7 steps).
-  // Si Sellsy reclame aussi un step_id, ajouter step.id de la 1ere etape
-  // recuperee via GET /v2/opportunities/pipelines/{id}/steps.
   const payload = {
     name: opportunityName,
     type: 'in_progress',
-    pipeline_id: SELLSY_PIPELINE_ID,
+    pipeline: { id: SELLSY_PIPELINE_ID },
+    step: { id: stepId },
     company_id: Number(companySellsyId),
     ...(prospect.estimated_amount != null
       ? { estimated_amount: { value: String(prospect.estimated_amount), currency: 'EUR' } }
@@ -480,6 +495,43 @@ function pickFirst<T>(value: T | T[] | null | undefined): T | null {
   if (value == null) return null;
   if (Array.isArray(value)) return value[0] ?? null;
   return value;
+}
+
+/**
+ * Recupere l'id du 1er step (etape) du pipeline Sellsy. Cache en memoire
+ * apres le 1er sync — les pipelines Sellsy bougent rarement, et un mauvais
+ * step n'est pas critique (l'admin peut deplacer manuellement dans Sellsy).
+ *
+ * Tri par display_order ASC pour avoir l'etape "Nouvelle" / "Lead" du
+ * pipeline. Si Sellsy ne supporte pas order_by sur cet endpoint, on
+ * retombe sur l'ordre natif et on prend display_order le plus bas via
+ * tri cote code.
+ */
+async function getFirstSellsyStepId(pipelineId: number): Promise<number> {
+  if (cachedFirstStepId !== null) return cachedFirstStepId;
+
+  const res = await sellsyFetch<{
+    data: Array<{ id: number; display_order?: number; name?: string }>;
+  }>(`/opportunities/pipelines/${pipelineId}/steps?limit=20`);
+
+  if (!res.data || res.data.length === 0) {
+    throw new Error(`Sellsy pipeline ${pipelineId} has no steps`);
+  }
+
+  const sorted = [...res.data].sort(
+    (a, b) =>
+      (a.display_order ?? Number.MAX_SAFE_INTEGER) - (b.display_order ?? Number.MAX_SAFE_INTEGER),
+  );
+  cachedFirstStepId = sorted[0].id;
+
+  console.log(
+    '%s pipeline-first-step pipeline_id=%d step_id=%d step_name=%s',
+    LOG_PREFIX,
+    pipelineId,
+    cachedFirstStepId,
+    sorted[0].name ?? '?',
+  );
+  return cachedFirstStepId;
 }
 
 /**

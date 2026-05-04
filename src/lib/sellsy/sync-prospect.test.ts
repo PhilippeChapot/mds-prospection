@@ -38,7 +38,16 @@ vi.mock('@/lib/sellsy/client', () => ({
 }));
 
 // L'import doit venir APRES les mocks.
-import { syncProspectToSellsy } from './sync-prospect';
+import { syncProspectToSellsy, _resetSellsyPipelineCacheForTests } from './sync-prospect';
+
+// Helper : mock typique du fetch GET pipelines/.../steps avant un POST /opportunities.
+// Step "Lead" (id 9999) du pipeline 775 par defaut. A inserer JUSTE AVANT le mock
+// du POST /opportunities dans la sequence mockResolvedValueOnce.
+function mockStepsFetch(stepId = 9999) {
+  return {
+    data: [{ id: stepId, display_order: 1, name: 'Lead' }],
+  };
+}
 
 // ----- Fixtures -----
 
@@ -74,6 +83,8 @@ describe('syncProspectToSellsy', () => {
     mockSupabaseClient.prospect = null;
     mockSupabaseClient.updates = [];
     mockSellsyFetch.mockReset();
+    // Reset le cache du step pipeline pour que chaque test soit isole.
+    _resetSellsyPipelineCacheForTests();
   });
 
   afterEach(() => {
@@ -98,13 +109,15 @@ describe('syncProspectToSellsy', () => {
       .mockResolvedValueOnce({ data: [] })
       // 3. individual create
       .mockResolvedValueOnce({ data: { id: 7001 } })
-      // 4. opportunity create
+      // 4. pipeline steps fetch (1er sync, cache vide)
+      .mockResolvedValueOnce(mockStepsFetch())
+      // 5. opportunity create
       .mockResolvedValueOnce({ data: { id: 9001 } });
 
     await syncProspectToSellsy('prospect-uuid-1');
 
-    // 4 fetches : search exact, search individual, create individual, create opportunity.
-    expect(mockSellsyFetch).toHaveBeenCalledTimes(4);
+    // 5 fetches : search exact, search individual, create individual, steps fetch, create opportunity.
+    expect(mockSellsyFetch).toHaveBeenCalledTimes(5);
     const createCompanyCall = mockSellsyFetch.mock.calls.find(
       ([path, options]) =>
         path === '/companies' && (options as { method?: string })?.method === 'POST',
@@ -136,7 +149,9 @@ describe('syncProspectToSellsy', () => {
       .mockResolvedValueOnce({ data: [] })
       // 4. individual create
       .mockResolvedValueOnce({ data: { id: 7001 } })
-      // 5. opportunity create
+      // 5. pipeline steps fetch
+      .mockResolvedValueOnce(mockStepsFetch())
+      // 6. opportunity create
       .mockResolvedValueOnce({ data: { id: 9001 } });
 
     await syncProspectToSellsy('prospect-uuid-1');
@@ -199,12 +214,14 @@ describe('syncProspectToSellsy', () => {
       .mockResolvedValueOnce({ data: [] })
       // 5. POST /individuals create
       .mockResolvedValueOnce({ data: { id: 7002 } })
-      // 6. POST /opportunities create
+      // 6. pipeline steps fetch
+      .mockResolvedValueOnce(mockStepsFetch())
+      // 7. POST /opportunities create
       .mockResolvedValueOnce({ data: { id: 9002 } });
 
     await syncProspectToSellsy('prospect-uuid-1');
 
-    expect(mockSellsyFetch).toHaveBeenCalledTimes(6);
+    expect(mockSellsyFetch).toHaveBeenCalledTimes(7);
     const createCompanyCall = mockSellsyFetch.mock.calls.find(
       ([path, options]) =>
         path === '/companies' && (options as { method?: string })?.method === 'POST',
