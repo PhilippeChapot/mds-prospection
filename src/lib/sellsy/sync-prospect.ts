@@ -71,11 +71,6 @@ interface SellsyIndividual {
   first_name?: string | null;
   last_name?: string | null;
 }
-interface SellsyOpportunity {
-  id: number;
-  name?: string;
-}
-
 const LOG_PREFIX = '[sellsy/sync-prospect]';
 
 /**
@@ -340,15 +335,16 @@ async function findOrCreateSellsyCompany(company: ProspectForSync['company']): P
   }
 
   // ----- 3. CREATE -----
-  const created = await sellsyFetch<{ data: SellsyCompany }>('/companies', {
+  const createdRaw = await sellsyFetch<unknown>('/companies', {
     method: 'POST',
     body: JSON.stringify({
       name: fullName,
       type: 'client',
     }),
   });
-  console.log('%s company-created mds_name=%s sellsy_id=%d', LOG_PREFIX, fullName, created.data.id);
-  return String(created.data.id);
+  const newId = extractSellsyId(createdRaw, '/companies');
+  console.log('%s company-created mds_name=%s sellsy_id=%d', LOG_PREFIX, fullName, newId);
+  return String(newId);
 }
 
 /**
@@ -407,12 +403,13 @@ async function findOrCreateSellsyIndividual(
     ],
   };
 
-  const created = await sellsyFetch<{ data: SellsyIndividual }>('/individuals', {
+  const createdRaw = await sellsyFetch<unknown>('/individuals', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
-  console.log('%s individual-created sellsy_id=%d', LOG_PREFIX, created.data.id);
-  return String(created.data.id);
+  const newId = extractSellsyId(createdRaw, '/individuals');
+  console.log('%s individual-created sellsy_id=%d', LOG_PREFIX, newId);
+  return String(newId);
 }
 
 async function searchSellsyIndividualByEmail(email: string): Promise<SellsyIndividual | null> {
@@ -435,6 +432,11 @@ async function createSellsyOpportunity(
 ): Promise<string> {
   const opportunityName = `${prospect.company.name} — Inscription MDS 2026`;
 
+  // Note : champ `source` retire (Sellsy V2 attend probablement un source_id
+  // numerique referencant une Source dans le compte, pas une string libre).
+  // L'origine de l'opportunite est trace via la note + source_detail cote
+  // MDS, c'est suffisant pour P4 M2. A reintegrer en finitions si Phil veut
+  // (necessite de lister GET /v2/opportunities/sources et mapper l'id).
   const payload = {
     name: opportunityName,
     type: 'in_progress',
@@ -442,16 +444,16 @@ async function createSellsyOpportunity(
     ...(prospect.estimated_amount != null
       ? { estimated_amount: { value: String(prospect.estimated_amount), currency: 'EUR' } }
       : {}),
-    source: 'inscription_web',
     note: prospect.source_detail ?? `signup ${prospect.id.slice(0, 8)}`,
   };
 
-  const created = await sellsyFetch<{ data: SellsyOpportunity }>('/opportunities', {
+  const createdRaw = await sellsyFetch<unknown>('/opportunities', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
-  console.log('%s opportunity-created sellsy_id=%d', LOG_PREFIX, created.data.id);
-  return String(created.data.id);
+  const newId = extractSellsyId(createdRaw, '/opportunities');
+  console.log('%s opportunity-created sellsy_id=%d', LOG_PREFIX, newId);
+  return String(newId);
 }
 
 // ---------------------------------------------------------------------------
@@ -462,6 +464,36 @@ function pickFirst<T>(value: T | T[] | null | undefined): T | null {
   if (value == null) return null;
   if (Array.isArray(value)) return value[0] ?? null;
   return value;
+}
+
+/**
+ * Sellsy V2 a un comportement non-uniforme entre endpoints :
+ *   - Search endpoints (/companies/search, /individuals/search) -> { data: [...] }
+ *   - Some create endpoints (/companies) peuvent retourner { data: {...} }
+ *   - D'autres create endpoints (/individuals notamment) retournent { id, ... }
+ *     directement au top level (confirme par bug "Cannot read properties of
+ *     undefined (reading 'id')" en prod sur POST /individuals).
+ *
+ * Cet helper extrait l'id quel que soit le shape de la response.
+ * Throw si introuvable, avec un message qui expose la response brute pour
+ * faciliter le debug.
+ */
+function extractSellsyId(response: unknown, endpoint: string): number {
+  if (!response || typeof response !== 'object') {
+    throw new Error(
+      `Sellsy ${endpoint} response is not an object: ${JSON.stringify(response).slice(0, 200)}`,
+    );
+  }
+  const obj = response as { id?: unknown; data?: { id?: unknown } };
+  // Tente data.id (ex: /companies, /companies/search), puis id top-level
+  // (ex: /individuals create d'apres test prod).
+  const candidate = obj.data?.id ?? obj.id;
+  if (typeof candidate !== 'number') {
+    throw new Error(
+      `Sellsy ${endpoint} response has no numeric id (got ${typeof candidate}): ${JSON.stringify(response).slice(0, 300)}`,
+    );
+  }
+  return candidate;
 }
 
 function truncate(s: string, max: number): string {
