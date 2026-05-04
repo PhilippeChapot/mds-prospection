@@ -387,7 +387,13 @@ async function findOrCreateSellsyIndividual(
   }
 
   // Sinon create avec link to company.
+  // Champ `type` requis par Sellsy V2 (3e quirk confirme par 400 "le champ
+  // 'type' est manquant"). Valeur 'client' cohérente avec POST /companies
+  // qui marche déjà avec type='client', et confirmee par le changelog
+  // Sellsy : "for Company & Individual, only client type is allowed" pour
+  // les invoices (cf. https://docs.sellsy.com/api/v2/changelog.html).
   const payload = {
+    type: 'client',
     first_name: contact.first_name ?? '',
     last_name: contact.last_name ?? contact.email,
     email: contact.email,
