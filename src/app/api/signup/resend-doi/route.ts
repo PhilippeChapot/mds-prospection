@@ -21,6 +21,7 @@ import { cookies } from 'next/headers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { checkRateLimit } from '@/lib/rate-limit/in-memory';
 import { signDoiToken, computeDoiExpiresAt } from '@/lib/doi/jwt';
+import { generateShortToken, computeShortTokenExpiresAt } from '@/lib/doi/short-token';
 import { sendDoiEmail } from '@/lib/signup/init';
 import { PENDING_SIGNUP_COOKIE } from '@/lib/signup/cookies';
 
@@ -74,15 +75,20 @@ export async function POST() {
     return NextResponse.json({ error: 'not_pending' }, { status: 409 });
   }
 
-  // 4. Regenere un nouveau JWT (rotation = invalide les liens precedents)
-  const newToken = await signDoiToken({ signupId: signup.id, email: signup.email });
-  const expiresAt = computeDoiExpiresAt();
+  // 4. Regenere short_token (utilise dans l'URL Brevo) + JWT (debug, parite avec init)
+  //    Rotation = les liens precedents (short ET JWT) sont invalides.
+  const newShortToken = generateShortToken();
+  const newShortTokenExpiresAt = computeShortTokenExpiresAt();
+  const newJwt = await signDoiToken({ signupId: signup.id, email: signup.email });
+  const newJwtExpiresAt = computeDoiExpiresAt();
 
   const { error: updateErr } = await supabase
     .from('public_signup_attempts')
     .update({
-      doi_token: newToken,
-      doi_token_expires_at: expiresAt.toISOString(),
+      short_token: newShortToken,
+      short_token_expires_at: newShortTokenExpiresAt.toISOString(),
+      doi_token: newJwt,
+      doi_token_expires_at: newJwtExpiresAt.toISOString(),
       verification_sent_at: new Date().toISOString(),
     })
     .eq('id', signup.id);
@@ -92,13 +98,13 @@ export async function POST() {
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 
-  // 5. Envoi email
+  // 5. Envoi email avec l'URL courte
   try {
     await sendDoiEmail({
       email: signup.email,
       firstName: signup.contact_first_name ?? '',
       locale: signup.language === 'EN' ? 'en' : 'fr',
-      token: newToken,
+      token: newShortToken,
     });
   } catch (err) {
     console.error('[signup/resend-doi] Brevo send failed', err);

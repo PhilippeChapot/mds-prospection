@@ -10,6 +10,7 @@ import { verifyHCaptchaToken } from '@/lib/hcaptcha/verify';
 import { verifyEmailDeliverability, isDeliverable } from '@/lib/neverbounce/verify';
 import { classifySignup, extractEmailDomain } from '@/lib/ai/classify-signup';
 import { signDoiToken, computeDoiExpiresAt } from '@/lib/doi/jwt';
+import { generateShortToken, computeShortTokenExpiresAt } from '@/lib/doi/short-token';
 import { sendTransactionalEmail, getDoiTemplateId } from '@/lib/brevo/client';
 import freeProviders from 'free-email-domains';
 import disposableProviders from 'disposable-email-domains';
@@ -117,12 +118,16 @@ interface BuildDoiUrlInput {
  * On evite de mettre le token dans une page Server Component car Next 15+
  * interdit cookies().set() depuis un SC. Une route handler peut faire les deux.
  *
- * `locale` est passe en query pour que le redirect post-verify aille a la
+ * Format URL court (depuis P3 M5.4-bis) : `?t=<short16>&loc=<fr|en>`
+ *   -> ~80 chars total au lieu de ~300 avec le JWT
+ *   -> evite les 404 du tracker Brevo sur longues URLs.
+ *
+ * `loc` est passe en query pour que le redirect post-verify aille a la
  * bonne locale meme si la lecture DB rate (best-effort fallback).
  */
 export function buildDoiUrl({ locale, token }: BuildDoiUrlInput): string {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-  const params = new URLSearchParams({ token, locale });
+  const params = new URLSearchParams({ t: token, loc: locale });
   return `${base}/api/signup/verify?${params.toString()}`;
 }
 
@@ -263,32 +268,39 @@ export async function initSignup(
 
   const signupId = inserted.id;
 
-  // 8. Genere le DOI token JWT + UPDATE le signup avec le token
+  // 8. Genere les 2 tokens (short_token utilise dans l'URL Brevo, doi_token JWT
+  //    conserve pour debug + future compat). UPDATE le signup avec les deux.
+  const shortToken = generateShortToken();
+  const shortTokenExpiresAt = computeShortTokenExpiresAt();
   const doiToken = await signDoiToken({ signupId, email: input.email });
-  const expiresAt = computeDoiExpiresAt();
+  const doiExpiresAt = computeDoiExpiresAt();
 
   const { error: updateError } = await supabase
     .from('public_signup_attempts')
     .update({
+      short_token: shortToken,
+      short_token_expires_at: shortTokenExpiresAt.toISOString(),
       doi_token: doiToken,
-      doi_token_expires_at: expiresAt.toISOString(),
+      doi_token_expires_at: doiExpiresAt.toISOString(),
       verification_sent_at: new Date().toISOString(),
     })
     .eq('id', signupId);
 
   if (updateError) {
-    console.error('[signup/init] UPDATE doi_token failed', updateError);
+    console.error('[signup/init] UPDATE tokens failed', updateError);
     return { ok: false, error: 'internal_error' };
   }
 
-  // 9. Envoi email DOI Brevo (best-effort — si KO, on log mais on retourne ok=true
-  //    pour ne pas re-creer un duplicate signup. L'admin peut renvoyer manuellement).
+  // 9. Envoi email DOI Brevo avec l'URL courte (short_token, ~80 chars total
+  //    pour eviter le 404 du tracker Brevo sur longues URLs JWT).
+  //    Best-effort : si KO, on log mais on retourne ok=true pour ne pas
+  //    re-creer un duplicate signup. L'admin peut renvoyer manuellement.
   try {
     await sendDoiEmail({
       email: input.email,
       firstName: input.firstName,
       locale: input.locale,
-      token: doiToken,
+      token: shortToken,
     });
   } catch (err) {
     console.error('[signup/init] Brevo send failed (signup created, retry possible)', err);

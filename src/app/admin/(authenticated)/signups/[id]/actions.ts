@@ -20,6 +20,7 @@ import { requireAdminProfile, getActiveSeasonId } from '@/lib/supabase/auth-help
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { classifySignup, extractEmailDomain } from '@/lib/ai/classify-signup';
 import { signDoiToken, computeDoiExpiresAt } from '@/lib/doi/jwt';
+import { generateShortToken, computeShortTokenExpiresAt } from '@/lib/doi/short-token';
 import { sendDoiEmail } from '@/lib/signup/init';
 
 export type ActionResult<T = void> =
@@ -288,14 +289,19 @@ export async function resendDoi(signupId: string): Promise<ActionResult> {
     return { success: false, error: `Statut ${signup.status} — pas de renvoi.` };
   }
 
-  const newToken = await signDoiToken({ signupId: signup.id, email: signup.email });
-  const expiresAt = computeDoiExpiresAt();
+  // Rotation : nouveau short_token (utilise dans l'URL Brevo) + JWT (debug).
+  const newShortToken = generateShortToken();
+  const newShortTokenExpiresAt = computeShortTokenExpiresAt();
+  const newJwt = await signDoiToken({ signupId: signup.id, email: signup.email });
+  const newJwtExpiresAt = computeDoiExpiresAt();
 
   const { error: updateErr } = await supabase
     .from('public_signup_attempts')
     .update({
-      doi_token: newToken,
-      doi_token_expires_at: expiresAt.toISOString(),
+      short_token: newShortToken,
+      short_token_expires_at: newShortTokenExpiresAt.toISOString(),
+      doi_token: newJwt,
+      doi_token_expires_at: newJwtExpiresAt.toISOString(),
       verification_sent_at: new Date().toISOString(),
       status: 'awaiting_verification',
     })
@@ -310,7 +316,7 @@ export async function resendDoi(signupId: string): Promise<ActionResult> {
       email: signup.email,
       firstName: signup.contact_first_name ?? '',
       locale: signup.language === 'EN' ? 'en' : 'fr',
-      token: newToken,
+      token: newShortToken,
     });
   } catch (err) {
     return { success: false, error: `Brevo: ${(err as Error).message}` };

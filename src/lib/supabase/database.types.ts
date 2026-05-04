@@ -1300,6 +1300,8 @@ export type Database = {
           matched_company_id: string | null;
           neverbounce_result: string | null;
           referrer: string | null;
+          short_token: string | null;
+          short_token_expires_at: string | null;
           status: Database['public']['Enums']['signup_status'];
           step2_payload: Json | null;
           step2_submitted_at: string | null;
@@ -1339,6 +1341,8 @@ export type Database = {
           matched_company_id?: string | null;
           neverbounce_result?: string | null;
           referrer?: string | null;
+          short_token?: string | null;
+          short_token_expires_at?: string | null;
           status?: Database['public']['Enums']['signup_status'];
           step2_payload?: Json | null;
           step2_submitted_at?: string | null;
@@ -1378,6 +1382,8 @@ export type Database = {
           matched_company_id?: string | null;
           neverbounce_result?: string | null;
           referrer?: string | null;
+          short_token?: string | null;
+          short_token_expires_at?: string | null;
           status?: Database['public']['Enums']['signup_status'];
           step2_payload?: Json | null;
           step2_submitted_at?: string | null;
