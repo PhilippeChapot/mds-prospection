@@ -60,10 +60,16 @@ export const step2CaseAPartialSchema = z.object({
 export type Step2CaseAPartialPayload = z.infer<typeof step2CaseAPartialSchema>;
 
 // ----- Cas B : payload -----
+// Note metier (mai 2026) : la taille du grand stand est passee de 12m² a 9m²,
+// et "Sponsor pole" (sponsoring d'un pole thematique) est devenu "Sponsoriser
+// le salon" (sponsoring de l'evenement entier). Les anciennes valeurs
+// `stand_12` / `sponsor_pole` peuvent rester en DB sur des signups existants
+// — le rendu admin (Step2PayloadView) les supporte pour retrocompat, mais le
+// wizard ne les propose plus.
 export const STEP2_CASE_B_INTERESTS = [
   'stand_6',
-  'stand_12',
-  'sponsor_pole',
+  'stand_9',
+  'sponsor_show',
   'visitor',
   'partner_media',
 ] as const;

@@ -117,8 +117,8 @@ export function Step2WizardCaseB({
 
   const interestLabels: Record<Step2CaseBInterest, string> = {
     stand_6: t('interestStand6'),
-    stand_12: t('interestStand12'),
-    sponsor_pole: t('interestSponsorPole'),
+    stand_9: t('interestStand9'),
+    sponsor_show: t('interestSponsorShow'),
     visitor: t('interestVisitor'),
     partner_media: t('interestPartnerMedia'),
   };

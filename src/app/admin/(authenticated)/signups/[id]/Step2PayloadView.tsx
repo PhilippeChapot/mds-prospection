@@ -32,12 +32,19 @@ const PAYMENT_LABEL: Record<string, string> = {
   facture_integrale: 'Facture intégrale',
 };
 
+// Mapping interest -> label admin. Inclut les anciennes valeurs
+// `stand_12` / `sponsor_pole` pour retrocompat sur les signups deja en DB
+// avant le changement metier (mai 2026). Les nouvelles inscriptions
+// remontent `stand_9` / `sponsor_show`.
 const INTEREST_LABEL: Record<string, string> = {
   stand_6: 'Stand 6 m²',
-  stand_12: 'Stand 12 m²',
-  sponsor_pole: 'Sponsor pôle',
+  stand_9: 'Stand 9 m²',
+  sponsor_show: 'Sponsoriser le salon',
   visitor: 'Visiteur seulement',
   partner_media: 'Partenariat média',
+  // legacy
+  stand_12: 'Stand 12 m² (legacy)',
+  sponsor_pole: 'Sponsor pôle (legacy)',
 };
 
 const BUDGET_LABEL: Record<string, string> = {
