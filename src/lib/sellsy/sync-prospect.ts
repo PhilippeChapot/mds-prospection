@@ -74,6 +74,16 @@ interface SellsyIndividual {
 const LOG_PREFIX = '[sellsy/sync-prospect]';
 
 /**
+ * Pipeline Sellsy par defaut pour toutes les opportunites MDS Prospection.
+ * Pipeline "defaut" du compte Phil (id 775, 7 steps). Si Phil change de
+ * pipeline ou veut un mapping plus fin par pole en P5, basculer ca en
+ * env var ou en app_settings.sellsy_pipeline_id.
+ *
+ * Decouvert via GET /v2/opportunities/pipelines (test curl par Phil).
+ */
+const SELLSY_PIPELINE_ID = 775;
+
+/**
  * Point d'entree principal. Le caller appelle en background :
  *   void syncProspectToSellsy(prospectId).catch(err => { ... });
  *
@@ -437,9 +447,15 @@ async function createSellsyOpportunity(
   // L'origine de l'opportunite est trace via la note + source_detail cote
   // MDS, c'est suffisant pour P4 M2. A reintegrer en finitions si Phil veut
   // (necessite de lister GET /v2/opportunities/sources et mapper l'id).
+  //
+  // pipeline_id obligatoire : Sellsy V2 attache toute opportunite a un
+  // pipeline (workflow de stages). Default 775 ("defaut" chez Phil, 7 steps).
+  // Si Sellsy reclame aussi un step_id, ajouter step.id de la 1ere etape
+  // recuperee via GET /v2/opportunities/pipelines/{id}/steps.
   const payload = {
     name: opportunityName,
     type: 'in_progress',
+    pipeline_id: SELLSY_PIPELINE_ID,
     company_id: Number(companySellsyId),
     ...(prospect.estimated_amount != null
       ? { estimated_amount: { value: String(prospect.estimated_amount), currency: 'EUR' } }
