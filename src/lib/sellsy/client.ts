@@ -156,15 +156,39 @@ export async function sellsyFetch<T = unknown>(
     } catch {
       body = await response.text().catch(() => null);
     }
-    console.error(
-      '[sellsy/client] error path=%s status=%d ms=%d msg=%s',
-      path,
-      response.status,
-      elapsedMs,
+
+    // Sellsy V2 retourne souvent { error, message, details: [...] } sur les
+    // erreurs de validation 400. Le champ `details` contient l'info utile
+    // (champ fautif + raison) — on le serialise en JSON pour ne pas le
+    // perdre dans "[Object]" du formattage console default.
+    const errorMsg =
       typeof body === 'object' && body && 'error' in body
         ? (body as { error: string }).error
-        : String(body).slice(0, 200),
-    );
+        : String(body).slice(0, 200);
+    const details =
+      typeof body === 'object' && body && 'details' in body
+        ? JSON.stringify((body as { details: unknown }).details, null, 2)
+        : null;
+
+    if (details) {
+      console.error(
+        '[sellsy/client] error path=%s status=%d ms=%d msg=%s details=%s',
+        path,
+        response.status,
+        elapsedMs,
+        errorMsg,
+        details,
+      );
+    } else {
+      console.error(
+        '[sellsy/client] error path=%s status=%d ms=%d msg=%s',
+        path,
+        response.status,
+        elapsedMs,
+        errorMsg,
+      );
+    }
+
     throw new SellsyError(
       `Sellsy fetch ${path} failed (${response.status})`,
       response.status,
