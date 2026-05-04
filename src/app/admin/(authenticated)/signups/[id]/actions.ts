@@ -70,7 +70,7 @@ export async function convertSignupToProspect(
   const { data: signup, error: signupErr } = await supabase
     .from('public_signup_attempts')
     .select(
-      'id, email, email_domain, contact_first_name, contact_last_name, contact_phone, company_name_input, matched_company_id, derived_category, language, ai_classification, step2_payload, status, converted_to_prospect_id',
+      'id, email, email_domain, contact_first_name, contact_last_name, contact_phone, company_name_input, matched_company_id, derived_category, language, ai_classification, step2_payload, status, converted_to_prospect_id, affiliate_input_raw',
     )
     .eq('id', signupId)
     .maybeSingle();
@@ -445,13 +445,22 @@ async function computeEstimatedAmount(
 }
 
 function buildProspectNotes(
-  signup: { id: string; language: string },
+  signup: { id: string; language: string; affiliate_input_raw?: string | null },
   payload: CaseAPayload | CaseBPayload | null,
 ): string {
   const lines: string[] = [
     `Source : inscription web (signup #${signup.id.slice(0, 8)}…)`,
     `Langue : ${signup.language}`,
   ];
+
+  // Bloc affiliation (texte libre P3.x — sera matche en P5 vs table affiliates)
+  const affiliateInput = signup.affiliate_input_raw?.trim();
+  if (affiliateInput && affiliateInput.length > 0) {
+    lines.push('');
+    lines.push('--- Référence affiliation ---');
+    lines.push(`Référé par : ${affiliateInput}`);
+    lines.push("(À valider et lier au système d'affiliation en P5)");
+  }
 
   if (!payload) {
     lines.push('Pas de payload étape 2.');

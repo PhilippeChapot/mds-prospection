@@ -59,6 +59,7 @@ export function Step1Form({
       firstName: '',
       lastName: '',
       phone: null,
+      affiliateInput: null,
       category: initialCategory,
       consentRgpd: false,
       consentMarketing: false,
@@ -262,6 +263,28 @@ export function Step1Form({
             {...register('phone')}
           />
           <FieldError messageKey={errors.phone?.message} />
+        </div>
+
+        {/* Affiliation (texte libre — normalise en P5 vs table affiliates) */}
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="affiliateInput" className="font-semibold">
+              {t('labelAffiliateInput')}
+            </Label>
+            <InfoTooltip ariaLabel={tTooltips('affiliateLabel')}>
+              <p className="font-semibold">{tTooltips('affiliateLabel')}</p>
+              <p className="mt-1">{tTooltips('affiliateBody')}</p>
+            </InfoTooltip>
+          </div>
+          <Input
+            id="affiliateInput"
+            type="text"
+            autoComplete="off"
+            maxLength={200}
+            placeholder={t('labelAffiliateInputPlaceholder')}
+            {...register('affiliateInput')}
+          />
+          <FieldError messageKey={errors.affiliateInput?.message} />
         </div>
 
         {/* Categorie */}

@@ -45,9 +45,9 @@ function renderFr({ firstName, doiUrl }: DoiTemplateParams): DoiTemplate {
           <!-- Header bleu marine avec logos -->
           <tr>
             <td style="background-color:#294294; padding: 28px 32px; text-align:center;">
-              <img src="https://mediadays.solutions/brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions" height="40" style="display:inline-block; vertical-align:middle; margin: 0 12px; height:40px;">
+              <img src="https://mediadays.solutions/brand/MDS-LogoBlanc2026-email.png" alt="MediaDays Solutions" width="40" height="40" style="display:inline-block; vertical-align:middle; margin: 0 12px; height:40px; width:40px; max-height:40px;">
               <span style="color:rgba(255,255,255,0.4); font-size:24px; vertical-align:middle;">|</span>
-              <img src="https://mediadays.solutions/brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show" height="40" style="display:inline-block; vertical-align:middle; margin: 0 12px; height:40px;">
+              <img src="https://mediadays.solutions/brand/PRS-LogoBlanc2026-email.png" alt="Paris Radio Show" width="40" height="40" style="display:inline-block; vertical-align:middle; margin: 0 12px; height:40px; width:40px; max-height:40px;">
             </td>
           </tr>
 
@@ -163,9 +163,9 @@ function renderEn({ firstName, doiUrl }: DoiTemplateParams): DoiTemplate {
           <!-- Header bleu marine avec logos -->
           <tr>
             <td style="background-color:#294294; padding: 28px 32px; text-align:center;">
-              <img src="https://mediadays.solutions/brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions" height="40" style="display:inline-block; vertical-align:middle; margin: 0 12px; height:40px;">
+              <img src="https://mediadays.solutions/brand/MDS-LogoBlanc2026-email.png" alt="MediaDays Solutions" width="40" height="40" style="display:inline-block; vertical-align:middle; margin: 0 12px; height:40px; width:40px; max-height:40px;">
               <span style="color:rgba(255,255,255,0.4); font-size:24px; vertical-align:middle;">|</span>
-              <img src="https://mediadays.solutions/brand/PRS-LogoBlanc2026.svg" alt="Paris Radio Show" height="40" style="display:inline-block; vertical-align:middle; margin: 0 12px; height:40px;">
+              <img src="https://mediadays.solutions/brand/PRS-LogoBlanc2026-email.png" alt="Paris Radio Show" width="40" height="40" style="display:inline-block; vertical-align:middle; margin: 0 12px; height:40px; width:40px; max-height:40px;">
             </td>
           </tr>
 

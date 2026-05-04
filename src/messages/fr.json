@@ -75,6 +75,8 @@
       "labelFirstName": "Prénom",
       "labelLastName": "Nom",
       "labelPhone": "Téléphone",
+      "labelAffiliateInput": "Qui vous a parlé de nous ? (optionnel)",
+      "labelAffiliateInputPlaceholder": "Nom de la société ou du contact qui vous a parlé de l'événement",
       "labelCategory": "Vous êtes…",
       "categoryExhibitor": "Exposant",
       "categoryPartner": "Partenaire",
@@ -87,7 +89,9 @@
       "emailLabel": "Pourquoi un email professionnel ?",
       "emailBody": "Utilisez votre adresse email professionnelle (votre email d'entreprise). Évitez les adresses Gmail, Hotmail ou Yahoo personnelles : nous vérifions que l'email est rattaché à votre activité professionnelle pour garantir la qualité des inscriptions et éviter les doublons.",
       "categoryLabel": "Quelle est la différence ?",
-      "categoryBody": "Exposant : société proposant des produits/services audio, radio, podcast (régies, prestataires, studios, équipementiers...) qui souhaite avoir un emplacement physique pendant le salon Paris Radio Show 2026 du 15 décembre 2026 au Carrousel du Louvre. Partenaire : société souhaitant soutenir l'événement MediaDays Solutions 2026 (avec ou sans présence physique). Plusieurs niveaux de partenariat possibles (sponsor principal, sponsor pôle, partenaire média)."
+      "categoryBody": "Exposant : société proposant des produits/services audio, radio, podcast (régies, prestataires, studios, équipementiers...) qui souhaite avoir un emplacement physique pendant le salon Paris Radio Show 2026 du 15 décembre 2026 au Carrousel du Louvre. Partenaire : société souhaitant soutenir l'événement MediaDays Solutions 2026 (avec ou sans présence physique). Plusieurs niveaux de partenariat possibles (sponsor principal, sponsor pôle, partenaire média).",
+      "affiliateLabel": "Qui vous a parlé de nous ?",
+      "affiliateBody": "Si une société, une régie ou un contact vous a parlé de MediaDays Solutions, indiquez son nom ici. Une commission lui sera versée si votre inscription est confirmée. Optionnel."
     },
     "checkEmail": {
       "heading": "Vérifiez votre boîte mail",

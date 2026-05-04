@@ -75,6 +75,8 @@
       "labelFirstName": "First name",
       "labelLastName": "Last name",
       "labelPhone": "Phone",
+      "labelAffiliateInput": "Who told you about us? (optional)",
+      "labelAffiliateInputPlaceholder": "Name of the company or contact who told you about the event",
       "labelCategory": "You are…",
       "categoryExhibitor": "Exhibitor",
       "categoryPartner": "Partner",
@@ -87,7 +89,9 @@
       "emailLabel": "Why a work email?",
       "emailBody": "Please use your work email address. Avoid personal Gmail, Hotmail or Yahoo addresses: we verify that your email is linked to your business activity to ensure quality registrations and prevent duplicates.",
       "categoryLabel": "What is the difference?",
-      "categoryBody": "Exhibitor: company offering audio, radio, podcast products/services (sales houses, service providers, studios, equipment manufacturers...) that wants a physical booth at Paris Radio Show 2026 on December 15, 2026 at Carrousel du Louvre. Partner: company wishing to support MediaDays Solutions 2026 (with or without physical presence). Several partnership levels available (main sponsor, pole sponsor, media partner)."
+      "categoryBody": "Exhibitor: company offering audio, radio, podcast products/services (sales houses, service providers, studios, equipment manufacturers...) that wants a physical booth at Paris Radio Show 2026 on December 15, 2026 at Carrousel du Louvre. Partner: company wishing to support MediaDays Solutions 2026 (with or without physical presence). Several partnership levels available (main sponsor, pole sponsor, media partner).",
+      "affiliateLabel": "Who told you about us?",
+      "affiliateBody": "If a company, sales house or contact told you about MediaDays Solutions, mention their name here. A commission will be paid if your registration is confirmed. Optional."
     },
     "checkEmail": {
       "heading": "Check your inbox",

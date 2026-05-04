@@ -48,6 +48,9 @@ export const signupStep1Schema = z.object({
   firstName: z.string().trim().min(1).max(80),
   lastName: z.string().trim().min(1).max(80),
   phone: z.string().trim().max(40).nullable(),
+  // Affiliation P3.x : capture texte libre. Sera normalisee + matchee
+  // contre la table affiliates en P5 (calcul commission retroactif possible).
+  affiliateInput: z.string().trim().max(200).nullable(),
   category: z.enum(SIGNUP_CATEGORIES),
   consentRgpd: z.boolean().refine((v) => v === true, { message: 'consentRgpdRequired' }),
   consentMarketing: z.boolean(),

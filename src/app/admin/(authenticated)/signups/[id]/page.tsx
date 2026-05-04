@@ -35,7 +35,7 @@ export default async function SignupDetailPage({ params }: PageProps) {
   const { data: signup, error } = await supabase
     .from('public_signup_attempts')
     .select(
-      'id, email, email_domain, email_validation_status, neverbounce_result, contact_first_name, contact_last_name, contact_phone, company_name_input, matched_company_id, is_new_company, category, derived_category, language, marketing_consent, cgv_accepted_at, ai_classification, ip_address, user_agent, referrer, utm_source, utm_medium, utm_campaign, status, doi_token_expires_at, verification_sent_at, verified_at, step2_payload, step2_submitted_at, converted_to_prospect_id, created_at',
+      'id, email, email_domain, email_validation_status, neverbounce_result, contact_first_name, contact_last_name, contact_phone, company_name_input, matched_company_id, is_new_company, category, derived_category, language, marketing_consent, cgv_accepted_at, ai_classification, ip_address, user_agent, referrer, utm_source, utm_medium, utm_campaign, status, doi_token_expires_at, verification_sent_at, verified_at, step2_payload, step2_submitted_at, converted_to_prospect_id, affiliate_input_raw, created_at',
     )
     .eq('id', id)
     .maybeSingle();
@@ -150,6 +150,13 @@ export default async function SignupDetailPage({ params }: PageProps) {
           <Field label="Prénom">{signup.contact_first_name ?? '—'}</Field>
           <Field label="Nom">{signup.contact_last_name ?? '—'}</Field>
           <Field label="Téléphone">{signup.contact_phone ?? '—'}</Field>
+          <Field label="Référé par" wide>
+            {signup.affiliate_input_raw ? (
+              <span className="text-md-text">{signup.affiliate_input_raw}</span>
+            ) : (
+              <span className="text-md-text-muted text-xs">—</span>
+            )}
+          </Field>
           <Field label="Langue">{signup.language}</Field>
           <Field label="Consentement RGPD">
             <span className="text-md-success">✓ Accepté</span>{' '}

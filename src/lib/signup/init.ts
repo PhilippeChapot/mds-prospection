@@ -240,6 +240,9 @@ export async function initSignup(
       contact_first_name: input.firstName,
       contact_last_name: input.lastName,
       contact_phone: input.phone,
+      // Affiliation P3.x : capture texte libre. Sera matchee + commission
+      // calculee en P5 vs table affiliates (FK affiliate_id deja en place).
+      affiliate_input_raw: input.affiliateInput,
       category: input.category,
       derived_category: derivedCategory,
       language: input.locale === 'fr' ? 'FR' : 'EN',
