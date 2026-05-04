@@ -262,81 +262,108 @@ async function runSyncSteps(prospect: ProspectForSync): Promise<void> {
   }
 }
 
+/**
+ * Strategie de matching company en 3 niveaux :
+ *   1. Match exact case-insensitive sur le nom complet
+ *   2. Match prefix : extraire les 2 premiers mots du nom MDS et chercher
+ *      dans Sellsy. Cas reel : MDS = "21 Juin Production", Sellsy = "21 Juin"
+ *      (id 52457). Le user MDS a saisi un nom plus complet que Sellsy.
+ *      - Si exactement 1 candidat dont le nom Sellsy est CONTENU dans le
+ *        nom MDS (ou inversement) -> match auto.
+ *      - Si plusieurs candidats -> review manuel (DB error message).
+ *   3. CREATE company dans Sellsy.
+ *
+ * Tests curl confirmes par le user :
+ *   - filters.website -> KO ("Ce champ est inconnu")
+ *   - filters wrapper obligatoire ("filters est manquant" sans)
+ *   - filters.name avec string simple : OK
+ */
 async function findOrCreateSellsyCompany(company: ProspectForSync['company']): Promise<string> {
-  // Search par website (Sellsy V2 supporte filter sur website pour les companies).
-  if (company.primary_domain) {
-    const found = await searchSellsyCompanyByWebsite(company.primary_domain);
-    if (found) {
+  const fullName = company.name.trim();
+
+  // ----- 1. Match exact case-insensitive sur nom complet -----
+  const exactCandidates = await searchSellsyCompaniesByName(fullName);
+  const exact = exactCandidates.find(
+    (c) => normalizeName(c.name ?? '') === normalizeName(fullName),
+  );
+  if (exact) {
+    console.log('%s company-found-exact name=%s sellsy_id=%d', LOG_PREFIX, fullName, exact.id);
+    return String(exact.id);
+  }
+
+  // ----- 2. Match prefix sur les 2 premiers mots -----
+  const words = fullName.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    const prefix = words.slice(0, 2).join(' ');
+    const prefixCandidates = await searchSellsyCompaniesByName(prefix);
+
+    // Filtrer : on garde les candidats dont le nom Sellsy normalise est CONTENU
+    // dans fullName, OU dont fullName est contenu dans le nom Sellsy.
+    // Couvre les 2 cas : MDS plus complet que Sellsy ("21 Juin Production"
+    // matche "21 Juin"), ou inversement.
+    const fullNorm = normalizeName(fullName);
+    const prefixNorm = normalizeName(prefix);
+    const matches = prefixCandidates.filter((c) => {
+      const candidateNorm = normalizeName(c.name ?? '');
+      if (!candidateNorm) return false;
+      if (!candidateNorm.startsWith(prefixNorm)) return false;
+      return candidateNorm.includes(fullNorm) || fullNorm.includes(candidateNorm);
+    });
+
+    if (matches.length === 1) {
       console.log(
-        '%s company-found-by-domain domain=%s sellsy_id=%d',
+        '%s company-match-by-prefix mds_name=%s sellsy_name=%s sellsy_id=%d',
         LOG_PREFIX,
-        company.primary_domain,
-        found.id,
+        fullName,
+        matches[0].name,
+        matches[0].id,
       );
-      return String(found.id);
+      return String(matches[0].id);
+    }
+
+    if (matches.length > 1) {
+      const candidatesDescription = matches
+        .slice(0, 5)
+        .map((c) => `${c.name ?? '?'} (id ${c.id})`)
+        .join(', ');
+      console.warn(
+        '%s company-multiple-candidates mds_name=%s count=%d candidates=%s',
+        LOG_PREFIX,
+        fullName,
+        matches.length,
+        candidatesDescription,
+      );
+      throw new SellsyManualMatchNeededError(
+        `Plusieurs sociétés Sellsy candidates pour "${fullName}" : ${candidatesDescription}. Sélectionner manuellement (UI à venir P4 M2.x).`,
+      );
     }
   }
 
-  // Fallback : search par nom exact.
-  const foundByName = await searchSellsyCompanyByName(company.name);
-  if (foundByName) {
-    console.log(
-      '%s company-found-by-name name=%s sellsy_id=%d',
-      LOG_PREFIX,
-      company.name,
-      foundByName.id,
-    );
-    return String(foundByName.id);
-  }
-
-  // Sinon create.
+  // ----- 3. CREATE -----
   const created = await sellsyFetch<{ data: SellsyCompany }>('/companies', {
     method: 'POST',
     body: JSON.stringify({
-      name: company.name,
+      name: fullName,
       type: 'client',
-      ...(company.primary_domain ? { website: `https://${company.primary_domain}` } : {}),
     }),
   });
-  console.log('%s company-created sellsy_id=%d', LOG_PREFIX, created.data.id);
+  console.log('%s company-created mds_name=%s sellsy_id=%d', LOG_PREFIX, fullName, created.data.id);
   return String(created.data.id);
 }
 
-async function searchSellsyCompanyByWebsite(domain: string): Promise<SellsyCompany | null> {
-  try {
-    const res = await sellsyFetch<SellsySearchResponse<SellsyCompany>>('/companies/search', {
-      method: 'POST',
-      body: JSON.stringify({
-        filters: { website: `https://${domain}` },
-        limit: 1,
-      }),
-    });
-    return res.data?.[0] ?? null;
-  } catch (err) {
-    // Si Sellsy ne supporte pas ce filter, on retombe sur search par nom.
-    console.warn(
-      '%s search-by-website-failed domain=%s msg=%s',
-      LOG_PREFIX,
-      domain,
-      (err as Error).message,
-    );
-    return null;
-  }
-}
-
-async function searchSellsyCompanyByName(name: string): Promise<SellsyCompany | null> {
+/**
+ * Search Sellsy companies par nom (filtre obligatoirement wrappe en `filters`).
+ * Retourne les candidats Sellsy (jusqu'a 20). Vide si rien.
+ */
+async function searchSellsyCompaniesByName(name: string): Promise<SellsyCompany[]> {
   const res = await sellsyFetch<SellsySearchResponse<SellsyCompany>>('/companies/search', {
     method: 'POST',
     body: JSON.stringify({
-      filters: { name: { contains: name } },
-      limit: 1,
+      filters: { name },
+      limit: 20,
     }),
   });
-  // Match exact (case insensitive) pour eviter de prendre un homonyme partiel.
-  const exact = (res.data ?? []).find(
-    (c) => (c.name ?? '').toLowerCase().trim() === name.toLowerCase().trim(),
-  );
-  return exact ?? null;
+  return res.data ?? [];
 }
 
 async function findOrCreateSellsyIndividual(
@@ -426,4 +453,44 @@ function pickFirst<T>(value: T | T[] | null | undefined): T | null {
 
 function truncate(s: string, max: number): string {
   return s.length > max ? `${s.slice(0, max - 3)}...` : s;
+}
+
+/**
+ * Normalise un nom de societe pour comparaison :
+ *   - lowercase
+ *   - trim
+ *   - collapse espaces multiples
+ *   - retire la ponctuation/accents non significative pour le matching
+ *
+ * Exemples :
+ *   "21 Juin Production" -> "21 juin production"
+ *   "21  Juin"           -> "21 juin"
+ *   "Editions HF — Podcast" -> "editions hf - podcast"
+ */
+function normalizeName(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // diacritics
+    .replace(/—/g, '-') // tiret long -> tiret simple (uniformise)
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Erreur metier : plusieurs candidats Sellsy potentiels pour cette company,
+ * besoin d'un match manuel par l'admin (UI a venir P4 M2.x).
+ *
+ * Pas retryable -> withExponentialRetry n'insiste pas, et le message est
+ * stocke en DB via onFinalError. L'admin peut alors agir manuellement.
+ *
+ * On set un status non-5xx pour que isRetryable() retourne false dans
+ * lib/sync/retry.ts (qui ne retry que sur 5xx + 429 + network errors).
+ */
+class SellsyManualMatchNeededError extends Error {
+  status = 409;
+  constructor(message: string) {
+    super(message);
+    this.name = 'SellsyManualMatchNeededError';
+  }
 }

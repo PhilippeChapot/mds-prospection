@@ -89,10 +89,10 @@ describe('syncProspectToSellsy', () => {
     expect(mockSupabaseClient.updates).toHaveLength(0);
   });
 
-  it('finds existing company by website (no create)', async () => {
+  it('finds existing company by exact name match (no create)', async () => {
     mockSupabaseClient.prospect = makeProspect();
     mockSellsyFetch
-      // 1. company search by website -> found
+      // 1. company search exact -> found exact match
       .mockResolvedValueOnce({ data: [{ id: 5001, name: 'NRJ Group' }] })
       // 2. individual search by email -> not found
       .mockResolvedValueOnce({ data: [] })
@@ -103,29 +103,95 @@ describe('syncProspectToSellsy', () => {
 
     await syncProspectToSellsy('prospect-uuid-1');
 
-    // 4 fetches : search company, search individual, create individual, create opportunity.
+    // 4 fetches : search exact, search individual, create individual, create opportunity.
     expect(mockSellsyFetch).toHaveBeenCalledTimes(4);
-    // Aucun POST /companies (find by domain a marche).
     const createCompanyCall = mockSellsyFetch.mock.calls.find(
       ([path, options]) =>
         path === '/companies' && (options as { method?: string })?.method === 'POST',
     );
     expect(createCompanyCall).toBeUndefined();
 
-    // UPDATE companies (sellsy_id) + UPDATE contacts + UPDATE prospects (opp_id) +
-    // UPDATE prospects (last_synced + clear errors).
     const tablesUpdated = mockSupabaseClient.updates.map((u) => u.table);
     expect(tablesUpdated).toContain('companies');
     expect(tablesUpdated).toContain('contacts');
     expect(tablesUpdated.filter((t) => t === 'prospects').length).toBeGreaterThanOrEqual(2);
   });
 
-  it('creates company + individual + opportunity when none exist', async () => {
+  it('matches company by prefix when MDS name is more complete than Sellsy', async () => {
+    // Cas reel : MDS = "21 Juin Production", Sellsy = "21 Juin" (id 52457).
+    mockSupabaseClient.prospect = makeProspect({
+      company: {
+        id: 'company-uuid-2',
+        name: '21 Juin Production',
+        primary_domain: '21juin.fr',
+        sellsy_id: null,
+      },
+    });
+    mockSellsyFetch
+      // 1. exact search "21 Juin Production" -> 0 result
+      .mockResolvedValueOnce({ data: [] })
+      // 2. prefix search "21 Juin" -> 1 result "21 Juin"
+      .mockResolvedValueOnce({ data: [{ id: 52457, name: '21 Juin' }] })
+      // 3. individual search -> empty
+      .mockResolvedValueOnce({ data: [] })
+      // 4. individual create
+      .mockResolvedValueOnce({ data: { id: 7001 } })
+      // 5. opportunity create
+      .mockResolvedValueOnce({ data: { id: 9001 } });
+
+    await syncProspectToSellsy('prospect-uuid-1');
+
+    // Aucun POST /companies create (match-by-prefix a fonctionne).
+    const createCompanyCall = mockSellsyFetch.mock.calls.find(
+      ([path, options]) =>
+        path === '/companies' && (options as { method?: string })?.method === 'POST',
+    );
+    expect(createCompanyCall).toBeUndefined();
+
+    // companies.sellsy_id mis a jour avec l'id Sellsy retrouve.
+    const companyUpdate = mockSupabaseClient.updates.find((u) => u.table === 'companies');
+    expect(companyUpdate?.values.sellsy_id).toBe('52457');
+  });
+
+  it('records manual-match-needed error when prefix returns multiple candidates', async () => {
+    mockSupabaseClient.prospect = makeProspect({
+      company: {
+        id: 'company-uuid-3',
+        name: 'Radio France International',
+        primary_domain: 'rfi.fr',
+        sellsy_id: null,
+      },
+    });
+    mockSellsyFetch
+      // 1. exact search -> 0
+      .mockResolvedValueOnce({ data: [] })
+      // 2. prefix "Radio France" -> 2 candidats (homonymes)
+      .mockResolvedValueOnce({
+        data: [
+          { id: 1001, name: 'Radio France International' },
+          { id: 1002, name: 'Radio France Inter' },
+        ],
+      });
+
+    await syncProspectToSellsy('prospect-uuid-1');
+
+    // SellsyManualMatchNeededError = status 409 = NOT retryable -> 1 seul cycle.
+    // Le retry n'insiste pas. UPDATE prospects last_sync_error_message ecrit.
+    const errorUpdate = mockSupabaseClient.updates.find(
+      (u) =>
+        u.table === 'prospects' &&
+        (u.values.last_sync_error_provider as string | undefined) === 'sellsy',
+    );
+    expect(errorUpdate).toBeDefined();
+    expect(errorUpdate?.values.last_sync_error_message).toContain('Plusieurs sociétés');
+  });
+
+  it('creates company when no match found', async () => {
     mockSupabaseClient.prospect = makeProspect();
     mockSellsyFetch
-      // 1. company search by website -> empty
+      // 1. exact search -> 0
       .mockResolvedValueOnce({ data: [] })
-      // 2. company search by name -> empty
+      // 2. prefix search -> 0
       .mockResolvedValueOnce({ data: [] })
       // 3. POST /companies create
       .mockResolvedValueOnce({ data: { id: 5002 } })
@@ -138,10 +204,7 @@ describe('syncProspectToSellsy', () => {
 
     await syncProspectToSellsy('prospect-uuid-1');
 
-    // 6 fetches au total.
     expect(mockSellsyFetch).toHaveBeenCalledTimes(6);
-
-    // Verifier qu'on a bien POST /companies (create).
     const createCompanyCall = mockSellsyFetch.mock.calls.find(
       ([path, options]) =>
         path === '/companies' && (options as { method?: string })?.method === 'POST',
