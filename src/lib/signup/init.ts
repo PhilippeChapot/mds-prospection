@@ -11,7 +11,8 @@ import { verifyEmailDeliverability, isDeliverable } from '@/lib/neverbounce/veri
 import { classifySignup, extractEmailDomain } from '@/lib/ai/classify-signup';
 import { signDoiToken, computeDoiExpiresAt } from '@/lib/doi/jwt';
 import { generateShortToken, computeShortTokenExpiresAt } from '@/lib/doi/short-token';
-import { sendTransactionalEmail, getDoiTemplateId } from '@/lib/brevo/client';
+import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
+import { renderDoiTemplate } from '@/lib/resend/templates/doi';
 import freeProviders from 'free-email-domains';
 import disposableProviders from 'disposable-email-domains';
 import type { SignupStep1Input, SignupInitErrorCode } from './schema';
@@ -139,21 +140,25 @@ interface SendDoiInput {
 }
 
 export async function sendDoiEmail(input: SendDoiInput): Promise<void> {
-  const templateId = getDoiTemplateId(input.locale);
   const doiUrl = buildDoiUrl({ locale: input.locale, token: input.token });
+  const template = renderDoiTemplate(input.locale, {
+    firstName: input.firstName,
+    doiUrl,
+  });
 
-  // Note tracking : le DOI ne doit pas passer par un tracker custom qui
-  // wrappe le lien (cf. bug P3 commit 5988387 : domaine connectonair.com
-  // 404 au clic). La desactivation se fait au niveau compte Brevo
-  // (Settings > Tracking) — pas ici via headers, qui sont rejetes en 400.
-  await sendTransactionalEmail({
-    to: [{ email: input.email, name: input.firstName }],
-    templateId,
-    params: {
-      firstName: input.firstName,
-      doiUrl,
-    },
-    tags: ['doi', `locale:${input.locale}`],
+  // Resend : pas de tracker custom qui wrappe les liens, contrairement a
+  // Brevo (cf. memoire project_brevo_tracker_bug.md). Le bouton "Confirmer
+  // mon adresse" pointe directement vers /api/signup/verify.
+  await sendTransactionalEmailViaResend({
+    to: input.email,
+    toName: input.firstName,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+    tags: [
+      { name: 'category', value: 'doi' },
+      { name: 'locale', value: input.locale },
+    ],
   });
 }
 

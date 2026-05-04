@@ -1,7 +1,20 @@
 /**
  * Brevo (ex-Sendinblue) v3 API client — minimal fetch-based.
  *
- * On evite le SDK officiel (~3 MB, surdimensionne pour 2 endpoints).
+ * @deprecated POUR LE TRANSACTIONNEL DOI (P3+) : utiliser
+ *   `lib/resend/client.ts` a la place. Brevo wrappe les liens dans un
+ *   tracker custom (`r.mail.connectonair.com` cote compte Phil) qui
+ *   retourne 404 systematiquement, peu importe la longueur de l'URL.
+ *   Cf. memoire project_brevo_tracker_bug.md pour le detail.
+ *
+ * Conserve dormant pour les usages P4+ NON-transactionnels :
+ *   - Marketing campaigns / newsletters de masse (le tracking de clic
+ *     y est UTILE pour mesurer l'engagement).
+ *   - Lifecycle automation (Brevo a de meilleurs flows lifecycle que
+ *     Resend a date).
+ *   - upsertContact() pour synchroniser le pipeline contacts (P4).
+ *
+ * On evite le SDK officiel Brevo (~3 MB) — fetch direct suffit.
  * Doc API : https://developers.brevo.com/reference/sendtransacemail
  */
 
