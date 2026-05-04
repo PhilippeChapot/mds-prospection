@@ -1,0 +1,127 @@
+/*
+ * Styles pour le rendu HTML des pages legales markdown.
+ * Volontairement minimaliste — pas de plugin Tailwind typography pour
+ * eviter une dependance lourde sur 3 pages.
+ */
+
+.legal-prose {
+  color: var(--color-md-text);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.legal-prose > *:first-child {
+  margin-top: 0;
+}
+
+.legal-prose > *:last-child {
+  margin-bottom: 0;
+}
+
+.legal-prose h2 {
+  color: var(--color-md-blue-dark);
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.legal-prose h3 {
+  color: var(--color-md-text);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.legal-prose p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.legal-prose em {
+  color: var(--color-md-text-muted);
+  font-style: italic;
+}
+
+.legal-prose strong {
+  color: var(--color-md-text);
+  font-weight: 600;
+}
+
+.legal-prose a {
+  color: var(--color-md-blue);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.legal-prose a:hover {
+  color: var(--color-md-magenta);
+}
+
+.legal-prose ul,
+.legal-prose ol {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  padding-left: 1.25rem;
+}
+
+.legal-prose ul {
+  list-style: disc;
+}
+
+.legal-prose ol {
+  list-style: decimal;
+}
+
+.legal-prose li {
+  margin-bottom: 0.25rem;
+}
+
+.legal-prose li::marker {
+  color: var(--color-md-text-muted);
+}
+
+.legal-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.legal-prose th,
+.legal-prose td {
+  border: 1px solid var(--color-md-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.legal-prose thead th {
+  background: var(--color-md-bg-soft);
+  font-weight: 600;
+}
+
+.legal-prose blockquote {
+  border-left: 3px solid var(--color-md-magenta);
+  padding-left: 1rem;
+  color: var(--color-md-text-muted);
+  font-style: italic;
+  margin: 1rem 0;
+}
+
+.legal-prose hr {
+  border: 0;
+  border-top: 1px solid var(--color-md-border);
+  margin: 2rem 0;
+}
+
+.legal-prose code {
+  background: var(--color-md-bg-soft);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+}
