@@ -458,16 +458,30 @@ async function createSellsyOpportunity(
   // Format Sellsy V2 confirme par curl :
   //   - pipeline: NUMBER direct (pas { id: ... })
   //   - step: NUMBER direct (idem)
-  //   - related: array obligatoire avec objets typés [{ type, id }, ...]
+  //   - related: array avec UN SEUL type a la fois (company OU individual,
+  //     pas les deux — Sellsy renvoie sinon "Une societe OU un individuel
+  //     est attendu, specifie : company,individual").
   //   - company_id en plus n'est PAS reconnu (la relation passe par `related`)
   // Test curl 2025-05-05 : POST /opportunities a cree id 2357486 avec ce format.
+  //
+  // On choisit company > individual car :
+  //   - L'opportunity represente une vente B2B (entite morale).
+  //   - Le contact reste lie indirectement via company.main_contact cote
+  //     Sellsy (linked_to qu'on a pose au create individual) + via la DB MDS.
   const stepId = await getFirstSellsyStepId(SELLSY_PIPELINE_ID);
 
-  const related: Array<{ type: 'company' | 'individual'; id: number }> = [
+  const related: Array<{ type: 'company'; id: number }> = [
     { type: 'company', id: Number(companySellsyId) },
   ];
+  // contactSellsyId conserve dans la signature pour usage futur P4 M3
+  // (emission devis : Sellsy demande probablement un contact_id sur
+  // /documents POST). Pas inclus dans `related` ici par design Sellsy.
   if (contactSellsyId) {
-    related.push({ type: 'individual', id: Number(contactSellsyId) });
+    console.log(
+      '%s opportunity-contact-not-included contact_sellsy_id=%s (lie indirectement via company)',
+      LOG_PREFIX,
+      contactSellsyId,
+    );
   }
 
   // Note : champ `source` retire (Sellsy V2 attend probablement un source_id
