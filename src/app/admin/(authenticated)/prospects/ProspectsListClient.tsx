@@ -284,8 +284,18 @@ export function ProspectsListClient({
                         >
                           <CompanyAvatar initials={initialsOf(row.company?.name ?? '?')} />
                           <div className="min-w-0">
-                            <div className="text-md-text truncate font-semibold">
-                              {row.company?.name ?? 'Societe inconnue'}
+                            <div className="text-md-text flex items-center gap-1.5 truncate font-semibold">
+                              <span className="truncate">
+                                {row.company?.name ?? 'Societe inconnue'}
+                              </span>
+                              {row.is_test && (
+                                <span
+                                  className="bg-md-warning/15 text-md-warning shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase"
+                                  title="Mode test : syncs externes desactivees"
+                                >
+                                  TEST
+                                </span>
+                              )}
                             </div>
                             <div className="text-md-text-muted truncate text-xs">
                               {contactDisplay}

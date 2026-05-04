@@ -33,6 +33,7 @@ export type ProspectListItem = {
   estimated_amount: number | null;
   owner_id: string | null;
   affiliate_id: string | null;
+  is_test: boolean;
   created_at: string;
   last_activity_at: string;
   company: {

@@ -74,3 +74,23 @@ export async function deleteProspectAction(prospectId: string) {
   revalidatePath('/admin/prospects');
   redirect('/admin/prospects');
 }
+
+/**
+ * Toggle is_test (admin only). Quand true, tous les helpers de sync P4
+ * (Sellsy, Stripe, Brevo, VIES) bypass via assertSyncAllowed() qui throw
+ * SyncSkippedError.
+ */
+export async function toggleProspectIsTestAction(prospectId: string, isTest: boolean) {
+  const profile = await requireAdminProfile();
+  if (profile.role !== 'admin') {
+    throw new Error("Seul un admin peut basculer le mode test d'un prospect.");
+  }
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from('prospects')
+    .update({ is_test: isTest, last_activity_at: new Date().toISOString() })
+    .eq('id', prospectId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/prospects/${prospectId}`);
+  revalidatePath('/admin/prospects');
+}

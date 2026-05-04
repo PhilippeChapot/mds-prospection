@@ -11,6 +11,7 @@ import { updateProspectNotesAction } from './actions';
 import { ActivitiesSection, type ActivityRow } from '@/components/admin/ActivitiesSection';
 import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { DeleteProspectButton } from './DeleteButton';
+import { IsTestToggle } from './IsTestToggle';
 import { PACK_LABEL } from '@/lib/supabase/queries';
 import type { PoleCode } from '@/lib/design-tokens';
 import type { Database } from '@/lib/supabase/database.types';
@@ -34,6 +35,8 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
     .select(
       `
       id, status, pack_code, estimated_amount, notes, owner_id, affiliate_id,
+      is_test, last_synced_sellsy_at, last_synced_brevo_at, last_synced_stripe_at,
+      last_sync_error_message, last_sync_error_provider, last_sync_error_at,
       created_at, updated_at, last_activity_at,
       company:companies!inner(id, name, primary_domain, country, category, was_prs_2026_exhibitor, pole:poles(code, name_fr)),
       contact:contacts(id, first_name, last_name, email, phone, role),
@@ -118,6 +121,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {profile.role === 'admin' && <IsTestToggle prospectId={id} isTest={prospect.is_test} />}
           <Button asChild variant="outline" size="sm">
             <Link href={`/admin/prospects/${id}/edit`}>
               <Pencil className="size-4" aria-hidden />

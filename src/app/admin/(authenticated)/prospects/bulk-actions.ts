@@ -115,7 +115,7 @@ export async function exportProspectsCsvAction(
       .from('prospects')
       .select(
         `
-        id, status, pack_code, estimated_amount, owner_id, affiliate_id, created_at, last_activity_at,
+        id, status, pack_code, estimated_amount, owner_id, affiliate_id, is_test, created_at, last_activity_at,
         company:companies!inner(id, name, category, was_prs_2026_exhibitor, pole:poles(code, name_fr)),
         contact:contacts(id, first_name, last_name, email),
         owner:users!prospects_owner_id_fkey(id, full_name, email)
@@ -145,6 +145,7 @@ export async function exportProspectsCsvAction(
         estimated_amount: row.estimated_amount,
         owner_id: row.owner_id,
         affiliate_id: row.affiliate_id,
+        is_test: row.is_test ?? false,
         created_at: row.created_at,
         last_activity_at: row.last_activity_at,
         company: company

@@ -514,6 +514,8 @@ export type Database = {
           created_at: string;
           description: string | null;
           id: string;
+          last_synced_brevo_at: string | null;
+          last_synced_sellsy_at: string | null;
           name: string;
           name_normalized: string;
           notes: string | null;
@@ -541,6 +543,8 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          last_synced_brevo_at?: string | null;
+          last_synced_sellsy_at?: string | null;
           name: string;
           name_normalized: string;
           notes?: string | null;
@@ -568,6 +572,8 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          last_synced_brevo_at?: string | null;
+          last_synced_sellsy_at?: string | null;
           name?: string;
           name_normalized?: string;
           notes?: string | null;
@@ -676,6 +682,8 @@ export type Database = {
           is_primary: boolean;
           language: Database['public']['Enums']['language_code'];
           last_name: string | null;
+          last_synced_brevo_at: string | null;
+          last_synced_sellsy_at: string | null;
           lifecycle_emails_enabled: boolean;
           marketing_consent: boolean;
           phone: string | null;
@@ -696,6 +704,8 @@ export type Database = {
           is_primary?: boolean;
           language?: Database['public']['Enums']['language_code'];
           last_name?: string | null;
+          last_synced_brevo_at?: string | null;
+          last_synced_sellsy_at?: string | null;
           lifecycle_emails_enabled?: boolean;
           marketing_consent?: boolean;
           phone?: string | null;
@@ -716,6 +726,8 @@ export type Database = {
           is_primary?: boolean;
           language?: Database['public']['Enums']['language_code'];
           last_name?: string | null;
+          last_synced_brevo_at?: string | null;
+          last_synced_sellsy_at?: string | null;
           lifecycle_emails_enabled?: boolean;
           marketing_consent?: boolean;
           phone?: string | null;
@@ -1078,6 +1090,12 @@ export type Database = {
           id: string;
           is_test: boolean;
           last_activity_at: string;
+          last_sync_error_at: string | null;
+          last_sync_error_message: string | null;
+          last_sync_error_provider: string | null;
+          last_synced_brevo_at: string | null;
+          last_synced_sellsy_at: string | null;
+          last_synced_stripe_at: string | null;
           notes: string | null;
           owner_id: string | null;
           pack_code: Database['public']['Enums']['pack_code'];
@@ -1118,6 +1136,12 @@ export type Database = {
           id?: string;
           is_test?: boolean;
           last_activity_at?: string;
+          last_sync_error_at?: string | null;
+          last_sync_error_message?: string | null;
+          last_sync_error_provider?: string | null;
+          last_synced_brevo_at?: string | null;
+          last_synced_sellsy_at?: string | null;
+          last_synced_stripe_at?: string | null;
           notes?: string | null;
           owner_id?: string | null;
           pack_code?: Database['public']['Enums']['pack_code'];
@@ -1158,6 +1182,12 @@ export type Database = {
           id?: string;
           is_test?: boolean;
           last_activity_at?: string;
+          last_sync_error_at?: string | null;
+          last_sync_error_message?: string | null;
+          last_sync_error_provider?: string | null;
+          last_synced_brevo_at?: string | null;
+          last_synced_sellsy_at?: string | null;
+          last_synced_stripe_at?: string | null;
           notes?: string | null;
           owner_id?: string | null;
           pack_code?: Database['public']['Enums']['pack_code'];
@@ -1682,6 +1712,33 @@ export type Database = {
           id?: string;
           role?: Database['public']['Enums']['user_role'];
           totp_enabled?: boolean;
+        };
+        Relationships: [];
+      };
+      vat_verifications: {
+        Row: {
+          country: string;
+          is_valid: boolean;
+          request_date: string;
+          trader_address: string | null;
+          trader_name: string | null;
+          vat_number: string;
+        };
+        Insert: {
+          country: string;
+          is_valid: boolean;
+          request_date?: string;
+          trader_address?: string | null;
+          trader_name?: string | null;
+          vat_number: string;
+        };
+        Update: {
+          country?: string;
+          is_valid?: boolean;
+          request_date?: string;
+          trader_address?: string | null;
+          trader_name?: string | null;
+          vat_number?: string;
         };
         Relationships: [];
       };
