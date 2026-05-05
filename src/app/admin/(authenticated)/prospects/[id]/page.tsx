@@ -38,7 +38,9 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
       id, status, pack_code, estimated_amount, notes, owner_id, affiliate_id,
       is_test, last_synced_sellsy_at, last_synced_brevo_at, last_synced_stripe_at,
       last_sync_error_message, last_sync_error_provider, last_sync_error_at,
-      sellsy_devis_id, sellsy_proforma_id, sellsy_invoice_id,
+      sellsy_devis_id, sellsy_devis_number, sellsy_devis_public_url, sellsy_devis_emitted_at,
+      sellsy_proforma_id, sellsy_proforma_number, sellsy_proforma_public_url, sellsy_proforma_emitted_at,
+      sellsy_invoice_id, sellsy_invoice_number, sellsy_invoice_public_url, sellsy_invoice_emitted_at,
       created_at, updated_at, last_activity_at,
       company:companies!inner(id, name, primary_domain, country, category, was_prs_2026_exhibitor, pole:poles(code, name_fr)),
       contact:contacts(id, first_name, last_name, email, phone, role),
@@ -197,6 +199,27 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
               : null,
           errorAt:
             prospect.last_sync_error_provider === 'sellsy' ? prospect.last_sync_error_at : null,
+          devis: prospect.sellsy_devis_id
+            ? {
+                number: prospect.sellsy_devis_number,
+                publicUrl: prospect.sellsy_devis_public_url,
+                emittedAt: prospect.sellsy_devis_emitted_at,
+              }
+            : null,
+          proforma: prospect.sellsy_proforma_id
+            ? {
+                number: prospect.sellsy_proforma_number,
+                publicUrl: prospect.sellsy_proforma_public_url,
+                emittedAt: prospect.sellsy_proforma_emitted_at,
+              }
+            : null,
+          invoice: prospect.sellsy_invoice_id
+            ? {
+                number: prospect.sellsy_invoice_number,
+                publicUrl: prospect.sellsy_invoice_public_url,
+                emittedAt: prospect.sellsy_invoice_emitted_at,
+              }
+            : null,
         }}
         stripe={{ lastSyncedAt: prospect.last_synced_stripe_at }}
         brevo={{ lastSyncedAt: prospect.last_synced_brevo_at }}

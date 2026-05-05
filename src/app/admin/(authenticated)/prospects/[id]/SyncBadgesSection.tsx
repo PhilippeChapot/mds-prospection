@@ -18,6 +18,12 @@ import { cn } from '@/lib/utils';
 
 type SyncStatus = 'pending' | 'synced' | 'error' | 'skipped' | 'not-implemented';
 
+interface SellsyDocBadge {
+  number: string | null;
+  publicUrl: string | null;
+  emittedAt: string | null;
+}
+
 interface Props {
   prospectId: string;
   isTest: boolean;
@@ -26,6 +32,9 @@ interface Props {
     lastSyncedAt: string | null;
     errorMessage: string | null;
     errorAt: string | null;
+    devis: SellsyDocBadge | null;
+    proforma: SellsyDocBadge | null;
+    invoice: SellsyDocBadge | null;
   };
   stripe: {
     lastSyncedAt: string | null;
@@ -79,6 +88,16 @@ export function SyncBadgesSection({
   }
 
   const sellsyStatus = computeStatus({ ...sellsy, isTest });
+  // Si plusieurs documents existent, afficher le plus avance :
+  // facture > proforma > devis. Permet a l'admin de voir le statut le
+  // plus recent du parcours commercial.
+  const sellsyDoc = sellsy.invoice
+    ? { ...sellsy.invoice, label: 'Facture émise' }
+    : sellsy.proforma
+      ? { ...sellsy.proforma, label: 'Proforma émise' }
+      : sellsy.devis
+        ? { ...sellsy.devis, label: 'Devis émis' }
+        : null;
   // Stripe + Brevo : pas encore implementes (P4 M4 et M6).
   const stripeStatus: SyncStatus = isTest
     ? 'skipped'
@@ -148,6 +167,7 @@ export function SyncBadgesSection({
           lastSyncedAt={sellsy.lastSyncedAt}
           errorMessage={sellsy.errorMessage}
           errorAt={sellsy.errorAt}
+          sellsyDoc={sellsyDoc}
         />
         <SyncBadge
           provider="Stripe"
@@ -173,6 +193,7 @@ function SyncBadge({
   errorMessage,
   errorAt,
   notImplementedNote,
+  sellsyDoc,
 }: {
   provider: string;
   status: SyncStatus;
@@ -180,6 +201,14 @@ function SyncBadge({
   errorMessage?: string | null;
   errorAt?: string | null;
   notImplementedNote?: string;
+  /** Si fourni, remplace le label "Synchronise le X" par le contexte
+   *  document Sellsy emis (devis/proforma/facture) avec numero cliquable. */
+  sellsyDoc?: {
+    label: string;
+    number: string | null;
+    publicUrl: string | null;
+    emittedAt: string | null;
+  } | null;
 }) {
   return (
     <div
@@ -202,7 +231,33 @@ function SyncBadge({
           )}
         >
           {status === 'pending' && 'En attente de la 1re sync…'}
-          {status === 'synced' && lastSyncedAt && `Synchronisé le ${formatDate(lastSyncedAt)}`}
+          {status === 'synced' &&
+            (sellsyDoc ? (
+              <>
+                <span>
+                  {sellsyDoc.label}
+                  {sellsyDoc.emittedAt && ` le ${formatDate(sellsyDoc.emittedAt)}`}
+                </span>
+                {sellsyDoc.number && (
+                  <div className="mt-0.5">
+                    {sellsyDoc.publicUrl ? (
+                      <a
+                        href={sellsyDoc.publicUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-md-magenta hover:text-md-magenta-soft font-medium underline-offset-2 hover:underline"
+                      >
+                        {sellsyDoc.number}
+                      </a>
+                    ) : (
+                      <span className="text-md-text font-medium">{sellsyDoc.number}</span>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              lastSyncedAt && `Synchronisé le ${formatDate(lastSyncedAt)}`
+            ))}
           {status === 'error' && (
             <>
               <span>Erreur</span>

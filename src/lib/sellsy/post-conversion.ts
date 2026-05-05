@@ -122,14 +122,40 @@ export async function runPostConversion(prospectId: string): Promise<void> {
     return;
   }
 
-  // 5. Stocker le document_id dans la colonne dediee selon le type.
+  // 5. Stocker le document_id + number + public_url + emitted_at dans les
+  //    colonnes dediees selon le type. Permet a l'UI fiche prospect d'afficher
+  //    "Devis emis le {date}" + numero cliquable sans devoir refetch Sellsy.
   const docIdStr = String(documentId);
+  const docDetailsForPersist = await fetchSellsyDocumentDetails(documentId, docType);
+  const emittedAt = new Date().toISOString();
+  // public_link est utilisable seulement si public_link_enabled=true (cf.
+  // quirk #17). Sinon on persiste pdf_link comme fallback partageable.
+  const linkToPersist =
+    (docDetailsForPersist.publicLinkEnabled && docDetailsForPersist.publicUrl) ||
+    docDetailsForPersist.pdfLink ||
+    null;
+
   const updateValues =
     docType === 'estimate'
-      ? { sellsy_devis_id: docIdStr }
+      ? {
+          sellsy_devis_id: docIdStr,
+          sellsy_devis_number: docDetailsForPersist.number,
+          sellsy_devis_public_url: linkToPersist,
+          sellsy_devis_emitted_at: emittedAt,
+        }
       : docType === 'proforma'
-        ? { sellsy_proforma_id: docIdStr }
-        : { sellsy_invoice_id: docIdStr };
+        ? {
+            sellsy_proforma_id: docIdStr,
+            sellsy_proforma_number: docDetailsForPersist.number,
+            sellsy_proforma_public_url: linkToPersist,
+            sellsy_proforma_emitted_at: emittedAt,
+          }
+        : {
+            sellsy_invoice_id: docIdStr,
+            sellsy_invoice_number: docDetailsForPersist.number,
+            sellsy_invoice_public_url: linkToPersist,
+            sellsy_invoice_emitted_at: emittedAt,
+          };
 
   await supabase.from('prospects').update(updateValues).eq('id', prospectId);
 
@@ -156,6 +182,7 @@ export async function runPostConversion(prospectId: string): Promise<void> {
     prospectId,
     documentId,
     docType,
+    docDetails: docDetailsForPersist,
     contactEmail: contact.email,
     contactFirstName: contact.first_name ?? '',
     locale: contact.language === 'EN' ? 'en' : 'fr',
@@ -172,6 +199,9 @@ interface SendDevisInput {
   prospectId: string;
   documentId: number;
   docType: SellsyDocumentType;
+  /** Reutilise le fetch deja effectue par runPostConversion pour la persistence
+   *  (number, public_url, etc.). Evite un GET /estimates/{id} en double. */
+  docDetails: SellsyDocumentDetails;
   contactEmail: string;
   contactFirstName: string;
   locale: 'fr' | 'en';
@@ -179,9 +209,7 @@ interface SendDevisInput {
 
 async function sendDevisConciergeEmail(input: SendDevisInput): Promise<void> {
   const supabase = getSupabaseServiceClient();
-
-  // Recupere le numero du document Sellsy + la company name pour le subject.
-  const docDetails = await fetchSellsyDocumentDetails(input.documentId, input.docType);
+  const docDetails = input.docDetails;
 
   // Debug : on a vu un bug ou totalHt ressortait a 0 EUR. Logger toute la
   // shape utile pour le template avant l'appel render.
