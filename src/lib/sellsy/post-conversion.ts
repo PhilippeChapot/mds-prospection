@@ -193,18 +193,21 @@ async function sendDevisConciergeEmail(input: SendDevisInput): Promise<void> {
         number: docDetails.number,
         total_excl_tax: docDetails.totalHt,
         public_url: docDetails.publicUrl,
+        public_link_enabled: docDetails.publicLinkEnabled,
+        pdf_link: docDetails.pdfLink,
       },
       null,
       2,
     ),
   );
 
-  // URL publique Sellsy : Sellsy V2 renvoie public_link en URL complete
-  // dans le GET /estimates/{id}. Si public_link_enabled=false, on fallback
-  // sur le PDF link directement (toujours fourni en V2).
+  // URL Sellsy : on prefere public_link MAIS uniquement s'il est active
+  // (public_link_enabled=true). Sinon Sellsy renvoie une page "Document
+  // inaccessible". Fallback sur pdf_link (toujours accessible via son
+  // token sign). Quirk #17.
   const sellsyDocumentUrl =
-    docDetails.publicUrl ??
-    docDetails.pdfLink ??
+    (docDetails.publicLinkEnabled && docDetails.publicUrl) ||
+    docDetails.pdfLink ||
     `https://www.sellsy.com/document/${input.documentId}`;
 
   const { data: prospect } = await supabase
@@ -249,6 +252,7 @@ interface SellsyDocumentDetails {
   number: string | null;
   totalHt: number;
   publicUrl: string | null;
+  publicLinkEnabled: boolean;
   pdfLink: string | null;
 }
 
@@ -278,9 +282,10 @@ async function fetchSellsyDocumentDetails(
 
     const totalHt = d.amounts?.total_excl_tax ? Number(d.amounts.total_excl_tax) : 0;
     const publicUrl = d.public_link ?? null;
+    const publicLinkEnabled = Boolean(d.public_link_enabled);
     const pdfLink = d.pdf_link ?? null;
 
-    return { number: d.number ?? null, totalHt, publicUrl, pdfLink };
+    return { number: d.number ?? null, totalHt, publicUrl, publicLinkEnabled, pdfLink };
   } catch (err) {
     console.warn(
       '%s fetch-document-details-failed document_id=%d msg=%s — fallback minimal',
@@ -288,7 +293,7 @@ async function fetchSellsyDocumentDetails(
       documentId,
       err instanceof Error ? err.message : String(err),
     );
-    return { number: null, totalHt: 0, publicUrl: null, pdfLink: null };
+    return { number: null, totalHt: 0, publicUrl: null, publicLinkEnabled: false, pdfLink: null };
   }
 }
 

@@ -130,6 +130,10 @@ export async function createSellsyDocument(
   const payload = {
     related: [{ type: 'company' as const, id: Number(company.sellsy_id) }],
     rows,
+    // Active le lien public Sellsy des la creation. Sans ca, public_link
+    // est genere mais inaccessible ("Document inaccessible") car
+    // public_link_enabled defaut workspace = false. Quirk #17 memory bank.
+    public_link_enabled: true,
     // Note Sellsy : on peut passer un contact_id pour rattacher le devis
     // a un contact specifique. Champ optionnel, pas critique pour M3.
     ...(contact?.sellsy_contact_id ? { contact_id: Number(contact.sellsy_contact_id) } : {}),
