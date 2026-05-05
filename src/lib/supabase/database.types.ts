@@ -1032,6 +1032,7 @@ export type Database = {
           price_eur_ht: number;
           season_id: string;
           sellsy_item_id: number | null;
+          sellsy_marseille_item_id: number | null;
           sellsy_sku: string | null;
         };
         Insert: {
@@ -1049,6 +1050,7 @@ export type Database = {
           price_eur_ht: number;
           season_id: string;
           sellsy_item_id?: number | null;
+          sellsy_marseille_item_id?: number | null;
           sellsy_sku?: string | null;
         };
         Update: {
@@ -1066,6 +1068,7 @@ export type Database = {
           price_eur_ht?: number;
           season_id?: string;
           sellsy_item_id?: number | null;
+          sellsy_marseille_item_id?: number | null;
           sellsy_sku?: string | null;
         };
         Relationships: [

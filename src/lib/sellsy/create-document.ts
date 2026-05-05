@@ -185,23 +185,82 @@ interface SellsyRow {
 }
 
 /**
- * Construit la liste des rows Sellsy depuis le step2_payload.
- * - Pack (1 row)
- * - Supplement Marseille si applicable (mergee dans le prix du pack — voir
- *   note ci-dessous, TODO P4 M3.x si Sellsy exige un item dedie)
- * - Addons (N rows)
+ * Donnees deja resolues (DB + Sellsy item lookup) — input de la pure
+ * fonction assembleRows() pour faciliter les tests sans mock Supabase.
  */
-async function buildRows(draft: Step2DraftCaseA): Promise<SellsyRow[]> {
+export interface AssembleRowsInput {
+  pack: { itemId: number; priceHt: number };
+  marseille: {
+    selected: boolean;
+    supplementHt: number | null;
+    /** sellsy_item_id du SKU MDS-OPT-*-MARSEILLE. Si null + selected,
+     *  on log un warning et on n'emet PAS la row Marseille (le supplement
+     *  ne sera pas facture jusqu'a ce que l'admin mappe l'item). */
+    itemId: number | null;
+  };
+  addons: Array<{ itemId: number; priceHt: number }>;
+}
+
+/**
+ * Pure function : assemble les rows Sellsy a partir des donnees deja
+ * resolues. Testable sans Supabase ni Sellsy API.
+ *
+ * Strategie Marseille : 2 rows distinctes (pack + option Marseille) plutot
+ * que merge dans le prix pack — meilleure tracabilite comptable Sellsy.
+ */
+export function assembleRows(input: AssembleRowsInput): SellsyRow[] {
   const rows: SellsyRow[] = [];
 
-  // ----- Pack -----
+  // 1. Pack Paris (toujours)
+  rows.push({
+    type: 'catalog',
+    quantity: '1',
+    related: { id: input.pack.itemId, type: 'product' },
+    unit_amount: formatAmount(input.pack.priceHt),
+  });
+
+  // 2. Option Marseille (si selected et item mappe)
+  if (input.marseille.selected) {
+    if (input.marseille.itemId != null && input.marseille.supplementHt != null) {
+      rows.push({
+        type: 'catalog',
+        quantity: '1',
+        related: { id: input.marseille.itemId, type: 'product' },
+        unit_amount: formatAmount(input.marseille.supplementHt),
+      });
+    } else {
+      console.warn(
+        '%s marseille-skipped — sellsy_marseille_item_id ou supplement_eur_ht manquant en DB. Le supplement ne sera PAS facture. A fixer via UPDATE pricing_tiers SET sellsy_marseille_item_id=...',
+        LOG_PREFIX,
+      );
+    }
+  }
+
+  // 3. Addons (N rows)
+  for (const addon of input.addons) {
+    rows.push({
+      type: 'catalog',
+      quantity: '1',
+      related: { id: addon.itemId, type: 'product' },
+      unit_amount: formatAmount(addon.priceHt),
+    });
+  }
+
+  return rows;
+}
+
+/**
+ * Wrapper qui fetch les donnees DB + resoud les item_id Sellsy puis
+ * delegue a la pure assembleRows().
+ */
+async function buildRows(draft: Step2DraftCaseA): Promise<SellsyRow[]> {
   if (!draft.pricingTierId) {
     throw new SellsyMappingError('step2_payload sans pricingTierId');
   }
   const supabase = getSupabaseServiceClient();
   const { data: tier } = await supabase
     .from('pricing_tiers')
-    .select('id, price_eur_ht, marseille_supplement_eur_ht')
+    .select('id, price_eur_ht, marseille_supplement_eur_ht, sellsy_marseille_item_id')
     .eq('id', draft.pricingTierId)
     .single();
 
@@ -210,26 +269,9 @@ async function buildRows(draft: Step2DraftCaseA): Promise<SellsyRow[]> {
   }
 
   const packItemId = await getSellsyItemIdForPricingTier(draft.pricingTierId);
-  // Note : Marseille supplement merge dans le prix du pack (pas d'item dedie
-  // Sellsy a date). Calcule AVANT push pour eviter une mutation post-push.
-  const packAmount =
-    Number(tier.price_eur_ht) +
-    (draft.marseilleSelected ? Number(tier.marseille_supplement_eur_ht ?? 0) : 0);
-  rows.push({
-    type: 'catalog',
-    quantity: '1',
-    related: { id: packItemId, type: 'product' },
-    unit_amount: formatAmount(packAmount),
-  });
-  if (draft.marseilleSelected && tier.marseille_supplement_eur_ht != null) {
-    console.log(
-      '%s marseille-merged-into-pack supp=%d',
-      LOG_PREFIX,
-      tier.marseille_supplement_eur_ht,
-    );
-  }
 
-  // ----- Addons -----
+  // Resolve addons en parallele (chaque addon = 2 fetch : option + item_id)
+  const addons: AssembleRowsInput['addons'] = [];
   if (draft.addonIds && draft.addonIds.length > 0) {
     for (const addonId of draft.addonIds) {
       const { data: addon } = await supabase
@@ -238,16 +280,21 @@ async function buildRows(draft: Step2DraftCaseA): Promise<SellsyRow[]> {
         .eq('id', addonId)
         .single();
       if (!addon) continue;
-
       const addonItemId = await getSellsyItemIdForAddon(addonId);
-      rows.push({
-        type: 'catalog',
-        quantity: '1',
-        related: { id: addonItemId, type: 'product' },
-        unit_amount: formatAmount(Number(addon.price_eur_ht)),
-      });
+      addons.push({ itemId: addonItemId, priceHt: Number(addon.price_eur_ht) });
     }
   }
+
+  const rows = assembleRows({
+    pack: { itemId: packItemId, priceHt: Number(tier.price_eur_ht) },
+    marseille: {
+      selected: Boolean(draft.marseilleSelected),
+      supplementHt:
+        tier.marseille_supplement_eur_ht != null ? Number(tier.marseille_supplement_eur_ht) : null,
+      itemId: tier.sellsy_marseille_item_id != null ? Number(tier.sellsy_marseille_item_id) : null,
+    },
+    addons,
+  });
 
   console.log('%s rows count=%d', LOG_PREFIX, rows.length);
   return rows;

@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
+  assembleRows,
   endpointForDocumentType,
   formatAmount,
   paymentPathToDocumentType,
@@ -49,5 +50,77 @@ describe('formatAmount (Sellsy V2 string format)', () => {
   });
   it('formats zero', () => {
     expect(formatAmount(0)).toBe('0.00');
+  });
+});
+
+describe('assembleRows (Sellsy rows from resolved data)', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  it('Paris seul : 1 row pack avec prix HT', () => {
+    const rows = assembleRows({
+      pack: { itemId: 18214704, priceHt: 1980 },
+      marseille: { selected: false, supplementHt: 500, itemId: 99999 },
+      addons: [],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toEqual({
+      type: 'catalog',
+      quantity: '1',
+      related: { id: 18214704, type: 'product' },
+      unit_amount: '1980.00',
+    });
+  });
+
+  it('Paris + Marseille (item mappe) : 2 rows distinctes', () => {
+    const rows = assembleRows({
+      pack: { itemId: 18214704, priceHt: 1980 },
+      marseille: { selected: true, supplementHt: 990, itemId: 18214800 },
+      addons: [],
+    });
+    expect(rows).toHaveLength(2);
+    expect(rows[0].related.id).toBe(18214704);
+    expect(rows[0].unit_amount).toBe('1980.00');
+    expect(rows[1].related.id).toBe(18214800);
+    expect(rows[1].unit_amount).toBe('990.00');
+  });
+
+  it('Paris + Marseille avec sellsy_marseille_item_id null : 1 row + warning', () => {
+    const warn = vi.spyOn(console, 'warn');
+    const rows = assembleRows({
+      pack: { itemId: 18214704, priceHt: 1980 },
+      marseille: { selected: true, supplementHt: 990, itemId: null },
+      addons: [],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].related.id).toBe(18214704);
+    expect(warn).toHaveBeenCalled();
+    const msg = warn.mock.calls[0]?.join(' ') ?? '';
+    expect(msg).toContain('marseille-skipped');
+    expect(msg).toContain('sellsy_marseille_item_id');
+  });
+
+  it('Paris + Marseille + 2 addons : 4 rows dans le bon ordre', () => {
+    const rows = assembleRows({
+      pack: { itemId: 18214704, priceHt: 1980 },
+      marseille: { selected: true, supplementHt: 990, itemId: 18214800 },
+      addons: [
+        { itemId: 18214737, priceHt: 250 },
+        { itemId: 18214738, priceHt: 350 },
+      ],
+    });
+    expect(rows).toHaveLength(4);
+    expect(rows.map((r) => r.related.id)).toEqual([18214704, 18214800, 18214737, 18214738]);
+  });
+
+  it('addons seuls (pack obligatoire mais sans Marseille) : 1 + N', () => {
+    const rows = assembleRows({
+      pack: { itemId: 18214704, priceHt: 1980 },
+      marseille: { selected: false, supplementHt: null, itemId: null },
+      addons: [{ itemId: 18214737, priceHt: 250 }],
+    });
+    expect(rows).toHaveLength(2);
+    expect(rows[1].unit_amount).toBe('250.00');
   });
 });
