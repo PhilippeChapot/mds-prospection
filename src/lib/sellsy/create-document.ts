@@ -115,8 +115,8 @@ export async function createSellsyDocument(
     );
   }
 
-  // 2. Build line items
-  const items = await buildLineItems(draft);
+  // 2. Build rows (cf. quirk #10..#14 memory bank pour la shape exacte).
+  const rows = await buildRows(draft);
 
   // 3. POST sur l'endpoint type. Sellsy V2 expose des endpoints separes
   //    par type de document, pas un /documents generique :
@@ -129,7 +129,7 @@ export async function createSellsyDocument(
 
   const payload = {
     related: [{ type: 'company' as const, id: Number(company.sellsy_id) }],
-    items,
+    rows,
     // Note Sellsy : on peut passer un contact_id pour rattacher le devis
     // a un contact specifique. Champ optionnel, pas critique pour M3.
     ...(contact?.sellsy_contact_id ? { contact_id: Number(contact.sellsy_contact_id) } : {}),
@@ -141,7 +141,8 @@ export async function createSellsyDocument(
   });
 
   const documentId = extractSellsyId(createdRaw, endpoint);
-  const total = items.reduce((acc, it) => acc + it.unit_amount * it.quantity, 0);
+  // Total HT calcule depuis les rows (string -> number) pour le log seulement.
+  const total = rows.reduce((acc, r) => acc + Number(r.unit_amount ?? 0) * Number(r.quantity), 0);
 
   console.log(
     '%s success prospect_id=%s type=%s document_id=%d total_ht=%d',
@@ -155,23 +156,39 @@ export async function createSellsyDocument(
   return { documentId, total };
 }
 
-interface SellsyLineItem {
-  id: number;
-  quantity: number;
-  unit_amount: number;
-  // tax_id optionnel pour P4 M3 (TVA standard implicite cote Sellsy).
-  // Sera ajoute en M7 pour autoliquidation UE.
+/**
+ * Shape d'une ligne Sellsy V2 (rows[]) — quirks #10..#15 memory bank :
+ *   - field name : "rows" (pas "items")
+ *   - type : "catalog" (pas "single" / "item" / "product")
+ *   - related : OBJET unique { id, type } (pas un array)
+ *   - related.type : "product" (pas "item") — enum["product","service"]
+ *   - tax_id : integer (pas tax_rate)
+ *   - quantity + unit_amount : STRINGS (pas numbers !) — confirme par le
+ *     schema OpenAPI Sellsy V2 (rows[].quantity / unit_amount type:"string")
+ */
+interface SellsyRow {
+  type: 'catalog';
+  /** STRING par spec Sellsy V2. Format "1" ou "1.00". */
+  quantity: string;
+  related: { id: number; type: 'product' };
+  /** Override du prix catalogue. STRING par spec Sellsy V2.
+   *  Format "1980.00" (2 decimales). */
+  unit_amount?: string;
+  /** Override du tax_id catalogue (integer Sellsy). Pour P4 M3 on laisse
+   *  le catalog-default (20% standard FR). M7 ajoutera le tax_id 0% pour
+   *  autoliquidation UE. */
+  tax_id?: number;
 }
 
 /**
- * Construit la liste des lignes Sellsy depuis le step2_payload.
- * - Pack (1 ligne)
- * - Supplement Marseille si applicable (1 ligne — TODO en P4 M3.x si Sellsy
- *   exige un item dedicacé. Pour M3 minimum viable on l'omet et on documente.)
- * - Addons (N lignes)
+ * Construit la liste des rows Sellsy depuis le step2_payload.
+ * - Pack (1 row)
+ * - Supplement Marseille si applicable (mergee dans le prix du pack — voir
+ *   note ci-dessous, TODO P4 M3.x si Sellsy exige un item dedie)
+ * - Addons (N rows)
  */
-async function buildLineItems(draft: Step2DraftCaseA): Promise<SellsyLineItem[]> {
-  const items: SellsyLineItem[] = [];
+async function buildRows(draft: Step2DraftCaseA): Promise<SellsyRow[]> {
+  const rows: SellsyRow[] = [];
 
   // ----- Pack -----
   if (!draft.pricingTierId) {
@@ -189,17 +206,18 @@ async function buildLineItems(draft: Step2DraftCaseA): Promise<SellsyLineItem[]>
   }
 
   const packItemId = await getSellsyItemIdForPricingTier(draft.pricingTierId);
-  items.push({
-    id: packItemId,
-    quantity: 1,
-    unit_amount: Number(tier.price_eur_ht),
+  // Note : Marseille supplement merge dans le prix du pack (pas d'item dedie
+  // Sellsy a date). Calcule AVANT push pour eviter une mutation post-push.
+  const packAmount =
+    Number(tier.price_eur_ht) +
+    (draft.marseilleSelected ? Number(tier.marseille_supplement_eur_ht ?? 0) : 0);
+  rows.push({
+    type: 'catalog',
+    quantity: '1',
+    related: { id: packItemId, type: 'product' },
+    unit_amount: formatAmount(packAmount),
   });
-
-  // Note : le supplement Marseille n'a pas son propre item Sellsy a date.
-  // 2 options : (a) augmenter le prix du pack si marseilleSelected, ou
-  // (b) creer un item Sellsy dedie. Pour M3 viable, on additionne au pack.
   if (draft.marseilleSelected && tier.marseille_supplement_eur_ht != null) {
-    items[items.length - 1].unit_amount += Number(tier.marseille_supplement_eur_ht);
     console.log(
       '%s marseille-merged-into-pack supp=%d',
       LOG_PREFIX,
@@ -218,16 +236,17 @@ async function buildLineItems(draft: Step2DraftCaseA): Promise<SellsyLineItem[]>
       if (!addon) continue;
 
       const addonItemId = await getSellsyItemIdForAddon(addonId);
-      items.push({
-        id: addonItemId,
-        quantity: 1,
-        unit_amount: Number(addon.price_eur_ht),
+      rows.push({
+        type: 'catalog',
+        quantity: '1',
+        related: { id: addonItemId, type: 'product' },
+        unit_amount: formatAmount(Number(addon.price_eur_ht)),
       });
     }
   }
 
-  console.log('%s line-items count=%d', LOG_PREFIX, items.length);
-  return items;
+  console.log('%s rows count=%d', LOG_PREFIX, rows.length);
+  return rows;
 }
 
 // ---------------------------------------------------------------------------
@@ -239,6 +258,14 @@ function pickFirst<T>(value: T | T[] | null | undefined): T | null {
   if (value == null) return null;
   if (Array.isArray(value)) return value[0] ?? null;
   return value;
+}
+
+/**
+ * Formate un montant EUR en string Sellsy V2 (2 decimales fixes, point decimal).
+ * Ex : 1980 -> "1980.00", 1980.5 -> "1980.50". Quirk #15.
+ */
+export function formatAmount(n: number): string {
+  return n.toFixed(2);
 }
 
 /**

@@ -51,8 +51,16 @@ echo "[2/2] POST /v2/estimates with minimal payload..."
 PAYLOAD=$(cat <<JSON
 {
   "related": [{ "type": "company", "id": $COMPANY_ID }],
-  "items": [
-    { "id": $ITEM_ID, "quantity": 1, "unit_amount": 12000 }
+  "rows": [
+    {
+      "type": "catalog",
+      "quantity": "1",
+      "unit_amount": "1980.00",
+      "related": {
+        "id": $ITEM_ID,
+        "type": "product"
+      }
+    }
   ]
 }
 JSON

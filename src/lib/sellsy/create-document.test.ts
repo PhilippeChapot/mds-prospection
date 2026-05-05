@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { paymentPathToDocumentType } from './create-document';
+import {
+  endpointForDocumentType,
+  formatAmount,
+  paymentPathToDocumentType,
+} from './create-document';
 
 describe('paymentPathToDocumentType', () => {
   it('maps devis_sepa -> estimate', () => {
@@ -22,5 +26,28 @@ describe('paymentPathToDocumentType', () => {
     expect(paymentPathToDocumentType(null)).toBe('estimate');
     expect(paymentPathToDocumentType(undefined)).toBe('estimate');
     expect(paymentPathToDocumentType('xxx')).toBe('estimate');
+  });
+});
+
+describe('endpointForDocumentType', () => {
+  it('routes type -> Sellsy V2 endpoint', () => {
+    expect(endpointForDocumentType('estimate')).toBe('/estimates');
+    expect(endpointForDocumentType('proforma')).toBe('/proformas');
+    expect(endpointForDocumentType('invoice')).toBe('/invoices');
+  });
+});
+
+describe('formatAmount (Sellsy V2 string format)', () => {
+  it('formats integer EUR with 2 decimals', () => {
+    expect(formatAmount(1980)).toBe('1980.00');
+  });
+  it('formats half-decimal correctly', () => {
+    expect(formatAmount(1980.5)).toBe('1980.50');
+  });
+  it('formats arbitrary decimals (rounds to 2)', () => {
+    expect(formatAmount(1980.567)).toBe('1980.57');
+  });
+  it('formats zero', () => {
+    expect(formatAmount(0)).toBe('0.00');
   });
 });
