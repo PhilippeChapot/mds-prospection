@@ -118,9 +118,16 @@ export async function createSellsyDocument(
   // 2. Build line items
   const items = await buildLineItems(draft);
 
-  // 3. POST /v2/documents
+  // 3. POST sur l'endpoint type. Sellsy V2 expose des endpoints separes
+  //    par type de document, pas un /documents generique :
+  //      estimate -> /estimates
+  //      proforma -> /proformas
+  //      invoice  -> /invoices
+  //    => 404 si on POST /documents (cf. quirk #8 memory bank).
+  //    Le type n'a donc plus besoin d'etre passe en body.
+  const endpoint = endpointForDocumentType(type);
+
   const payload = {
-    type,
     related: [{ type: 'company' as const, id: Number(company.sellsy_id) }],
     items,
     // Note Sellsy : on peut passer un contact_id pour rattacher le devis
@@ -128,12 +135,12 @@ export async function createSellsyDocument(
     ...(contact?.sellsy_contact_id ? { contact_id: Number(contact.sellsy_contact_id) } : {}),
   };
 
-  const createdRaw = await sellsyFetch<unknown>('/documents', {
+  const createdRaw = await sellsyFetch<unknown>(endpoint, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 
-  const documentId = extractSellsyId(createdRaw, '/documents');
+  const documentId = extractSellsyId(createdRaw, endpoint);
   const total = items.reduce((acc, it) => acc + it.unit_amount * it.quantity, 0);
 
   console.log(
@@ -232,6 +239,22 @@ function pickFirst<T>(value: T | T[] | null | undefined): T | null {
   if (value == null) return null;
   if (Array.isArray(value)) return value[0] ?? null;
   return value;
+}
+
+/**
+ * Mapping type document -> endpoint Sellsy V2.
+ * Quirk #8 : Sellsy V2 n'a PAS de /documents generique. Chaque type
+ * possede son propre endpoint plurialise.
+ */
+export function endpointForDocumentType(type: SellsyDocumentType): string {
+  switch (type) {
+    case 'estimate':
+      return '/estimates';
+    case 'proforma':
+      return '/proformas';
+    case 'invoice':
+      return '/invoices';
+  }
 }
 
 function extractSellsyId(response: unknown, endpoint: string): number {

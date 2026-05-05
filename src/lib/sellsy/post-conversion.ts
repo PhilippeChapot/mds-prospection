@@ -19,7 +19,12 @@
 import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
 import { renderDevisConciergeTemplate } from '@/lib/resend/templates/devis-concierge';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
-import { createSellsyDocument, paymentPathToDocumentType } from './create-document';
+import {
+  createSellsyDocument,
+  endpointForDocumentType,
+  paymentPathToDocumentType,
+  type SellsyDocumentType,
+} from './create-document';
 import { syncProspectToSellsy } from './sync-prospect';
 import { sellsyFetch } from './client';
 
@@ -150,6 +155,7 @@ export async function runPostConversion(prospectId: string): Promise<void> {
   await sendDevisConciergeEmail({
     prospectId,
     documentId,
+    docType,
     contactEmail: contact.email,
     contactFirstName: contact.first_name ?? '',
     locale: contact.language === 'EN' ? 'en' : 'fr',
@@ -165,6 +171,7 @@ export async function runPostConversion(prospectId: string): Promise<void> {
 interface SendDevisInput {
   prospectId: string;
   documentId: number;
+  docType: SellsyDocumentType;
   contactEmail: string;
   contactFirstName: string;
   locale: 'fr' | 'en';
@@ -174,7 +181,7 @@ async function sendDevisConciergeEmail(input: SendDevisInput): Promise<void> {
   const supabase = getSupabaseServiceClient();
 
   // Recupere le numero du document Sellsy + la company name pour le subject.
-  const docDetails = await fetchSellsyDocumentDetails(input.documentId);
+  const docDetails = await fetchSellsyDocumentDetails(input.documentId, input.docType);
 
   // URL publique Sellsy (visible par le prospect sans compte). Format :
   //   https://www.sellsy.com/document/<id>?key=<public_link_id>
@@ -227,7 +234,14 @@ interface SellsyDocumentDetails {
   publicUrl: string | null;
 }
 
-async function fetchSellsyDocumentDetails(documentId: number): Promise<SellsyDocumentDetails> {
+async function fetchSellsyDocumentDetails(
+  documentId: number,
+  docType: SellsyDocumentType,
+): Promise<SellsyDocumentDetails> {
+  // Quirk #8 : pas de /documents/{id} en V2, il faut switcher l'endpoint
+  // selon le type (cf. endpointForDocumentType).
+  const endpoint = `${endpointForDocumentType(docType)}/${documentId}`;
+
   try {
     const res = await sellsyFetch<{
       data?: {
@@ -238,7 +252,7 @@ async function fetchSellsyDocumentDetails(documentId: number): Promise<SellsyDoc
       number?: string;
       amounts?: { tax_excluded_amount?: string };
       public_link_id?: string;
-    }>(`/documents/${documentId}`);
+    }>(endpoint);
 
     // extractSellsyId-style flexible parsing
     const obj = (res as { data?: unknown }).data ?? res;
