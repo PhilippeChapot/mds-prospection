@@ -34,6 +34,12 @@ export function renderDevisConciergeTemplate(
   locale: 'fr' | 'en',
   params: DevisConciergeParams,
 ): DevisConciergeTemplate {
+  // Debug : on a vu un bug ou totalHt ressortait a 0 EUR. Logger ce que
+  // le template recoit pour confirmer que la valeur est bien transmise.
+  console.log(
+    '[debug-email-template] devis_concierge params: %s',
+    JSON.stringify({ locale, ...params }, null, 2),
+  );
   return locale === 'fr' ? renderFr(params) : renderEn(params);
 }
 

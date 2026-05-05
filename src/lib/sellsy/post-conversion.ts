@@ -183,12 +183,29 @@ async function sendDevisConciergeEmail(input: SendDevisInput): Promise<void> {
   // Recupere le numero du document Sellsy + la company name pour le subject.
   const docDetails = await fetchSellsyDocumentDetails(input.documentId, input.docType);
 
-  // URL publique Sellsy (visible par le prospect sans compte). Format :
-  //   https://www.sellsy.com/document/<id>?key=<public_link_id>
-  // Pour M3 simple : on construit l'URL avec le format short. Si Sellsy
-  // change d'URL pattern, ajuster.
+  // Debug : on a vu un bug ou totalHt ressortait a 0 EUR. Logger toute la
+  // shape utile pour le template avant l'appel render.
+  console.log(
+    '[debug-email] document for template: %s',
+    JSON.stringify(
+      {
+        id: input.documentId,
+        number: docDetails.number,
+        total_excl_tax: docDetails.totalHt,
+        public_url: docDetails.publicUrl,
+      },
+      null,
+      2,
+    ),
+  );
+
+  // URL publique Sellsy : Sellsy V2 renvoie public_link en URL complete
+  // dans le GET /estimates/{id}. Si public_link_enabled=false, on fallback
+  // sur le PDF link directement (toujours fourni en V2).
   const sellsyDocumentUrl =
-    docDetails.publicUrl ?? `https://www.sellsy.com/document/${input.documentId}`;
+    docDetails.publicUrl ??
+    docDetails.pdfLink ??
+    `https://www.sellsy.com/document/${input.documentId}`;
 
   const { data: prospect } = await supabase
     .from('prospects')
@@ -232,6 +249,7 @@ interface SellsyDocumentDetails {
   number: string | null;
   totalHt: number;
   publicUrl: string | null;
+  pdfLink: string | null;
 }
 
 async function fetchSellsyDocumentDetails(
@@ -242,35 +260,27 @@ async function fetchSellsyDocumentDetails(
   // selon le type (cf. endpointForDocumentType).
   const endpoint = `${endpointForDocumentType(docType)}/${documentId}`;
 
+  // Sellsy V2 expose les amounts sous `total_excl_tax` (pas `tax_excluded_amount`,
+  // qui etait V1) et le lien public sous `public_link` (URL complete, pas un
+  // public_link_id a recomposer). Cf. spec OpenAPI components.schemas.Estimate.
+  type SellsyDoc = {
+    number?: string;
+    amounts?: { total_excl_tax?: string; total?: string };
+    public_link?: string | null;
+    public_link_enabled?: boolean;
+    pdf_link?: string;
+  };
+
   try {
-    const res = await sellsyFetch<{
-      data?: {
-        number?: string;
-        amounts?: { tax_excluded_amount?: string };
-        public_link_id?: string;
-      };
-      number?: string;
-      amounts?: { tax_excluded_amount?: string };
-      public_link_id?: string;
-    }>(endpoint);
-
+    const res = await sellsyFetch<{ data?: SellsyDoc } & SellsyDoc>(endpoint);
     // extractSellsyId-style flexible parsing
-    const obj = (res as { data?: unknown }).data ?? res;
-    const d = obj as {
-      number?: string;
-      amounts?: { tax_excluded_amount?: string };
-      public_link_id?: string;
-    };
+    const d: SellsyDoc = (res as { data?: SellsyDoc }).data ?? (res as SellsyDoc);
 
-    const totalHt = d.amounts?.tax_excluded_amount
-      ? Math.round(Number(d.amounts.tax_excluded_amount))
-      : 0;
+    const totalHt = d.amounts?.total_excl_tax ? Number(d.amounts.total_excl_tax) : 0;
+    const publicUrl = d.public_link ?? null;
+    const pdfLink = d.pdf_link ?? null;
 
-    const publicUrl = d.public_link_id
-      ? `https://www.sellsy.com/document/${documentId}?key=${d.public_link_id}`
-      : null;
-
-    return { number: d.number ?? null, totalHt, publicUrl };
+    return { number: d.number ?? null, totalHt, publicUrl, pdfLink };
   } catch (err) {
     console.warn(
       '%s fetch-document-details-failed document_id=%d msg=%s — fallback minimal',
@@ -278,7 +288,7 @@ async function fetchSellsyDocumentDetails(
       documentId,
       err instanceof Error ? err.message : String(err),
     );
-    return { number: null, totalHt: 0, publicUrl: null };
+    return { number: null, totalHt: 0, publicUrl: null, pdfLink: null };
   }
 }
 
