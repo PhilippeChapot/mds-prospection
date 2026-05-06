@@ -84,11 +84,153 @@
   font-size: 16px;
   line-height: 1.55;
   color: var(--md-text-muted);
-  margin: 0 0 32px;
+  margin: 0 0 24px;
 }
 .lead strong {
   color: var(--md-text);
   font-weight: 600;
+}
+
+.meeting {
+  background: linear-gradient(180deg, rgba(41, 66, 148, 0.05) 0%, rgba(41, 66, 148, 0.02) 100%);
+  border: 1px solid var(--md-border);
+  border-left: 4px solid var(--md-blue);
+  border-radius: 12px;
+  padding: 20px 22px;
+  margin: 0 0 16px;
+  text-align: left;
+}
+.meetingTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--md-blue);
+  margin: 0 0 8px;
+}
+.meetingDate {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--md-text);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.meetingDate strong {
+  font-weight: 700;
+  font-size: 17px;
+}
+.meetingTime {
+  font-size: 14px;
+  color: var(--md-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.meetingActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 12px;
+}
+.meetButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--md-blue);
+  color: var(--md-white);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.meetButton:hover {
+  background: var(--md-blue-dark);
+}
+.meetButton svg {
+  flex-shrink: 0;
+}
+
+.calendarLink {
+  font-size: 13px;
+  color: var(--md-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.calendarLink:hover {
+  color: var(--md-blue-dark);
+}
+
+.phoneDetails {
+  margin-top: 4px;
+  border-top: 1px dashed var(--md-border);
+  padding-top: 12px;
+}
+.phoneSummary {
+  font-size: 13px;
+  color: var(--md-text-muted);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+.phoneSummary::before {
+  content: '▸';
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+.phoneDetails[open] .phoneSummary::before {
+  transform: rotate(90deg);
+}
+.phoneSummary::-webkit-details-marker {
+  display: none;
+}
+
+.phoneBlock {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--md-bg);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.phoneRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0;
+  padding: 6px 0;
+}
+.phoneRow + .phoneRow {
+  border-top: 1px solid var(--md-border);
+}
+.phoneLabel {
+  color: var(--md-text-muted);
+  font-weight: 500;
+}
+.phoneValue {
+  font-weight: 600;
+  color: var(--md-text);
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+a.phoneValue:hover {
+  color: var(--md-blue);
+  text-decoration: underline;
+}
+.morePhones {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--md-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.morePhones:hover {
+  color: var(--md-blue-dark);
 }
 
 .dates {
@@ -173,5 +315,15 @@
   }
   .lead {
     font-size: 15px;
+  }
+  .meetingActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .meetButton {
+    justify-content: center;
+  }
+  .calendarLink {
+    text-align: center;
   }
 }
