@@ -52,7 +52,10 @@ export const config = {
    *  - `/_vercel/*` (Vercel internal)
    *  - `/brand/*`, `/video/*`, fichiers du dossier public
    *  - le hook test Sentry (P0)
+   *  - `/merci-oui` + `/merci-non` (pages RSVP Brevo standalone, pas
+   *    localisees, sinon next-intl tente une redirection vers /fr/merci-oui
+   *    qui n'existe pas et plante en server error).
    */
   matcher:
-    '/((?!api|_next|_vercel|auth|brand|video|sentry-test|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\..*).*)',
+    '/((?!api|_next|_vercel|auth|brand|video|sentry-test|favicon\\.ico|robots\\.txt|sitemap\\.xml|merci-oui|merci-non|.*\\..*).*)',
 };
