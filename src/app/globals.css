@@ -85,6 +85,26 @@
   --radius-xl: calc(var(--radius) * 1.4);
 }
 
+/* ------ Aliases --md-* pour CSS modules (consommes par /merci-oui, /merci-non,
+   et autres pages futures qui utilisent un page.module.css standalone hors
+   de Tailwind). Refletent les --color-md-* declares en @theme ci-dessus. --- */
+:root {
+  --md-blue: #294294;
+  --md-blue-bright: #0b3fa8;
+  --md-blue-dark: #031a56;
+  --md-blue-deep: #00124a;
+  --md-magenta: #e6007e;
+  --md-magenta-soft: #ff4da0;
+  --md-white: #ffffff;
+  --md-bg: #f2f4fb;
+  --md-text: #0e1a3c;
+  --md-text-muted: #5c6a8a;
+  --md-border: #dce2f0;
+  --md-success: #1fbf7a;
+  --md-warning: #f5a524;
+  --md-danger: #e5484d;
+}
+
 /* ------ shadcn semantic vars — override avec couleurs MD officielles ------- */
 :root {
   --radius: 0.625rem;
