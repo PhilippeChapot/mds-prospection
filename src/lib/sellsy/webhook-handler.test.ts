@@ -1,58 +1,83 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handleSellsyEvent, type SellsyWebhookEvent } from './webhook-handler';
 
-describe('handleSellsyEvent', () => {
+describe('handleSellsyEvent (Sellsy V2 webhook shape : eventType + event)', () => {
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
-  it('event type non gere : log + ignore (pas de throw)', async () => {
+  it('event non gere : log unhandled-key + payload partiel (pas de throw)', async () => {
     const event: SellsyWebhookEvent = {
-      event_id: 'evt-test-1',
-      type: 'document.created',
-      data: { id: 123 },
+      eventType: 'client',
+      event: 'created',
+      timestamp: '1778187955',
+      ownerid: '1084',
     };
     await expect(handleSellsyEvent(event)).resolves.toBeUndefined();
-    expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('unhandled-type'),
-      expect.anything(),
-      expect.anything(),
-    );
+    const allLogs = vi
+      .mocked(console.log)
+      .mock.calls.map((c) => c.join(' '))
+      .join(' | ');
+    expect(allLogs).toContain('unhandled-key');
+    expect(allLogs).toContain('client.created');
   });
 
-  it('document.signed sans data.id : log error mais ne throw pas', async () => {
+  it('docslog.emailsent : log + skip (pas de processing)', async () => {
     const event: SellsyWebhookEvent = {
-      event_id: 'evt-test-2',
-      type: 'document.signed',
-      data: {},
+      eventType: 'docslog',
+      event: 'emailsent',
+      timestamp: '1778187955',
+      docid: '12345',
     };
     await expect(handleSellsyEvent(event)).resolves.toBeUndefined();
-    const errorSpy = vi.mocked(console.error);
-    const allCalls = errorSpy.mock.calls.map((args) => args.join(' ')).join(' | ');
-    expect(allCalls).toContain('signed-no-doc-id');
+    const logs = vi
+      .mocked(console.log)
+      .mock.calls.map((c) => c.join(' '))
+      .join(' | ');
+    expect(logs).toContain('emailsent-skip');
   });
 
-  it('document.paid sans data.id : log error mais ne throw pas', async () => {
+  it('docslog.step sans docid : log error mais ne throw pas', async () => {
     const event: SellsyWebhookEvent = {
-      event_id: 'evt-test-3',
-      type: 'document.paid',
-      data: {},
+      eventType: 'docslog',
+      event: 'step',
+      timestamp: '1778187955',
+      step: 'Signé',
+      // pas de docid
     };
     await expect(handleSellsyEvent(event)).resolves.toBeUndefined();
-    const errorSpy = vi.mocked(console.error);
-    const allCalls = errorSpy.mock.calls.map((args) => args.join(' ')).join(' | ');
-    expect(allCalls).toContain('paid-no-doc-id');
+    const errors = vi
+      .mocked(console.error)
+      .mock.calls.map((c) => c.join(' '))
+      .join(' | ');
+    expect(errors).toContain('step-no-doc-id');
   });
 
-  it('event vide / mal forme : log unhandled-type fallback', async () => {
-    const event: SellsyWebhookEvent = { event_id: 'evt-test-4' };
+  it('docslog.step avec status non tracke : log + skip', async () => {
+    const event: SellsyWebhookEvent = {
+      eventType: 'docslog',
+      event: 'step',
+      timestamp: '1778187955',
+      docid: '12345',
+      step: 'Brouillon', // ni signe ni paye
+    };
     await expect(handleSellsyEvent(event)).resolves.toBeUndefined();
-    expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('unhandled-type'),
-      expect.anything(),
-      expect.anything(),
-    );
+    const logs = vi
+      .mocked(console.log)
+      .mock.calls.map((c) => c.join(' '))
+      .join(' | ');
+    expect(logs).toContain('step-status-not-tracked');
+  });
+
+  it('event vide : tombe en unhandled-key (pas de throw)', async () => {
+    const event: SellsyWebhookEvent = {};
+    await expect(handleSellsyEvent(event)).resolves.toBeUndefined();
+    const logs = vi
+      .mocked(console.log)
+      .mock.calls.map((c) => c.join(' '))
+      .join(' | ');
+    expect(logs).toContain('unhandled-key');
   });
 });
