@@ -43,7 +43,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
       sellsy_proforma_id, sellsy_proforma_number, sellsy_proforma_public_url, sellsy_proforma_emitted_at,
       sellsy_invoice_id, sellsy_invoice_number, sellsy_invoice_public_url, sellsy_invoice_emitted_at,
       created_at, updated_at, last_activity_at,
-      company:companies!inner(id, name, primary_domain, country, category, was_prs_2026_exhibitor, pole:poles(code, name_fr)),
+      company:companies!inner(id, name, primary_domain, country, category, sellsy_id, was_prs_2026_exhibitor, pole:poles(code, name_fr)),
       contact:contacts(id, first_name, last_name, email, phone, role),
       owner:users!prospects_owner_id_fkey(id, full_name, email, role)
     `,
@@ -226,16 +226,29 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
         stripe={{ lastSyncedAt: prospect.last_synced_stripe_at }}
         brevo={{ lastSyncedAt: prospect.last_synced_brevo_at }}
         extraActions={
-          <ConciergePaymentLinkDialog
-            prospectId={id}
-            isTest={prospect.is_test}
-            defaultAmountHt={prospect.estimated_amount}
-            defaultDescription={
-              prospect.sellsy_devis_number
-                ? `${prospect.sellsy_devis_number} — MediaDays Solutions 2026`
-                : 'MediaDays Solutions 2026'
-            }
-          />
+          <>
+            {company?.sellsy_id ? (
+              <a
+                href={`https://go.sellsy.com/companies/${company.sellsy_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border-md-border bg-card text-md-text hover:bg-muted inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium"
+                title="Ouvrir la fiche société sur Sellsy"
+              >
+                Voir dans Sellsy ↗
+              </a>
+            ) : null}
+            <ConciergePaymentLinkDialog
+              prospectId={id}
+              isTest={prospect.is_test}
+              defaultAmountHt={prospect.estimated_amount}
+              defaultDescription={
+                prospect.sellsy_devis_number
+                  ? `${prospect.sellsy_devis_number} — MediaDays Solutions 2026`
+                  : 'MediaDays Solutions 2026'
+              }
+            />
+          </>
         }
       />
 

@@ -1116,6 +1116,7 @@ export type Database = {
           season_id: string;
           selected_addon_ids: string[];
           selected_booth_id: string | null;
+          signed_at: string | null;
           sellsy_devis_emitted_at: string | null;
           sellsy_devis_id: string | null;
           sellsy_devis_number: string | null;
@@ -1171,6 +1172,7 @@ export type Database = {
           season_id: string;
           selected_addon_ids?: string[];
           selected_booth_id?: string | null;
+          signed_at?: string | null;
           sellsy_devis_emitted_at?: string | null;
           sellsy_devis_id?: string | null;
           sellsy_devis_number?: string | null;
@@ -1226,6 +1228,7 @@ export type Database = {
           season_id?: string;
           selected_addon_ids?: string[];
           selected_booth_id?: string | null;
+          signed_at?: string | null;
           sellsy_devis_emitted_at?: string | null;
           sellsy_devis_id?: string | null;
           sellsy_devis_number?: string | null;

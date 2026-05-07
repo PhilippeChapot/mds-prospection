@@ -28,11 +28,19 @@
 
 import { sellsyFetch } from '@/lib/sellsy/client';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { isAutoliquidationApplicable } from '@/lib/vies/verify';
 import {
   getSellsyItemIdForPricingTier,
   getSellsyItemIdForAddon,
   SellsyMappingError,
 } from './products-mapping';
+
+/**
+ * Texte legal autoliquidation TVA (art. 196 dir. 2006/112/CE) ajoute en
+ * `note` au document Sellsy quand le client est UE non-FR avec TVA verifiee.
+ * Quirk #18 memory bank.
+ */
+const AUTOLIQUIDATION_NOTE = 'Autoliquidation de la TVA — art. 196 directive 2006/112/CE.';
 
 const LOG_PREFIX = '[sellsy/create-doc]';
 
@@ -76,12 +84,14 @@ export async function createSellsyDocument(
   const supabase = getSupabaseServiceClient();
 
   // 1. Lookup prospect + company.sellsy_id + step2_payload (depuis le signup parent)
+  //    vat_country + vat_verified vivent sur companies (pas prospects) — c'est
+  //    l'entreprise qui porte la TVA UE, pas le prospect commercial.
   const { data: prospectRow, error: pErr } = await supabase
     .from('prospects')
     .select(
       `
       id, is_test, pack_code, selected_addon_ids, payment_path,
-      company:companies!inner(name, sellsy_id),
+      company:companies!inner(name, sellsy_id, vat_country, vat_verified),
       contact:contacts(sellsy_contact_id)
       `,
     )
@@ -115,10 +125,31 @@ export async function createSellsyDocument(
     );
   }
 
-  // 2. Build rows (cf. quirk #10..#14 memory bank pour la shape exacte).
-  const rows = await buildRows(draft);
+  // 2. Resoudre tax_id selon autoliquidation (P4 M7) :
+  //    - prospect FR ou non-UE -> taxIdOverride=null (catalog item porte
+  //      sa TVA 20% par defaut, on n'override pas)
+  //    - prospect UE non-FR + vat_verified='valid' -> override avec
+  //      SELLSY_TAX_ID_0_PERCENT + ajoute mention legale en note
+  const autoliq = isAutoliquidationApplicable(company.vat_country, company.vat_verified);
+  let taxIdOverride: number | null = null;
+  if (autoliq) {
+    const raw = process.env.SELLSY_TAX_ID_0_PERCENT;
+    const id = raw ? Number(raw) : NaN;
+    if (Number.isFinite(id) && id > 0) {
+      taxIdOverride = id;
+    } else {
+      console.warn(
+        '%s autoliquidation-applicable-but-no-tax-id prospect_id=%s — TVA 20%% sera appliquee (set SELLSY_TAX_ID_0_PERCENT)',
+        LOG_PREFIX,
+        prospectId,
+      );
+    }
+  }
 
-  // 3. POST sur l'endpoint type. Sellsy V2 expose des endpoints separes
+  // 3. Build rows (cf. quirk #10..#14 memory bank pour la shape exacte).
+  const rows = await buildRows(draft, taxIdOverride);
+
+  // 4. POST sur l'endpoint type. Sellsy V2 expose des endpoints separes
   //    par type de document, pas un /documents generique :
   //      estimate -> /estimates
   //      proforma -> /proformas
@@ -134,6 +165,8 @@ export async function createSellsyDocument(
     // est genere mais inaccessible ("Document inaccessible") car
     // public_link_enabled defaut workspace = false. Quirk #17 memory bank.
     public_link_enabled: true,
+    // Mention legale autoliquidation si applicable (P4 M7).
+    ...(autoliq && taxIdOverride != null ? { note: AUTOLIQUIDATION_NOTE } : {}),
     // Note Sellsy : on peut passer un contact_id pour rattacher le devis
     // a un contact specifique. Champ optionnel, pas critique pour M3.
     ...(contact?.sellsy_contact_id ? { contact_id: Number(contact.sellsy_contact_id) } : {}),
@@ -199,6 +232,10 @@ export interface AssembleRowsInput {
     itemId: number | null;
   };
   addons: Array<{ itemId: number; priceHt: number }>;
+  /** Override du tax_id Sellsy applique a chaque row (P4 M7). Utilise
+   *  pour l'autoliquidation TVA UE non-FR : taxIdOverride=SELLSY_TAX_ID_0_PERCENT.
+   *  null/undefined = catalog item porte sa propre TVA (20% standard FR). */
+  taxIdOverride?: number | null;
 }
 
 /**
@@ -209,25 +246,32 @@ export interface AssembleRowsInput {
  * que merge dans le prix pack — meilleure tracabilite comptable Sellsy.
  */
 export function assembleRows(input: AssembleRowsInput): SellsyRow[] {
+  const taxId = input.taxIdOverride ?? null;
+  const withTax = (row: SellsyRow): SellsyRow => (taxId != null ? { ...row, tax_id: taxId } : row);
+
   const rows: SellsyRow[] = [];
 
   // 1. Pack Paris (toujours)
-  rows.push({
-    type: 'catalog',
-    quantity: '1',
-    related: { id: input.pack.itemId, type: 'product' },
-    unit_amount: formatAmount(input.pack.priceHt),
-  });
+  rows.push(
+    withTax({
+      type: 'catalog',
+      quantity: '1',
+      related: { id: input.pack.itemId, type: 'product' },
+      unit_amount: formatAmount(input.pack.priceHt),
+    }),
+  );
 
   // 2. Option Marseille (si selected et item mappe)
   if (input.marseille.selected) {
     if (input.marseille.itemId != null && input.marseille.supplementHt != null) {
-      rows.push({
-        type: 'catalog',
-        quantity: '1',
-        related: { id: input.marseille.itemId, type: 'product' },
-        unit_amount: formatAmount(input.marseille.supplementHt),
-      });
+      rows.push(
+        withTax({
+          type: 'catalog',
+          quantity: '1',
+          related: { id: input.marseille.itemId, type: 'product' },
+          unit_amount: formatAmount(input.marseille.supplementHt),
+        }),
+      );
     } else {
       console.warn(
         '%s marseille-skipped — sellsy_marseille_item_id ou supplement_eur_ht manquant en DB. Le supplement ne sera PAS facture. A fixer via UPDATE pricing_tiers SET sellsy_marseille_item_id=...',
@@ -238,12 +282,14 @@ export function assembleRows(input: AssembleRowsInput): SellsyRow[] {
 
   // 3. Addons (N rows)
   for (const addon of input.addons) {
-    rows.push({
-      type: 'catalog',
-      quantity: '1',
-      related: { id: addon.itemId, type: 'product' },
-      unit_amount: formatAmount(addon.priceHt),
-    });
+    rows.push(
+      withTax({
+        type: 'catalog',
+        quantity: '1',
+        related: { id: addon.itemId, type: 'product' },
+        unit_amount: formatAmount(addon.priceHt),
+      }),
+    );
   }
 
   return rows;
@@ -253,7 +299,10 @@ export function assembleRows(input: AssembleRowsInput): SellsyRow[] {
  * Wrapper qui fetch les donnees DB + resoud les item_id Sellsy puis
  * delegue a la pure assembleRows().
  */
-async function buildRows(draft: Step2DraftCaseA): Promise<SellsyRow[]> {
+async function buildRows(
+  draft: Step2DraftCaseA,
+  taxIdOverride: number | null = null,
+): Promise<SellsyRow[]> {
   if (!draft.pricingTierId) {
     throw new SellsyMappingError('step2_payload sans pricingTierId');
   }
@@ -294,6 +343,7 @@ async function buildRows(draft: Step2DraftCaseA): Promise<SellsyRow[]> {
       itemId: tier.sellsy_marseille_item_id != null ? Number(tier.sellsy_marseille_item_id) : null,
     },
     addons,
+    taxIdOverride,
   });
 
   console.log('%s rows count=%d', LOG_PREFIX, rows.length);
