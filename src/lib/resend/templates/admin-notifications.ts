@@ -37,14 +37,22 @@ export interface SignupConvertiParams {
   contactName: string;
   pole: string;
   category: string;
-  packCode: string;
+  packCode: string | null;
   paymentPath: string | null;
   estimatedAmountEur: string; // pre-formate "1 980,00 €"
   language: 'FR' | 'EN';
   addonCount: number;
+  /** Cas B = manifestation d'interet sans pack (devis manuel ulterieur). */
+  isCasB?: boolean;
+  /** Cas B uniquement : type de presence souhaite (visiteur, sponsor...). */
+  presenceType?: string | null;
 }
 
 export function renderAdminSignupConvertiEmail(p: SignupConvertiParams): AdminNotificationTemplate {
+  return p.isCasB ? renderCasB(p) : renderCasA(p);
+}
+
+function renderCasA(p: SignupConvertiParams): AdminNotificationTemplate {
   const subject = `[MDS] Nouveau prospect converti — ${p.companyName}`;
 
   const html = `
@@ -58,7 +66,7 @@ export function renderAdminSignupConvertiEmail(p: SignupConvertiParams): AdminNo
           <tr><td style="padding: 6px 0; color: #5c6b85;">Societe</td><td style="text-align: right;">${p.companyName}</td></tr>
           <tr><td style="padding: 6px 0; color: #5c6b85;">Pole</td><td style="text-align: right;">${p.pole}</td></tr>
           <tr><td style="padding: 6px 0; color: #5c6b85;">Categorie</td><td style="text-align: right;">${p.category}</td></tr>
-          <tr><td style="padding: 6px 0; color: #5c6b85;">Pack</td><td style="text-align: right; font-weight: 600;">${p.packCode}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Pack</td><td style="text-align: right; font-weight: 600;">${p.packCode ?? '—'}</td></tr>
           <tr><td style="padding: 6px 0; color: #5c6b85;">Addons</td><td style="text-align: right;">${p.addonCount}</td></tr>
           <tr><td style="padding: 6px 0; color: #5c6b85;">Total HT</td><td style="text-align: right; font-weight: 600; color: #294294;">${p.estimatedAmountEur}</td></tr>
           <tr><td style="padding: 6px 0; color: #5c6b85;">Parcours</td><td style="text-align: right;">${p.paymentPath ?? '—'}</td></tr>
@@ -79,7 +87,7 @@ export function renderAdminSignupConvertiEmail(p: SignupConvertiParams): AdminNo
     `Societe : ${p.companyName}`,
     `Pole : ${p.pole}`,
     `Categorie : ${p.category}`,
-    `Pack : ${p.packCode}`,
+    `Pack : ${p.packCode ?? '—'}`,
     `Addons : ${p.addonCount}`,
     `Total HT : ${p.estimatedAmountEur}`,
     `Parcours : ${p.paymentPath ?? '—'}`,
@@ -87,6 +95,50 @@ export function renderAdminSignupConvertiEmail(p: SignupConvertiParams): AdminNo
     ``,
     `Fiche prospect : ${p.prospectUrl}`,
   ].join('\n');
+
+  return { subject, html, text };
+}
+
+function renderCasB(p: SignupConvertiParams): AdminNotificationTemplate {
+  const subject = `[MDS] Manifestation d'intérêt — ${p.companyName}`;
+
+  const html = `
+    <div style="${ADMIN_BASE_STYLES}">
+      <div style="max-width: 540px; margin: 0 auto; background: #fff; border: 1px solid #f5a52455; border-radius: 12px; padding: 28px;">
+        <h2 style="margin: 0 0 8px; color: #f5a524;">Manifestation d'intérêt reçue 📨</h2>
+        <p style="margin: 0 0 20px; color: #5c6b85;">${p.companyName} s'intéresse aux MediaDays Solutions sans avoir choisi de pack — devis non émis automatiquement, rappel admin sous 48h ouvrées.</p>
+        <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 14px;">
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Contact</td><td style="text-align: right; font-weight: 600;">${p.contactName}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Email</td><td style="text-align: right;">${p.contactEmail}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Societe</td><td style="text-align: right;">${p.companyName}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Pole</td><td style="text-align: right;">${p.pole}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Categorie</td><td style="text-align: right;">${p.category}</td></tr>
+          ${p.presenceType ? `<tr><td style="padding: 6px 0; color: #5c6b85;">Type de presence</td><td style="text-align: right; font-weight: 600;">${p.presenceType}</td></tr>` : ''}
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Langue</td><td style="text-align: right;">${p.language}</td></tr>
+        </table>
+        <p style="margin: 24px 0 0;">
+          <a href="${p.prospectUrl}" style="display: inline-block; padding: 10px 20px; background: #294294; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">Voir le prospect</a>
+        </p>
+      </div>
+    </div>
+  `.trim();
+
+  const text = [
+    `Manifestation d'interet recue (Cas B)`,
+    `Devis non emis automatiquement — rappel admin sous 48h ouvrees.`,
+    ``,
+    `Contact : ${p.contactName}`,
+    `Email : ${p.contactEmail}`,
+    `Societe : ${p.companyName}`,
+    `Pole : ${p.pole}`,
+    `Categorie : ${p.category}`,
+    p.presenceType ? `Type de presence : ${p.presenceType}` : '',
+    `Langue : ${p.language}`,
+    ``,
+    `Fiche prospect : ${p.prospectUrl}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   return { subject, html, text };
 }

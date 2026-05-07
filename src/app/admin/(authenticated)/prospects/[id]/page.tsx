@@ -36,7 +36,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
     .from('prospects')
     .select(
       `
-      id, status, pack_code, estimated_amount, notes, owner_id, affiliate_id,
+      id, status, pack_code, payment_path, estimated_amount, notes, owner_id, affiliate_id,
       is_test, last_synced_sellsy_at, last_synced_brevo_at, last_synced_stripe_at,
       last_sync_error_message, last_sync_error_provider, last_sync_error_at,
       sellsy_devis_id, sellsy_devis_number, sellsy_devis_public_url, sellsy_devis_emitted_at,
@@ -192,6 +192,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           !!prospect.sellsy_proforma_id ||
           !!prospect.sellsy_invoice_id
         }
+        isCasB={!prospect.payment_path && !prospect.pack_code}
         sellsy={{
           lastSyncedAt: prospect.last_synced_sellsy_at,
           errorMessage:

@@ -55,6 +55,49 @@ describe('renderAdminSyncErrorEmail', () => {
   });
 });
 
+describe('renderAdminSignupConvertiEmail Cas B', () => {
+  it('utilise un subject distinct "Manifestation d intérêt"', () => {
+    const tpl = renderAdminSignupConvertiEmail({
+      prospectUrl: 'https://app.test/admin/prospects/abc',
+      companyName: 'Radio House',
+      contactEmail: 'audio@radiohouse.pro',
+      contactName: 'Marie Dupuis',
+      pole: 'AUDIO_RADIO',
+      category: 'standard',
+      packCode: null,
+      paymentPath: null,
+      estimatedAmountEur: '0,00 €',
+      language: 'FR',
+      addonCount: 0,
+      isCasB: true,
+      presenceType: 'visiteur',
+    });
+    expect(tpl.subject).toContain('Manifestation');
+    expect(tpl.subject).toContain('Radio House');
+    expect(tpl.html).toContain('rappel admin sous 48h');
+    expect(tpl.html).toContain('visiteur');
+    expect(tpl.text).toContain('Cas B');
+  });
+
+  it("Cas A par defaut : conserve le subject 'Nouveau prospect converti'", () => {
+    const tpl = renderAdminSignupConvertiEmail({
+      prospectUrl: 'https://app.test/admin/prospects/abc',
+      companyName: 'ACME',
+      contactEmail: 'a@acme.test',
+      contactName: 'A B',
+      pole: 'AUDIO_RADIO',
+      category: 'prs_exhibitor',
+      packCode: 'ACCESS',
+      paymentPath: 'devis_sepa',
+      estimatedAmountEur: '1 980,00 €',
+      language: 'FR',
+      addonCount: 0,
+      // isCasB non fourni
+    });
+    expect(tpl.subject).toContain('Nouveau prospect converti');
+  });
+});
+
 describe('renderAdminSignatureFinaleEmail', () => {
   it('inclut numero devis et lien Sellsy', () => {
     const tpl = renderAdminSignatureFinaleEmail({

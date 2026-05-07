@@ -45,6 +45,85 @@ const LOG_PREFIX = '[sellsy/post-conversion]';
 export async function runPostConversion(prospectId: string): Promise<void> {
   console.log('%s start prospect_id=%s', LOG_PREFIX, prospectId);
 
+  // Detection Cas A (signup avec pack PRS) vs Cas B (manifestation d'interet
+  // sans pack). En Cas B on skip toute la partie Sellsy/devis pour eviter
+  // un "step2_payload Cas A introuvable" qui faisait planter la suite.
+  const isCasB = await detectCasB(prospectId);
+
+  if (isCasB) {
+    console.log(
+      '%s case-b-detected prospect_id=%s — skip Sellsy doc, jump to Brevo + admin email',
+      LOG_PREFIX,
+      prospectId,
+    );
+  } else {
+    // Cas A : flow Sellsy + devis. Wrappee en try/catch pour que les
+    // etapes Brevo + admin email restent tjs appelees a la fin (M6.1).
+    try {
+      await runCaseAFlow(prospectId);
+    } catch (err) {
+      console.error(
+        '%s case-a-flow-failed prospect_id=%s msg=%s — Brevo + admin email seront tentes quand meme',
+        LOG_PREFIX,
+        prospectId,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  // M6.1 : TOUJOURS appeler Brevo + admin email (best-effort), peu importe
+  // le succes / echec / skip de la partie Sellsy. allSettled isole les 2
+  // promesses : si Brevo fail, l'admin email part quand meme et inversement.
+  await Promise.allSettled([
+    triggerBrevoLifecycle(prospectId),
+    notifyAdminSignupConverted(prospectId, isCasB),
+  ]);
+
+  console.log(
+    '%s done prospect_id=%s mode=%s',
+    LOG_PREFIX,
+    prospectId,
+    isCasB ? 'case_b' : 'case_a',
+  );
+}
+
+/**
+ * Detecte Cas B (manifestation d'interet sans pack PRS) par double-check :
+ *   - prospect.payment_path IS NULL  -> Cas B confirme (Cas A en a tjs un)
+ *   - sinon, lookup signup.step2_payload.mode -> 'caseA' explicite uniquement
+ *
+ * False positives moins graves que false negatives : preferer "skip Sellsy"
+ * que "tenter Sellsy et planter".
+ */
+async function detectCasB(prospectId: string): Promise<boolean> {
+  const supabase = getSupabaseServiceClient();
+  const { data: prospect } = await supabase
+    .from('prospects')
+    .select('payment_path, pack_code')
+    .eq('id', prospectId)
+    .maybeSingle();
+  if (!prospect) return true; // pas de prospect = on skip pour ne pas crasher
+  if (!prospect.payment_path && !prospect.pack_code) return true;
+  if (!prospect.payment_path) {
+    // Cas borderline : pack_code set mais payment_path null. On verifie le
+    // signup pour decider — si mode='caseA' on tente quand meme.
+    const { data: signup } = await supabase
+      .from('public_signup_attempts')
+      .select('step2_payload')
+      .eq('converted_to_prospect_id', prospectId)
+      .maybeSingle();
+    const draft = (signup?.step2_payload as { mode?: string } | null) ?? null;
+    return draft?.mode !== 'caseA';
+  }
+  return false;
+}
+
+/**
+ * Flow Cas A : sync Sellsy + emission document + email concierge.
+ * Sort des helpers Brevo/admin pour qu'ils restent appeles a la fin de
+ * runPostConversion meme si cette fonction throw.
+ */
+async function runCaseAFlow(prospectId: string): Promise<void> {
   // 1. Sync Sellsy (find-or-create company + individual + opportunity).
   //    Cette etape gere elle-meme is_test + retry + UPDATE error en DB.
   await syncProspectToSellsy(prospectId);
@@ -191,15 +270,12 @@ export async function runPostConversion(prospectId: string): Promise<void> {
     locale: contact.language === 'EN' ? 'en' : 'fr',
   });
 
-  // 7. P4 M6 — Brevo lifecycle (best-effort) + notif admin signup converti.
-  //    Ces 2 etapes sont independantes : si Brevo fail, l'admin email part
-  //    quand meme et inversement.
-  await Promise.allSettled([
-    triggerBrevoLifecycle(prospectId),
-    notifyAdminSignupConverted(prospectId),
-  ]);
-
-  console.log('%s success prospect_id=%s document_id=%d', LOG_PREFIX, prospectId, documentId);
+  console.log(
+    '%s case-a-flow-success prospect_id=%s document_id=%d',
+    LOG_PREFIX,
+    prospectId,
+    documentId,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -264,7 +340,7 @@ async function triggerBrevoLifecycle(prospectId: string): Promise<void> {
 // notifyAdminSignupConverted (P4 M6) — email admin best-effort
 // ---------------------------------------------------------------------------
 
-async function notifyAdminSignupConverted(prospectId: string): Promise<void> {
+async function notifyAdminSignupConverted(prospectId: string, isCasB: boolean): Promise<void> {
   try {
     const supabase = getSupabaseServiceClient();
     const { data, error } = await supabase
@@ -292,6 +368,19 @@ async function notifyAdminSignupConverted(prospectId: string): Promise<void> {
       minimumFractionDigits: 2,
     }).format(Number(data.estimated_amount ?? 0));
 
+    // Recupere step2_payload pour decoder le presence_type cote Cas B
+    // (manifestation d'interet : visiteur, sponsor, partenaire, autre).
+    let presenceType: string | null = null;
+    if (isCasB) {
+      const { data: signup } = await supabase
+        .from('public_signup_attempts')
+        .select('step2_payload')
+        .eq('converted_to_prospect_id', prospectId)
+        .maybeSingle();
+      const draft = (signup?.step2_payload as { presenceType?: string } | null) ?? null;
+      presenceType = draft?.presenceType ?? null;
+    }
+
     const tpl = renderAdminSignupConvertiEmail({
       prospectUrl,
       companyName: company?.name ?? '(société inconnue)',
@@ -304,6 +393,8 @@ async function notifyAdminSignupConverted(prospectId: string): Promise<void> {
       estimatedAmountEur: amountFmt,
       language: (contact.language ?? 'FR') as 'FR' | 'EN',
       addonCount: (data.selected_addon_ids ?? []).length,
+      isCasB,
+      presenceType,
     });
     await sendAdminNotification('admin_signup_converti', tpl);
   } catch (err) {

@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { resyncProspectAction, emitSellsyDocumentAction } from './actions';
 import { cn } from '@/lib/utils';
 
-type SyncStatus = 'pending' | 'synced' | 'error' | 'skipped' | 'not-implemented';
+type SyncStatus = 'pending' | 'synced' | 'error' | 'skipped' | 'not-applicable' | 'not-implemented';
 
 interface SellsyDocBadge {
   number: string | null;
@@ -28,6 +28,10 @@ interface Props {
   prospectId: string;
   isTest: boolean;
   hasSellsyDocument: boolean;
+  /** Cas B = manifestation d'interet sans pack PRS. Affiche un label gris
+   *  "N/A (Cas B)" pour Sellsy au lieu d'une erreur, et garde le bouton
+   *  "Emettre devis" visible (admin peut decider d'emettre manuellement). */
+  isCasB?: boolean;
   sellsy: {
     lastSyncedAt: string | null;
     errorMessage: string | null;
@@ -51,6 +55,7 @@ export function SyncBadgesSection({
   prospectId,
   isTest,
   hasSellsyDocument,
+  isCasB = false,
   sellsy,
   stripe,
   brevo,
@@ -91,7 +96,14 @@ export function SyncBadgesSection({
     });
   }
 
-  const sellsyStatus = computeStatus({ ...sellsy, isTest });
+  // Cas B sans devis emis : on affiche un label "N/A" gris au lieu de
+  // l'erreur "step2_payload Cas A introuvable" qui n'apporte rien a l'admin.
+  // Si un devis a ete emis manuellement (sellsy.devis|proforma|invoice
+  // non-null), on revient au flow normal.
+  const sellsyStatus =
+    isCasB && !hasSellsyDocument
+      ? ('not-applicable' as SyncStatus)
+      : computeStatus({ ...sellsy, isTest });
   // Si plusieurs documents existent, afficher le plus avance :
   // facture > proforma > devis. Permet a l'admin de voir le statut le
   // plus recent du parcours commercial.
@@ -275,6 +287,9 @@ function SyncBadge({
             </>
           )}
           {status === 'skipped' && 'Sync désactivée (mode TEST)'}
+          {status === 'not-applicable' && (
+            <span className="text-md-text-muted">N/A (Cas B — manifestation d&apos;intérêt)</span>
+          )}
           {status === 'not-implemented' && (
             <span className="text-md-text-muted">À venir ({notImplementedNote})</span>
           )}
@@ -291,6 +306,8 @@ function StatusIcon({ status }: { status: SyncStatus }) {
     return <AlertCircle className="text-md-danger mt-0.5 size-4 shrink-0" aria-hidden />;
   if (status === 'skipped')
     return <MinusCircle className="text-md-warning mt-0.5 size-4 shrink-0" aria-hidden />;
+  if (status === 'not-applicable')
+    return <MinusCircle className="text-md-text-muted mt-0.5 size-4 shrink-0" aria-hidden />;
   return <Clock className="text-md-text-muted mt-0.5 size-4 shrink-0" aria-hidden />;
 }
 
