@@ -110,6 +110,27 @@ export async function resyncProspectAction(prospectId: string) {
 }
 
 /**
+ * Mode "concierge" Phil — generer un Stripe Payment Link custom pour un
+ * prospect (montant + description + duree de validite saisis cote dialog).
+ * Le lien est ajoute aux notes du prospect (audit trail).
+ */
+export async function createConciergePaymentLinkAction(input: {
+  prospectId: string;
+  amountEurHt: number;
+  description: string;
+  expiresInDays: 1 | 7 | 30;
+}): Promise<{ url: string; expiresAt: string }> {
+  const profile = await requireAdminProfile();
+  if (profile.role !== 'admin') {
+    throw new Error('Seul un admin peut generer un Payment Link Stripe.');
+  }
+  const { createConciergePaymentLink } = await import('@/lib/stripe/payment-link');
+  const result = await createConciergePaymentLink(input);
+  revalidatePath(`/admin/prospects/${input.prospectId}`);
+  return { url: result.url, expiresAt: result.expiresAt };
+}
+
+/**
  * Toggle is_test (admin only). Quand true, tous les helpers de sync P4
  * (Sellsy, Stripe, Brevo, VIES) bypass via assertSyncAllowed() qui throw
  * SyncSkippedError.

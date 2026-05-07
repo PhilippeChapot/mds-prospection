@@ -42,6 +42,9 @@ interface Props {
   brevo: {
     lastSyncedAt: string | null;
   };
+  /** Render extra admin actions in the header toolbar (Payment Link dialog,
+   *  futures actions M5+). Garde Sync section agnostique des helpers Stripe. */
+  extraActions?: React.ReactNode;
 }
 
 export function SyncBadgesSection({
@@ -51,6 +54,7 @@ export function SyncBadgesSection({
   sellsy,
   stripe,
   brevo,
+  extraActions,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -138,6 +142,7 @@ export function SyncBadgesSection({
               Émettre devis Sellsy
             </Button>
           )}
+          {extraActions}
           <Button
             type="button"
             variant="outline"

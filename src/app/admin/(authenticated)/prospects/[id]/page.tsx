@@ -12,6 +12,7 @@ import { ActivitiesSection, type ActivityRow } from '@/components/admin/Activiti
 import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { DeleteProspectButton } from './DeleteButton';
 import { IsTestToggle } from './IsTestToggle';
+import { ConciergePaymentLinkDialog } from './ConciergePaymentLinkDialog';
 import { SyncBadgesSection } from './SyncBadgesSection';
 import { PACK_LABEL } from '@/lib/supabase/queries';
 import type { PoleCode } from '@/lib/design-tokens';
@@ -223,6 +224,18 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
         }}
         stripe={{ lastSyncedAt: prospect.last_synced_stripe_at }}
         brevo={{ lastSyncedAt: prospect.last_synced_brevo_at }}
+        extraActions={
+          <ConciergePaymentLinkDialog
+            prospectId={id}
+            isTest={prospect.is_test}
+            defaultAmountHt={prospect.estimated_amount}
+            defaultDescription={
+              prospect.sellsy_devis_number
+                ? `${prospect.sellsy_devis_number} — MediaDays Solutions 2026`
+                : 'MediaDays Solutions 2026'
+            }
+          />
+        }
       />
 
       <div className="grid gap-5 lg:grid-cols-2">
