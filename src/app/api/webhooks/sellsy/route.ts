@@ -2,14 +2,15 @@
  * Webhook Sellsy — endpoint /api/webhooks/sellsy.
  *
  * - GET  -> 405
- * - POST -> verifie signature HMAC SHA256 + idempotence + dispatch.
+ * - POST -> verifie signature HMAC SHA1 + idempotence + dispatch.
  *
  * Idempotence : table sellsy_events_processed (PK event_id text). Si event
  * deja insere -> 200 immediat sans re-traiter.
  *
- * Verif signature :
- *   header `x-sellsy-signature` doit matcher
- *   crypto.createHmac('sha256', SELLSY_WEBHOOK_SECRET).update(rawBody).digest('hex')
+ * Verif signature (quirks Sellsy V2 #20 + #21 memory bank) :
+ *   - Header : `x-webhook-signature` (PAS x-sellsy-signature)
+ *   - Algorithme : HMAC SHA1 (PAS SHA256) — 40 chars hex
+ *   - Match : crypto.createHmac('sha1', SELLSY_WEBHOOK_SECRET).update(rawBody).digest('hex')
  *
  * Logs structures (prefix [sellsy/webhook-route]).
  */
@@ -29,36 +30,13 @@ export function GET() {
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
-  // Debug temporaire (P4 M7 quirk #20) : Sellsy V2 utilise probablement un
-  // nom de header de signature different de l'attendu. On loggue tous les
-  // headers entrants pour identifier le vrai nom, et on tente plusieurs
-  // candidats. A nettoyer une fois le bon nom confirme.
-  const allHeaders = Object.fromEntries(req.headers.entries());
-  console.log('%s all-headers: %s', LOG_PREFIX, JSON.stringify(allHeaders));
-
-  const sigHeader =
-    req.headers.get('x-sellsy-signature') ??
-    req.headers.get('sellsy-signature') ??
-    req.headers.get('x-signature') ??
-    req.headers.get('signature') ??
-    req.headers.get('x-hub-signature') ??
-    req.headers.get('x-hub-signature-256') ??
-    req.headers.get('x-webhook-signature') ??
-    req.headers.get('x-sellsy-event-signature');
-
+  // Quirk Sellsy V2 #20 : header `x-webhook-signature` (pas
+  // x-sellsy-signature). Confirme via log debug en prod.
+  const sigHeader = req.headers.get('x-webhook-signature');
   if (!sigHeader) {
-    const sellsyHeaders = Object.keys(allHeaders).filter(
-      (k) =>
-        k.includes('sellsy') || k.includes('signature') || k.includes('hub') || k.startsWith('x-'),
-    );
-    console.warn(
-      '%s no-signature-header-found candidates_seen=[%s]',
-      LOG_PREFIX,
-      sellsyHeaders.join(', '),
-    );
+    console.warn('%s missing-signature', LOG_PREFIX);
     return new NextResponse('Missing signature', { status: 400 });
   }
-  console.log('%s signature-header-found value_prefix=%s', LOG_PREFIX, sigHeader.slice(0, 12));
 
   const secret = process.env.SELLSY_WEBHOOK_SECRET;
   if (!secret) {
@@ -68,8 +46,10 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   const rawBody = await req.text();
 
-  // HMAC SHA256 verif. Comparison constant-time pour eviter les timing attacks.
-  const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+  // Quirk Sellsy V2 #21 : HMAC SHA1 (40 chars hex), pas SHA256.
+  // Confirmé via log debug : signature reçue de 40 chars = sha1 digest.
+  // Comparison constant-time pour eviter les timing attacks.
+  const expected = crypto.createHmac('sha1', secret).update(rawBody).digest('hex');
   const sigBuf = Buffer.from(sigHeader, 'utf8');
   const expBuf = Buffer.from(expected, 'utf8');
   const sigValid = sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf);
