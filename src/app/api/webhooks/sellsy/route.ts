@@ -130,15 +130,20 @@ export async function POST(req: Request): Promise<NextResponse> {
 
 /**
  * Construit un event_id stable pour l'idempotence Sellsy.
- * Sellsy V2 ne fournit pas d'event_id natif — on hash les champs cles
- * + un prefixe hex du raw body pour eviter les collisions sur des events
- * qui auraient les memes metadata (ex: 2 emails envoyes au meme moment).
+ * Sellsy V2 ne fournit pas d'event_id natif — on combine les champs
+ * caracteristiques du payload pour identifier un event de maniere stable.
+ * Format : `${eventType}.${event}.${timestamp}.${relatedid}`. Si un de ces
+ * champs manque, on appose un hash du rawBody en suffixe pour disambiguer.
  */
 function buildEventId(event: SellsyWebhookEvent, rawBody: string): string {
-  const ts = event.timestamp ?? 'no-ts';
   const cat = event.eventType ?? 'no-cat';
   const ev = event.event ?? 'no-ev';
-  const owner = event.ownerid ?? 'no-owner';
+  const ts = event.timestamp ?? 'no-ts';
+  const related = event.relatedid ?? '';
+  if (related) {
+    return `${cat}.${ev}.${ts}.${related}`;
+  }
+  // Fallback events sans relatedid : hash body pour stabilite.
   const bodyHash = crypto.createHash('sha1').update(rawBody).digest('hex').slice(0, 16);
-  return `${ts}-${cat}-${ev}-${owner}-${bodyHash}`;
+  return `${cat}.${ev}.${ts}.${event.ownerid ?? '?'}.${bodyHash}`;
 }
