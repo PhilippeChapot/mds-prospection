@@ -198,7 +198,9 @@ export async function syncProspectToSellsy(prospectId: string): Promise<void> {
             prospect.id,
             error.message,
           );
-          // P4 M6 : notif admin Brevo (template admin_sync_error). TODO.
+          // P4 M6 : notif admin Resend (template admin_sync_error).
+          const { notifyAdminSyncError } = await import('@/lib/sync/notify-admin-error');
+          await notifyAdminSyncError(prospect.id, 'sellsy', error, 'syncProspectToSellsy');
         },
       },
     );

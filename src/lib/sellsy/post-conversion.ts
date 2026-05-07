@@ -18,6 +18,9 @@
 
 import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
 import { renderDevisConciergeTemplate } from '@/lib/resend/templates/devis-concierge';
+import { sendAdminNotification } from '@/lib/resend/admin-notifier';
+import { renderAdminSignupConvertiEmail } from '@/lib/resend/templates/admin-notifications';
+import { upsertContactBrevo, type ProspectPole } from '@/lib/brevo/lifecycle';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import {
   createSellsyDocument,
@@ -188,7 +191,129 @@ export async function runPostConversion(prospectId: string): Promise<void> {
     locale: contact.language === 'EN' ? 'en' : 'fr',
   });
 
+  // 7. P4 M6 — Brevo lifecycle (best-effort) + notif admin signup converti.
+  //    Ces 2 etapes sont independantes : si Brevo fail, l'admin email part
+  //    quand meme et inversement.
+  await Promise.allSettled([
+    triggerBrevoLifecycle(prospectId),
+    notifyAdminSignupConverted(prospectId),
+  ]);
+
   console.log('%s success prospect_id=%s document_id=%d', LOG_PREFIX, prospectId, documentId);
+}
+
+// ---------------------------------------------------------------------------
+// triggerBrevoLifecycle (P4 M6) — upsert contact + assign listes
+// ---------------------------------------------------------------------------
+
+async function triggerBrevoLifecycle(prospectId: string): Promise<void> {
+  const supabase = getSupabaseServiceClient();
+  try {
+    const { data, error } = await supabase
+      .from('prospects')
+      .select(
+        `
+        id, is_test,
+        company:companies!inner(name, category, pole:poles(code)),
+        contact:contacts(email, first_name, last_name, language, marketing_consent)
+        `,
+      )
+      .eq('id', prospectId)
+      .maybeSingle();
+    if (error || !data) {
+      console.warn('%s brevo-lookup-failed prospect=%s', LOG_PREFIX, prospectId);
+      return;
+    }
+    const company = pickFirst(data.company);
+    const contact = pickFirst(data.contact);
+    if (!contact?.email) {
+      console.warn('%s brevo-no-email prospect=%s', LOG_PREFIX, prospectId);
+      return;
+    }
+    const pole = pickFirst(company?.pole)?.code as ProspectPole | undefined;
+    await upsertContactBrevo({
+      is_test: data.is_test,
+      email: contact.email,
+      firstName: contact.first_name,
+      lastName: contact.last_name,
+      companyName: company?.name ?? null,
+      pole: pole ?? 'INCONNU',
+      category: company?.category ?? 'standard',
+      language: (contact.language ?? 'FR') as 'FR' | 'EN',
+      marketingConsent: Boolean(contact.marketing_consent),
+    });
+    await supabase
+      .from('prospects')
+      .update({ last_synced_brevo_at: new Date().toISOString() })
+      .eq('id', prospectId);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('%s brevo-failed prospect=%s msg=%s', LOG_PREFIX, prospectId, msg);
+    await supabase
+      .from('prospects')
+      .update({
+        last_sync_error_message: msg.slice(0, 1000),
+        last_sync_error_provider: 'brevo',
+        last_sync_error_at: new Date().toISOString(),
+      })
+      .eq('id', prospectId);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// notifyAdminSignupConverted (P4 M6) — email admin best-effort
+// ---------------------------------------------------------------------------
+
+async function notifyAdminSignupConverted(prospectId: string): Promise<void> {
+  try {
+    const supabase = getSupabaseServiceClient();
+    const { data, error } = await supabase
+      .from('prospects')
+      .select(
+        `
+        id, pack_code, payment_path, estimated_amount, selected_addon_ids,
+        company:companies!inner(name, category, pole:poles(code)),
+        contact:contacts(email, first_name, last_name, language)
+        `,
+      )
+      .eq('id', prospectId)
+      .maybeSingle();
+    if (error || !data) return;
+
+    const company = pickFirst(data.company);
+    const contact = pickFirst(data.contact);
+    if (!contact?.email) return;
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    const prospectUrl = `${baseUrl}/admin/prospects/${prospectId}`;
+    const amountFmt = new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+    }).format(Number(data.estimated_amount ?? 0));
+
+    const tpl = renderAdminSignupConvertiEmail({
+      prospectUrl,
+      companyName: company?.name ?? '(société inconnue)',
+      contactEmail: contact.email,
+      contactName: `${contact.first_name ?? ''} ${contact.last_name ?? ''}`.trim() || '(sans nom)',
+      pole: pickFirst(company?.pole)?.code ?? 'INCONNU',
+      category: company?.category ?? 'standard',
+      packCode: data.pack_code,
+      paymentPath: data.payment_path,
+      estimatedAmountEur: amountFmt,
+      language: (contact.language ?? 'FR') as 'FR' | 'EN',
+      addonCount: (data.selected_addon_ids ?? []).length,
+    });
+    await sendAdminNotification('admin_signup_converti', tpl);
+  } catch (err) {
+    console.error(
+      '%s admin-notify-failed prospect=%s msg=%s',
+      LOG_PREFIX,
+      prospectId,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

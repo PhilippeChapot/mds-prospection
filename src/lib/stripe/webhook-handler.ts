@@ -14,7 +14,7 @@
 import type Stripe from 'stripe';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { notifySellsyPaymentReceived } from '@/lib/sellsy/payments';
-import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
+import { sendAdminNotification } from '@/lib/resend/admin-notifier';
 import type { Database } from '@/lib/supabase/database.types';
 import {
   renderAdminAcomptePayeEmail,
@@ -247,30 +247,9 @@ async function sendAdminEmail(input: AdminEmailInput): Promise<void> {
       ? renderAdminAcomptePayeEmail(params)
       : renderAdminAcompteEchecEmail({ ...params, errorMessage: input.errorMessage });
 
-    // Recipients : app_settings.admin_notification_emails (P4 M1).
-    const { data: setting } = await supabase
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'admin_notification_emails')
-      .maybeSingle();
-    const recipients = (setting?.value as string[] | null) ?? ['philippe.chapot@gmail.com'];
-    if (recipients.length === 0) {
-      console.warn('%s admin-emails-empty', LOG_PREFIX);
-      return;
-    }
-
-    for (const to of recipients) {
-      await sendTransactionalEmailViaResend({
-        to,
-        toName: 'Admin MDS',
-        subject: tpl.subject,
-        html: tpl.html,
-        text: tpl.text,
-        tags: [
-          { name: 'category', value: input.success ? 'admin_acompte_paye' : 'admin_acompte_echec' },
-        ],
-      });
-    }
+    // P4 M6 : centralise via sendAdminNotification (lecture
+    // app_settings.admin_notification_emails + fallback + loop Resend).
+    await sendAdminNotification(input.success ? 'admin_acompte_paye' : 'admin_acompte_echec', tpl);
   } catch (err) {
     console.error(
       '%s admin-email-failed prospect=%s msg=%s',
