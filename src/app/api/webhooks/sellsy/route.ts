@@ -29,11 +29,36 @@ export function GET() {
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
-  const sigHeader = req.headers.get('x-sellsy-signature');
+  // Debug temporaire (P4 M7 quirk #20) : Sellsy V2 utilise probablement un
+  // nom de header de signature different de l'attendu. On loggue tous les
+  // headers entrants pour identifier le vrai nom, et on tente plusieurs
+  // candidats. A nettoyer une fois le bon nom confirme.
+  const allHeaders = Object.fromEntries(req.headers.entries());
+  console.log('%s all-headers: %s', LOG_PREFIX, JSON.stringify(allHeaders));
+
+  const sigHeader =
+    req.headers.get('x-sellsy-signature') ??
+    req.headers.get('sellsy-signature') ??
+    req.headers.get('x-signature') ??
+    req.headers.get('signature') ??
+    req.headers.get('x-hub-signature') ??
+    req.headers.get('x-hub-signature-256') ??
+    req.headers.get('x-webhook-signature') ??
+    req.headers.get('x-sellsy-event-signature');
+
   if (!sigHeader) {
-    console.warn('%s missing-signature', LOG_PREFIX);
+    const sellsyHeaders = Object.keys(allHeaders).filter(
+      (k) =>
+        k.includes('sellsy') || k.includes('signature') || k.includes('hub') || k.startsWith('x-'),
+    );
+    console.warn(
+      '%s no-signature-header-found candidates_seen=[%s]',
+      LOG_PREFIX,
+      sellsyHeaders.join(', '),
+    );
     return new NextResponse('Missing signature', { status: 400 });
   }
+  console.log('%s signature-header-found value_prefix=%s', LOG_PREFIX, sigHeader.slice(0, 12));
 
   const secret = process.env.SELLSY_WEBHOOK_SECRET;
   if (!secret) {
