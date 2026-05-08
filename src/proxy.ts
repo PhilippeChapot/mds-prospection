@@ -17,8 +17,25 @@ import { updateSession } from '@/lib/supabase/middleware';
 
 const intlMiddleware = createMiddleware(routing);
 
+/**
+ * Bot scanners (WordPress / Joomla / phpMyAdmin) tapent en permanence sur
+ * /wp-admin/install.php, /xmlrpc.php, /administrator/, /phpmyadmin/, etc.
+ *
+ * Sans early-return, Next.js sert une 404 dynamique qui charge le layout
+ * root + react-markdown -> import transitif jsdom -> crash ERR_REQUIRE_ESM
+ * en runtime serverless. Le matcher de config inclut explicitement ces
+ * patterns pour que le middleware tourne dessus (sinon le `.*\\..*` les
+ * exclurait au niveau .php).
+ */
+const SCANNER_PATTERNS =
+  /^\/(wp-admin|wp-includes|wp-content|wp-login\.php|xmlrpc\.php|administrator|phpmyadmin|setup-config\.php)/i;
+
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (SCANNER_PATTERNS.test(pathname)) {
+    return new NextResponse('Not Found', { status: 404 });
+  }
 
   if (pathname.startsWith('/admin')) {
     const { supabaseResponse, user } = await updateSession(request);
@@ -46,7 +63,7 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
   /*
-   * Ne tourne pas sur :
+   * Matcher principal — ne tourne pas sur :
    *  - `/api/*`     (pas de localisation des routes API)
    *  - `/_next/*`   (assets Next)
    *  - `/_vercel/*` (Vercel internal)
@@ -55,7 +72,18 @@ export const config = {
    *  - `/merci-oui` + `/merci-non` (pages RSVP Brevo standalone, pas
    *    localisees, sinon next-intl tente une redirection vers /fr/merci-oui
    *    qui n'existe pas et plante en server error).
+   *
+   * Matchers additionnels pour SCANNER_PATTERNS :
+   *  - `.php` URLs (wp-login.php, xmlrpc.php, setup-config.php) que le
+   *    pattern `.*\\..*` du matcher principal exclurait. Les routes
+   *    sans extension (/wp-admin, /administrator, /phpmyadmin) sont
+   *    deja capturees par le matcher principal.
    */
-  matcher:
+  matcher: [
     '/((?!api|_next|_vercel|auth|brand|video|sentry-test|favicon\\.ico|robots\\.txt|sitemap\\.xml|merci-oui|merci-non|.*\\..*).*)',
+    '/wp-login.php',
+    '/xmlrpc.php',
+    '/setup-config.php',
+    '/admin/install.php',
+  ],
 };
