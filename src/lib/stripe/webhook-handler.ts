@@ -170,9 +170,11 @@ async function markProspectPaid(
     // On continue : Sellsy notify + email admin restent utiles meme si UPDATE fail.
   }
 
-  // 2. Notifier Sellsy (best-effort, non bloquant).
+  // 2. Notifier Sellsy (best-effort, non bloquant). Quirk #24 : flow en
+  //    2 etapes (POST /companies/{id}/payments puis POST /invoices/{id}/payments/{paymentId}).
   if (ctx.sellsyDocId) {
     await notifySellsyPaymentReceived({
+      prospectId,
       documentId: Number(ctx.sellsyDocId),
       documentType: 'invoice',
       amountEur: ctx.amountEur,
