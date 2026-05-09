@@ -21,6 +21,7 @@ const StatusSchema = z.enum([
   'contact',
   'devis_envoye',
   'acompte_paye',
+  'paye_integral',
   'signe',
   'perdu',
 ]) satisfies z.ZodType<ProspectStatus>;
