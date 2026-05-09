@@ -19,6 +19,7 @@ import type { Database } from '@/lib/supabase/database.types';
 import {
   renderAdminAcomptePayeEmail,
   renderAdminAcompteEchecEmail,
+  renderAdminConciergePayeEmail,
 } from '@/lib/resend/templates/admin-payment';
 
 type ProspectUpdate = Database['public']['Tables']['prospects']['Update'];
@@ -30,10 +31,21 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
 
   switch (event.type) {
     case 'checkout.session.completed':
+      // P4.x.1 Bug A : handler unique pour les paiements reussis (succes
+      // Checkout = succes Payment Link aussi, Stripe envoie tjs l'event
+      // checkout.session.completed avant payment_intent.succeeded).
       await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
       break;
     case 'payment_intent.succeeded':
-      await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+      // Bug A : passthrough log seulement. Stripe envoie cet event en
+      // doublon de checkout.session.completed pour tout paiement Card -
+      // on ne re-traite pas pour eviter le double email admin.
+      console.log(
+        '%s pi-succeeded-passthrough id=%s pi=%s — already handled via checkout.session.completed',
+        LOG_PREFIX,
+        event.id,
+        (event.data.object as Stripe.PaymentIntent).id,
+      );
       break;
     case 'payment_intent.payment_failed':
       await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
@@ -46,9 +58,17 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
   const prospectId = session.metadata?.prospect_id;
   const sellsyDocId = session.metadata?.sellsy_document_id || null;
+  // P4.x.1 Bug B : route le template admin via metadata.flow injecte cote
+  // helpers (acompte/integral pour Checkout, concierge pour Payment Link).
+  // Fallback sur la deduction depuis source/type pour les liens crees
+  // avant l'introduction de flow (retrocompat).
+  const flow =
+    (session.metadata?.flow as 'acompte' | 'integral' | 'concierge' | undefined) ??
+    (session.metadata?.source === 'admin_concierge' ? 'concierge' : undefined) ??
+    'acompte';
   const type =
     (session.metadata?.type as 'acompte_30pct' | 'integral' | 'concierge' | undefined) ??
-    'acompte_30pct';
+    (flow === 'concierge' ? 'concierge' : flow === 'integral' ? 'integral' : 'acompte_30pct');
 
   if (!prospectId) {
     console.error('%s checkout-completed-no-prospect-id session=%s', LOG_PREFIX, session.id);
@@ -71,31 +91,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
     amountEur,
     paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : null,
     sessionId: session.id,
-  });
-}
-
-async function handlePaymentIntentSucceeded(intent: Stripe.PaymentIntent): Promise<void> {
-  const prospectId = intent.metadata?.prospect_id;
-  const sellsyDocId = intent.metadata?.sellsy_document_id || null;
-  const type =
-    (intent.metadata?.type as 'acompte_30pct' | 'integral' | 'concierge' | undefined) ??
-    'concierge';
-
-  if (!prospectId) {
-    // Note : ce branche se declenche aussi sur les payment_intent
-    // crees par checkout.session — on a deja traite via session.completed.
-    // Sans prospect_id sur les metadata du PI on est dans un cas Payment
-    // Link pur (concierge), avec metadata redondant via paymentLinks.create.
-    console.log('%s pi-succeeded-no-prospect-id pi=%s — ignore', LOG_PREFIX, intent.id);
-    return;
-  }
-
-  const amountEur = (intent.amount_received ?? intent.amount ?? 0) / 100;
-  await markProspectPaid(prospectId, type, {
-    sellsyDocId,
-    amountEur,
-    paymentIntentId: intent.id,
-    sessionId: null,
+    flow,
   });
 }
 
@@ -118,6 +114,9 @@ async function handlePaymentIntentFailed(intent: Stripe.PaymentIntent): Promise<
 
   // Notif admin echec — pas de maj DB du statut prospect (on ne change rien
   // si paiement echoue, le prospect peut retenter).
+  const flow =
+    (intent.metadata?.flow as 'acompte' | 'integral' | 'concierge' | undefined) ??
+    (intent.metadata?.source === 'admin_concierge' ? 'concierge' : 'acompte');
   await sendAdminEmail({
     prospectId,
     paymentType:
@@ -128,6 +127,7 @@ async function handlePaymentIntentFailed(intent: Stripe.PaymentIntent): Promise<
     paymentIntentId: intent.id,
     sessionId: null,
     errorMessage,
+    flow,
   });
 }
 
@@ -136,6 +136,8 @@ interface MarkPaidContext {
   amountEur: number;
   paymentIntentId: string | null;
   sessionId: string | null;
+  /** P4.x.1 Bug B : route le template admin (concierge vs acompte). */
+  flow: 'acompte' | 'integral' | 'concierge';
 }
 
 async function markProspectPaid(
@@ -183,7 +185,7 @@ async function markProspectPaid(
     });
   }
 
-  // 3. Email admin notif paiement.
+  // 3. Email admin notif paiement (route le template selon flow).
   await sendAdminEmail({
     prospectId,
     paymentType: type,
@@ -191,6 +193,7 @@ async function markProspectPaid(
     success: true,
     paymentIntentId: ctx.paymentIntentId,
     sessionId: ctx.sessionId,
+    flow: ctx.flow,
   });
 
   console.log(
@@ -210,6 +213,8 @@ interface AdminEmailInput {
   paymentIntentId: string | null;
   sessionId: string | null;
   errorMessage?: string;
+  /** P4.x.1 Bug B : route le template + la category Resend. */
+  flow: 'acompte' | 'integral' | 'concierge';
 }
 
 async function sendAdminEmail(input: AdminEmailInput): Promise<void> {
@@ -245,13 +250,25 @@ async function sendAdminEmail(input: AdminEmailInput): Promise<void> {
       stripePaymentIntentId: input.paymentIntentId ?? undefined,
     };
 
-    const tpl = input.success
-      ? renderAdminAcomptePayeEmail(params)
-      : renderAdminAcompteEchecEmail({ ...params, errorMessage: input.errorMessage });
+    // P4.x.1 Bug B : route le template + category selon flow.
+    // - flow=concierge -> renderAdminConciergePayeEmail / 'admin_concierge_paye'
+    // - flow=acompte/integral -> renderAdminAcomptePayeEmail / 'admin_acompte_paye'
+    let tpl: ReturnType<typeof renderAdminAcomptePayeEmail>;
+    let category: 'admin_acompte_paye' | 'admin_concierge_paye' | 'admin_acompte_echec';
+    if (!input.success) {
+      tpl = renderAdminAcompteEchecEmail({ ...params, errorMessage: input.errorMessage });
+      category = 'admin_acompte_echec';
+    } else if (input.flow === 'concierge') {
+      tpl = renderAdminConciergePayeEmail(params);
+      category = 'admin_concierge_paye';
+    } else {
+      tpl = renderAdminAcomptePayeEmail(params);
+      category = 'admin_acompte_paye';
+    }
 
     // P4 M6 : centralise via sendAdminNotification (lecture
     // app_settings.admin_notification_emails + fallback + loop Resend).
-    await sendAdminNotification(input.success ? 'admin_acompte_paye' : 'admin_acompte_echec', tpl);
+    await sendAdminNotification(category, tpl);
   } catch (err) {
     console.error(
       '%s admin-email-failed prospect=%s msg=%s',

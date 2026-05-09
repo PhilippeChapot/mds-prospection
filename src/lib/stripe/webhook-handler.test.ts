@@ -65,23 +65,24 @@ describe('handleStripeEvent', () => {
     );
   });
 
-  it('payment_intent.succeeded sans prospect_id : skip silencieux', async () => {
+  it('payment_intent.succeeded : passthrough (Bug A — pas de double email admin)', async () => {
     const event = {
-      id: 'evt_pi_no_prospect',
+      id: 'evt_pi_passthrough',
       type: 'payment_intent.succeeded',
       data: {
         object: {
           id: 'pi_test',
-          metadata: {},
+          metadata: { prospect_id: 'p1' },
           amount: 1000,
         },
       },
     } as unknown as Stripe.Event;
     await expect(handleStripeEvent(event)).resolves.toBeUndefined();
-    expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('pi-succeeded-no-prospect-id'),
-      expect.anything(),
-      expect.anything(),
-    );
+    const allLogs = vi
+      .mocked(console.log)
+      .mock.calls.map((c) => c.join(' '))
+      .join(' | ');
+    expect(allLogs).toContain('pi-succeeded-passthrough');
+    expect(allLogs).toContain('already handled via checkout.session.completed');
   });
 });

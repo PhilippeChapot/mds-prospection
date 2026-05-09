@@ -86,6 +86,9 @@ export async function createConciergePaymentLink(
       prospect_id: input.prospectId,
       sellsy_document_id: prospect.sellsy_devis_id ?? '',
       source: 'admin_concierge',
+      // P4.x.1 Bug B : flow=concierge -> webhook route le template
+      // admin_concierge_paye au lieu de admin_acompte_paye.
+      flow: 'concierge',
     },
     payment_intent_data: {
       metadata: {

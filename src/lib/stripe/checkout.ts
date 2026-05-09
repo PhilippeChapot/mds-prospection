@@ -125,6 +125,10 @@ export async function createCheckoutSession(
       prospect_id: prospectId,
       sellsy_document_id: prospect.sellsy_devis_id ?? '',
       type,
+      // P4.x.1 Bug B : flow distinct pour route le bon template admin
+      // au webhook. acompte_30pct/integral -> admin_acompte_paye,
+      // concierge (Payment Link) -> admin_concierge_paye.
+      flow: type === 'integral' ? 'integral' : 'acompte',
     },
     payment_intent_data: {
       metadata: {
