@@ -95,6 +95,59 @@ export async function runPostConversion(prospectId: string): Promise<void> {
  * False positives moins graves que false negatives : preferer "skip Sellsy"
  * que "tenter Sellsy et planter".
  */
+/**
+ * P4.x.3 Bug K — resout le payment_path effectif d'un prospect.
+ *
+ * Priorite : prospects.payment_path (colonne SQL) -> step2_payload.paymentPath
+ * (JSONB camelCase, source de verite). Si la colonne est peuplee, on
+ * la prefere (rapide, pas de deuxieme lookup). Sinon on lit le signup
+ * parent et on extrait paymentPath du JSONB.
+ *
+ * Cas couverts :
+ *   - Prospect cree par signups/[id]/actions.ts -> payment_path peuple :
+ *     OK direct
+ *   - Prospect cree avant le commit qui peuple payment_path -> colonne
+ *     null mais signup contient toujours paymentPath -> on retombe
+ *     sur le JSONB
+ *   - Prospect cree manuellement par admin sans signup associe -> les
+ *     deux sources retournent null : on retourne null (le caller
+ *     decide quoi faire, generalement skip).
+ *
+ * Exporte pour test Vitest.
+ */
+export type EffectivePaymentPath =
+  | 'devis_sepa'
+  | 'devis_acompte_stripe'
+  | 'proforma_acompte'
+  | 'facture_integrale'
+  | null;
+
+export async function resolvePaymentPath(
+  prospectId: string,
+  prospectColumnValue: EffectivePaymentPath,
+): Promise<EffectivePaymentPath> {
+  if (prospectColumnValue) return prospectColumnValue;
+
+  // Fallback : lire signup.step2_payload.paymentPath (camelCase JSONB).
+  const supabase = getSupabaseServiceClient();
+  const { data: signup } = await supabase
+    .from('public_signup_attempts')
+    .select('step2_payload')
+    .eq('converted_to_prospect_id', prospectId)
+    .maybeSingle();
+  const draft = signup?.step2_payload as { paymentPath?: string } | null;
+  const fromPayload = draft?.paymentPath;
+  if (
+    fromPayload === 'devis_sepa' ||
+    fromPayload === 'devis_acompte_stripe' ||
+    fromPayload === 'proforma_acompte' ||
+    fromPayload === 'facture_integrale'
+  ) {
+    return fromPayload;
+  }
+  return null;
+}
+
 async function detectCasB(prospectId: string): Promise<boolean> {
   const supabase = getSupabaseServiceClient();
   const { data: prospect } = await supabase
@@ -350,7 +403,22 @@ async function runCaseAFlowLocked(prospectId: string): Promise<void> {
   }
   const locale: 'fr' | 'en' = contact.language === 'EN' ? 'en' : 'fr';
 
-  if (prospect.payment_path === 'devis_sepa') {
+  // P4.x.3 Bug K : lire la valeur depuis le step2_payload (camelCase
+  // 'paymentPath') comme source de verite, avec fallback sur la colonne
+  // prospects.payment_path (snake_case). Raison : pour des prospects
+  // crees avant la migration ou via un flow alternatif, la colonne
+  // peut etre null alors que le payload signup contient bien la valeur.
+  const effectivePaymentPath = await resolvePaymentPath(prospectId, prospect.payment_path);
+  console.log(
+    '%s payment-path-check prospect_id=%s prospect.col=%s step2.path=%s -> effective=%s',
+    LOG_PREFIX,
+    prospectId,
+    prospect.payment_path ?? 'null',
+    effectivePaymentPath ?? 'null',
+    effectivePaymentPath ?? 'null',
+  );
+
+  if (effectivePaymentPath === 'devis_sepa') {
     await sendDevisConciergeEmail({
       prospectId,
       documentId,
@@ -360,7 +428,7 @@ async function runCaseAFlowLocked(prospectId: string): Promise<void> {
       contactFirstName: contact.first_name ?? '',
       locale,
     });
-  } else if (prospect.payment_path === 'devis_acompte_stripe') {
+  } else if (effectivePaymentPath === 'devis_acompte_stripe') {
     // P4.x.2 sujet D : auto-creation Payment Link 30% + email prospect.
     if (totalTtcToPersist != null) {
       await triggerAcomptePaymentLink({
@@ -384,7 +452,7 @@ async function runCaseAFlowLocked(prospectId: string): Promise<void> {
       '%s email-skipped-payment-path prospect_id=%s payment_path=%s (proforma_acompte / facture_integrale : pas d auto-email)',
       LOG_PREFIX,
       prospectId,
-      prospect.payment_path,
+      effectivePaymentPath ?? 'null',
     );
   }
 
