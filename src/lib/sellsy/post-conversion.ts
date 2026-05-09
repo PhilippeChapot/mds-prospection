@@ -484,7 +484,17 @@ async function triggerAcomptePaymentLink(input: TriggerAcompteInput): Promise<vo
     const acompteTtc = Math.round(input.totalTtc * 0.3 * 100) / 100;
     const resteDu = Math.round((input.totalTtc - acompteTtc) * 100) / 100;
 
-    // 2. Cree le Payment Link Stripe (skip si is_test).
+    // 2. Lookup company.name pour le template (P4.x.4 Bug L : avant le fix
+    //    on passait companyName='' -> email "pour ." en suspens).
+    const supabase = getSupabaseServiceClient();
+    const { data: companyRow } = await supabase
+      .from('prospects')
+      .select('company:companies!inner(name)')
+      .eq('id', input.prospectId)
+      .maybeSingle();
+    const companyName = pickFirst(companyRow?.company)?.name ?? '';
+
+    // 3. Cree le Payment Link Stripe (skip si is_test).
     const { createAcomptePaymentLink } = await import('@/lib/stripe/payment-link');
     const result = await createAcomptePaymentLink({
       prospectId: input.prospectId,
@@ -501,7 +511,7 @@ async function triggerAcomptePaymentLink(input: TriggerAcompteInput): Promise<vo
       return;
     }
 
-    // 3. Email prospect avec lien Sellsy + Payment Link Stripe.
+    // 4. Email prospect avec lien Sellsy + Payment Link Stripe.
     const { renderProspectAcomptePaymentLinkTemplate } =
       await import('@/lib/resend/templates/prospect-acompte-paymentlink');
     const sellsyDocUrl =
@@ -510,7 +520,7 @@ async function triggerAcomptePaymentLink(input: TriggerAcompteInput): Promise<vo
       `https://www.sellsy.com/document/${input.documentId}`;
     const tpl = renderProspectAcomptePaymentLinkTemplate(input.locale, {
       firstName: input.contactFirstName,
-      companyName: '', // sera relu via contact si besoin futur
+      companyName,
       documentNumber: input.docDetails.number ?? `D-${input.documentId}`,
       sellsyDocumentUrl: sellsyDocUrl,
       paymentLinkUrl: result.url,

@@ -49,12 +49,18 @@ const BASE_STYLES = `
 function renderFr(p: ProspectAcomptePaymentLinkParams): ProspectAcomptePaymentLinkTemplate {
   const subject = `Votre devis MediaDays Solutions 2026 + lien de paiement de l'acompte`;
 
+  // P4.x.4 Bug L : si companyName est vide/manquant, on omet le "pour X"
+  // pour eviter "pour ." en suspens. Phrase alternative plus generique.
+  const greetingFr = p.companyName.trim()
+    ? `Nous avons le plaisir de vous adresser le devis MediaDays Solutions 2026 pour <strong>${escapeHtml(p.companyName)}</strong>.`
+    : `Nous avons le plaisir de vous adresser votre devis MediaDays Solutions 2026.`;
+
   const html = `
     <div style="${BASE_STYLES}">
       <div style="max-width: 560px; margin: 0 auto; background: #fff; border: 1px solid #e0e4ee; border-radius: 12px; padding: 32px;">
         <p style="margin: 0 0 16px;">Bonjour ${escapeHtml(p.firstName)},</p>
         <p style="margin: 0 0 20px; line-height: 1.55;">
-          Nous avons le plaisir de vous adresser le devis MediaDays Solutions 2026 pour <strong>${escapeHtml(p.companyName)}</strong>.
+          ${greetingFr}
         </p>
 
         <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 14px; margin: 0 0 24px;">
@@ -95,7 +101,9 @@ function renderFr(p: ProspectAcomptePaymentLinkParams): ProspectAcomptePaymentLi
   const text = [
     `Bonjour ${p.firstName},`,
     ``,
-    `Voici votre devis MediaDays Solutions 2026 pour ${p.companyName}.`,
+    p.companyName.trim()
+      ? `Voici votre devis MediaDays Solutions 2026 pour ${p.companyName}.`
+      : `Voici votre devis MediaDays Solutions 2026.`,
     ``,
     `Devis : ${p.documentNumber}`,
     `Acompte 30% a regler : ${p.acompteAmount}`,
@@ -121,12 +129,18 @@ function renderFr(p: ProspectAcomptePaymentLinkParams): ProspectAcomptePaymentLi
 function renderEn(p: ProspectAcomptePaymentLinkParams): ProspectAcomptePaymentLinkTemplate {
   const subject = `Your MediaDays Solutions 2026 quote + deposit payment link`;
 
+  // P4.x.4 Bug L : si companyName est vide, on omet le "for X" pour
+  // eviter "for ." en suspens.
+  const greetingEn = p.companyName.trim()
+    ? `We are pleased to share your MediaDays Solutions 2026 quote for <strong>${escapeHtml(p.companyName)}</strong>.`
+    : `We are pleased to share your MediaDays Solutions 2026 quote.`;
+
   const html = `
     <div style="${BASE_STYLES}">
       <div style="max-width: 560px; margin: 0 auto; background: #fff; border: 1px solid #e0e4ee; border-radius: 12px; padding: 32px;">
         <p style="margin: 0 0 16px;">Hi ${escapeHtml(p.firstName)},</p>
         <p style="margin: 0 0 20px; line-height: 1.55;">
-          We are pleased to share your MediaDays Solutions 2026 quote for <strong>${escapeHtml(p.companyName)}</strong>.
+          ${greetingEn}
         </p>
 
         <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 14px; margin: 0 0 24px;">
@@ -163,7 +177,9 @@ function renderEn(p: ProspectAcomptePaymentLinkParams): ProspectAcomptePaymentLi
   const text = [
     `Hi ${p.firstName},`,
     ``,
-    `Your MediaDays Solutions 2026 quote for ${p.companyName} is ready.`,
+    p.companyName.trim()
+      ? `Your MediaDays Solutions 2026 quote for ${p.companyName} is ready.`
+      : `Your MediaDays Solutions 2026 quote is ready.`,
     ``,
     `Quote: ${p.documentNumber}`,
     `30% deposit due: ${p.acompteAmount}`,
