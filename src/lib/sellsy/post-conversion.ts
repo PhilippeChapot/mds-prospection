@@ -162,17 +162,46 @@ async function acquireEmitLock(prospectId: string): Promise<boolean> {
   // 2. Tentative d'insertion. Si conflict (PK violation 23505), echec silencieux
   //    via la 2e branche.
   const { error } = await supabase.from('sellsy_emit_locks').insert({ prospect_id: prospectId });
-  if (!error) return true;
-  if (error.code === '23505') return false;
+  if (!error) {
+    console.log('%s emit-lock-acquired prospect=%s', LOG_PREFIX, prospectId);
+    return true;
+  }
+  if (error.code === '23505') {
+    console.log(
+      '%s emit-lock-conflict prospect=%s — invocation concurrente',
+      LOG_PREFIX,
+      prospectId,
+    );
+    return false;
+  }
   // Erreur autre que conflict : log mais on laisse passer (best-effort,
   // le check existingDocId plus bas reste un garde-fou).
-  console.warn('%s acquire-lock-error prospect=%s msg=%s', LOG_PREFIX, prospectId, error.message);
+  console.warn(
+    '%s emit-lock-acquire-error prospect=%s code=%s msg=%s',
+    LOG_PREFIX,
+    prospectId,
+    error.code,
+    error.message,
+  );
   return true;
 }
 
 async function releaseEmitLock(prospectId: string): Promise<void> {
   const supabase = getSupabaseServiceClient();
-  await supabase.from('sellsy_emit_locks').delete().eq('prospect_id', prospectId);
+  const { error } = await supabase.from('sellsy_emit_locks').delete().eq('prospect_id', prospectId);
+  if (error) {
+    // P4.x.2 sujet H' : log explicite + ne throw pas pour ne pas masquer
+    // l'erreur originale du try (qui aurait deja loggue son contexte).
+    console.error(
+      '%s emit-lock-release-failed prospect=%s code=%s msg=%s — sera nettoye par le cron TTL',
+      LOG_PREFIX,
+      prospectId,
+      error.code,
+      error.message,
+    );
+    return;
+  }
+  console.log('%s emit-lock-released prospect=%s', LOG_PREFIX, prospectId);
 }
 
 async function runCaseAFlowLocked(prospectId: string): Promise<void> {

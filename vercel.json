@@ -6,6 +6,10 @@
     {
       "path": "/api/cron/sync-sellsy-products",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-emit-locks",
+      "schedule": "*/10 * * * *"
     }
   ]
 }
