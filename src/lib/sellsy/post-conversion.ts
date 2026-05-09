@@ -124,6 +124,58 @@ async function detectCasB(prospectId: string): Promise<boolean> {
  * runPostConversion meme si cette fonction throw.
  */
 async function runCaseAFlow(prospectId: string): Promise<void> {
+  // P4.x.1 Bug F : guard idempotence early-return avant tout traitement
+  // (sync Sellsy + creation document). Sans ca, 2 invocations concurrentes
+  // de runPostConversion (re-invocation Server Action Next 16) creent 2
+  // devis Sellsy a 170ms d'intervalle. Le check "existingDocId" plus bas
+  // ne suffit pas car les 2 invocations passent le check avant que l'une
+  // ait fini. Le lock atomique est libere en fin de fonction (succes ou
+  // echec) — TTL 5min cote DB en garde-fou.
+  const lockAcquired = await acquireEmitLock(prospectId);
+  if (!lockAcquired) {
+    console.log(
+      '%s emit-lock-already-held prospect_id=%s — invocation concurrente, skip',
+      LOG_PREFIX,
+      prospectId,
+    );
+    return;
+  }
+
+  try {
+    await runCaseAFlowLocked(prospectId);
+  } finally {
+    await releaseEmitLock(prospectId);
+  }
+}
+
+/**
+ * Tente d'acquerir le verrou d'emission devis pour un prospect.
+ * Retourne true si on a le lock, false sinon (deja pris par une autre
+ * invocation en cours, ou crash recent < 5min). INSERT atomique via
+ * ON CONFLICT DO NOTHING (Supabase upsert ignoreDuplicates).
+ */
+async function acquireEmitLock(prospectId: string): Promise<boolean> {
+  const supabase = getSupabaseServiceClient();
+  // 1. Cleanup les locks expires (TTL > 5min) — best-effort, sans bloquer.
+  await supabase.from('sellsy_emit_locks').delete().lt('expires_at', new Date().toISOString());
+
+  // 2. Tentative d'insertion. Si conflict (PK violation 23505), echec silencieux
+  //    via la 2e branche.
+  const { error } = await supabase.from('sellsy_emit_locks').insert({ prospect_id: prospectId });
+  if (!error) return true;
+  if (error.code === '23505') return false;
+  // Erreur autre que conflict : log mais on laisse passer (best-effort,
+  // le check existingDocId plus bas reste un garde-fou).
+  console.warn('%s acquire-lock-error prospect=%s msg=%s', LOG_PREFIX, prospectId, error.message);
+  return true;
+}
+
+async function releaseEmitLock(prospectId: string): Promise<void> {
+  const supabase = getSupabaseServiceClient();
+  await supabase.from('sellsy_emit_locks').delete().eq('prospect_id', prospectId);
+}
+
+async function runCaseAFlowLocked(prospectId: string): Promise<void> {
   // 1. Sync Sellsy (find-or-create company + individual + opportunity).
   //    Cette etape gere elle-meme is_test + retry + UPDATE error en DB.
   await syncProspectToSellsy(prospectId);

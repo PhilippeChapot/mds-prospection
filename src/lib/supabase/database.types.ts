@@ -1591,6 +1591,32 @@ export type Database = {
         };
         Relationships: [];
       };
+      sellsy_emit_locks: {
+        Row: {
+          prospect_id: string;
+          acquired_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          prospect_id: string;
+          acquired_at?: string;
+          expires_at?: string;
+        };
+        Update: {
+          prospect_id?: string;
+          acquired_at?: string;
+          expires_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sellsy_emit_locks_prospect_id_fkey';
+            columns: ['prospect_id'];
+            isOneToOne: true;
+            referencedRelation: 'prospects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       sellsy_events_processed: {
         Row: {
           event_id: string;
