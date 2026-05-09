@@ -76,10 +76,28 @@ export async function handleSellsyEvent(event: SellsyWebhookEvent): Promise<void
     case 'docslog.step':
       await handleDocslogStep(event);
       break;
+    case 'docslog.paymentadd':
+      // P4.x.1 Bug G : reglement ajoute sur un devis/facture/proforma cote
+      // Sellsy (manuel admin OU webhook signature OU virement SEPA imp).
+      await handleDocslogPaymentAdd(event);
+      break;
+    case 'signature.completed':
+      // Signature electronique completee (DocuSign-like Sellsy). Memes effets
+      // que docslog.step status=accepted, mais log distinct pour traceability.
+      await handleSignatureCompleted(event);
+      break;
+    case 'docslog.created':
     case 'docslog.emailsent':
+    case 'signature.created':
+    case 'signature.signature':
+      // Events informatifs : on log la presence + relatedid pour audit
+      // mais pas d'action metier (la creation Sellsy = nous-memes via API,
+      // les emails Sellsy n'affectent pas notre statut prospect, et les
+      // events intermediaires de signature sont couverts par signature.completed).
       console.log(
-        '%s emailsent-skip relatedid=%s relatedtype=%s',
+        '%s informational-skip key=%s relatedid=%s relatedtype=%s',
         LOG_PREFIX,
+        key,
         event.relatedid ?? '?',
         event.relatedtype ?? '?',
       );
@@ -274,6 +292,168 @@ async function handleDocslogStep(event: SellsyWebhookEvent): Promise<void> {
     isAccepted,
     isPaid,
   );
+}
+
+/**
+ * Event docslog.paymentadd — un reglement a ete ajoute sur le document
+ * (paiement Stripe arrivant via /v2/payments link, ou virement SEPA saisi
+ * manuellement dans Sellsy par l'admin, ou paiement reconcile).
+ *
+ * Le payload contient relatedid (le document) et relatedobject avec les
+ * totaux du document (pas le montant du paiement specifique). On marque
+ * le prospect comme `acompte_status=paid` + `acompte_paid_at=now()`. Le
+ * detail des montants n'est pas critique cote MDS — c'est Sellsy qui
+ * gere la balance, on synchro juste l'etat "encaisse" cote DB.
+ */
+async function handleDocslogPaymentAdd(event: SellsyWebhookEvent): Promise<void> {
+  if (!event.relatedid || !event.relatedtype) {
+    console.warn(
+      '%s paymentadd-missing-related relatedid=%s relatedtype=%s',
+      LOG_PREFIX,
+      event.relatedid ?? '?',
+      event.relatedtype ?? '?',
+    );
+    return;
+  }
+
+  const documentId = String(event.relatedid);
+  const documentType = event.relatedtype as 'estimate' | 'invoice' | 'proforma';
+
+  const matchColumn =
+    documentType === 'estimate'
+      ? 'sellsy_devis_id'
+      : documentType === 'invoice'
+        ? 'sellsy_invoice_id'
+        : documentType === 'proforma'
+          ? 'sellsy_proforma_id'
+          : null;
+  if (!matchColumn) {
+    console.warn('%s paymentadd-unknown-relatedtype type=%s', LOG_PREFIX, documentType);
+    return;
+  }
+
+  const supabase = getSupabaseServiceClient();
+  const { data: prospect } = await supabase
+    .from('prospects')
+    .select(
+      `
+      id, sellsy_devis_id, sellsy_proforma_id, sellsy_invoice_id,
+      sellsy_devis_number, sellsy_devis_public_url,
+      acompte_amount_eur,
+      company:companies!inner(name)
+      `,
+    )
+    .eq(matchColumn, documentId)
+    .maybeSingle();
+
+  if (!prospect) {
+    console.log(
+      '%s paymentadd-no-prospect-match doc_id=%s type=%s — devis hors flow MDS, ignore',
+      LOG_PREFIX,
+      documentId,
+      documentType,
+    );
+    return;
+  }
+
+  // Extraction tolerante du montant total document (pour log) — la spec
+  // exacte du payload paymentadd n'est pas confirmee, on log ce qu'on voit.
+  const totalRaw = event.relatedobject?.amounts as
+    | { total_excl_tax?: string | number; total?: string | number }
+    | undefined;
+  const totalEur = totalRaw?.total != null ? Number(totalRaw.total) : null;
+
+  const now = new Date().toISOString();
+  await supabase
+    .from('prospects')
+    .update({
+      status: 'signe',
+      acompte_status: 'paid',
+      acompte_paid_at: now,
+      ...(totalEur != null ? { acompte_amount_eur: totalEur } : {}),
+      last_synced_sellsy_at: now,
+      last_activity_at: now,
+    })
+    .eq('id', prospect.id);
+
+  // Email admin notif paiement
+  const company = pickFirst(prospect.company);
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const tpl = renderAdminSignatureFinaleEmail({
+    prospectUrl: `${baseUrl}/admin/prospects/${prospect.id}`,
+    companyName: company?.name ?? '(société inconnue)',
+    documentNumber:
+      prospect.sellsy_devis_number ?? event.relatedobject?.number ?? `DOC-${documentId}`,
+    amountEur: totalEur != null ? formatEur(totalEur) : '—',
+    sellsyDocumentUrl:
+      prospect.sellsy_devis_public_url ?? `https://go.sellsy.com/documents/${documentId}`,
+  });
+  await sendAdminNotification('admin_signature_finale', tpl);
+
+  console.log(
+    '%s paymentadd-success prospect=%s doc_id=%s type=%s total=%s',
+    LOG_PREFIX,
+    prospect.id,
+    documentId,
+    documentType,
+    totalEur ?? '?',
+  );
+}
+
+/**
+ * Event signature.completed — signature electronique completee. Memes
+ * effets que docslog.step status=accepted (status=signe + Brevo SIGNED
+ * + admin email + auto-creation facture si estimate). On reuse en
+ * synthetisant un faux event docslog.step pour passer dans le meme code.
+ */
+async function handleSignatureCompleted(event: SellsyWebhookEvent): Promise<void> {
+  // Le payload signature.* peut avoir relatedid + relatedtype directement,
+  // ou les nicher dans relatedobject. On essaie les deux.
+  const relatedid =
+    event.relatedid ??
+    (event.relatedobject?.id != null ? String(event.relatedobject.id) : undefined);
+  const relatedtype =
+    event.relatedtype ??
+    ((event.relatedobject as { type?: string } | undefined)?.type as 'estimate' | undefined) ??
+    'estimate'; // par defaut estimate (signature electronique = devis le plus souvent)
+
+  if (!relatedid) {
+    console.warn(
+      '%s signature-completed-no-relatedid payload=%s',
+      LOG_PREFIX,
+      JSON.stringify(event).slice(0, 300),
+    );
+    return;
+  }
+
+  // Synthese : on fabrique un event docslog.step avec status=accepted
+  // pour reutiliser handleDocslogStep (eviter la duplication).
+  const synthetic: SellsyWebhookEvent = {
+    ...event,
+    eventType: 'docslog',
+    event: 'step',
+    relatedid,
+    relatedtype,
+    relatedobject: {
+      ...(event.relatedobject ?? {}),
+      status: 'accepted',
+    },
+  };
+  console.log(
+    '%s signature-completed-synthese-step relatedid=%s relatedtype=%s',
+    LOG_PREFIX,
+    relatedid,
+    relatedtype,
+  );
+  await handleDocslogStep(synthetic);
+}
+
+function formatEur(amount: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+  }).format(amount);
 }
 
 function pickFirst<T>(value: T | T[] | null | undefined): T | null {

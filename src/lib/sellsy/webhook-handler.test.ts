@@ -24,7 +24,7 @@ describe('handleSellsyEvent (Sellsy V2 webhook payload — quirks #22 + #23)', (
     expect(logs).toContain('client.created');
   });
 
-  it('docslog.emailsent : log emailsent-skip avec relatedid', async () => {
+  it('docslog.emailsent : log informational-skip avec relatedid', async () => {
     const event: SellsyWebhookEvent = {
       eventType: 'docslog',
       event: 'emailsent',
@@ -37,7 +37,8 @@ describe('handleSellsyEvent (Sellsy V2 webhook payload — quirks #22 + #23)', (
       .mocked(console.log)
       .mock.calls.map((c) => c.join(' '))
       .join(' | ');
-    expect(logs).toContain('emailsent-skip');
+    expect(logs).toContain('informational-skip');
+    expect(logs).toContain('docslog.emailsent');
   });
 
   it('docslog.step sans relatedid : warn step-missing-related', async () => {
@@ -90,6 +91,69 @@ describe('handleSellsyEvent (Sellsy V2 webhook payload — quirks #22 + #23)', (
       .mock.calls.map((c) => c.join(' '))
       .join(' | ');
     expect(warns).toContain('step-unknown-relatedtype');
+  });
+
+  it('docslog.created : log informational-skip (pas d action)', async () => {
+    const event: SellsyWebhookEvent = {
+      eventType: 'docslog',
+      event: 'created',
+      timestamp: '1778280746',
+      relatedid: '52437694',
+      relatedtype: 'estimate',
+    };
+    await expect(handleSellsyEvent(event)).resolves.toBeUndefined();
+    const logs = vi
+      .mocked(console.log)
+      .mock.calls.map((c) => c.join(' '))
+      .join(' | ');
+    expect(logs).toContain('informational-skip');
+    expect(logs).toContain('docslog.created');
+  });
+
+  it('docslog.paymentadd sans relatedid : warn paymentadd-missing-related', async () => {
+    const event: SellsyWebhookEvent = {
+      eventType: 'docslog',
+      event: 'paymentadd',
+      timestamp: '1778280746',
+      // pas de relatedid
+    };
+    await expect(handleSellsyEvent(event)).resolves.toBeUndefined();
+    const warns = vi
+      .mocked(console.warn)
+      .mock.calls.map((c) => c.join(' '))
+      .join(' | ');
+    expect(warns).toContain('paymentadd-missing-related');
+  });
+
+  it('signature.completed sans relatedid ni relatedobject.id : warn', async () => {
+    const event: SellsyWebhookEvent = {
+      eventType: 'signature',
+      event: 'completed',
+      timestamp: '1778280800',
+    };
+    await expect(handleSellsyEvent(event)).resolves.toBeUndefined();
+    const warns = vi
+      .mocked(console.warn)
+      .mock.calls.map((c) => c.join(' '))
+      .join(' | ');
+    expect(warns).toContain('signature-completed-no-relatedid');
+  });
+
+  it('signature.created : log informational-skip', async () => {
+    const event: SellsyWebhookEvent = {
+      eventType: 'signature',
+      event: 'created',
+      timestamp: '1778280800',
+      relatedid: '52437694',
+      relatedtype: 'estimate',
+    };
+    await expect(handleSellsyEvent(event)).resolves.toBeUndefined();
+    const logs = vi
+      .mocked(console.log)
+      .mock.calls.map((c) => c.join(' '))
+      .join(' | ');
+    expect(logs).toContain('informational-skip');
+    expect(logs).toContain('signature.created');
   });
 
   it('event vide : tombe en unhandled-key (pas de throw)', async () => {
