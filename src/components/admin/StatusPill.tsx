@@ -6,6 +6,7 @@ const STATUS_LABEL: Record<ProspectStatus, string> = {
   contact: 'En contact',
   devis_envoye: 'Devis envoye',
   acompte_paye: 'Acompte paye',
+  paye_integral: 'Paye integral',
   signe: 'Signe',
   perdu: 'Perdu',
 };
@@ -15,6 +16,7 @@ const STATUS_CLASS: Record<ProspectStatus, string> = {
   contact: 'bg-md-blue/10 text-md-blue',
   devis_envoye: 'bg-md-warning/15 text-md-warning',
   acompte_paye: 'bg-md-blue/15 text-md-blue-dark',
+  paye_integral: 'bg-md-success/15 text-md-success',
   signe: 'bg-md-success/15 text-md-success',
   perdu: 'bg-md-danger/15 text-md-danger',
 };

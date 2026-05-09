@@ -269,6 +269,12 @@ async function runCaseAFlowLocked(prospectId: string): Promise<void> {
     docDetailsForPersist.pdfLink ||
     null;
 
+  // P4.x.2 sujet C : persiste le total TTC pour permettre le calcul
+  // paid_pct cote webhooks (Stripe + Sellsy paymentadd) sans re-fetcher
+  // Sellsy a chaque event.
+  const totalTtcToPersist =
+    docDetailsForPersist.totalTtc > 0 ? docDetailsForPersist.totalTtc : null;
+
   const updateValues =
     docType === 'estimate'
       ? {
@@ -276,6 +282,7 @@ async function runCaseAFlowLocked(prospectId: string): Promise<void> {
           sellsy_devis_number: docDetailsForPersist.number,
           sellsy_devis_public_url: linkToPersist,
           sellsy_devis_emitted_at: emittedAt,
+          sellsy_devis_total_ttc: totalTtcToPersist,
         }
       : docType === 'proforma'
         ? {
@@ -292,6 +299,19 @@ async function runCaseAFlowLocked(prospectId: string): Promise<void> {
           };
 
   await supabase.from('prospects').update(updateValues).eq('id', prospectId);
+
+  // P4.x.2 sujet E : transition status lead -> devis_envoye apres
+  // emission devis reussie. Ne regresse pas si deja plus avance
+  // (ex: devis re-emis apres signature, ne revient pas de signe a
+  // devis_envoye). On utilise une condition "status='lead'" cote update
+  // pour eviter d'ecraser des status plus avances.
+  if (docType === 'estimate') {
+    await supabase
+      .from('prospects')
+      .update({ status: 'devis_envoye', last_activity_at: new Date().toISOString() })
+      .eq('id', prospectId)
+      .eq('status', 'lead');
+  }
 
   // 6. Envoyer l'email de notification au prospect (parcours devis_sepa
   //    uniquement en M3 — les autres parcours auront leur email avec
@@ -547,6 +567,10 @@ async function sendDevisConciergeEmail(input: SendDevisInput): Promise<void> {
 interface SellsyDocumentDetails {
   number: string | null;
   totalHt: number;
+  /** Total TTC du devis (P4.x.2 sujet C : utilise pour calculer paid_pct
+   *  et la transition vers paye_integral). 0 si Sellsy ne renvoie pas
+   *  amounts.total. */
+  totalTtc: number;
   publicUrl: string | null;
   publicLinkEnabled: boolean;
   pdfLink: string | null;
@@ -577,11 +601,12 @@ async function fetchSellsyDocumentDetails(
     const d: SellsyDoc = (res as { data?: SellsyDoc }).data ?? (res as SellsyDoc);
 
     const totalHt = d.amounts?.total_excl_tax ? Number(d.amounts.total_excl_tax) : 0;
+    const totalTtc = d.amounts?.total ? Number(d.amounts.total) : 0;
     const publicUrl = d.public_link ?? null;
     const publicLinkEnabled = Boolean(d.public_link_enabled);
     const pdfLink = d.pdf_link ?? null;
 
-    return { number: d.number ?? null, totalHt, publicUrl, publicLinkEnabled, pdfLink };
+    return { number: d.number ?? null, totalHt, totalTtc, publicUrl, publicLinkEnabled, pdfLink };
   } catch (err) {
     console.warn(
       '%s fetch-document-details-failed document_id=%d msg=%s — fallback minimal',
@@ -589,7 +614,14 @@ async function fetchSellsyDocumentDetails(
       documentId,
       err instanceof Error ? err.message : String(err),
     );
-    return { number: null, totalHt: 0, publicUrl: null, publicLinkEnabled: false, pdfLink: null };
+    return {
+      number: null,
+      totalHt: 0,
+      totalTtc: 0,
+      publicUrl: null,
+      publicLinkEnabled: false,
+      pdfLink: null,
+    };
   }
 }
 

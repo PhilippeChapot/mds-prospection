@@ -21,6 +21,7 @@ import {
   renderAdminAcompteEchecEmail,
   renderAdminConciergePayeEmail,
 } from '@/lib/resend/templates/admin-payment';
+import { calculatePaymentStatus } from '@/lib/prospects/calculate-payment-status';
 
 type ProspectUpdate = Database['public']['Tables']['prospects']['Update'];
 
@@ -147,19 +148,45 @@ async function markProspectPaid(
 ): Promise<void> {
   const supabase = getSupabaseServiceClient();
 
-  // 1. UPDATE prospect : status + acompte_paid_at + colonnes Stripe + sync indicator.
+  // P4.x.2 sujet C : calcule le status auto selon paid_pct (cumul vs total TTC).
+  // Lookup acompte_amount_eur (cumul precedent) + sellsy_devis_total_ttc.
+  const { data: existing } = await supabase
+    .from('prospects')
+    .select('acompte_amount_eur, sellsy_devis_total_ttc')
+    .eq('id', prospectId)
+    .maybeSingle();
+
+  const previousPaid = Number(existing?.acompte_amount_eur ?? 0);
+  const cumulativePaid = previousPaid + ctx.amountEur;
+  const devisTotalTtc = existing?.sellsy_devis_total_ttc
+    ? Number(existing.sellsy_devis_total_ttc)
+    : null;
+  const computedStatus = calculatePaymentStatus(cumulativePaid, devisTotalTtc);
+
+  // 1. UPDATE prospect : status auto + acompte_paid_at + cumul + sync indicator.
   const now = new Date().toISOString();
   const updates: ProspectUpdate = {
-    status: type === 'integral' ? 'signe' : 'acompte_paye',
+    status: computedStatus,
     acompte_status: 'paid',
     acompte_paid_at: now,
-    acompte_amount_eur: ctx.amountEur,
+    acompte_amount_eur: cumulativePaid,
     last_synced_stripe_at: now,
     last_activity_at: now,
   };
 
   if (ctx.paymentIntentId) updates.stripe_payment_intent_id = ctx.paymentIntentId;
   if (ctx.sessionId) updates.stripe_checkout_session_id = ctx.sessionId;
+
+  console.log(
+    '%s computed-status prospect=%s previous_paid=%d new_amount=%d cumul=%d ttc=%s -> status=%s',
+    LOG_PREFIX,
+    prospectId,
+    previousPaid,
+    ctx.amountEur,
+    cumulativePaid,
+    devisTotalTtc ?? 'null',
+    computedStatus,
+  );
 
   const { error: updErr } = await supabase.from('prospects').update(updates).eq('id', prospectId);
   if (updErr) {

@@ -13,6 +13,7 @@ export const PROSPECT_STATUSES: ProspectStatus[] = [
   'contact',
   'devis_envoye',
   'acompte_paye',
+  'paye_integral',
   'signe',
   'perdu',
 ];

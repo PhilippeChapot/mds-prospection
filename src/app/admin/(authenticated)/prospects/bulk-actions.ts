@@ -79,6 +79,7 @@ const STATUS_LABEL_FR: Record<ProspectStatus, string> = {
   contact: 'En contact',
   devis_envoye: 'Devis envoye',
   acompte_paye: 'Acompte paye',
+  paye_integral: 'Paye integral',
   signe: 'Signe',
   perdu: 'Perdu',
 };

@@ -167,7 +167,7 @@ export function renderAdminSignatureFinaleEmail(
         <p style="margin: 0 0 20px; color: #5c6b85;"><strong>${p.companyName}</strong> a signe le devis. Bravo.</p>
         <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 14px;">
           <tr><td style="padding: 6px 0; color: #5c6b85;">Numero devis</td><td style="text-align: right; font-family: monospace;">${p.documentNumber}</td></tr>
-          <tr><td style="padding: 6px 0; color: #5c6b85;">Montant HT</td><td style="text-align: right; font-weight: 600; color: #294294;">${p.amountEur}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Montant</td><td style="text-align: right; font-weight: 600; color: #294294;">${p.amountEur}</td></tr>
         </table>
         <p style="margin: 24px 0 0; display: flex; gap: 8px; flex-wrap: wrap;">
           <a href="${p.prospectUrl}" style="display: inline-block; padding: 10px 20px; background: #294294; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">Voir le prospect</a>
@@ -182,7 +182,69 @@ export function renderAdminSignatureFinaleEmail(
     ``,
     `Societe : ${p.companyName}`,
     `Numero devis : ${p.documentNumber}`,
-    `Montant HT : ${p.amountEur}`,
+    `Montant : ${p.amountEur}`,
+    ``,
+    `Fiche prospect : ${p.prospectUrl}`,
+    `Devis Sellsy : ${p.sellsyDocumentUrl}`,
+  ].join('\n');
+
+  return { subject, html, text };
+}
+
+// ============================================================================
+// admin_paymentadd (P4.x.2 sujet H)
+// ============================================================================
+
+export interface PaymentAddParams {
+  prospectUrl: string;
+  companyName: string;
+  documentNumber: string;
+  /** Montant du paiement specifique (formatted "1 200,00 €"). */
+  amountEur: string;
+  /** Cumul des paiements pour ce prospect (formatted). */
+  cumulativeEur: string;
+  /** Total TTC du devis (formatted) ou "—" si inconnu. */
+  devisTotalTtcEur: string;
+  /** Statut prospect calcule apres ce paiement (acompte_paye | paye_integral). */
+  newStatus: 'acompte_paye' | 'paye_integral';
+  sellsyDocumentUrl: string;
+}
+
+export function renderAdminPaymentAddEmail(p: PaymentAddParams): AdminNotificationTemplate {
+  const subject = `[MDS] Paiement reçu — ${p.companyName} (${p.amountEur})`;
+
+  const statusLabel = p.newStatus === 'paye_integral' ? 'Payé intégralement' : 'Acompte payé';
+  const accentColor = p.newStatus === 'paye_integral' ? '#1fbf7a' : '#294294';
+
+  const html = `
+    <div style="${ADMIN_BASE_STYLES}">
+      <div style="max-width: 540px; margin: 0 auto; background: #fff; border: 1px solid #e0e4ee; border-radius: 12px; padding: 28px;">
+        <h2 style="margin: 0 0 8px; color: ${accentColor};">Paiement enregistré côté Sellsy ✓</h2>
+        <p style="margin: 0 0 20px; color: #5c6b85;">Un règlement a été ajouté au devis de <strong>${p.companyName}</strong>.</p>
+        <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 14px;">
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Montant</td><td style="text-align: right; font-weight: 600; color: ${accentColor};">${p.amountEur}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Cumul payé</td><td style="text-align: right; font-weight: 600;">${p.cumulativeEur}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Total devis (TTC)</td><td style="text-align: right;">${p.devisTotalTtcEur}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Numéro devis</td><td style="text-align: right; font-family: monospace;">${p.documentNumber}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Statut prospect</td><td style="text-align: right; font-weight: 600;">${statusLabel}</td></tr>
+        </table>
+        <p style="margin: 24px 0 0; display: flex; gap: 8px; flex-wrap: wrap;">
+          <a href="${p.prospectUrl}" style="display: inline-block; padding: 10px 20px; background: #294294; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">Voir le prospect</a>
+          <a href="${p.sellsyDocumentUrl}" style="display: inline-block; padding: 10px 20px; background: #fff; color: #294294; text-decoration: none; border-radius: 8px; border: 1px solid #294294; font-weight: 600;">Voir le devis Sellsy</a>
+        </p>
+      </div>
+    </div>
+  `.trim();
+
+  const text = [
+    `Paiement enregistre cote Sellsy`,
+    ``,
+    `Societe : ${p.companyName}`,
+    `Numero devis : ${p.documentNumber}`,
+    `Montant : ${p.amountEur}`,
+    `Cumul paye : ${p.cumulativeEur}`,
+    `Total devis (TTC) : ${p.devisTotalTtcEur}`,
+    `Statut prospect : ${statusLabel}`,
     ``,
     `Fiche prospect : ${p.prospectUrl}`,
     `Devis Sellsy : ${p.sellsyDocumentUrl}`,

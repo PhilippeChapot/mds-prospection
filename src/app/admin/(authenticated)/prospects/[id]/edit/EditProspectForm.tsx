@@ -17,7 +17,14 @@ const initialState: UpdateProspectState = {};
 export type EditableProspect = {
   id: string;
   pack_code: 'ACCESS' | 'CLASSIC' | 'PREMIUM' | 'A_DEFINIR';
-  status: 'lead' | 'contact' | 'devis_envoye' | 'acompte_paye' | 'signe' | 'perdu';
+  status:
+    | 'lead'
+    | 'contact'
+    | 'devis_envoye'
+    | 'acompte_paye'
+    | 'paye_integral'
+    | 'signe'
+    | 'perdu';
   estimated_amount: number | null;
   owner_id: string | null;
   notes: string | null;

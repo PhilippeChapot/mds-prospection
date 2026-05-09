@@ -29,6 +29,7 @@ export type AdminNotificationCategory =
   | 'admin_signup_converti'
   | 'admin_acompte_paye'
   | 'admin_concierge_paye'
+  | 'admin_paymentadd'
   | 'admin_acompte_echec'
   | 'admin_signature_finale'
   | 'admin_sync_error';

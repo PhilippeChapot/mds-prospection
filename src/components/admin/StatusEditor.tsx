@@ -12,7 +12,15 @@ import { StatusPill } from './StatusPill';
 import { updateProspectStatusAction } from '@/app/admin/(authenticated)/prospects/[id]/actions';
 import { toast } from 'sonner';
 
-const STATUSES = ['lead', 'contact', 'devis_envoye', 'acompte_paye', 'signe', 'perdu'] as const;
+const STATUSES = [
+  'lead',
+  'contact',
+  'devis_envoye',
+  'acompte_paye',
+  'paye_integral',
+  'signe',
+  'perdu',
+] as const;
 type Status = (typeof STATUSES)[number];
 
 const LABEL: Record<Status, string> = {
@@ -20,6 +28,7 @@ const LABEL: Record<Status, string> = {
   contact: 'En contact',
   devis_envoye: 'Devis envoye',
   acompte_paye: 'Acompte paye',
+  paye_integral: 'Paye integral',
   signe: 'Signe',
   perdu: 'Perdu',
 };

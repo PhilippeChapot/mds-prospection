@@ -29,9 +29,13 @@
  */
 
 import { sendAdminNotification } from '@/lib/resend/admin-notifier';
-import { renderAdminSignatureFinaleEmail } from '@/lib/resend/templates/admin-notifications';
+import {
+  renderAdminSignatureFinaleEmail,
+  renderAdminPaymentAddEmail,
+} from '@/lib/resend/templates/admin-notifications';
 import { addContactToList } from '@/lib/brevo/lifecycle';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { calculatePaymentStatus } from '@/lib/prospects/calculate-payment-status';
 import type { Database } from '@/lib/supabase/database.types';
 
 type ProspectUpdate = Database['public']['Tables']['prospects']['Update'];
@@ -338,7 +342,7 @@ async function handleDocslogPaymentAdd(event: SellsyWebhookEvent): Promise<void>
     .select(
       `
       id, sellsy_devis_id, sellsy_proforma_id, sellsy_invoice_id,
-      sellsy_devis_number, sellsy_devis_public_url,
+      sellsy_devis_number, sellsy_devis_public_url, sellsy_devis_total_ttc,
       acompte_amount_eur,
       company:companies!inner(name)
       `,
@@ -356,47 +360,99 @@ async function handleDocslogPaymentAdd(event: SellsyWebhookEvent): Promise<void>
     return;
   }
 
-  // Extraction tolerante du montant total document (pour log) — la spec
-  // exacte du payload paymentadd n'est pas confirmee, on log ce qu'on voit.
-  const totalRaw = event.relatedobject?.amounts as
-    | { total_excl_tax?: string | number; total?: string | number }
-    | undefined;
-  const totalEur = totalRaw?.total != null ? Number(totalRaw.total) : null;
+  // P4.x.2 sujet C : montant du paiement specifique. Sellsy paymentadd
+  // peut envoyer soit relatedobject.amounts.total (le total du DOCUMENT,
+  // pas du paiement) soit un champ amount dedie. On essaie d'abord
+  // amount/payment_amount/value (paiement specifique), fallback sur
+  // amounts.total - acompte deja paye (delta).
+  const paymentAmountRaw =
+    (event as { amount?: number | string }).amount ??
+    (event as { payment_amount?: number | string }).payment_amount;
+  let paymentEur: number | null = null;
+  if (paymentAmountRaw != null) {
+    paymentEur = Number(paymentAmountRaw);
+  } else {
+    // Fallback : total document - paye precedent. Approximation : si
+    // acompte_amount_eur est null et qu'on recoit total, on assume que
+    // c'est le 1er paiement et qu'il fait `total`.
+    const totalRaw = event.relatedobject?.amounts as { total?: string | number } | undefined;
+    const totalDocEur = totalRaw?.total != null ? Number(totalRaw.total) : null;
+    if (totalDocEur != null) {
+      const previousPaid = Number(prospect.acompte_amount_eur ?? 0);
+      paymentEur = Math.max(0, totalDocEur - previousPaid);
+    }
+  }
+
+  if (paymentEur == null || paymentEur <= 0) {
+    console.warn(
+      '%s paymentadd-no-amount doc_id=%s payload-amount=%s — skip update DB',
+      LOG_PREFIX,
+      documentId,
+      JSON.stringify(paymentAmountRaw ?? null),
+    );
+    return;
+  }
+
+  // Cumul + status auto via helper P4.x.2 sujet C.
+  const previousPaid = Number(prospect.acompte_amount_eur ?? 0);
+  const cumulativePaid = previousPaid + paymentEur;
+  const devisTotalTtc = prospect.sellsy_devis_total_ttc
+    ? Number(prospect.sellsy_devis_total_ttc)
+    : null;
+  const computedStatus = calculatePaymentStatus(cumulativePaid, devisTotalTtc);
+
+  console.log(
+    '%s paymentadd-computed-status prospect=%s previous=%d new=%d cumul=%d ttc=%s -> status=%s',
+    LOG_PREFIX,
+    prospect.id,
+    previousPaid,
+    paymentEur,
+    cumulativePaid,
+    devisTotalTtc ?? 'null',
+    computedStatus,
+  );
 
   const now = new Date().toISOString();
   await supabase
     .from('prospects')
     .update({
-      status: 'signe',
+      status: computedStatus,
       acompte_status: 'paid',
       acompte_paid_at: now,
-      ...(totalEur != null ? { acompte_amount_eur: totalEur } : {}),
+      acompte_amount_eur: cumulativePaid,
       last_synced_sellsy_at: now,
       last_activity_at: now,
     })
     .eq('id', prospect.id);
 
-  // Email admin notif paiement
+  // P4.x.2 sujet H : nouveau template admin_paymentadd dedie (au lieu
+  // de signature_finale qui parlait de "Devis signe" a tort pour un
+  // paiement). Subject "Paiement reçu — {company} ({amount})".
   const company = pickFirst(prospect.company);
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-  const tpl = renderAdminSignatureFinaleEmail({
+  const tpl = renderAdminPaymentAddEmail({
     prospectUrl: `${baseUrl}/admin/prospects/${prospect.id}`,
     companyName: company?.name ?? '(société inconnue)',
     documentNumber:
       prospect.sellsy_devis_number ?? event.relatedobject?.number ?? `DOC-${documentId}`,
-    amountEur: totalEur != null ? formatEur(totalEur) : '—',
+    amountEur: formatEur(paymentEur),
+    cumulativeEur: formatEur(cumulativePaid),
+    devisTotalTtcEur: devisTotalTtc != null ? formatEur(devisTotalTtc) : '—',
+    newStatus: computedStatus,
     sellsyDocumentUrl:
       prospect.sellsy_devis_public_url ?? `https://go.sellsy.com/documents/${documentId}`,
   });
-  await sendAdminNotification('admin_signature_finale', tpl);
+  await sendAdminNotification('admin_paymentadd', tpl);
 
   console.log(
-    '%s paymentadd-success prospect=%s doc_id=%s type=%s total=%s',
+    '%s paymentadd-success prospect=%s doc_id=%s type=%s payment=%d cumul=%d status=%s',
     LOG_PREFIX,
     prospect.id,
     documentId,
     documentType,
-    totalEur ?? '?',
+    paymentEur,
+    cumulativePaid,
+    computedStatus,
   );
 }
 

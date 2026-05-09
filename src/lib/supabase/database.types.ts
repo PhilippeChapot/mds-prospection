@@ -1121,6 +1121,7 @@ export type Database = {
           sellsy_devis_id: string | null;
           sellsy_devis_number: string | null;
           sellsy_devis_public_url: string | null;
+          sellsy_devis_total_ttc: number | null;
           sellsy_invoice_emitted_at: string | null;
           sellsy_invoice_id: string | null;
           sellsy_invoice_number: string | null;
@@ -1177,6 +1178,7 @@ export type Database = {
           sellsy_devis_id?: string | null;
           sellsy_devis_number?: string | null;
           sellsy_devis_public_url?: string | null;
+          sellsy_devis_total_ttc?: number | null;
           sellsy_invoice_emitted_at?: string | null;
           sellsy_invoice_id?: string | null;
           sellsy_invoice_number?: string | null;
@@ -1233,6 +1235,7 @@ export type Database = {
           sellsy_devis_id?: string | null;
           sellsy_devis_number?: string | null;
           sellsy_devis_public_url?: string | null;
+          sellsy_devis_total_ttc?: number | null;
           sellsy_invoice_emitted_at?: string | null;
           sellsy_invoice_id?: string | null;
           sellsy_invoice_number?: string | null;
@@ -1885,7 +1888,14 @@ export type Database = {
         | 'DATA_ADTECH'
         | 'INCONNU';
       prospect_source: 'inscription_web' | 'direct' | 'salon' | 'reference' | 'campagne';
-      prospect_status: 'lead' | 'contact' | 'devis_envoye' | 'acompte_paye' | 'signe' | 'perdu';
+      prospect_status:
+        | 'lead'
+        | 'contact'
+        | 'devis_envoye'
+        | 'acompte_paye'
+        | 'paye_integral'
+        | 'signe'
+        | 'perdu';
       prs_exhibitor_source: 'xlsx_seed' | 'manual_admin' | 'sellsy_export';
       reminder_source: 'manual' | 'ai_assistant';
       reminder_type:
@@ -2103,7 +2113,15 @@ export const Constants = {
         'INCONNU',
       ],
       prospect_source: ['inscription_web', 'direct', 'salon', 'reference', 'campagne'],
-      prospect_status: ['lead', 'contact', 'devis_envoye', 'acompte_paye', 'signe', 'perdu'],
+      prospect_status: [
+        'lead',
+        'contact',
+        'devis_envoye',
+        'acompte_paye',
+        'paye_integral',
+        'signe',
+        'perdu',
+      ],
       prs_exhibitor_source: ['xlsx_seed', 'manual_admin', 'sellsy_export'],
       reminder_source: ['manual', 'ai_assistant'],
       reminder_type: ['call_back', 'send_email', 'follow_up', 'check_payment', 'meeting', 'other'],

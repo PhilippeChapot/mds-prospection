@@ -9,6 +9,7 @@ export type ProspectStatus =
   | 'contact'
   | 'devis_envoye'
   | 'acompte_paye'
+  | 'paye_integral'
   | 'signe'
   | 'perdu';
 
