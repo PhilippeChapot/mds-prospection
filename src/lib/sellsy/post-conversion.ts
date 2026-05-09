@@ -313,34 +313,51 @@ async function runCaseAFlowLocked(prospectId: string): Promise<void> {
       .eq('status', 'lead');
   }
 
-  // 6. Envoyer l'email de notification au prospect (parcours devis_sepa
-  //    uniquement en M3 — les autres parcours auront leur email avec
-  //    Stripe Checkout en M4).
-  if (prospect.payment_path !== 'devis_sepa') {
-    console.log(
-      '%s email-skipped-non-sepa prospect_id=%s payment_path=%s (P4 M4)',
-      LOG_PREFIX,
-      prospectId,
-      prospect.payment_path,
-    );
-    return;
-  }
-
+  // 6. Envoyer l'email de notification au prospect (selon payment_path).
   const contact = pickFirst(prospect.contact);
   if (!contact?.email) {
     console.error('%s no-contact-email prospect_id=%s', LOG_PREFIX, prospectId);
     return;
   }
+  const locale: 'fr' | 'en' = contact.language === 'EN' ? 'en' : 'fr';
 
-  await sendDevisConciergeEmail({
-    prospectId,
-    documentId,
-    docType,
-    docDetails: docDetailsForPersist,
-    contactEmail: contact.email,
-    contactFirstName: contact.first_name ?? '',
-    locale: contact.language === 'EN' ? 'en' : 'fr',
-  });
+  if (prospect.payment_path === 'devis_sepa') {
+    await sendDevisConciergeEmail({
+      prospectId,
+      documentId,
+      docType,
+      docDetails: docDetailsForPersist,
+      contactEmail: contact.email,
+      contactFirstName: contact.first_name ?? '',
+      locale,
+    });
+  } else if (prospect.payment_path === 'devis_acompte_stripe') {
+    // P4.x.2 sujet D : auto-creation Payment Link 30% + email prospect.
+    if (totalTtcToPersist != null) {
+      await triggerAcomptePaymentLink({
+        prospectId,
+        documentId,
+        docDetails: docDetailsForPersist,
+        totalTtc: totalTtcToPersist,
+        contactEmail: contact.email,
+        contactFirstName: contact.first_name ?? '',
+        locale,
+      });
+    } else {
+      console.warn(
+        '%s acompte-skip-no-ttc prospect_id=%s — sellsy n a pas renvoye amounts.total, retry necessaire',
+        LOG_PREFIX,
+        prospectId,
+      );
+    }
+  } else {
+    console.log(
+      '%s email-skipped-payment-path prospect_id=%s payment_path=%s (proforma_acompte / facture_integrale : pas d auto-email)',
+      LOG_PREFIX,
+      prospectId,
+      prospect.payment_path,
+    );
+  }
 
   console.log(
     '%s case-a-flow-success prospect_id=%s document_id=%d',
@@ -348,6 +365,90 @@ async function runCaseAFlowLocked(prospectId: string): Promise<void> {
     prospectId,
     documentId,
   );
+}
+
+// ---------------------------------------------------------------------------
+// triggerAcomptePaymentLink (P4.x.2 sujet D)
+// ---------------------------------------------------------------------------
+
+interface TriggerAcompteInput {
+  prospectId: string;
+  documentId: number;
+  docDetails: SellsyDocumentDetails;
+  totalTtc: number;
+  contactEmail: string;
+  contactFirstName: string;
+  locale: 'fr' | 'en';
+}
+
+async function triggerAcomptePaymentLink(input: TriggerAcompteInput): Promise<void> {
+  try {
+    // 1. Calcul acompte 30% TTC, arrondi 2 decimales.
+    const acompteTtc = Math.round(input.totalTtc * 0.3 * 100) / 100;
+    const resteDu = Math.round((input.totalTtc - acompteTtc) * 100) / 100;
+
+    // 2. Cree le Payment Link Stripe (skip si is_test).
+    const { createAcomptePaymentLink } = await import('@/lib/stripe/payment-link');
+    const result = await createAcomptePaymentLink({
+      prospectId: input.prospectId,
+      amountEurTtc: acompteTtc,
+      devisNumber: input.docDetails.number,
+    });
+    if ('skipped' in result) {
+      console.log(
+        '%s acompte-payment-link-skipped prospect=%s reason=%s',
+        LOG_PREFIX,
+        input.prospectId,
+        result.skipped,
+      );
+      return;
+    }
+
+    // 3. Email prospect avec lien Sellsy + Payment Link Stripe.
+    const { renderProspectAcomptePaymentLinkTemplate } =
+      await import('@/lib/resend/templates/prospect-acompte-paymentlink');
+    const sellsyDocUrl =
+      (input.docDetails.publicLinkEnabled && input.docDetails.publicUrl) ||
+      input.docDetails.pdfLink ||
+      `https://www.sellsy.com/document/${input.documentId}`;
+    const tpl = renderProspectAcomptePaymentLinkTemplate(input.locale, {
+      firstName: input.contactFirstName,
+      companyName: '', // sera relu via contact si besoin futur
+      documentNumber: input.docDetails.number ?? `D-${input.documentId}`,
+      sellsyDocumentUrl: sellsyDocUrl,
+      paymentLinkUrl: result.url,
+      acompteAmount: formatEur(acompteTtc),
+      resteDuAmount: formatEur(resteDu),
+    });
+
+    await sendTransactionalEmailViaResend({
+      to: input.contactEmail,
+      toName: input.contactFirstName,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      tags: [
+        { name: 'category', value: 'prospect_acompte_paymentlink' },
+        { name: 'locale', value: input.locale },
+      ],
+    });
+
+    console.log(
+      '%s acompte-payment-link-sent prospect=%s acompte=%d reste=%d to=%s',
+      LOG_PREFIX,
+      input.prospectId,
+      acompteTtc,
+      resteDu,
+      input.contactEmail,
+    );
+  } catch (err) {
+    console.error(
+      '%s acompte-payment-link-failed prospect=%s msg=%s',
+      LOG_PREFIX,
+      input.prospectId,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
