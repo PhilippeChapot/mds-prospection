@@ -106,7 +106,11 @@ describe('POST /api/espace-exposant/request-magic-link (P5.x.2)', () => {
     const sendArgs = sendMock.mock.calls[0][0];
     expect(sendArgs.to).toBe('marie@radio.fr');
     expect(sendArgs.subject).toContain('Espace Exposant');
-    expect(sendArgs.html).toContain('test.mediadays.solutions/fr/espace-exposant/login?token=');
+    // P5.x.2.bis : URL pointe maintenant vers le Route Handler /api/...
+    // (le `&` est echappe en `&amp;` dans le HTML).
+    expect(sendArgs.html).toContain('test.mediadays.solutions/api/espace-exposant/login?token=');
+    expect(sendArgs.html).toContain('locale=fr');
+    expect(sendArgs.text).toContain('test.mediadays.solutions/api/espace-exposant/login?token=');
   });
 
   it('email sans match -> 200 success generique sans envoi Resend', async () => {

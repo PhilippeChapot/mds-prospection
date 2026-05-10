@@ -129,7 +129,12 @@ export async function POST(request: Request) {
   try {
     const token = await signMagicToken(prospectId);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-    const magicLinkUrl = `${baseUrl}/${locale}/espace-exposant/login?token=${encodeURIComponent(token)}`;
+    // P5.x.2.bis : pointe vers le Route Handler `/api/espace-exposant/login`
+    // (et plus le Server Component `/[locale]/.../login/page.tsx`) car
+    // Next.js 15 interdit `cookies().set()` dans un Server Component.
+    // Le route handler set le cookie sur la response et redirect ensuite
+    // vers `/[locale]/espace-exposant/dashboard`.
+    const magicLinkUrl = `${baseUrl}/api/espace-exposant/login?token=${encodeURIComponent(token)}&locale=${locale}`;
     const requestPageUrl = `${baseUrl}/${locale}/espace-exposant`;
 
     const tpl = renderEspaceExposantMagicLinkTemplate(locale, {
