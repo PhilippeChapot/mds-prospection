@@ -71,7 +71,7 @@ export async function convertSignupToProspect(
   const { data: signup, error: signupErr } = await supabase
     .from('public_signup_attempts')
     .select(
-      'id, email, email_domain, contact_first_name, contact_last_name, contact_phone, company_name_input, matched_company_id, derived_category, language, ai_classification, step2_payload, status, converted_to_prospect_id, affiliate_input_raw',
+      'id, email, email_domain, contact_first_name, contact_last_name, contact_phone, company_name_input, matched_company_id, derived_category, language, ai_classification, step2_payload, status, converted_to_prospect_id, affiliate_input_raw, vat_country, vat_number, vat_verified, vat_verified_at',
     )
     .eq('id', signupId)
     .maybeSingle();
@@ -123,11 +123,21 @@ export async function convertSignupToProspect(
         name,
         name_normalized: name.toLowerCase().trim(),
         primary_domain: signup.email_domain ?? extractEmailDomain(signup.email) ?? null,
-        country: 'FR', // P3 fallback (pas de pays stocke en signup row, cf. M5 finitions)
+        // Si le client a saisi une TVA UE, on retient son pays comme
+        // pays societe (autoliquidation depend de companies.vat_country).
+        // Sinon fallback FR (cohorte historique).
+        country: signup.vat_country ?? 'FR',
         category: signup.derived_category,
         pole_id: poleId,
         pole_classified_by: aiPole ? 'ai' : 'manual',
         was_prs_2026_exhibitor: signup.derived_category === 'prs_exhibitor',
+        // P5.x.1 — propage TVA UE vers la company creee. La row
+        // companies est lue par sellsy/create-document.ts pour appliquer
+        // l'autoliquidation Art. 196 (helper isAutoliquidationApplicable).
+        vat_country: signup.vat_country,
+        vat_number: signup.vat_number,
+        vat_verified: signup.vat_verified ?? 'unverified',
+        vat_verified_at: signup.vat_verified_at,
       })
       .select('id')
       .single();
@@ -135,6 +145,26 @@ export async function convertSignupToProspect(
       return { success: false, error: `INSERT company: ${createCoErr?.message ?? 'unknown'}` };
     }
     companyId = created.id;
+  } else if (signup.vat_country && signup.vat_verified === 'valid') {
+    // Company existante + TVA UE verifiee saisie au signup : on enrichit
+    // si la company n'a pas encore de TVA (sinon on respecte la valeur
+    // existante — la verite admin l'emporte sur le signup).
+    const { data: existing } = await supabase
+      .from('companies')
+      .select('vat_country, vat_number, vat_verified')
+      .eq('id', companyId)
+      .maybeSingle();
+    if (existing && (!existing.vat_country || existing.vat_verified === 'unverified')) {
+      await supabase
+        .from('companies')
+        .update({
+          vat_country: signup.vat_country,
+          vat_number: signup.vat_number,
+          vat_verified: signup.vat_verified,
+          vat_verified_at: signup.vat_verified_at,
+        })
+        .eq('id', companyId);
+    }
   }
 
   // 3. Find/create contact

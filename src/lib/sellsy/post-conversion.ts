@@ -484,15 +484,22 @@ async function triggerAcomptePaymentLink(input: TriggerAcompteInput): Promise<vo
     const acompteTtc = Math.round(input.totalTtc * 0.3 * 100) / 100;
     const resteDu = Math.round((input.totalTtc - acompteTtc) * 100) / 100;
 
-    // 2. Lookup company.name pour le template (P4.x.4 Bug L : avant le fix
-    //    on passait companyName='' -> email "pour ." en suspens).
+    // 2. Lookup company.name + vat_country/vat_verified pour le template
+    //    (P4.x.4 Bug L : companyName vide -> "pour ." en suspens ;
+    //     P5.x.1 : flag autoliquidation pour mention legale Art. 196).
     const supabase = getSupabaseServiceClient();
     const { data: companyRow } = await supabase
       .from('prospects')
-      .select('company:companies!inner(name)')
+      .select('company:companies!inner(name, vat_country, vat_verified)')
       .eq('id', input.prospectId)
       .maybeSingle();
-    const companyName = pickFirst(companyRow?.company)?.name ?? '';
+    const company = pickFirst(companyRow?.company);
+    const companyName = company?.name ?? '';
+    const { isAutoliquidationApplicable } = await import('@/lib/vies/verify');
+    const autoliquidation = isAutoliquidationApplicable(
+      company?.vat_country ?? null,
+      company?.vat_verified ?? null,
+    );
 
     // 3. Cree le Payment Link Stripe (skip si is_test).
     const { createAcomptePaymentLink } = await import('@/lib/stripe/payment-link');
@@ -526,6 +533,7 @@ async function triggerAcomptePaymentLink(input: TriggerAcompteInput): Promise<vo
       paymentLinkUrl: result.url,
       acompteAmount: formatEur(acompteTtc),
       resteDuAmount: formatEur(resteDu),
+      autoliquidation,
     });
 
     await sendTransactionalEmailViaResend({

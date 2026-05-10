@@ -20,6 +20,8 @@ import {
   type SignupCategory,
   type SignupInitErrorCode,
   SUPPORTED_COUNTRIES,
+  EU_VAT_COUNTRIES,
+  type EuVatCountry,
 } from '@/lib/signup/schema';
 import { cn } from '@/lib/utils';
 
@@ -34,12 +36,16 @@ export function Step1Form({
   initialCategory: SignupCategory;
 }) {
   const t = useTranslations('signup.step1');
+  const tVat = useTranslations('signup.step1.vat');
   const tTooltips = useTranslations('signup.tooltips');
   const tErrors = useTranslations('errors');
   const tCommon = useTranslations('common');
   const router = useRouter();
   const captchaRef = useRef<HCaptcha>(null);
   const [serverError, setServerError] = useState<SignupInitErrorCode | null>(null);
+  const [vatVerifying, setVatVerifying] = useState(false);
+  const [vatError, setVatError] = useState<string | null>(null);
+  const [vatVerifiedName, setVatVerifiedName] = useState<string | null>(null);
 
   const {
     register,
@@ -60,6 +66,9 @@ export function Step1Form({
       lastName: '',
       phone: null,
       affiliateInput: null,
+      vatCountry: null,
+      vatNumber: null,
+      vatVerified: false,
       category: initialCategory,
       consentRgpd: false,
       consentMarketing: false,
@@ -86,7 +95,71 @@ export function Step1Form({
   }, [setValue]);
 
   const companyName = watch('companyName');
+  const companyCountry = watch('companyCountry');
+  const vatCountry = watch('vatCountry');
+  const vatNumber = watch('vatNumber');
+  const vatVerified = watch('vatVerified');
   const consentRgpd = watch('consentRgpd');
+
+  // Le bloc TVA UE n'a de sens que si la societe N'EST PAS basee en France :
+  // - FR -> TVA 20% standard (pas d'autoliquidation possible)
+  // - CH/GB/US/CA/MC/OTHER -> hors UE (pas d'autoliquidation Art. 196)
+  // - DE/BE/ES/IT/NL/PT (et autres UE selectionnes via vatCountry) -> eligible
+  // On affiche le bloc des que companyCountry n'est pas FR pour permettre
+  // au client UE d'aller plus loin meme s'il a choisi un companyCountry "OTHER".
+  const showVatBlock = companyCountry !== 'FR';
+
+  // Reset l'etat VIES si le numero ou le pays change.
+  useEffect(() => {
+    if (vatVerified) {
+      setValue('vatVerified', false);
+      setVatVerifiedName(null);
+      setVatError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vatCountry, vatNumber]);
+
+  async function handleVerifyVat() {
+    setVatError(null);
+    setVatVerifiedName(null);
+    if (!vatCountry || !vatNumber || vatNumber.trim().length < 4) {
+      setVatError('errorMissingFields');
+      return;
+    }
+    setVatVerifying(true);
+    try {
+      const response = await fetch('/api/signup/verify-vat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ country: vatCountry, vatNumber: vatNumber.trim() }),
+      });
+      const data = (await response.json().catch(() => ({}))) as
+        | { ok: true; name: string | null; address: string | null }
+        | { ok: false; error: string };
+
+      if (response.status === 429 || (!data.ok && data.error === 'rate_limited')) {
+        setVatError('errorRateLimited');
+        return;
+      }
+      if (!response.ok || !data.ok) {
+        const errCode = !data.ok ? data.error : 'errorViesUnavailable';
+        const map: Record<string, string> = {
+          invalid_country: 'errorInvalidCountry',
+          not_valid: 'errorNotValid',
+          vies_unavailable: 'errorViesUnavailable',
+          invalid_payload: 'errorMissingFields',
+        };
+        setVatError(map[errCode] ?? 'errorViesUnavailable');
+        return;
+      }
+      setValue('vatVerified', true, { shouldValidate: false });
+      setVatVerifiedName(data.name);
+    } catch {
+      setVatError('errorViesUnavailable');
+    } finally {
+      setVatVerifying(false);
+    }
+  }
 
   async function onSubmit(values: SignupStep1Input) {
     setServerError(null);
@@ -220,6 +293,90 @@ export function Step1Form({
           </select>
           <FieldError messageKey={errors.companyCountry?.message} />
         </div>
+
+        {/* Bloc TVA UE — visible des que companyCountry !== FR. Permet au
+         * client UE non-FR d'activer l'autoliquidation Art. 196. */}
+        {showVatBlock && (
+          <div className="border-md-border bg-md-blue/[0.03] space-y-3 rounded-md border p-4">
+            <div>
+              <p className="text-md-text text-sm font-semibold">{tVat('sectionTitle')}</p>
+              <p className="text-md-text-muted mt-1 text-xs">{tVat('sectionHelp')}</p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="vatCountry" className="text-sm font-medium">
+                  {tVat('countryLabel')}
+                </Label>
+                <select
+                  id="vatCountry"
+                  className="border-md-border focus:border-md-blue focus:ring-md-blue/20 h-10 w-full rounded-md border bg-white px-3 text-sm focus:ring-2 focus:outline-none"
+                  {...register('vatCountry', {
+                    setValueAs: (v) => (v === '' || v == null ? null : v),
+                  })}
+                >
+                  <option value="">{tVat('countryPlaceholder')}</option>
+                  {EU_VAT_COUNTRIES.map((code) => (
+                    <option key={code} value={code}>
+                      {euCountryLabel(code, locale)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="vatNumber" className="text-sm font-medium">
+                  {tVat('numberLabel')}
+                </Label>
+                <Input
+                  id="vatNumber"
+                  type="text"
+                  autoComplete="off"
+                  placeholder={tVat('numberPlaceholder')}
+                  {...register('vatNumber', {
+                    setValueAs: (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+                  })}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleVerifyVat}
+                disabled={vatVerifying || !vatCountry || !vatNumber || vatNumber.trim().length < 4}
+              >
+                {vatVerifying ? (
+                  <>
+                    <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden />
+                    {tVat('verifying')}
+                  </>
+                ) : (
+                  tVat('verifyButton')
+                )}
+              </Button>
+              {vatVerified && (
+                <span className="bg-md-success/15 text-md-success inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold">
+                  ✓ {tVat('verifiedBadge')}
+                  {vatVerifiedName ? (
+                    <span className="ml-1 font-normal opacity-80">— {vatVerifiedName}</span>
+                  ) : null}
+                </span>
+              )}
+            </div>
+
+            {vatError && (
+              <p className="text-destructive text-xs" role="alert">
+                {tVat(vatError as Parameters<typeof tVat>[0])}
+              </p>
+            )}
+
+            <p className="text-md-text-muted text-xs">
+              {vatVerified ? tVat('autoliquidationInfo') : tVat('standardInfo')}
+            </p>
+          </div>
+        )}
 
         {/* Prenom + Nom */}
         <div className="grid gap-4 sm:grid-cols-2">
@@ -449,6 +606,68 @@ function maskEmail(email: string): string {
   if (!local || !domain) return email;
   if (local.length <= 2) return `${local[0]}***@${domain}`;
   return `${local.slice(0, 2)}***@${domain}`;
+}
+
+function euCountryLabel(code: EuVatCountry, locale: 'fr' | 'en'): string {
+  const names: Record<'fr' | 'en', Record<EuVatCountry, string>> = {
+    fr: {
+      AT: 'Autriche',
+      BE: 'Belgique',
+      BG: 'Bulgarie',
+      CY: 'Chypre',
+      CZ: 'République tchèque',
+      DE: 'Allemagne',
+      DK: 'Danemark',
+      EE: 'Estonie',
+      ES: 'Espagne',
+      FI: 'Finlande',
+      GR: 'Grèce',
+      HR: 'Croatie',
+      HU: 'Hongrie',
+      IE: 'Irlande',
+      IT: 'Italie',
+      LT: 'Lituanie',
+      LU: 'Luxembourg',
+      LV: 'Lettonie',
+      MT: 'Malte',
+      NL: 'Pays-Bas',
+      PL: 'Pologne',
+      PT: 'Portugal',
+      RO: 'Roumanie',
+      SE: 'Suède',
+      SI: 'Slovénie',
+      SK: 'Slovaquie',
+    },
+    en: {
+      AT: 'Austria',
+      BE: 'Belgium',
+      BG: 'Bulgaria',
+      CY: 'Cyprus',
+      CZ: 'Czech Republic',
+      DE: 'Germany',
+      DK: 'Denmark',
+      EE: 'Estonia',
+      ES: 'Spain',
+      FI: 'Finland',
+      GR: 'Greece',
+      HR: 'Croatia',
+      HU: 'Hungary',
+      IE: 'Ireland',
+      IT: 'Italy',
+      LT: 'Lithuania',
+      LU: 'Luxembourg',
+      LV: 'Latvia',
+      MT: 'Malta',
+      NL: 'Netherlands',
+      PL: 'Poland',
+      PT: 'Portugal',
+      RO: 'Romania',
+      SE: 'Sweden',
+      SI: 'Slovenia',
+      SK: 'Slovakia',
+    },
+  };
+  return names[locale][code] ?? code;
 }
 
 function countryLabel(code: string, locale: 'fr' | 'en'): string {

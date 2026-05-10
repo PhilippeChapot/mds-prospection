@@ -28,6 +28,43 @@ export const SUPPORTED_COUNTRIES = [
 
 export type SupportedCountry = (typeof SUPPORTED_COUNTRIES)[number];
 
+/**
+ * Pays UE non-FR exposes dans le selecteur "Pays TVA" du wizard.
+ * Doit rester aligne avec EU_COUNTRIES_NON_FR du helper VIES.
+ * (Liste plus restreinte que SUPPORTED_COUNTRIES qui contient aussi
+ * CH, GB, US, CA, etc. non eligibles a l'autoliquidation Art. 196.)
+ */
+export const EU_VAT_COUNTRIES = [
+  'AT',
+  'BE',
+  'BG',
+  'CY',
+  'CZ',
+  'DE',
+  'DK',
+  'EE',
+  'ES',
+  'FI',
+  'GR',
+  'HR',
+  'HU',
+  'IE',
+  'IT',
+  'LT',
+  'LU',
+  'LV',
+  'MT',
+  'NL',
+  'PL',
+  'PT',
+  'RO',
+  'SE',
+  'SI',
+  'SK',
+] as const;
+
+export type EuVatCountry = (typeof EU_VAT_COUNTRIES)[number];
+
 export const SIGNUP_CATEGORIES = ['exposant', 'partenaire'] as const;
 export type SignupCategory = (typeof SIGNUP_CATEGORIES)[number];
 
@@ -51,6 +88,18 @@ export const signupStep1Schema = z.object({
   // Affiliation P3.x : capture texte libre. Sera normalisee + matchee
   // contre la table affiliates en P5 (calcul commission retroactif possible).
   affiliateInput: z.string().trim().max(200).nullable(),
+  // P5.x.1 — TVA UE intracommunautaire (autoliquidation Art. 196).
+  //   - vatCountry : code pays UE (ex: 'DE', 'BE'). null si client FR ou
+  //     hors UE — dans ce cas vatNumber et vatVerified sont ignores.
+  //   - vatNumber  : numero saisi (sans prefixe pays). null si pas applicable.
+  //   - vatVerified : true si l'utilisateur a presse "Verifier" et VIES
+  //     a renvoye OK. Le serveur re-verifie ensuite via le cache 30j.
+  // Cote client, le <select> renvoie "" pour le placeholder ; le form
+  // doit utiliser `setValueAs` (ou un onChange custom) pour normaliser
+  // en null avant d'appeler le resolver.
+  vatCountry: z.enum(EU_VAT_COUNTRIES).nullable(),
+  vatNumber: z.string().trim().max(40).nullable(),
+  vatVerified: z.boolean(),
   category: z.enum(SIGNUP_CATEGORIES),
   consentRgpd: z.boolean().refine((v) => v === true, { message: 'consentRgpdRequired' }),
   consentMarketing: z.boolean(),

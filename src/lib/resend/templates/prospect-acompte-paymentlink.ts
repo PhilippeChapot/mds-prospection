@@ -24,6 +24,12 @@ export interface ProspectAcomptePaymentLinkParams {
   paymentLinkUrl: string;
   acompteAmount: string;
   resteDuAmount?: string;
+  /**
+   * P5.x.1 — true si le devis Sellsy est emis en autoliquidation TVA
+   * (UE non-FR + numero verifie). Affiche une mention "Art. 196" sous
+   * le bloc montants pour rassurer le client UE sur le HT-only.
+   */
+  autoliquidation?: boolean;
 }
 
 export interface ProspectAcomptePaymentLinkTemplate {
@@ -68,6 +74,11 @@ function renderFr(p: ProspectAcomptePaymentLinkParams): ProspectAcomptePaymentLi
           <tr><td style="padding: 6px 0; color: #5c6b85;">Acompte 30% à régler</td><td style="text-align: right; font-weight: 700; color: #294294;">${escapeHtml(p.acompteAmount)}</td></tr>
           ${p.resteDuAmount ? `<tr><td style="padding: 6px 0; color: #5c6b85;">Solde après acompte</td><td style="text-align: right;">${escapeHtml(p.resteDuAmount)}</td></tr>` : ''}
         </table>
+        ${
+          p.autoliquidation
+            ? `<p style="margin: -8px 0 24px; font-size: 12px; color: #5c6b85; line-height: 1.5;"><em>TVA autoliquidée par le preneur — Article 196 directive 2006/112/CE. Montants en HT.</em></p>`
+            : ''
+        }
 
         <p style="margin: 0 0 12px; line-height: 1.55;">
           <strong>1. Consultez votre devis détaillé :</strong>
@@ -108,6 +119,9 @@ function renderFr(p: ProspectAcomptePaymentLinkParams): ProspectAcomptePaymentLi
     `Devis : ${p.documentNumber}`,
     `Acompte 30% a regler : ${p.acompteAmount}`,
     p.resteDuAmount ? `Solde apres acompte : ${p.resteDuAmount}` : '',
+    p.autoliquidation
+      ? `TVA autoliquidee par le preneur — Article 196 directive 2006/112/CE. Montants en HT.`
+      : '',
     ``,
     `1. Consulter le devis : ${p.sellsyDocumentUrl}`,
     `2. Regler l'acompte : ${p.paymentLinkUrl}`,
@@ -148,6 +162,11 @@ function renderEn(p: ProspectAcomptePaymentLinkParams): ProspectAcomptePaymentLi
           <tr><td style="padding: 6px 0; color: #5c6b85;">30% deposit due</td><td style="text-align: right; font-weight: 700; color: #294294;">${escapeHtml(p.acompteAmount)}</td></tr>
           ${p.resteDuAmount ? `<tr><td style="padding: 6px 0; color: #5c6b85;">Balance after deposit</td><td style="text-align: right;">${escapeHtml(p.resteDuAmount)}</td></tr>` : ''}
         </table>
+        ${
+          p.autoliquidation
+            ? `<p style="margin: -8px 0 24px; font-size: 12px; color: #5c6b85; line-height: 1.5;"><em>VAT reverse-charged to the recipient — Article 196 of Directive 2006/112/EC. Amounts excluding VAT.</em></p>`
+            : ''
+        }
 
         <p style="margin: 0 0 12px; line-height: 1.55;"><strong>1. Review your detailed quote:</strong></p>
         <p style="margin: 0 0 24px;">
@@ -184,6 +203,9 @@ function renderEn(p: ProspectAcomptePaymentLinkParams): ProspectAcomptePaymentLi
     `Quote: ${p.documentNumber}`,
     `30% deposit due: ${p.acompteAmount}`,
     p.resteDuAmount ? `Balance after deposit: ${p.resteDuAmount}` : '',
+    p.autoliquidation
+      ? `VAT reverse-charged to the recipient — Article 196 of Directive 2006/112/EC. Amounts excluding VAT.`
+      : '',
     ``,
     `1. View quote: ${p.sellsyDocumentUrl}`,
     `2. Pay deposit: ${p.paymentLinkUrl}`,

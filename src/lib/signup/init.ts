@@ -13,6 +13,7 @@ import { signDoiToken, computeDoiExpiresAt } from '@/lib/doi/jwt';
 import { generateShortToken, computeShortTokenExpiresAt } from '@/lib/doi/short-token';
 import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
 import { renderDoiTemplate } from '@/lib/resend/templates/doi';
+import { verifyVatNumber, EU_COUNTRIES_NON_FR } from '@/lib/vies/verify';
 import freeProviders from 'free-email-domains';
 import disposableProviders from 'disposable-email-domains';
 import type { SignupStep1Input, SignupInitErrorCode } from './schema';
@@ -222,6 +223,38 @@ export async function initSignup(
   // 6. Derived category (Cas A vs Cas B)
   const derivedCategory = await deriveCategory(input.category, input.companyId ?? null);
 
+  // 6.bis Re-verification VIES (best-effort, hit cache 30j) si le client
+  //       a saisi un pays UE non-FR + un numero. On NE fait PAS confiance
+  //       au flag vatVerified envoye par le client : on consulte la source
+  //       d'autorite (VIES via cache). Si VIES KO, on persiste 'unverified'
+  //       et l'admin pourra re-tenter plus tard.
+  let vatStatus: 'unverified' | 'pending' | 'valid' | 'invalid' = 'unverified';
+  let vatCountryNormalized: string | null = null;
+  let vatNumberNormalized: string | null = null;
+  let vatVerifiedAt: string | null = null;
+
+  if (
+    input.vatCountry &&
+    input.vatNumber &&
+    (EU_COUNTRIES_NON_FR as readonly string[]).includes(input.vatCountry)
+  ) {
+    vatCountryNormalized = input.vatCountry.toUpperCase();
+    vatNumberNormalized = input.vatNumber
+      .replace(/\s/g, '')
+      .replace(new RegExp(`^${vatCountryNormalized}`, 'i'), '');
+
+    try {
+      const viesResult = await verifyVatNumber(vatCountryNormalized, vatNumberNormalized);
+      vatStatus = viesResult.isValid ? 'valid' : 'invalid';
+      vatVerifiedAt = new Date().toISOString();
+    } catch (err) {
+      console.warn(
+        '[signup/init] vies-error during persist (status=unverified) msg=%s',
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
   // 7. INSERT signup (status=awaiting_verification, doi_token vide pour l'instant)
   const supabase = getSupabaseServiceClient();
   const emailValidationStatus = mapEmailValidationStatus(nb.result, emailDomain);
@@ -264,6 +297,11 @@ export async function initSignup(
       utm_source: input.utmSource ?? null,
       utm_medium: input.utmMedium ?? null,
       utm_campaign: input.utmCampaign ?? null,
+      // P5.x.1 — TVA UE intracommunautaire (autoliquidation Art. 196).
+      vat_country: vatCountryNormalized,
+      vat_number: vatNumberNormalized,
+      vat_verified: vatStatus,
+      vat_verified_at: vatVerifiedAt,
       status: 'awaiting_verification',
     })
     .select('id')

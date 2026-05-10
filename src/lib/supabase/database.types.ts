@@ -1381,6 +1381,10 @@ export type Database = {
           utm_campaign: string | null;
           utm_medium: string | null;
           utm_source: string | null;
+          vat_country: string | null;
+          vat_number: string | null;
+          vat_verified: Database['public']['Enums']['vat_status'];
+          vat_verified_at: string | null;
           verification_sent_at: string | null;
           verification_token: string;
           verified_at: string | null;
@@ -1422,6 +1426,10 @@ export type Database = {
           utm_campaign?: string | null;
           utm_medium?: string | null;
           utm_source?: string | null;
+          vat_country?: string | null;
+          vat_number?: string | null;
+          vat_verified?: Database['public']['Enums']['vat_status'];
+          vat_verified_at?: string | null;
           verification_sent_at?: string | null;
           verification_token?: string;
           verified_at?: string | null;
@@ -1463,6 +1471,10 @@ export type Database = {
           utm_campaign?: string | null;
           utm_medium?: string | null;
           utm_source?: string | null;
+          vat_country?: string | null;
+          vat_number?: string | null;
+          vat_verified?: Database['public']['Enums']['vat_status'];
+          vat_verified_at?: string | null;
           verification_sent_at?: string | null;
           verification_token?: string;
           verified_at?: string | null;
