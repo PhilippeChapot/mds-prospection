@@ -30,6 +30,8 @@ export interface DevisConciergeTemplate {
   text: string;
 }
 
+import { capitalizeName } from '@/lib/format/name';
+
 export function renderDevisConciergeTemplate(
   locale: 'fr' | 'en',
   params: DevisConciergeParams,
@@ -40,7 +42,9 @@ export function renderDevisConciergeTemplate(
     '[debug-email-template] devis_concierge params: %s',
     JSON.stringify({ locale, ...params }, null, 2),
   );
-  return locale === 'fr' ? renderFr(params) : renderEn(params);
+  // P5.x.5 : capitalize prenom a l'affichage (DB stocke brut).
+  const normalized = { ...params, firstName: capitalizeName(params.firstName) };
+  return locale === 'fr' ? renderFr(normalized) : renderEn(normalized);
 }
 
 const RESPONSIVE_STYLES = `

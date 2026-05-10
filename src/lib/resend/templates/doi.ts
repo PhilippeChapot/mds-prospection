@@ -32,8 +32,12 @@ export interface DoiTemplate {
   text: string;
 }
 
+import { capitalizeName } from '@/lib/format/name';
+
 export function renderDoiTemplate(locale: 'fr' | 'en', params: DoiTemplateParams): DoiTemplate {
-  return locale === 'fr' ? renderFr(params) : renderEn(params);
+  // P5.x.5 : capitalize prenom a l'affichage (DB stocke brut).
+  const normalized = { ...params, firstName: capitalizeName(params.firstName) };
+  return locale === 'fr' ? renderFr(normalized) : renderEn(normalized);
 }
 
 // ----- Styles communs (media queries pour mobile) -----

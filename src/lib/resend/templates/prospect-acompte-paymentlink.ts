@@ -38,11 +38,15 @@ export interface ProspectAcomptePaymentLinkTemplate {
   text: string;
 }
 
+import { capitalizeName } from '@/lib/format/name';
+
 export function renderProspectAcomptePaymentLinkTemplate(
   locale: 'fr' | 'en',
   params: ProspectAcomptePaymentLinkParams,
 ): ProspectAcomptePaymentLinkTemplate {
-  return locale === 'fr' ? renderFr(params) : renderEn(params);
+  // P5.x.5 : normalise le prenom a l'affichage (cf. capitalizeName helper).
+  const normalized = { ...params, firstName: capitalizeName(params.firstName) };
+  return locale === 'fr' ? renderFr(normalized) : renderEn(normalized);
 }
 
 const BASE_STYLES = `

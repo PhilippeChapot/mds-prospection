@@ -26,11 +26,18 @@ export interface EspaceExposantMagicLinkTemplate {
   text: string;
 }
 
+import { capitalizeName } from '@/lib/format/name';
+
 export function renderEspaceExposantMagicLinkTemplate(
   locale: 'fr' | 'en',
   params: EspaceExposantMagicLinkParams,
 ): EspaceExposantMagicLinkTemplate {
-  return locale === 'fr' ? renderFr(params) : renderEn(params);
+  // P5.x.5 : normalise le prenom a l'affichage. Doctrine MDS = stockage
+  // brut en DB, capitalize cote rendu uniquement (un user qui tape "phil"
+  // doit voir "Phil" dans son email). Idempotent : un appel sur "Phil"
+  // re-rend "Phil".
+  const normalized = { ...params, firstName: capitalizeName(params.firstName) };
+  return locale === 'fr' ? renderFr(normalized) : renderEn(normalized);
 }
 
 const BASE_STYLES = `
