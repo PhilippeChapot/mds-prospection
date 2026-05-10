@@ -29,6 +29,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { signMagicToken } from '@/lib/espace-exposant/jwt';
 import { renderEspaceExposantMagicLinkTemplate } from '@/lib/resend/templates/espace-exposant-magic-link';
 import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
+import { capitalizeName } from '@/lib/format/name';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -138,7 +139,9 @@ export async function POST(request: Request) {
     const requestPageUrl = `${baseUrl}/${locale}/espace-exposant`;
 
     const tpl = renderEspaceExposantMagicLinkTemplate(locale, {
-      firstName: firstName || (locale === 'fr' ? 'cher exposant' : 'dear exhibitor'),
+      // P5.x.3 S1 : capitalize "phil" -> "Phil" pour l'email.
+      firstName:
+        capitalizeName(firstName) || (locale === 'fr' ? 'cher exposant' : 'dear exhibitor'),
       magicLinkUrl,
       requestPageUrl,
     });

@@ -34,6 +34,25 @@ import { sellsyFetch } from './client';
 const LOG_PREFIX = '[sellsy/post-conversion]';
 
 /**
+ * Resultat structure de runPostConversion (P5.x.3 S2).
+ * Permet a `emitSellsyDocumentAction` (Server Action admin) de detecter
+ * un lock conflict et afficher un toast UI au lieu de faire croire a un
+ * succes alors qu'aucun devis n'a ete emis.
+ *
+ * Le caller fire-and-forget (convertSignupToProspect) ignore le retour.
+ */
+export interface RunPostConversionResult {
+  ok: boolean;
+  /**
+   * 'lock_conflict' : invocation concurrente, devis non emis cette fois
+   *                   (le lock concurrent finit le travail).
+   * 'case_b'        : Cas B (manifestation d'interet) — skip Sellsy
+   *                   intentionnel, pas une erreur.
+   */
+  skipped?: 'lock_conflict' | 'case_b';
+}
+
+/**
  * Orchestre les 3 etapes post-conversion.
  * Best-effort : chaque step est isolee. Si l'emission devis echoue, la
  * sync prospect reste OK (deja persistee). L'admin peut retry via le
@@ -42,7 +61,7 @@ const LOG_PREFIX = '[sellsy/post-conversion]';
  * Le caller (convertSignupToProspect) appelle en background :
  *   void runPostConversion(prospectId).catch(err => { ... });
  */
-export async function runPostConversion(prospectId: string): Promise<void> {
+export async function runPostConversion(prospectId: string): Promise<RunPostConversionResult> {
   console.log('%s start prospect_id=%s', LOG_PREFIX, prospectId);
 
   // Detection Cas A (signup avec pack PRS) vs Cas B (manifestation d'interet
@@ -50,6 +69,7 @@ export async function runPostConversion(prospectId: string): Promise<void> {
   // un "step2_payload Cas A introuvable" qui faisait planter la suite.
   const isCasB = await detectCasB(prospectId);
 
+  let caseAResult: { skipped?: 'lock_conflict' } = {};
   if (isCasB) {
     console.log(
       '%s case-b-detected prospect_id=%s — skip Sellsy doc, jump to Brevo + admin email',
@@ -60,7 +80,7 @@ export async function runPostConversion(prospectId: string): Promise<void> {
     // Cas A : flow Sellsy + devis. Wrappee en try/catch pour que les
     // etapes Brevo + admin email restent tjs appelees a la fin (M6.1).
     try {
-      await runCaseAFlow(prospectId);
+      caseAResult = await runCaseAFlow(prospectId);
     } catch (err) {
       console.error(
         '%s case-a-flow-failed prospect_id=%s msg=%s — Brevo + admin email seront tentes quand meme',
@@ -85,6 +105,14 @@ export async function runPostConversion(prospectId: string): Promise<void> {
     prospectId,
     isCasB ? 'case_b' : 'case_a',
   );
+
+  if (caseAResult.skipped === 'lock_conflict') {
+    return { ok: false, skipped: 'lock_conflict' };
+  }
+  if (isCasB) {
+    return { ok: true, skipped: 'case_b' };
+  }
+  return { ok: true };
 }
 
 /**
@@ -175,8 +203,12 @@ async function detectCasB(prospectId: string): Promise<boolean> {
  * Flow Cas A : sync Sellsy + emission document + email concierge.
  * Sort des helpers Brevo/admin pour qu'ils restent appeles a la fin de
  * runPostConversion meme si cette fonction throw.
+ *
+ * P5.x.3 S2 : retourne `{ skipped: 'lock_conflict' }` si lock deja pris
+ * pour permettre au caller (Server Action admin) d'afficher un toast
+ * informatif a l'utilisateur ("emission deja en cours").
  */
-async function runCaseAFlow(prospectId: string): Promise<void> {
+async function runCaseAFlow(prospectId: string): Promise<{ skipped?: 'lock_conflict' }> {
   // P4.x.1 Bug F : guard idempotence early-return avant tout traitement
   // (sync Sellsy + creation document). Sans ca, 2 invocations concurrentes
   // de runPostConversion (re-invocation Server Action Next 16) creent 2
@@ -191,7 +223,7 @@ async function runCaseAFlow(prospectId: string): Promise<void> {
       LOG_PREFIX,
       prospectId,
     );
-    return;
+    return { skipped: 'lock_conflict' };
   }
 
   try {
@@ -199,6 +231,7 @@ async function runCaseAFlow(prospectId: string): Promise<void> {
   } finally {
     await releaseEmitLock(prospectId);
   }
+  return {};
 }
 
 /**

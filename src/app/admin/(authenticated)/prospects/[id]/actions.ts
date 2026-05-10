@@ -82,15 +82,35 @@ export async function deleteProspectAction(prospectId: string) {
  * correspondant existe deja, runPostConversion ne reemet pas.
  *
  * Utilise par le bouton "Emettre devis Sellsy" sur fiche prospect.
+ *
+ * P5.x.3 S2 : retourne un resultat structure pour que le client puisse
+ * afficher un toast warning specifique "emission deja en cours" au lieu
+ * du faux toast success quand un lock est detecte.
  */
-export async function emitSellsyDocumentAction(prospectId: string) {
+export type EmitSellsyDocumentResult =
+  | { ok: true }
+  | { ok: false; reason: 'lock_conflict'; message: string };
+
+export async function emitSellsyDocumentAction(
+  prospectId: string,
+): Promise<EmitSellsyDocumentResult> {
   const profile = await requireAdminProfile();
   if (profile.role !== 'admin') {
     throw new Error('Seul un admin peut emettre un document Sellsy.');
   }
   const { runPostConversion } = await import('@/lib/sellsy/post-conversion');
-  await runPostConversion(prospectId);
+  const result = await runPostConversion(prospectId);
   revalidatePath(`/admin/prospects/${prospectId}`);
+
+  if (!result.ok && result.skipped === 'lock_conflict') {
+    return {
+      ok: false,
+      reason: 'lock_conflict',
+      message:
+        'Une émission est déjà en cours pour ce prospect. Patientez quelques secondes puis réessayez.',
+    };
+  }
+  return { ok: true };
 }
 
 /**

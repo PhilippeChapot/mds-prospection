@@ -3,6 +3,7 @@ import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { loadDashboardData } from '@/lib/espace-exposant/session';
+import { capitalizeName } from '@/lib/format/name';
 import type { Locale } from 'next-intl';
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +22,9 @@ export default async function EspaceExposantDashboardPage({ params }: PageProps)
   const data = await loadDashboardData(locale);
   const t = await getTranslations({ locale, namespace: 'espaceExposant.dashboard' });
 
-  const firstName = data.contact.first_name ?? '';
+  // P5.x.3 S1 : capitalize a l'affichage (les prenoms sont stockes
+  // bruts en DB — "phil" tape par l'utilisateur affiche "Phil").
+  const firstName = capitalizeName(data.contact.first_name);
   const eventsInterest = data.prospect.events_interest ?? [];
   const hasMarseille = eventsInterest.includes('marseille');
   const salonsLabel = hasMarseille

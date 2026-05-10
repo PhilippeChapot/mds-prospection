@@ -87,7 +87,14 @@ export function SyncBadgesSection({
     }
     startEmit(async () => {
       try {
-        await emitSellsyDocumentAction(prospectId);
+        const result = await emitSellsyDocumentAction(prospectId);
+        if (!result.ok && result.reason === 'lock_conflict') {
+          // P5.x.3 S2 : multi-clic frenetique -> 1er clic emet, 2-Ne clics
+          // sont rejetes par le lock idempotence (P4.x.1 F). Toast warning
+          // pour distinguer du flow nominal et eviter de paniquer l'admin.
+          toast.warning(result.message);
+          return;
+        }
         toast.success('Document Sellsy émis. Refresh dans quelques secondes…');
         setTimeout(() => router.refresh(), 3000);
       } catch (err) {

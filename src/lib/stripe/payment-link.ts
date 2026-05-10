@@ -237,11 +237,16 @@ export async function createAcomptePaymentLink(
   // P5.x.2 — persiste l'URL + date d'expiration en colonnes dediees pour
   // que l'Espace Exposant puisse afficher le CTA "Regler l'acompte"
   // (queryable, contrairement au champ notes free-text).
+  // P5.x.3 S3 — persiste aussi l'ID `plink_xxx` pour que le cron
+  // cleanup-payment-links puisse appeler paymentLinks.update(id, ...)
+  // (l'URL https://buy.stripe.com/<slug> n'est pas un identifiant API
+  // utilisable).
   await supabase
     .from('prospects')
     .update({
       notes: newNotes,
       acompte_payment_link_url: link.url,
+      acompte_payment_link_id: link.id,
       acompte_payment_link_expires_at: expiresAt,
     })
     .eq('id', input.prospectId);
