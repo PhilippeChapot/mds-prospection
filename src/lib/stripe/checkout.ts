@@ -23,6 +23,7 @@
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { assertSyncAllowed } from '@/lib/sync/skip-if-test';
 import { getStripe } from './client';
+import { STRIPE_BUSINESS_TAG } from './constants';
 
 const LOG_PREFIX = '[stripe/checkout]';
 
@@ -129,12 +130,16 @@ export async function createCheckoutSession(
       // au webhook. acompte_30pct/integral -> admin_acompte_paye,
       // concierge (Payment Link) -> admin_concierge_paye.
       flow: type === 'integral' ? 'integral' : 'acompte',
+      // P4.x.5 : tag pour filtrer MDS dans le compte Stripe partage.
+      business: STRIPE_BUSINESS_TAG,
     },
     payment_intent_data: {
       metadata: {
         prospect_id: prospectId,
         sellsy_document_id: prospect.sellsy_devis_id ?? '',
         type,
+        flow: type === 'integral' ? 'integral' : 'acompte',
+        business: STRIPE_BUSINESS_TAG,
       },
     },
     success_url: successUrl,

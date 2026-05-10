@@ -14,6 +14,7 @@
 
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { getStripe } from './client';
+import { STRIPE_BUSINESS_TAG } from './constants';
 
 const LOG_PREFIX = '[stripe/payment-link]';
 
@@ -89,12 +90,16 @@ export async function createConciergePaymentLink(
       // P4.x.1 Bug B : flow=concierge -> webhook route le template
       // admin_concierge_paye au lieu de admin_acompte_paye.
       flow: 'concierge',
+      // P4.x.5 : tag pour filtrer MDS dans le compte Stripe partage.
+      business: STRIPE_BUSINESS_TAG,
     },
     payment_intent_data: {
       metadata: {
         prospect_id: input.prospectId,
         sellsy_document_id: prospect.sellsy_devis_id ?? '',
         source: 'admin_concierge',
+        flow: 'concierge',
+        business: STRIPE_BUSINESS_TAG,
       },
     },
     after_completion: { type: 'redirect', redirect: { url: successUrl } },
@@ -207,6 +212,8 @@ export async function createAcomptePaymentLink(
       flow: 'acompte',
       expected_pct: '30',
       source: 'auto_emit_devis',
+      // P4.x.5 : tag pour filtrer MDS dans le compte Stripe partage.
+      business: STRIPE_BUSINESS_TAG,
     },
     payment_intent_data: {
       metadata: {
@@ -214,6 +221,7 @@ export async function createAcomptePaymentLink(
         sellsy_document_id: prospect.sellsy_devis_id ?? '',
         flow: 'acompte',
         expected_pct: '30',
+        business: STRIPE_BUSINESS_TAG,
       },
     },
     after_completion: { type: 'redirect', redirect: { url: successUrl } },
