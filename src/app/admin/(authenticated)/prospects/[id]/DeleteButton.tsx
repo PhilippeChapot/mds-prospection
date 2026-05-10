@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { deleteProspectAction } from './actions';
-import { toast } from 'sonner';
+import { safeServerAction } from '@/lib/utils/safe-server-action';
 
 export function DeleteProspectButton({ prospectId }: { prospectId: string }) {
   const [pending, startTransition] = useTransition();
@@ -46,13 +46,15 @@ export function DeleteProspectButton({ prospectId }: { prospectId: string }) {
             variant="destructive"
             disabled={pending}
             onClick={() =>
-              startTransition(async () => {
-                try {
-                  await deleteProspectAction(prospectId);
-                } catch (err) {
-                  toast.error(err instanceof Error ? err.message : 'Erreur');
-                }
-              })
+              startTransition(() =>
+                // P5.x.7.pre : safeServerAction re-throw le signal
+                // NEXT_REDIRECT pour eviter le faux toast d'erreur
+                // (deleteProspectAction redirect vers /admin/prospects).
+                safeServerAction(
+                  () => deleteProspectAction(prospectId),
+                  'Erreur lors de la suppression du prospect',
+                ),
+              )
             }
           >
             {pending ? 'Suppression…' : 'Confirmer la suppression'}

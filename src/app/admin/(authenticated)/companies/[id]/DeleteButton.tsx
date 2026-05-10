@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { deleteCompanyAction } from './actions';
-import { toast } from 'sonner';
+import { safeServerAction } from '@/lib/utils/safe-server-action';
 
 export function DeleteCompanyButton({
   companyId,
@@ -63,13 +63,14 @@ export function DeleteCompanyButton({
             variant="destructive"
             disabled={pending || blocked}
             onClick={() =>
-              startTransition(async () => {
-                try {
-                  await deleteCompanyAction(companyId);
-                } catch (err) {
-                  toast.error(err instanceof Error ? err.message : 'Erreur');
-                }
-              })
+              startTransition(() =>
+                // P5.x.7.pre : safeServerAction re-throw NEXT_REDIRECT
+                // (deleteCompanyAction redirect vers /admin/companies).
+                safeServerAction(
+                  () => deleteCompanyAction(companyId),
+                  'Erreur lors de la suppression de la societe',
+                ),
+              )
             }
           >
             {pending ? 'Suppression…' : 'Confirmer la suppression'}
