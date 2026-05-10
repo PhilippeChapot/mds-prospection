@@ -59,8 +59,7 @@ describe('capitalize firstName dans templates Resend (P5.x.5)', () => {
       companyName: 'Acme',
       documentNumber: 'D-1',
       sellsyDocumentUrl: 'https://x/y',
-      totalHt: '1000',
-      totalTtc: '1200',
+      totalHt: '1 000 €',
     });
     expect(tpl.html).toContain('Bonjour Édouard');
   });
