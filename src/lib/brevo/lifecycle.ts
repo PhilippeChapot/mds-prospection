@@ -53,8 +53,17 @@ export type ProspectCategory = 'prs_exhibitor' | 'standard' | 'non_eligible';
 export interface ProspectForLists {
   pole: ProspectPole;
   category: ProspectCategory;
-  /** Sera utilise par M7 pour basculer le contact dans BREVO_LIST_ID_SIGNED. */
+  /**
+   * Flags lifecycle (P5.x.4 Phase C). Mutuellement exclusifs avec priorite
+   * descendante : isLost > isSigned > isAcomptePaid > isQuoted.
+   * Le contact n'est present que dans UNE seule liste lifecycle a la fois,
+   * ce qui permet aux automations Brevo de s'arreter naturellement quand
+   * la transition suivante est franchie (sortie de liste = exit condition).
+   */
+  isQuoted?: boolean;
+  isAcomptePaid?: boolean;
   isSigned?: boolean;
+  isLost?: boolean;
 }
 
 /**
@@ -64,6 +73,14 @@ export interface ProspectForLists {
  * Lit les env vars BREVO_LIST_ID_* — si une env var est manquante,
  * elle est silencieusement omise (pas d'erreur). L'admin verra dans les
  * logs warnings la liste des env vars resolues vs manquantes.
+ *
+ * Listes "stables" (verified, pole, eligibility) : toujours presentes
+ * tant que le contact existe.
+ *
+ * Listes "lifecycle" (DEVIS_EMIS, ACOMPTE_PAYE, SIGNED, LOST) : exclusives.
+ * A chaque transition de statut, on calcule la liste cible et on retire
+ * les autres lifecycle via le mecanisme `unlinkListIds` cote Brevo
+ * (cf. upsertContactBrevo).
  */
 export function getListIdsForProspect(prospect: ProspectForLists): number[] {
   const ids: number[] = [];
@@ -85,11 +102,49 @@ export function getListIdsForProspect(prospect: ProspectForLists): number[] {
   }
   // category 'standard' : pas de liste d'eligibilite dediee.
 
-  if (prospect.isSigned) {
+  // Lifecycle : priorite descendante. Un contact perdu n'est plus dans
+  // les listes intermediaires, etc.
+  if (prospect.isLost) {
+    const lost = parseListId(process.env.BREVO_LIST_ID_LOST);
+    if (lost != null) ids.push(lost);
+  } else if (prospect.isSigned) {
     const signed = parseListId(process.env.BREVO_LIST_ID_SIGNED);
     if (signed != null) ids.push(signed);
+  } else if (prospect.isAcomptePaid) {
+    const acompte = parseListId(process.env.BREVO_LIST_ID_ACOMPTE_PAYE);
+    if (acompte != null) ids.push(acompte);
+  } else if (prospect.isQuoted) {
+    const devis = parseListId(process.env.BREVO_LIST_ID_DEVIS_EMIS);
+    if (devis != null) ids.push(devis);
   }
 
+  return ids;
+}
+
+/**
+ * Retourne tous les IDs des listes "lifecycle MDS" configurees, tous
+ * statuts confondus (DEVIS_EMIS, ACOMPTE_PAYE, SIGNED, LOST).
+ *
+ * Utilise par upsertContactBrevo pour passer en `unlinkListIds` toutes
+ * les listes lifecycle qui ne sont pas dans la cible courante : a la
+ * transition `quoted -> acompte_paid`, on ajoute ACOMPTE_PAYE et on
+ * retire DEVIS_EMIS automatiquement (exit condition de l'automation
+ * Brevo "MDS Devis Emis").
+ *
+ * Les listes verified/pole/eligibility ne sont JAMAIS dans cette liste —
+ * elles sont stables et ne doivent pas etre touchees lors des transitions.
+ */
+export function getMdsLifecycleListIds(): number[] {
+  const ids: number[] = [];
+  for (const env of [
+    process.env.BREVO_LIST_ID_DEVIS_EMIS,
+    process.env.BREVO_LIST_ID_ACOMPTE_PAYE,
+    process.env.BREVO_LIST_ID_SIGNED,
+    process.env.BREVO_LIST_ID_LOST,
+  ]) {
+    const id = parseListId(env);
+    if (id != null) ids.push(id);
+  }
   return ids;
 }
 
@@ -135,6 +190,23 @@ export interface UpsertBrevoInput {
   marketingConsent: boolean;
   /** Si fourni, override la liste calculee depuis pole/category. */
   listIdsOverride?: number[];
+
+  // P5.x.4 Phase C — flags lifecycle pour calcul automatique des listes.
+  isQuoted?: boolean;
+  isAcomptePaid?: boolean;
+  isSigned?: boolean;
+  isLost?: boolean;
+
+  // P5.x.4 Phase C — attributs Brevo additionnels utilises par les
+  // templates de la sequence "MDS Devis Emis" (J+3/J+7/J+14/J+21).
+  // null/undefined -> attribut omis (pas envoye a Brevo).
+  sellsyDevisNumber?: string | null;
+  sellsyDevisUrl?: string | null;
+  sellsyDevisTotalTtc?: number | null;
+  /** Date d'emission du devis. Brevo accepte ISO 8601 ; on envoie YYYY-MM-DD. */
+  sellsyDevisEmittedAt?: string | Date | null;
+  packCode?: string | null;
+  acomptePaymentLinkUrl?: string | null;
 }
 
 export interface UpsertBrevoResult {
@@ -156,7 +228,15 @@ export async function upsertContactBrevo(input: UpsertBrevoInput): Promise<Upser
   }
 
   const listIds =
-    input.listIdsOverride ?? getListIdsForProspect({ pole: input.pole, category: input.category });
+    input.listIdsOverride ??
+    getListIdsForProspect({
+      pole: input.pole,
+      category: input.category,
+      isQuoted: input.isQuoted,
+      isAcomptePaid: input.isAcomptePaid,
+      isSigned: input.isSigned,
+      isLost: input.isLost,
+    });
 
   if (listIds.length === 0) {
     console.warn(
@@ -168,22 +248,22 @@ export async function upsertContactBrevo(input: UpsertBrevoInput): Promise<Upser
     );
   }
 
-  const attributes = {
-    FIRSTNAME: input.firstName ?? '',
-    LASTNAME: input.lastName ?? '',
-    COMPANY: input.companyName ?? '',
-    POLE: input.pole ?? 'INCONNU',
-    CATEGORY: input.category,
-    LANGUAGE: input.language,
-    MARKETING_CONSENT: input.marketingConsent,
-  };
+  // unlink : toutes les listes lifecycle qui NE sont PAS dans la cible
+  // courante. Permet a Brevo de retirer le contact des automations
+  // "MDS Devis Emis" / "MDS Acompte" / etc. lors des transitions de
+  // statut. Listes stables (verified/pole/eligibility) jamais touchees.
+  const lifecycleIds = getMdsLifecycleListIds();
+  const unlinkListIds = lifecycleIds.filter((id) => !listIds.includes(id));
 
-  const payload = {
+  const attributes = buildAttributes(input);
+
+  const payload: Record<string, unknown> = {
     email: input.email,
     attributes,
-    listIds: listIds.length > 0 ? listIds : undefined,
     updateEnabled: true,
   };
+  if (listIds.length > 0) payload.listIds = listIds;
+  if (unlinkListIds.length > 0) payload.unlinkListIds = unlinkListIds;
 
   const res = await fetch(`${BREVO_API_BASE}/contacts`, {
     method: 'POST',
@@ -200,11 +280,12 @@ export async function upsertContactBrevo(input: UpsertBrevoInput): Promise<Upser
   if (res.status === 201) {
     const data = (await res.json()) as { id: number };
     console.log(
-      '%s created email=%s contact_id=%d lists=[%s]',
+      '%s created email=%s contact_id=%d lists=[%s] unlink=[%s]',
       LOG_PREFIX,
       input.email,
       data.id,
       listIds.join(','),
+      unlinkListIds.join(','),
     );
     return { brevoContactId: data.id, listIds };
   }
@@ -213,7 +294,13 @@ export async function upsertContactBrevo(input: UpsertBrevoInput): Promise<Upser
     // Aucun id renvoye — on ne le recupere pas pour M6 (pas necessaire pour les
     // flows lifecycle qui s'appuient sur l'email). Si M7 webhook Sellsy a besoin
     // de l'id pour un addContactToList separe, on fera un GET /contacts/{email}.
-    console.log('%s updated email=%s lists=[%s]', LOG_PREFIX, input.email, listIds.join(','));
+    console.log(
+      '%s updated email=%s lists=[%s] unlink=[%s]',
+      LOG_PREFIX,
+      input.email,
+      listIds.join(','),
+      unlinkListIds.join(','),
+    );
     return { brevoContactId: null, listIds };
   }
 
@@ -224,6 +311,67 @@ export async function upsertContactBrevo(input: UpsertBrevoInput): Promise<Upser
     /* noop */
   }
   throw new BrevoLifecycleError(`Brevo upsertContact failed (${res.status})`, res.status, body);
+}
+
+// ============================================================================
+// buildAttributes — interne
+// ============================================================================
+
+/**
+ * Construit le payload `attributes` Brevo. Les champs null/undefined
+ * sont omis (Brevo accepte un attribut absent et garde la valeur
+ * existante, ce qui evite d'ecraser un attribut precedemment defini
+ * par une autre source).
+ *
+ * Format date Brevo : YYYY-MM-DD pour un attribut de type DATE.
+ * `DEVIS_SIGNATURE_DEADLINE` est calcule = sellsyDevisEmittedAt + 21j
+ * (deadline de signature commerciale apres laquelle on relance avec
+ * un nouveau devis ou on passe au statut perdu).
+ */
+function buildAttributes(input: UpsertBrevoInput): Record<string, unknown> {
+  const attrs: Record<string, unknown> = {
+    FIRSTNAME: input.firstName ?? '',
+    LASTNAME: input.lastName ?? '',
+    COMPANY: input.companyName ?? '',
+    POLE: input.pole ?? 'INCONNU',
+    CATEGORY: input.category,
+    LANGUAGE: input.language,
+    MARKETING_CONSENT: input.marketingConsent,
+  };
+
+  if (input.sellsyDevisNumber != null) {
+    attrs.SELLSY_DEVIS_NUMBER = input.sellsyDevisNumber;
+  }
+  if (input.sellsyDevisUrl != null) {
+    attrs.SELLSY_DEVIS_URL = input.sellsyDevisUrl;
+  }
+  if (input.sellsyDevisTotalTtc != null) {
+    attrs.DEVIS_TOTAL_TTC = input.sellsyDevisTotalTtc;
+  }
+  if (input.sellsyDevisEmittedAt != null) {
+    const emittedAt =
+      input.sellsyDevisEmittedAt instanceof Date
+        ? input.sellsyDevisEmittedAt
+        : new Date(input.sellsyDevisEmittedAt);
+    if (!Number.isNaN(emittedAt.getTime())) {
+      attrs.DEVIS_EMITTED_AT = toBrevoDate(emittedAt);
+      const deadline = new Date(emittedAt.getTime() + 21 * 24 * 60 * 60 * 1000);
+      attrs.DEVIS_SIGNATURE_DEADLINE = toBrevoDate(deadline);
+    }
+  }
+  if (input.packCode != null) {
+    attrs.PACK_CODE = input.packCode;
+  }
+  if (input.acomptePaymentLinkUrl != null) {
+    attrs.ACOMPTE_PAYMENT_LINK_URL = input.acomptePaymentLinkUrl;
+  }
+
+  return attrs;
+}
+
+function toBrevoDate(d: Date): string {
+  // YYYY-MM-DD en UTC. Brevo accepte les attributs DATE dans ce format.
+  return d.toISOString().slice(0, 10);
 }
 
 // ============================================================================

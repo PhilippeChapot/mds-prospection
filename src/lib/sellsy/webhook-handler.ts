@@ -33,7 +33,9 @@ import {
   renderAdminSignatureFinaleEmail,
   renderAdminPaymentAddEmail,
 } from '@/lib/resend/templates/admin-notifications';
-import { addContactToList } from '@/lib/brevo/lifecycle';
+// P5.x.4 Phase C : addContactToList remplace par syncBrevoLifecycle
+// (import dynamique dans le handler signature.completed pour eviter
+// le bundle SSR).
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { calculatePaymentStatus } from '@/lib/prospects/calculate-payment-status';
 import type { Database } from '@/lib/supabase/database.types';
@@ -213,34 +215,20 @@ async function handleDocslogStep(event: SellsyWebhookEvent): Promise<void> {
 
   await supabase.from('prospects').update(update).eq('id', prospect.id);
 
-  // Brevo SIGNED uniquement sur acceptation (pas sur paiement seul).
-  if (isAccepted) {
-    const contact = pickFirst(prospect.contact);
-    const brevoIdRaw = contact?.brevo_contact_id;
-    const brevoId = brevoIdRaw ? Number(brevoIdRaw) : NaN;
-    const signedListId = Number(process.env.BREVO_LIST_ID_SIGNED ?? '');
-    if (
-      Number.isFinite(brevoId) &&
-      brevoId > 0 &&
-      Number.isFinite(signedListId) &&
-      signedListId > 0
-    ) {
-      try {
-        await addContactToList(brevoId, signedListId);
-      } catch (err) {
-        console.warn(
-          '%s brevo-add-to-signed-failed prospect=%s msg=%s',
-          LOG_PREFIX,
-          prospect.id,
-          err instanceof Error ? err.message : String(err),
-        );
-      }
-    } else {
-      console.log(
-        '%s brevo-skip-list-signed prospect=%s reason=%s',
+  // P5.x.4 Phase C : sync Brevo complet (upsert attributs + listes
+  // lifecycle avec exit conditions). Remplace le simple addContactToList
+  // qui n'enlevait pas le contact de "MDS Devis Emis" -> les automations
+  // continuaient apres signature.
+  if (isAccepted || isPaid) {
+    try {
+      const { syncBrevoLifecycle } = await import('@/lib/brevo/sync-lifecycle');
+      await syncBrevoLifecycle(prospect.id);
+    } catch (err) {
+      console.warn(
+        '%s brevo-sync-failed prospect=%s msg=%s',
         LOG_PREFIX,
         prospect.id,
-        !brevoIdRaw ? 'no_brevo_contact_id' : 'no_BREVO_LIST_ID_SIGNED_env',
+        err instanceof Error ? err.message : String(err),
       );
     }
   }
@@ -424,6 +412,21 @@ async function handleDocslogPaymentAdd(event: SellsyWebhookEvent): Promise<void>
       last_activity_at: now,
     })
     .eq('id', prospect.id);
+
+  // P5.x.4 Phase C : sync Brevo (transition -> isAcomptePaid=true ou
+  // isSigned=true selon computedStatus). L'automation "MDS Devis Emis"
+  // s'arrete naturellement via unlinkListIds.
+  try {
+    const { syncBrevoLifecycle } = await import('@/lib/brevo/sync-lifecycle');
+    await syncBrevoLifecycle(prospect.id);
+  } catch (err) {
+    console.warn(
+      '%s brevo-sync-failed prospect=%s msg=%s',
+      LOG_PREFIX,
+      prospect.id,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
 
   // P4.x.2 sujet H : nouveau template admin_paymentadd dedie (au lieu
   // de signature_finale qui parlait de "Devis signe" a tort pour un

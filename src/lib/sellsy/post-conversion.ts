@@ -20,7 +20,9 @@ import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
 import { renderDevisConciergeTemplate } from '@/lib/resend/templates/devis-concierge';
 import { sendAdminNotification } from '@/lib/resend/admin-notifier';
 import { renderAdminSignupConvertiEmail } from '@/lib/resend/templates/admin-notifications';
-import { upsertContactBrevo, type ProspectPole } from '@/lib/brevo/lifecycle';
+// P5.x.4 Phase C : la logique brevo a ete deplacee dans sync-lifecycle.ts
+// (importee dynamiquement par triggerBrevoLifecycle pour eviter le bundle
+// SSR de toutes les pages qui exportent runPostConversion).
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import {
   createSellsyDocument,
@@ -600,61 +602,16 @@ async function triggerAcomptePaymentLink(input: TriggerAcompteInput): Promise<vo
 }
 
 // ---------------------------------------------------------------------------
-// triggerBrevoLifecycle (P4 M6) — upsert contact + assign listes
+// triggerBrevoLifecycle (P4 M6) — thin wrapper sur syncBrevoLifecycle (P5.x.4)
 // ---------------------------------------------------------------------------
 
 async function triggerBrevoLifecycle(prospectId: string): Promise<void> {
-  const supabase = getSupabaseServiceClient();
-  try {
-    const { data, error } = await supabase
-      .from('prospects')
-      .select(
-        `
-        id, is_test,
-        company:companies!inner(name, category, pole:poles(code)),
-        contact:contacts(email, first_name, last_name, language, marketing_consent)
-        `,
-      )
-      .eq('id', prospectId)
-      .maybeSingle();
-    if (error || !data) {
-      console.warn('%s brevo-lookup-failed prospect=%s', LOG_PREFIX, prospectId);
-      return;
-    }
-    const company = pickFirst(data.company);
-    const contact = pickFirst(data.contact);
-    if (!contact?.email) {
-      console.warn('%s brevo-no-email prospect=%s', LOG_PREFIX, prospectId);
-      return;
-    }
-    const pole = pickFirst(company?.pole)?.code as ProspectPole | undefined;
-    await upsertContactBrevo({
-      is_test: data.is_test,
-      email: contact.email,
-      firstName: contact.first_name,
-      lastName: contact.last_name,
-      companyName: company?.name ?? null,
-      pole: pole ?? 'INCONNU',
-      category: company?.category ?? 'standard',
-      language: (contact.language ?? 'FR') as 'FR' | 'EN',
-      marketingConsent: Boolean(contact.marketing_consent),
-    });
-    await supabase
-      .from('prospects')
-      .update({ last_synced_brevo_at: new Date().toISOString() })
-      .eq('id', prospectId);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('%s brevo-failed prospect=%s msg=%s', LOG_PREFIX, prospectId, msg);
-    await supabase
-      .from('prospects')
-      .update({
-        last_sync_error_message: msg.slice(0, 1000),
-        last_sync_error_provider: 'brevo',
-        last_sync_error_at: new Date().toISOString(),
-      })
-      .eq('id', prospectId);
-  }
+  // P5.x.4 Phase C : la logique a ete extraite dans @/lib/brevo/sync-lifecycle.ts
+  // pour pouvoir etre reappelee depuis les webhooks (signature/payment) et
+  // l'admin updateProspectStatusAction. Ici on conserve un thin wrapper
+  // pour preserver la sequence d'appel runPostConversion (allSettled).
+  const { syncBrevoLifecycle } = await import('@/lib/brevo/sync-lifecycle');
+  await syncBrevoLifecycle(prospectId);
 }
 
 // ---------------------------------------------------------------------------

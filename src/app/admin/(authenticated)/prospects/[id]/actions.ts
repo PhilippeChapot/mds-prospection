@@ -30,6 +30,23 @@ export async function updateProspectStatusAction(prospectId: string, newStatus: 
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/prospects/${prospectId}`);
   revalidatePath('/admin/prospects');
+
+  // P5.x.4 Phase C : sync Brevo en background pour repercuter la
+  // transition de statut (notamment isLost=true sur passage 'perdu' ->
+  // sortie de toutes les automations lifecycle). Fire-and-forget : on
+  // ne bloque pas l'admin si Brevo down.
+  void (async () => {
+    try {
+      const { syncBrevoLifecycle } = await import('@/lib/brevo/sync-lifecycle');
+      await syncBrevoLifecycle(prospectId);
+    } catch (err) {
+      console.error(
+        '[admin/updateProspectStatusAction] brevo-sync-failed prospect=%s msg=%s',
+        prospectId,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  })();
 }
 
 export async function updateProspectNotesAction(prospectId: string, notes: string) {

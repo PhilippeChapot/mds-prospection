@@ -223,6 +223,21 @@ async function markProspectPaid(
     flow: ctx.flow,
   });
 
+  // 4. P5.x.4 Phase C : sync Brevo apres paiement Stripe (transition
+  //    quoted -> acompte_paid ou paye_integral selon computedStatus).
+  //    Best-effort : pas bloquant, log si fail.
+  try {
+    const { syncBrevoLifecycle } = await import('@/lib/brevo/sync-lifecycle');
+    await syncBrevoLifecycle(prospectId);
+  } catch (err) {
+    console.warn(
+      '%s brevo-sync-failed prospect=%s msg=%s',
+      LOG_PREFIX,
+      prospectId,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
   console.log(
     '%s mark-paid prospect=%s type=%s amount=%d',
     LOG_PREFIX,
