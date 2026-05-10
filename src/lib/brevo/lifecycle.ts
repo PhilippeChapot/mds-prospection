@@ -123,7 +123,8 @@ export function getListIdsForProspect(prospect: ProspectForLists): number[] {
 
 /**
  * Retourne tous les IDs des listes "lifecycle MDS" configurees, tous
- * statuts confondus (DEVIS_EMIS, ACOMPTE_PAYE, SIGNED, LOST).
+ * statuts confondus (VERIFIED_NOT_CONVERTED, DEVIS_EMIS, ACOMPTE_PAYE,
+ * SIGNED, LOST).
  *
  * Utilise par upsertContactBrevo pour passer en `unlinkListIds` toutes
  * les listes lifecycle qui ne sont pas dans la cible courante : a la
@@ -131,12 +132,20 @@ export function getListIdsForProspect(prospect: ProspectForLists): number[] {
  * retire DEVIS_EMIS automatiquement (exit condition de l'automation
  * Brevo "MDS Devis Emis").
  *
+ * P5.x.8 : VERIFIED_NOT_CONVERTED ajoute. Cote signup-side, le contact
+ * y entre apres verifyDoi et en sort apres step2 submit / conversion.
+ * Cote prospect-side (P5.x.4 sync), `unlinkListIds` retire
+ * automatiquement la liste si elle est dans la pool — donc convertir
+ * un signup en prospect retire le contact de VERIFIED_NOT_CONVERTED
+ * sans handler dedie.
+ *
  * Les listes verified/pole/eligibility ne sont JAMAIS dans cette liste —
  * elles sont stables et ne doivent pas etre touchees lors des transitions.
  */
 export function getMdsLifecycleListIds(): number[] {
   const ids: number[] = [];
   for (const env of [
+    process.env.BREVO_LIST_ID_VERIFIED_NOT_CONVERTED,
     process.env.BREVO_LIST_ID_DEVIS_EMIS,
     process.env.BREVO_LIST_ID_ACOMPTE_PAYE,
     process.env.BREVO_LIST_ID_SIGNED,
@@ -207,6 +216,10 @@ export interface UpsertBrevoInput {
   sellsyDevisEmittedAt?: string | Date | null;
   packCode?: string | null;
   acomptePaymentLinkUrl?: string | null;
+
+  // P5.x.8 — URL `etape-2?token=...` pour les emails de relance signup
+  // verified non converti. null si pas de short_token disponible.
+  signupResumeUrl?: string | null;
 }
 
 export interface UpsertBrevoResult {
@@ -364,6 +377,12 @@ function buildAttributes(input: UpsertBrevoInput): Record<string, unknown> {
   }
   if (input.acomptePaymentLinkUrl != null) {
     attrs.ACOMPTE_PAYMENT_LINK_URL = input.acomptePaymentLinkUrl;
+  }
+  if (input.signupResumeUrl != null) {
+    // P5.x.8 — URL de reprise step2 pour les relances Brevo "MDS
+    // Verified Pas Converted". Vide -> attribut non envoye, Brevo
+    // garde la valeur precedente.
+    attrs.SIGNUP_RESUME_URL = input.signupResumeUrl;
   }
 
   return attrs;

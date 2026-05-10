@@ -18,7 +18,14 @@ import { randomBytes } from 'node:crypto';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
 const TOKEN_LENGTH = 16;
-const TTL_SECONDS = 24 * 60 * 60; // 24h
+// P5.x.8 : etendu de 24h a 14j pour couvrir la sequence Brevo
+// "MDS Verified Pas Converted" J+1/J+3/J+7 + buffer. Le token reste
+// single-domain (cookie HTTP step2 est independant, TTL 2h cote session)
+// donc le risque d'usage residuel post-fuite reste limite. La majorite
+// des verifications DOI se font dans les 24h ; le 14j sert uniquement
+// aux relances email pour les utilisateurs qui ont abandonne en
+// cours de route.
+const TTL_SECONDS = 14 * 24 * 60 * 60; // 14j
 
 export function generateShortToken(): string {
   const bytes = randomBytes(TOKEN_LENGTH);

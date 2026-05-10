@@ -89,6 +89,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 
+  // P5.x.8 : retire le contact de la liste Brevo "MDS Verified Pas
+  // Converted" maintenant que step2 est soumis (la sequence J+1/J+3/J+7
+  // s'arrete naturellement via unlinkListIds). Best-effort en background.
+  void (async () => {
+    try {
+      const { syncSignupLifecycle } = await import('@/lib/brevo/sync-signup-lifecycle');
+      await syncSignupLifecycle(session.signupId);
+    } catch (err) {
+      console.error(
+        '[step2/submit] signup-lifecycle-failed signup=%s msg=%s',
+        session.signupId,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  })();
+
   const ref = signPublicSignupRef(session.signupId);
   return NextResponse.json({ success: true, ref });
 }

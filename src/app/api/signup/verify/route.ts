@@ -143,6 +143,22 @@ export async function GET(request: Request) {
       console.error('[signup/verify] UPDATE verified failed', updateErr);
       return NextResponse.redirect(`${getBaseUrl()}${RESTART_SLUG[signupLocale]}?error=1`);
     }
+
+    // P5.x.8 : ajoute le contact a la liste Brevo "MDS Verified Pas
+    // Converted" pour declencher la sequence J+1/J+3/J+7. Best-effort,
+    // ne bloque pas la redirection step2 si Brevo down.
+    void (async () => {
+      try {
+        const { syncSignupLifecycle } = await import('@/lib/brevo/sync-signup-lifecycle');
+        await syncSignupLifecycle(signup.id);
+      } catch (err) {
+        console.error(
+          '[signup/verify] signup-lifecycle-failed signup=%s msg=%s',
+          signup.id,
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+    })();
   }
 
   // 4. Set cookie HMAC + redirect step2

@@ -279,6 +279,24 @@ export async function convertSignupToProspect(
     );
   });
 
+  // P5.x.8 : ensure le contact sort de "MDS Verified Pas Converted"
+  // (en pratique, runPostConversion -> syncBrevoLifecycle prospect-side
+  // unlink deja la liste via getMdsLifecycleListIds, mais on force un
+  // signup-side sync ici pour gerer le cas ou la liste prospect-lifecycle
+  // n'a pas encore son env var configuree).
+  void (async () => {
+    try {
+      const { syncSignupLifecycle } = await import('@/lib/brevo/sync-signup-lifecycle');
+      await syncSignupLifecycle(signup.id);
+    } catch (err) {
+      console.error(
+        '[signups/convert] signup-lifecycle-failed signup=%s msg=%s',
+        signup.id,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  })();
+
   return { success: true, data: { prospectId: newProspect.id } };
 }
 
