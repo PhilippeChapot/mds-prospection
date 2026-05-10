@@ -238,6 +238,13 @@ async function markProspectPaid(
     );
   }
 
+  // 5. P5.x.7 : calcul auto de la commission affilie (idempotent —
+  //    skip si deja calculee, ce qui evite double-compte sur paymentadd
+  //    Sellsy back-to-back).
+  const { maybeRecordAffiliateCommission } =
+    await import('@/lib/affiliates/maybe-record-commission');
+  await maybeRecordAffiliateCommission(prospectId);
+
   console.log(
     '%s mark-paid prospect=%s type=%s amount=%d',
     LOG_PREFIX,

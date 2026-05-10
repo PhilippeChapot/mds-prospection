@@ -428,6 +428,11 @@ async function handleDocslogPaymentAdd(event: SellsyWebhookEvent): Promise<void>
     );
   }
 
+  // P5.x.7 : calcul auto commission affilie (idempotent).
+  const { maybeRecordAffiliateCommission } =
+    await import('@/lib/affiliates/maybe-record-commission');
+  await maybeRecordAffiliateCommission(prospect.id);
+
   // P4.x.2 sujet H : nouveau template admin_paymentadd dedie (au lieu
   // de signature_finale qui parlait de "Devis signe" a tort pour un
   // paiement). Subject "Paiement reçu — {company} ({amount})".

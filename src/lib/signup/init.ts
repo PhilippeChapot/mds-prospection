@@ -166,6 +166,13 @@ export async function sendDoiEmail(input: SendDoiInput): Promise<void> {
 interface InitSignupContext {
   ip: string;
   userAgent: string | null;
+  /**
+   * P5.x.7 : token affilie lu depuis le cookie `mds_affiliate_ref`.
+   * null si pas de cookie ou format invalide. Sera resolu en
+   * `affiliate_id` via lookup `affiliates.token` si match (et
+   * is_active=true) ; sinon, on persiste null.
+   */
+  affiliateToken?: string | null;
 }
 
 export async function initSignup(
@@ -255,8 +262,25 @@ export async function initSignup(
     }
   }
 
-  // 7. INSERT signup (status=awaiting_verification, doi_token vide pour l'instant)
+  // 6.ter P5.x.7 — lookup affiliate par token (cookie). Si match
+  // (et affiliate actif), on resout en affiliate_id pour le persister
+  // sur le signup ; sinon on retombe sur null sans crasher.
   const supabase = getSupabaseServiceClient();
+  let affiliateId: string | null = null;
+  if (ctx.affiliateToken) {
+    const { data: affiliate } = await supabase
+      .from('affiliates')
+      .select('id, is_active')
+      .eq('token', ctx.affiliateToken)
+      .maybeSingle();
+    if (affiliate?.is_active) {
+      affiliateId = affiliate.id;
+    } else {
+      console.log('[signup/init] affiliate-token-unknown-or-inactive token=%s', ctx.affiliateToken);
+    }
+  }
+
+  // 7. INSERT signup (status=awaiting_verification, doi_token vide pour l'instant)
   const emailValidationStatus = mapEmailValidationStatus(nb.result, emailDomain);
   const isNewCompany = !input.companyId;
 
@@ -302,6 +326,8 @@ export async function initSignup(
       vat_number: vatNumberNormalized,
       vat_verified: vatStatus,
       vat_verified_at: vatVerifiedAt,
+      // P5.x.7 — affilie referent (resolu via cookie token).
+      affiliate_id: affiliateId,
       status: 'awaiting_verification',
     })
     .select('id')

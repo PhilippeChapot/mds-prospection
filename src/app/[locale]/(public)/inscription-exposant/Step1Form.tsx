@@ -92,6 +92,26 @@ export function Step1Form({
     setValue('utmMedium', url.searchParams.get('utm_medium'));
     setValue('utmCampaign', url.searchParams.get('utm_campaign'));
     setValue('referrer', document.referrer || null);
+
+    // P5.x.7 : tracking affilie. Si ?ref=<token>, ping le endpoint qui
+    // log le click et set le cookie 30j. Le serveur valide le token,
+    // donc un ?ref= invalide ne casse rien (200 ok=false silencieux).
+    const ref = url.searchParams.get('ref');
+    if (ref && /^[A-Za-z0-9_.\-]+$/.test(ref) && ref.length <= 64) {
+      void fetch('/api/affiliates/click', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          token: ref,
+          referrer: document.referrer || null,
+          utmSource: url.searchParams.get('utm_source'),
+          utmMedium: url.searchParams.get('utm_medium'),
+          utmCampaign: url.searchParams.get('utm_campaign'),
+        }),
+      }).catch(() => {
+        // Silencieux : le tracking est best-effort, ne bloque pas le wizard.
+      });
+    }
   }, [setValue]);
 
   const companyName = watch('companyName');

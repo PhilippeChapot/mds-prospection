@@ -15,11 +15,13 @@
  *   500 { success: false, error: 'internal_error' }
  */
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { signupStep1Schema } from '@/lib/signup/schema';
 import { initSignup } from '@/lib/signup/init';
 import { checkRateLimit } from '@/lib/rate-limit/in-memory';
 import { getClientIp } from '@/lib/rate-limit/ip';
 import { PENDING_SIGNUP_COOKIE, PENDING_SIGNUP_COOKIE_MAX_AGE_SECONDS } from '@/lib/signup/cookies';
+import { AFFILIATE_COOKIE, isValidAffiliateToken } from '@/lib/affiliates/cookie';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -52,7 +54,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: 'invalid_payload' }, { status: 400 });
   }
 
-  const result = await initSignup(parsed.data, { ip, userAgent });
+  // P5.x.7 : lit le cookie affilie pose au load via /api/affiliates/click.
+  // Sanitize avant de passer en service pour eviter qu'un cookie forge avec
+  // un token long/exotique ne pollue les logs DB.
+  const cookieStore = await cookies();
+  const affiliateCookie = cookieStore.get(AFFILIATE_COOKIE)?.value ?? null;
+  const affiliateToken = isValidAffiliateToken(affiliateCookie) ? affiliateCookie : null;
+
+  const result = await initSignup(parsed.data, { ip, userAgent, affiliateToken });
 
   if (!result.ok) {
     const status =

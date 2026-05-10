@@ -71,7 +71,7 @@ export async function convertSignupToProspect(
   const { data: signup, error: signupErr } = await supabase
     .from('public_signup_attempts')
     .select(
-      'id, email, email_domain, contact_first_name, contact_last_name, contact_phone, company_name_input, matched_company_id, derived_category, language, ai_classification, step2_payload, status, converted_to_prospect_id, affiliate_input_raw, vat_country, vat_number, vat_verified, vat_verified_at',
+      'id, email, email_domain, contact_first_name, contact_last_name, contact_phone, company_name_input, matched_company_id, derived_category, language, ai_classification, step2_payload, status, converted_to_prospect_id, affiliate_input_raw, affiliate_id, vat_country, vat_number, vat_verified, vat_verified_at',
     )
     .eq('id', signupId)
     .maybeSingle();
@@ -233,6 +233,11 @@ export async function convertSignupToProspect(
       payment_path: a?.paymentPath ?? null,
       notes,
       owner_id: profile.id,
+      // P5.x.7 — propage l'affiliate_id du signup vers le prospect.
+      // Le statut commission reste 'not_applicable' tant que le paiement
+      // n'est pas tombe ; il bascule en 'due' au calcul commission
+      // (cf. webhook handlers Stripe + Sellsy paymentadd).
+      affiliate_id: signup.affiliate_id ?? null,
     })
     .select('id')
     .single();

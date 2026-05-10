@@ -216,6 +216,7 @@ export type Database = {
           is_active: boolean;
           notes_internal: string | null;
           token: string;
+          type: 'media' | 'referral';
           updated_at: string;
         };
         Insert: {
@@ -233,6 +234,7 @@ export type Database = {
           is_active?: boolean;
           notes_internal?: string | null;
           token: string;
+          type?: 'media' | 'referral';
           updated_at?: string;
         };
         Update: {
@@ -250,6 +252,7 @@ export type Database = {
           is_active?: boolean;
           notes_internal?: string | null;
           token?: string;
+          type?: 'media' | 'referral';
           updated_at?: string;
         };
         Relationships: [
@@ -1092,6 +1095,7 @@ export type Database = {
           affiliate_id: string | null;
           commission_eur_ht: number | null;
           commission_paid_at: string | null;
+          commission_payment_reference: string | null;
           commission_status: Database['public']['Enums']['commission_status'];
           company_id: string;
           created_at: string;
@@ -1152,6 +1156,7 @@ export type Database = {
           affiliate_id?: string | null;
           commission_eur_ht?: number | null;
           commission_paid_at?: string | null;
+          commission_payment_reference?: string | null;
           commission_status?: Database['public']['Enums']['commission_status'];
           company_id: string;
           created_at?: string;
@@ -1212,6 +1217,7 @@ export type Database = {
           affiliate_id?: string | null;
           commission_eur_ht?: number | null;
           commission_paid_at?: string | null;
+          commission_payment_reference?: string | null;
           commission_status?: Database['public']['Enums']['commission_status'];
           company_id?: string;
           created_at?: string;
