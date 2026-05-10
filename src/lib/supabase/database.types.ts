@@ -1085,6 +1085,8 @@ export type Database = {
         Row: {
           acompte_amount_eur: number | null;
           acompte_paid_at: string | null;
+          acompte_payment_link_expires_at: string | null;
+          acompte_payment_link_url: string | null;
           acompte_status: Database['public']['Enums']['acompte_status'];
           affiliate_id: string | null;
           commission_eur_ht: number | null;
@@ -1142,6 +1144,8 @@ export type Database = {
         Insert: {
           acompte_amount_eur?: number | null;
           acompte_paid_at?: string | null;
+          acompte_payment_link_expires_at?: string | null;
+          acompte_payment_link_url?: string | null;
           acompte_status?: Database['public']['Enums']['acompte_status'];
           affiliate_id?: string | null;
           commission_eur_ht?: number | null;
@@ -1199,6 +1203,8 @@ export type Database = {
         Update: {
           acompte_amount_eur?: number | null;
           acompte_paid_at?: string | null;
+          acompte_payment_link_expires_at?: string | null;
+          acompte_payment_link_url?: string | null;
           acompte_status?: Database['public']['Enums']['acompte_status'];
           affiliate_id?: string | null;
           commission_eur_ht?: number | null;

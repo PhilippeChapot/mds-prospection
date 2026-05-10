@@ -217,6 +217,84 @@
       "ctaHome": "Back to home"
     }
   },
+  "espaceExposant": {
+    "title": "Exhibitor Portal",
+    "subtitle": "Your MediaDays Solutions 2026 portal",
+    "requestLink": {
+      "heading": "Get your access link",
+      "subheading": "Enter the email address you used to register. You will receive an access link valid for 15 minutes.",
+      "emailLabel": "Registration email",
+      "emailPlaceholder": "you@your-company.com",
+      "submit": "Get my link",
+      "submitLoading": "Sending…",
+      "success": "If this email matches a registration, you will receive an email with your access link within a few minutes.",
+      "error": {
+        "rateLimit": "Too many requests. Please try again in an hour.",
+        "invalidEmail": "Invalid email address.",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "login": {
+      "validating": "Signing you in…",
+      "expired": "Your access link has expired. Request a new link below.",
+      "invalid": "Invalid access link. Request a new link below.",
+      "generic": "Sign-in failed. Request a new link below."
+    },
+    "dashboard": {
+      "greeting": "Hi {firstName}",
+      "welcome": "Welcome to your MediaDays Solutions 2026 portal.",
+      "companyLabel": "Company",
+      "logout": "Sign out",
+      "registration": {
+        "section": "📋 My registration",
+        "statusLabel": "Status",
+        "packLabel": "Pack",
+        "amountLabel": "Estimated amount",
+        "salonsLabel": "Shows",
+        "salonParis": "Paris (December 15, 2026)",
+        "salonMarseille": "Marseille (December 10, 2026)",
+        "salonsParisOnly": "Paris (December 15, 2026)",
+        "salonsParisMarseille": "Paris (Dec 15) + Marseille (Dec 10)"
+      },
+      "status": {
+        "lead": "🟡 Registration in progress",
+        "qualified": "🟡 Registration in progress",
+        "quoted": "🟢 Quote sent",
+        "devis_envoye": "🟢 Quote sent",
+        "signed": "✅ Quote signed",
+        "signe": "✅ Quote signed",
+        "deposit_paid": "💳 Deposit paid",
+        "acompte_paye": "💳 Deposit paid",
+        "won": "🎉 Registration confirmed",
+        "paye_integral": "🎉 Paid in full",
+        "lost": "❌ Registration closed",
+        "perdu": "❌ Registration closed",
+        "fallback": "🟡 Registration in progress"
+      },
+      "devis": {
+        "section": "📄 My quote",
+        "numberLabel": "Number",
+        "emittedAtLabel": "Issued on",
+        "totalTtcLabel": "Total VAT incl.",
+        "cta": "View Sellsy quote",
+        "noDevis": "Your quote has not been issued yet. Our team will contact you within 48h."
+      },
+      "payment": {
+        "section": "💳 My payment",
+        "acompteLabel": "30% deposit",
+        "statusPending": "⏳ Pending",
+        "statusPaid": "✅ Paid",
+        "cta": "Pay deposit by card",
+        "expired": "Your payment link has expired. Contact us for a new link.",
+        "noPath": "No online payment available — please follow the payment instructions on your quote."
+      },
+      "contact": {
+        "section": "Any question?",
+        "body": "Contact us:",
+        "email": "philippe@mediadays.solutions"
+      }
+    }
+  },
   "legal": {
     "lastUpdated": "Last updated: {date}",
     "tableOfContents": "Table of contents"

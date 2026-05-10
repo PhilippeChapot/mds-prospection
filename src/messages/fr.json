@@ -217,6 +217,84 @@
       "ctaHome": "Retour à l'accueil"
     }
   },
+  "espaceExposant": {
+    "title": "Espace Exposant",
+    "subtitle": "Votre portail MediaDays Solutions 2026",
+    "requestLink": {
+      "heading": "Recevez votre lien d'accès",
+      "subheading": "Saisissez l'adresse email avec laquelle vous vous êtes inscrit. Vous recevrez un lien d'accès valable 15 minutes.",
+      "emailLabel": "Adresse email d'inscription",
+      "emailPlaceholder": "vous@votre-societe.com",
+      "submit": "Recevoir mon lien",
+      "submitLoading": "Envoi en cours…",
+      "success": "Si cette adresse correspond à une inscription, vous allez recevoir un email avec votre lien d'accès dans quelques minutes.",
+      "error": {
+        "rateLimit": "Trop de demandes. Réessayez dans une heure.",
+        "invalidEmail": "Adresse email invalide.",
+        "generic": "Une erreur est survenue. Réessayez."
+      }
+    },
+    "login": {
+      "validating": "Connexion en cours…",
+      "expired": "Votre lien d'accès a expiré. Demandez un nouveau lien ci-dessous.",
+      "invalid": "Lien d'accès invalide. Demandez un nouveau lien ci-dessous.",
+      "generic": "Connexion impossible. Demandez un nouveau lien ci-dessous."
+    },
+    "dashboard": {
+      "greeting": "Bonjour {firstName}",
+      "welcome": "Bienvenue sur votre espace MediaDays Solutions 2026.",
+      "companyLabel": "Société",
+      "logout": "Se déconnecter",
+      "registration": {
+        "section": "📋 Mon inscription",
+        "statusLabel": "Statut",
+        "packLabel": "Pack",
+        "amountLabel": "Montant estimé",
+        "salonsLabel": "Salons",
+        "salonParis": "Paris (15 décembre 2026)",
+        "salonMarseille": "Marseille (10 décembre 2026)",
+        "salonsParisOnly": "Paris (15 décembre 2026)",
+        "salonsParisMarseille": "Paris (15 déc) + Marseille (10 déc)"
+      },
+      "status": {
+        "lead": "🟡 Inscription en cours",
+        "qualified": "🟡 Inscription en cours",
+        "quoted": "🟢 Devis envoyé",
+        "devis_envoye": "🟢 Devis envoyé",
+        "signed": "✅ Devis signé",
+        "signe": "✅ Devis signé",
+        "deposit_paid": "💳 Acompte payé",
+        "acompte_paye": "💳 Acompte payé",
+        "won": "🎉 Inscription confirmée",
+        "paye_integral": "🎉 Payé en intégralité",
+        "lost": "❌ Inscription clôturée",
+        "perdu": "❌ Inscription clôturée",
+        "fallback": "🟡 Inscription en cours"
+      },
+      "devis": {
+        "section": "📄 Mon devis",
+        "numberLabel": "Numéro",
+        "emittedAtLabel": "Émis le",
+        "totalTtcLabel": "Total TTC",
+        "cta": "Consulter le devis Sellsy",
+        "noDevis": "Votre devis n'a pas encore été émis. Notre équipe vous contactera sous 48h."
+      },
+      "payment": {
+        "section": "💳 Mon paiement",
+        "acompteLabel": "Acompte 30%",
+        "statusPending": "⏳ En attente",
+        "statusPaid": "✅ Payé",
+        "cta": "Régler l'acompte par carte",
+        "expired": "Votre lien de paiement a expiré. Contactez-nous pour un nouveau lien.",
+        "noPath": "Aucun paiement en ligne disponible — réglez selon les modalités de votre devis."
+      },
+      "contact": {
+        "section": "Une question ?",
+        "body": "Contactez-nous :",
+        "email": "philippe@mediadays.solutions"
+      }
+    }
+  },
   "legal": {
     "lastUpdated": "Dernière mise à jour : {date}",
     "tableOfContents": "Sommaire"

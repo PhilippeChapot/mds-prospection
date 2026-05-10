@@ -234,7 +234,17 @@ export async function createAcomptePaymentLink(
   // Trace dans les notes prospect (audit trail). Ligne distincte vs concierge.
   const noteLine = `[${new Date().toISOString().slice(0, 10)}] Payment Link Stripe ACOMPTE 30% (auto, expire ${expiresAt.slice(0, 10)}) : ${link.url}`;
   const newNotes = prospect.notes ? `${prospect.notes}\n${noteLine}` : noteLine;
-  await supabase.from('prospects').update({ notes: newNotes }).eq('id', input.prospectId);
+  // P5.x.2 — persiste l'URL + date d'expiration en colonnes dediees pour
+  // que l'Espace Exposant puisse afficher le CTA "Regler l'acompte"
+  // (queryable, contrairement au champ notes free-text).
+  await supabase
+    .from('prospects')
+    .update({
+      notes: newNotes,
+      acompte_payment_link_url: link.url,
+      acompte_payment_link_expires_at: expiresAt,
+    })
+    .eq('id', input.prospectId);
 
   console.log(
     '%s acompte-success prospect_id=%s link_id=%s url=%s amount_cents=%d',
