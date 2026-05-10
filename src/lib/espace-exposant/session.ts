@@ -32,11 +32,19 @@ export interface EspaceExposantDashboardData {
     acompte_paid_at: string | null;
     acompte_payment_link_url: string | null;
     acompte_payment_link_expires_at: string | null;
+    // P5.x.10 — facture Sellsy + booth allocation.
+    sellsy_invoice_public_url: string | null;
+    booth_assignment: string | null;
+    booth_assigned_at: string | null;
   };
   contact: {
     first_name: string | null;
     last_name: string | null;
     language: string | null;
+    // P5.x.10 — editables depuis l'Espace Exposant.
+    email: string | null;
+    phone: string | null;
+    role: string | null;
   };
   company: {
     name: string;
@@ -81,10 +89,12 @@ export async function loadDashboardData(locale: string): Promise<EspaceExposantD
       id, status, pack_code, estimated_amount, payment_path, events_interest,
       sellsy_devis_id, sellsy_devis_number, sellsy_devis_public_url,
       sellsy_devis_emitted_at, sellsy_devis_total_ttc,
+      sellsy_invoice_public_url,
       acompte_amount_eur, acompte_paid_at,
       acompte_payment_link_url, acompte_payment_link_expires_at,
+      booth_assignment, booth_assigned_at,
       company:companies!inner(name),
-      contact:contacts!primary_contact_id(first_name, last_name, language)
+      contact:contacts!primary_contact_id(first_name, last_name, language, email, phone, role)
       `,
     )
     .eq('id', prospectId)
@@ -122,11 +132,17 @@ export async function loadDashboardData(locale: string): Promise<EspaceExposantD
       acompte_paid_at: row.acompte_paid_at,
       acompte_payment_link_url: row.acompte_payment_link_url,
       acompte_payment_link_expires_at: row.acompte_payment_link_expires_at,
+      sellsy_invoice_public_url: row.sellsy_invoice_public_url,
+      booth_assignment: row.booth_assignment,
+      booth_assigned_at: row.booth_assigned_at,
     },
     contact: {
       first_name: contact?.first_name ?? null,
       last_name: contact?.last_name ?? null,
       language: contact?.language ?? null,
+      email: (contact as { email?: string | null } | null)?.email ?? null,
+      phone: (contact as { phone?: string | null } | null)?.phone ?? null,
+      role: (contact as { role?: string | null } | null)?.role ?? null,
     },
     company: { name: company?.name ?? '' },
     paymentLinkExpired,

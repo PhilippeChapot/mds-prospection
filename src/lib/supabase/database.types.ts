@@ -1093,6 +1093,9 @@ export type Database = {
           acompte_payment_link_url: string | null;
           acompte_status: Database['public']['Enums']['acompte_status'];
           affiliate_id: string | null;
+          booth_assigned_at: string | null;
+          booth_assigned_by: string | null;
+          booth_assignment: string | null;
           commission_eur_ht: number | null;
           commission_paid_at: string | null;
           commission_payment_reference: string | null;
@@ -1154,6 +1157,9 @@ export type Database = {
           acompte_payment_link_url?: string | null;
           acompte_status?: Database['public']['Enums']['acompte_status'];
           affiliate_id?: string | null;
+          booth_assigned_at?: string | null;
+          booth_assigned_by?: string | null;
+          booth_assignment?: string | null;
           commission_eur_ht?: number | null;
           commission_paid_at?: string | null;
           commission_payment_reference?: string | null;
@@ -1215,6 +1221,9 @@ export type Database = {
           acompte_payment_link_url?: string | null;
           acompte_status?: Database['public']['Enums']['acompte_status'];
           affiliate_id?: string | null;
+          booth_assigned_at?: string | null;
+          booth_assigned_by?: string | null;
+          booth_assignment?: string | null;
           commission_eur_ht?: number | null;
           commission_paid_at?: string | null;
           commission_payment_reference?: string | null;

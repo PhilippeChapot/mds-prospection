@@ -292,6 +292,60 @@
         "section": "Any question?",
         "body": "Contact us:",
         "email": "philippe@mediadays.solutions"
+      },
+      "booth": {
+        "section": "📍 My booth",
+        "label": "Booth",
+        "assignedOn": "Assigned on {date}",
+        "notYet": "Your booth location will be communicated shortly.",
+        "seeFloorPlan": "See floor plan"
+      },
+      "contactInfo": {
+        "section": "📞 My contact details",
+        "nameLabel": "Identity",
+        "emailLabel": "Email",
+        "phoneLabel": "Phone",
+        "phonePlaceholder": "+33 6 12 34 56 78",
+        "roleLabel": "Job title",
+        "rolePlaceholder": "e.g. Head of Sales",
+        "notSet": "—",
+        "editButton": "Update my details",
+        "saveButton": "Save",
+        "cancelButton": "Cancel",
+        "saving": "Saving…",
+        "saved": "Details updated ✓",
+        "error": "Update failed."
+      },
+      "documents": {
+        "section": "📄 Documents",
+        "guide": "Exhibitor guide",
+        "guideDownload": "Download PDF guide",
+        "guideComingSoon": "Available soon",
+        "floorPlan": "Floor plan",
+        "floorPlanDownload": "Download PDF",
+        "devis": "My quote",
+        "devisCta": "View Sellsy quote",
+        "devisNotYet": "Your quote has not been issued yet.",
+        "invoice": "My invoice",
+        "invoiceCta": "View invoice",
+        "invoiceNotYet": "Issued after quote signature and payment."
+      },
+      "commKit": {
+        "section": "🎨 Communication kit",
+        "intro": "Download MediaDays Solutions / Paris Radio Show logos and use the official email signature to announce your participation.",
+        "logoMds": "MediaDays Solutions 2026 logo",
+        "logoPrs": "Paris Radio Show 2026 logo",
+        "downloadSvg": "SVG",
+        "downloadPng": "PNG",
+        "badge": "Badge \"I exhibit at MDS 2026\"",
+        "badgeComingSoon": "Badge in progress",
+        "badgeDownload": "Download badge",
+        "signature": "HTML email signature",
+        "signaturePreview": "Preview",
+        "signatureCopy": "Copy HTML code",
+        "signatureCopied": "Code copied ✓",
+        "templates": "Social announcement templates",
+        "templatesComingSoon": "Available soon"
       }
     }
   },

@@ -14,6 +14,7 @@ import { DeleteProspectButton } from './DeleteButton';
 import { IsTestToggle } from './IsTestToggle';
 import { ConciergePaymentLinkDialog } from './ConciergePaymentLinkDialog';
 import { SyncBadgesSection } from './SyncBadgesSection';
+import { BoothAssignmentSection } from './BoothAssignmentSection';
 import { PACK_LABEL } from '@/lib/supabase/queries';
 import type { PoleCode } from '@/lib/design-tokens';
 import type { Database } from '@/lib/supabase/database.types';
@@ -42,10 +43,12 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
       sellsy_devis_id, sellsy_devis_number, sellsy_devis_public_url, sellsy_devis_emitted_at,
       sellsy_proforma_id, sellsy_proforma_number, sellsy_proforma_public_url, sellsy_proforma_emitted_at,
       sellsy_invoice_id, sellsy_invoice_number, sellsy_invoice_public_url, sellsy_invoice_emitted_at,
+      booth_assignment, booth_assigned_at, booth_assigned_by,
       created_at, updated_at, last_activity_at,
       company:companies!inner(id, name, primary_domain, country, category, sellsy_id, was_prs_2026_exhibitor, pole:poles(code, name_fr)),
       contact:contacts(id, first_name, last_name, email, phone, role),
-      owner:users!prospects_owner_id_fkey(id, full_name, email, role)
+      owner:users!prospects_owner_id_fkey(id, full_name, email, role),
+      booth_assignee:users!prospects_booth_assigned_by_fkey(full_name, email)
     `,
     )
     .eq('id', id)
@@ -250,6 +253,14 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
             />
           </>
         }
+      />
+
+      {/* P5.x.10 — Attribution de stand (booth allocation) */}
+      <BoothAssignmentSection
+        prospectId={id}
+        current={prospect.booth_assignment}
+        assignedAt={prospect.booth_assigned_at}
+        assigneeName={pickFirst(prospect.booth_assignee)?.full_name ?? null}
       />
 
       <div className="grid gap-5 lg:grid-cols-2">

@@ -225,6 +225,33 @@ export async function createConciergePaymentLinkAction(input: {
  * (Sellsy, Stripe, Brevo, VIES) bypass via assertSyncAllowed() qui throw
  * SyncSkippedError.
  */
+/**
+ * P5.x.10 — attribution du stand. Texte libre (ex: "E5", "Allee Audio - Stand 12").
+ * `clear=true` permet de retirer l'attribution (input vide).
+ */
+export async function assignBoothAction(prospectId: string, boothAssignment: string | null) {
+  const profile = await requireAdminProfile();
+  if (profile.role !== 'admin') {
+    throw new Error('Réservé aux admins.');
+  }
+  const value = boothAssignment?.trim() || null;
+  if (value && value.length > 100) {
+    throw new Error('Le code emplacement doit faire 100 caractères ou moins.');
+  }
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from('prospects')
+    .update({
+      booth_assignment: value,
+      booth_assigned_at: value ? new Date().toISOString() : null,
+      booth_assigned_by: value ? profile.id : null,
+      last_activity_at: new Date().toISOString(),
+    })
+    .eq('id', prospectId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/prospects/${prospectId}`);
+}
+
 export async function toggleProspectIsTestAction(prospectId: string, isTest: boolean) {
   const profile = await requireAdminProfile();
   if (profile.role !== 'admin') {

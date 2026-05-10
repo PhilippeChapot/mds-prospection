@@ -1,9 +1,12 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { LogOut } from 'lucide-react';
+import { LogOut, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { loadDashboardData } from '@/lib/espace-exposant/session';
 import { capitalizeName } from '@/lib/format/name';
+import { getDocumentLinks, getCommunicationKit } from '@/lib/espace-exposant/documents';
+import { ContactInfoForm } from './ContactInfoForm';
+import { SignatureCopyButton } from './SignatureCopyButton';
 import type { Locale } from 'next-intl';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +22,13 @@ export default async function EspaceExposantDashboardPage({ params }: PageProps)
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const data = await loadDashboardData(locale);
+  const loaded = await loadDashboardData(locale);
+  const documents = getDocumentLinks({
+    sellsyDevisPublicUrl: loaded.prospect.sellsy_devis_public_url,
+    sellsyInvoicePublicUrl: loaded.prospect.sellsy_invoice_public_url,
+  });
+  const commKit = getCommunicationKit(locale as 'fr' | 'en');
+  const data = { ...loaded, documents, commKit };
   const t = await getTranslations({ locale, namespace: 'espaceExposant.dashboard' });
 
   // P5.x.3 S1 : capitalize a l'affichage (les prenoms sont stockes
@@ -163,6 +172,139 @@ export default async function EspaceExposantDashboardPage({ params }: PageProps)
         </Card>
       )}
 
+      {/* P5.x.10 — Section emplacement (booth) */}
+      <Card className="border-md-border space-y-3 p-5 shadow-sm sm:p-6">
+        <h2 className="text-md-text text-base font-semibold">{t('booth.section')}</h2>
+        {data.prospect.booth_assignment ? (
+          <div className="flex items-center gap-3">
+            <MapPin className="text-md-blue size-5 shrink-0" aria-hidden />
+            <div>
+              <div className="text-md-text text-lg font-bold">{data.prospect.booth_assignment}</div>
+              {data.prospect.booth_assigned_at ? (
+                <div className="text-md-text-muted text-xs">
+                  {t('booth.assignedOn', { date: fmtDate(data.prospect.booth_assigned_at) })}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <p className="text-md-text-muted text-sm">{t('booth.notYet')}</p>
+        )}
+        {data.documents.floorPlanPdfUrl ? (
+          <div className="pt-1">
+            <Button asChild variant="outline" size="sm">
+              <a href={data.documents.floorPlanPdfUrl} target="_blank" rel="noopener noreferrer">
+                {t('booth.seeFloorPlan')} ↗
+              </a>
+            </Button>
+          </div>
+        ) : null}
+      </Card>
+
+      {/* P5.x.10 — Section coordonnées (édition phone + role) */}
+      <Card className="border-md-border space-y-4 p-5 shadow-sm sm:p-6">
+        <h2 className="text-md-text text-base font-semibold">{t('contactInfo.section')}</h2>
+        <ContactInfoForm
+          initialPhone={data.contact.phone}
+          initialRole={data.contact.role}
+          fullName={`${capitalizeName(data.contact.first_name)} ${capitalizeName(data.contact.last_name) || ''}`.trim()}
+          email={data.contact.email ?? ''}
+        />
+      </Card>
+
+      {/* P5.x.10 — Section documents */}
+      <Card className="border-md-border space-y-4 p-5 shadow-sm sm:p-6">
+        <h2 className="text-md-text text-base font-semibold">{t('documents.section')}</h2>
+
+        <DocumentRow
+          label={t('documents.guide')}
+          url={data.documents.guidePdfUrl}
+          ctaLabel={t('documents.guideDownload')}
+          fallback={t('documents.guideComingSoon')}
+        />
+        <DocumentRow
+          label={t('documents.floorPlan')}
+          url={data.documents.floorPlanPdfUrl}
+          ctaLabel={t('documents.floorPlanDownload')}
+          fallback={t('documents.guideComingSoon')}
+        />
+        <DocumentRow
+          label={t('documents.devis')}
+          url={data.documents.devisUrl}
+          ctaLabel={t('documents.devisCta')}
+          fallback={t('documents.devisNotYet')}
+        />
+        <DocumentRow
+          label={t('documents.invoice')}
+          url={data.documents.invoiceUrl}
+          ctaLabel={t('documents.invoiceCta')}
+          fallback={t('documents.invoiceNotYet')}
+        />
+      </Card>
+
+      {/* P5.x.10 — Section kit communication */}
+      <Card className="border-md-border space-y-4 p-5 shadow-sm sm:p-6">
+        <h2 className="text-md-text text-base font-semibold">{t('commKit.section')}</h2>
+        <p className="text-md-text-muted text-sm">{t('commKit.intro')}</p>
+
+        <div className="space-y-3">
+          <LogoRow
+            label={t('commKit.logoMds')}
+            svgUrl={data.commKit.logoMdsSvgUrl}
+            pngUrl={data.commKit.logoMdsPngUrl}
+            svgCta={t('commKit.downloadSvg')}
+            pngCta={t('commKit.downloadPng')}
+          />
+          <LogoRow
+            label={t('commKit.logoPrs')}
+            svgUrl={data.commKit.logoPrsSvgUrl}
+            pngUrl={data.commKit.logoPrsPngUrl}
+            svgCta={t('commKit.downloadSvg')}
+            pngCta={t('commKit.downloadPng')}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-md-text text-sm font-medium">{t('commKit.badge')}</span>
+          {data.commKit.badgeJexposeUrl ? (
+            <Button asChild variant="outline" size="sm">
+              <a
+                href={data.commKit.badgeJexposeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+              >
+                {t('commKit.badgeDownload')}
+              </a>
+            </Button>
+          ) : (
+            <span className="text-md-text-muted text-xs italic">
+              {t('commKit.badgeComingSoon')}
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-md-text text-sm font-medium">{t('commKit.signature')}</span>
+            <SignatureCopyButton html={data.commKit.emailSignatureHtml} />
+          </div>
+          <div
+            className="border-md-border bg-md-bg-soft overflow-x-auto rounded-md border p-3 text-xs"
+            // P5.x.10 — Aperçu HTML signature : safe car genere cote
+            // server (escapeHtml applique au tagline + URL controlees).
+            dangerouslySetInnerHTML={{ __html: data.commKit.emailSignatureHtml }}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-md-text text-sm font-medium">{t('commKit.templates')}</span>
+          <span className="text-md-text-muted text-xs italic">
+            {t('commKit.templatesComingSoon')}
+          </span>
+        </div>
+      </Card>
+
       <Card className="border-md-border bg-md-bg-soft space-y-1 p-5 text-sm shadow-sm sm:p-6">
         <p className="text-md-text font-semibold">{t('contact.section')}</p>
         <p className="text-md-text-muted">
@@ -173,6 +315,65 @@ export default async function EspaceExposantDashboardPage({ params }: PageProps)
         </p>
       </Card>
     </section>
+  );
+}
+
+function DocumentRow({
+  label,
+  url,
+  ctaLabel,
+  fallback,
+}: {
+  label: string;
+  url: string | null;
+  ctaLabel: string;
+  fallback: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+      <span className="text-md-text font-medium">{label}</span>
+      {url ? (
+        <Button asChild variant="outline" size="sm">
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            {ctaLabel} ↗
+          </a>
+        </Button>
+      ) : (
+        <span className="text-md-text-muted text-xs italic">{fallback}</span>
+      )}
+    </div>
+  );
+}
+
+function LogoRow({
+  label,
+  svgUrl,
+  pngUrl,
+  svgCta,
+  pngCta,
+}: {
+  label: string;
+  svgUrl: string;
+  pngUrl: string;
+  svgCta: string;
+  pngCta: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+      <span className="text-md-text font-medium">{label}</span>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild variant="outline" size="sm">
+          <a href={svgUrl} target="_blank" rel="noopener noreferrer" download>
+            {svgCta}
+          </a>
+        </Button>
+        <Button asChild variant="outline" size="sm">
+          <a href={pngUrl} target="_blank" rel="noopener noreferrer" download>
+            {pngCta}
+          </a>
+        </Button>
+      </div>
+    </div>
   );
 }
 

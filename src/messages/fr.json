@@ -292,6 +292,60 @@
         "section": "Une question ?",
         "body": "Contactez-nous :",
         "email": "philippe@mediadays.solutions"
+      },
+      "booth": {
+        "section": "📍 Mon emplacement",
+        "label": "Stand",
+        "assignedOn": "Attribué le {date}",
+        "notYet": "Votre emplacement vous sera communiqué prochainement.",
+        "seeFloorPlan": "Voir le plan de salle"
+      },
+      "contactInfo": {
+        "section": "📞 Mes coordonnées",
+        "nameLabel": "Identité",
+        "emailLabel": "Email",
+        "phoneLabel": "Téléphone",
+        "phonePlaceholder": "+33 6 12 34 56 78",
+        "roleLabel": "Fonction",
+        "rolePlaceholder": "ex : Directeur commercial",
+        "notSet": "—",
+        "editButton": "Modifier mes coordonnées",
+        "saveButton": "Enregistrer",
+        "cancelButton": "Annuler",
+        "saving": "Enregistrement…",
+        "saved": "Coordonnées mises à jour ✓",
+        "error": "Erreur lors de la mise à jour."
+      },
+      "documents": {
+        "section": "📄 Documents",
+        "guide": "Guide exposant",
+        "guideDownload": "Télécharger le guide PDF",
+        "guideComingSoon": "Disponible prochainement",
+        "floorPlan": "Plan de salle",
+        "floorPlanDownload": "Télécharger le PDF",
+        "devis": "Mon devis",
+        "devisCta": "Consulter le devis Sellsy",
+        "devisNotYet": "Votre devis n'a pas encore été émis.",
+        "invoice": "Ma facture",
+        "invoiceCta": "Consulter la facture",
+        "invoiceNotYet": "Émise après signature électronique du devis et règlement."
+      },
+      "commKit": {
+        "section": "🎨 Kit communication",
+        "intro": "Téléchargez les logos MediaDays Solutions / Paris Radio Show et utilisez la signature email officielle pour annoncer votre participation.",
+        "logoMds": "Logo MediaDays Solutions 2026",
+        "logoPrs": "Logo Paris Radio Show 2026",
+        "downloadSvg": "SVG",
+        "downloadPng": "PNG",
+        "badge": "Badge « J'expose chez MDS 2026 »",
+        "badgeComingSoon": "Badge en cours de finalisation",
+        "badgeDownload": "Télécharger le badge",
+        "signature": "Signature email HTML",
+        "signaturePreview": "Aperçu",
+        "signatureCopy": "Copier le code HTML",
+        "signatureCopied": "Code copié ✓",
+        "templates": "Modèles d'annonce sociale",
+        "templatesComingSoon": "Disponibles prochainement"
       }
     }
   },
