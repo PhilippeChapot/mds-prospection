@@ -33,6 +33,45 @@ export type Database = {
   };
   public: {
     Tables: {
+      admin_alerts: {
+        Row: {
+          id: string;
+          kind: string;
+          severity: 'warning' | 'critical';
+          prospect_id: string | null;
+          signup_id: string | null;
+          message: string;
+          details: Json;
+          created_at: string;
+          resolved_at: string | null;
+          resolved_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          kind: string;
+          severity: 'warning' | 'critical';
+          prospect_id?: string | null;
+          signup_id?: string | null;
+          message: string;
+          details?: Json;
+          created_at?: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          kind?: string;
+          severity?: 'warning' | 'critical';
+          prospect_id?: string | null;
+          signup_id?: string | null;
+          message?: string;
+          details?: Json;
+          created_at?: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+        };
+        Relationships: [];
+      };
       activities: {
         Row: {
           body: string | null;

@@ -3,6 +3,11 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/admin/KpiCard';
 import { RecentActivityFeed } from '@/components/admin/RecentActivityFeed';
+import { AlertsCard } from '@/components/admin/AlertsCard';
+import { ChartSignupsPerDay } from '@/components/admin/charts/ChartSignupsPerDay';
+import { ChartConversionFunnel } from '@/components/admin/charts/ChartConversionFunnel';
+import { ChartPoleDistribution } from '@/components/admin/charts/ChartPoleDistribution';
+import { ChartRevenueArea } from '@/components/admin/charts/ChartRevenueArea';
 import { getActiveSeasonId } from '@/lib/supabase/auth-helpers';
 import {
   getDashboardKpis,
@@ -10,6 +15,12 @@ import {
   getRecentActivities,
   type FunnelStatusRow,
 } from '@/lib/dashboard/queries';
+import {
+  getSignupsPerDay,
+  getFunnelStats,
+  getPoleDistribution,
+  getRevenueCumulative,
+} from '@/lib/dashboard/charts';
 
 export const metadata = { title: 'Dashboard' };
 
@@ -23,14 +34,19 @@ const fmtEur = (eur: number) =>
 export default async function AdminDashboardPage() {
   const seasonId = await getActiveSeasonId();
 
-  // P5.x.6 : 3 queries en parallele pour minimiser TTFB. Toutes les
-  // queries filtrent season_id + is_test=false, donc le dashboard
-  // reflete uniquement le pipeline reel.
-  const [kpis, funnel, activities] = await Promise.all([
-    getDashboardKpis(seasonId),
-    getFunnelByStatus(seasonId),
-    getRecentActivities(seasonId, 10),
-  ]);
+  // P5.x.6 + P5.x.11 : queries en parallele pour minimiser TTFB.
+  // Toutes les queries filtrent season_id + is_test=false (charts.ts
+  // applique le meme filtre interne).
+  const [kpis, funnel, activities, signupsPerDay, funnelChart, poleDist, revenue] =
+    await Promise.all([
+      getDashboardKpis(seasonId),
+      getFunnelByStatus(seasonId),
+      getRecentActivities(seasonId, 10),
+      getSignupsPerDay(30),
+      getFunnelStats(seasonId),
+      getPoleDistribution(seasonId),
+      getRevenueCumulative(seasonId, 90),
+    ]);
 
   const isEmpty = kpis.activeProspects === 0 && kpis.paidIntegralCount === 0;
 
@@ -101,12 +117,31 @@ export default async function AdminDashboardPage() {
         />
       </section>
 
+      {/* P5.x.11 — Alertes pipeline (cron-driven) */}
+      <AlertsCard />
+
       {/* Section 2 : Funnel par statut */}
       <section className="bg-card border-md-border rounded-xl border p-5 shadow-sm">
         <h2 className="text-md-blue-dark mb-4 text-sm font-bold tracking-wide uppercase">
           Funnel par statut
         </h2>
         <FunnelTable rows={funnel} />
+      </section>
+
+      {/* P5.x.11 — 4 charts (recharts client-side, queries server) */}
+      <section className="grid gap-4 lg:grid-cols-2">
+        <ChartCard title="Signups / jour (30j)">
+          <ChartSignupsPerDay data={signupsPerDay} />
+        </ChartCard>
+        <ChartCard title="Funnel de conversion (cumul)">
+          <ChartConversionFunnel data={funnelChart} />
+        </ChartCard>
+        <ChartCard title="Répartition par pôle (en cours)">
+          <ChartPoleDistribution data={poleDist} />
+        </ChartCard>
+        <ChartCard title="Revenue cumulé MDS 2026 (90j)">
+          <ChartRevenueArea data={revenue} />
+        </ChartCard>
       </section>
 
       {/* Section 3 : Activités récentes */}
@@ -124,6 +159,15 @@ export default async function AdminDashboardPage() {
         </div>
         <RecentActivityFeed events={activities} />
       </section>
+    </div>
+  );
+}
+
+function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-card border-md-border rounded-xl border p-5 shadow-sm">
+      <h2 className="text-md-blue-dark mb-3 text-sm font-bold tracking-wide uppercase">{title}</h2>
+      {children}
     </div>
   );
 }
