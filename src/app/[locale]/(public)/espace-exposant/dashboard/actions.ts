@@ -113,15 +113,21 @@ const ACCEPTED_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'i
 const RASTER_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 
 /**
- * P5.x.12.quater — Auto-trim des bordures transparentes / quasi-blanches
- * sur les logos raster (PNG/JPG/WebP). Permet au badge social de rendre
- * le logo en plein cadre sans subir les marges vides du fichier source.
+ * P5.x.12.quater + quinquies — Auto-trim des marges sur les logos
+ * raster (PNG/JPG/WebP). Permet au badge social de rendre le logo en
+ * plein cadre sans subir les marges vides du fichier source.
  *
- * Best-effort : si sharp.trim() throw (ex: image opaque sans bordures
- * detectables, format corrompu), on retourne le buffer original.
+ * P5.x.12.quinquies fix : on enleve le param `background: white+alpha=0`
+ * (ambigu — cible les pixels a la fois blancs ET transparents, qui
+ * n'existent quasi jamais). A la place : auto-detection via le pixel
+ * top-left + threshold permissif (50) pour gerer ombres / anti-aliasing.
+ * Si trim n'a rien retire (dimensions identiques), on garde le buffer
+ * original pour eviter le cout du re-encoding.
  *
- * SVG : skip car vectoriel (pas de pixels a trimmer, et l'export d'un
- * outil de design est generalement deja sans marges).
+ * SVG : skip car vectoriel (pas de pixels a trimmer, export design
+ * generalement deja propre).
+ *
+ * Best-effort : si sharp throw, fallback original.
  */
 async function trimLogoIfRaster(file: File): Promise<Buffer> {
   const original = Buffer.from(await file.arrayBuffer());
@@ -129,24 +135,50 @@ async function trimLogoIfRaster(file: File): Promise<Buffer> {
     return original;
   }
   try {
-    // Import dynamique : sharp est lourd (binaire natif), on ne le
-    // charge que sur les formats raster.
+    // Import dynamique : sharp lourd (binaire natif), charge seulement
+    // pour les raster.
     const sharp = (await import('sharp')).default;
+    const beforeMeta = await sharp(original).metadata();
+    const beforeW = beforeMeta.width ?? 0;
+    const beforeH = beforeMeta.height ?? 0;
+
     const trimmed = await sharp(original)
       .trim({
-        // Trim sur le blanc pur ET le transparent (alpha=0). Sharp
-        // calcule le bounding box des pixels qui s'eloignent de cette
-        // couleur de reference au-dela de `threshold`.
-        background: { r: 255, g: 255, b: 255, alpha: 0 },
-        threshold: 10,
+        // P5.x.12.quinquies : pas de param `background` -> sharp utilise
+        // automatiquement le pixel top-left comme reference. Combine avec
+        // un threshold large pour absorber ombres degradees / anti-aliasing.
+        threshold: 50,
       })
       .toBuffer();
+
+    const afterMeta = await sharp(trimmed).metadata();
+    const afterW = afterMeta.width ?? 0;
+    const afterH = afterMeta.height ?? 0;
+    const noChange = afterW === beforeW && afterH === beforeH;
+
+    if (noChange) {
+      // Re-encoding sans crop = pure perte (souvent +20-30% de poids).
+      // On garde le buffer original.
+      console.log(
+        '[espace-exposant/uploadLogo] trim no-op file=%s dims=%dx%d — keeping original',
+        file.name,
+        beforeW,
+        beforeH,
+      );
+      return original;
+    }
+
     console.log(
-      '[espace-exposant/uploadLogo] trim file=%s original=%dB trimmed=%dB saved=%d%%',
+      '[espace-exposant/uploadLogo] trim file=%s beforeDims=%dx%d afterDims=%dx%d croppedPx=%dx%d beforeSize=%dB afterSize=%dB',
       file.name,
+      beforeW,
+      beforeH,
+      afterW,
+      afterH,
+      beforeW - afterW,
+      beforeH - afterH,
       original.length,
       trimmed.length,
-      Math.round(((original.length - trimmed.length) / Math.max(original.length, 1)) * 100),
     );
     return trimmed;
   } catch (err) {
