@@ -55,8 +55,10 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
 
   const isPrs = company.category === 'prs_exhibitor';
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
-  const logoMdsUrl = `${baseUrl}/brand/MDS-LogoBlanc2026-email.png`;
-  const logoPrsUrl = `${baseUrl}/brand/PRS-LogoBlanc2026-email.png`;
+  // P5.x.12.septies : nouveaux PNG 1600x1600 (4x DPI) pour rendu net
+  // a 400x400 dans le badge social.
+  const logoMdsUrl = `${baseUrl}/brand/MDS-LogoBlanc-badge.png`;
+  const logoPrsUrl = `${baseUrl}/brand/PRS-LogoBlanc-badge.png`;
 
   // P5.x.12.bis Bug 1 : prefetch le logo en data URL avant Satori.
   // next/og (Satori) ne fetch pas systematiquement les URLs externes
