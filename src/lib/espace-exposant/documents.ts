@@ -61,36 +61,88 @@ export interface CommunicationKit {
 
 const BRAND_BASE = '/brand';
 
-export function getCommunicationKit(locale: 'fr' | 'en' = 'fr'): CommunicationKit {
+/** Categorie tarifaire de la company (cf. enum DB `category_tarif`). */
+export type CategoryTarif = 'prs_exhibitor' | 'standard' | 'non_eligible';
+
+/**
+ * Construit le Kit communication a afficher cote Espace Exposant.
+ *
+ * P5.x.10.bis : la signature email est differenciee selon la categorie
+ * tarifaire de la company :
+ *   - prs_exhibitor    -> logo Paris Radio Show + wording "Retrouvez-nous
+ *                         au Paris Radio Show / MediaDays Solutions"
+ *   - standard / non_eligible / null -> logo MediaDays Solutions + wording
+ *                         "Retrouvez-nous aux MediaDays Solutions"
+ *
+ * Doctrine branding : "MediaDays Solutions" (D majuscule, jamais "MDS
+ * Solutions"), "Paris Radio Show" (pas "PRS" user-facing), "Retrouvez-
+ * nous" (pluriel — signature de societe).
+ */
+export function getCommunicationKit(
+  locale: 'fr' | 'en' = 'fr',
+  category: CategoryTarif | null = null,
+): CommunicationKit {
+  const isPrsExhibitor = category === 'prs_exhibitor';
   return {
     logoMdsSvgUrl: `${BRAND_BASE}/MDS-LogoBleu2026.svg`,
-    // PNG haute-res non disponible cote brand assets — on fallback sur
-    // la version blanche email (160x160 retina) en attendant une vraie
-    // version couleur. A remplacer quand un asset PNG bleu sera livre.
+    // PNG haute-res couleur non disponible — fallback sur la version
+    // blanche email (160x160 retina) en attendant une vraie version
+    // couleur. A remplacer quand un PNG bleu sera livre.
     logoMdsPngUrl: `${BRAND_BASE}/MDS-LogoBlanc2026-email.png`,
     logoPrsSvgUrl: `${BRAND_BASE}/PRS-LogoBleu2026.svg`,
     logoPrsPngUrl: `${BRAND_BASE}/PRS-LogoBlanc2026-email.png`,
     badgeJexposeUrl: process.env.EXHIBITOR_BADGE_URL || null,
-    emailSignatureHtml: buildEmailSignatureHtml(locale),
+    emailSignatureHtml: getEmailSignatureHtml(locale, isPrsExhibitor),
   };
 }
 
-function buildEmailSignatureHtml(locale: 'fr' | 'en'): string {
+/**
+ * Exporte pour tests Vitest (verifie les 4 variants FR/EN x PRS/MDS).
+ */
+export function getEmailSignatureHtml(locale: 'fr' | 'en', isPrsExhibitor: boolean): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
-  const logoUrl = `${baseUrl}/brand/MDS-LogoBleu2026.svg`;
-  const tagline =
-    locale === 'en'
-      ? 'Find me at MDS Solutions 2026 — Paris, December 15'
-      : 'Retrouvez-moi à MDS Solutions 2026 — Paris, 15 décembre';
+  // Le logo couleur n'est pas dispo en PNG ; le SVG sur baseUrl est compatible
+  // Gmail webmail / Apple Mail / Outlook 365 web. Outlook desktop legacy
+  // tombe sur l'alt text — acceptable pour MVP.
+  const logoUrl = isPrsExhibitor
+    ? `${baseUrl}/brand/PRS-LogoBleu2026.svg`
+    : `${baseUrl}/brand/MDS-LogoBleu2026.svg`;
+  const logoAlt = isPrsExhibitor ? 'Paris Radio Show 2026' : 'MediaDays Solutions 2026';
 
-  return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:-apple-system,Helvetica,Arial,sans-serif;color:#1F2240;">
+  // Tagline + sub-line selon variant (4 combinaisons).
+  let tagline: string;
+  let subline: string;
+  if (isPrsExhibitor && locale === 'fr') {
+    tagline = 'Retrouvez-nous au Paris Radio Show / MediaDays Solutions 2026';
+    subline = 'Paris, 15 décembre et/ou Marseille, 10 décembre';
+  } else if (isPrsExhibitor && locale === 'en') {
+    tagline = 'Find us at Paris Radio Show / MediaDays Solutions 2026';
+    subline = 'Paris, December 15 and/or Marseille, December 10';
+  } else if (locale === 'en') {
+    tagline = 'Find us at MediaDays Solutions 2026';
+    subline = 'Paris and/or Marseille';
+  } else {
+    tagline = 'Retrouvez-nous aux MediaDays Solutions 2026';
+    subline = 'Paris et/ou Marseille';
+  }
+
+  const linkLabel = baseUrl.replace(/^https?:\/\//, '');
+
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;color:#1F2240;">
   <tr>
-    <td style="padding-right:14px;border-right:1px solid #E5E9F5;">
-      <img src="${logoUrl}" alt="MediaDays Solutions 2026" width="80" height="80" style="display:block;" />
+    <td style="padding-right:16px;border-right:1px solid #E5E7EB;vertical-align:middle;">
+      <img src="${logoUrl}" alt="${escapeAttr(logoAlt)}" width="120" height="120" style="display:block;width:120px;height:auto;" />
     </td>
-    <td style="padding-left:14px;font-size:13px;line-height:1.4;">
-      <strong style="color:#294294;font-size:14px;">${escapeHtml(tagline)}</strong><br/>
-      <a href="${baseUrl}" style="color:#294294;text-decoration:none;">${baseUrl.replace(/^https?:\/\//, '')}</a>
+    <td style="padding-left:16px;vertical-align:middle;">
+      <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#294294;line-height:1.4;">
+        ${escapeHtml(tagline)}
+      </p>
+      <p style="margin:0 0 6px 0;font-size:13px;color:#5A6080;line-height:1.4;">
+        ${escapeHtml(subline)}
+      </p>
+      <p style="margin:0;font-size:13px;color:#294294;line-height:1.4;">
+        <a href="${baseUrl}" style="color:#294294;text-decoration:none;">${escapeHtml(linkLabel)}</a>
+      </p>
     </td>
   </tr>
 </table>`;
@@ -103,4 +155,8 @@ function escapeHtml(s: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function escapeAttr(s: string): string {
+  return escapeHtml(s);
 }

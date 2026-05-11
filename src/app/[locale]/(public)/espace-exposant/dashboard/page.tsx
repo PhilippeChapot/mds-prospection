@@ -27,7 +27,10 @@ export default async function EspaceExposantDashboardPage({ params }: PageProps)
     sellsyDevisPublicUrl: loaded.prospect.sellsy_devis_public_url,
     sellsyInvoicePublicUrl: loaded.prospect.sellsy_invoice_public_url,
   });
-  const commKit = getCommunicationKit(locale as 'fr' | 'en');
+  // P5.x.10.bis : differencie la signature email selon la categorie
+  // tarifaire (prs_exhibitor -> logo PRS + tagline mixte ; sinon ->
+  // logo MDS + tagline MDS pur).
+  const commKit = getCommunicationKit(locale as 'fr' | 'en', loaded.company.category);
   const data = { ...loaded, documents, commKit };
   const t = await getTranslations({ locale, namespace: 'espaceExposant.dashboard' });
 

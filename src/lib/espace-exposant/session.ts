@@ -48,6 +48,8 @@ export interface EspaceExposantDashboardData {
   };
   company: {
     name: string;
+    /** P5.x.10.bis — distingue exposants PRS (tarif preferentiel) vs MDS. */
+    category: 'prs_exhibitor' | 'standard' | 'non_eligible' | null;
   };
   /**
    * Indique si le payment-link acompte est expire au moment du fetch.
@@ -93,7 +95,7 @@ export async function loadDashboardData(locale: string): Promise<EspaceExposantD
       acompte_amount_eur, acompte_paid_at,
       acompte_payment_link_url, acompte_payment_link_expires_at,
       booth_assignment, booth_assigned_at,
-      company:companies!inner(name),
+      company:companies!inner(name, category),
       contact:contacts!primary_contact_id(first_name, last_name, language, email, phone, role)
       `,
     )
@@ -144,7 +146,12 @@ export async function loadDashboardData(locale: string): Promise<EspaceExposantD
       phone: (contact as { phone?: string | null } | null)?.phone ?? null,
       role: (contact as { role?: string | null } | null)?.role ?? null,
     },
-    company: { name: company?.name ?? '' },
+    company: {
+      name: company?.name ?? '',
+      category:
+        (company as { category?: 'prs_exhibitor' | 'standard' | 'non_eligible' | null } | null)
+          ?.category ?? null,
+    },
     paymentLinkExpired,
   };
 }
