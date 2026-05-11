@@ -330,6 +330,27 @@
         "invoiceCta": "View invoice",
         "invoiceNotYet": "Issued after quote signature and payment."
       },
+      "logoUploader": {
+        "section": "🖼️ Your company logo",
+        "intro": "Upload your logo to personalise your social badge and help attendees recognise you.",
+        "upload": "Upload a logo",
+        "replace": "Replace logo",
+        "uploading": "Uploading…",
+        "hint": "PNG, JPG, WebP or SVG · Max 5 MB · Prefer PNG for email signatures",
+        "error": {
+          "unauthorized": "Session expired. Sign in again via your magic link.",
+          "noFile": "No file selected.",
+          "tooLarge": "File exceeds 5 MB.",
+          "invalidType": "Unsupported format (PNG, JPG, WebP, SVG only).",
+          "upload": "Upload failed. Please try again."
+        }
+      },
+      "badge": {
+        "section": "📣 Social badge \"I exhibit at MDS 2026\"",
+        "intro": "Download your personalised badge (1080×1080) to share on LinkedIn, Twitter, Instagram or Facebook to announce your participation.",
+        "download": "Download my badge",
+        "tipNoLogo": "Tip: upload your logo above to get a branded badge (otherwise your company name will be displayed)."
+      },
       "commKit": {
         "section": "🎨 Communication kit",
         "intro": "Download MediaDays Solutions / Paris Radio Show logos and use the official email signature to announce your participation.",

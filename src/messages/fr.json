@@ -330,6 +330,27 @@
         "invoiceCta": "Consulter la facture",
         "invoiceNotYet": "Émise après signature électronique du devis et règlement."
       },
+      "logoUploader": {
+        "section": "🖼️ Logo de votre société",
+        "intro": "Téléchargez votre logo pour personnaliser votre badge social et faciliter votre identification.",
+        "upload": "Télécharger un logo",
+        "replace": "Remplacer le logo",
+        "uploading": "Envoi en cours…",
+        "hint": "PNG, JPG, WebP ou SVG · Max 5 Mo · Préférez PNG pour les signatures email",
+        "error": {
+          "unauthorized": "Session expirée. Reconnectez-vous via votre lien magic.",
+          "noFile": "Aucun fichier sélectionné.",
+          "tooLarge": "Le fichier dépasse 5 Mo.",
+          "invalidType": "Format non supporté (PNG, JPG, WebP, SVG uniquement).",
+          "upload": "Échec de l'envoi. Réessayez."
+        }
+      },
+      "badge": {
+        "section": "📣 Badge social « J'expose chez MDS 2026 »",
+        "intro": "Téléchargez votre badge personnalisé (1080×1080) à publier sur LinkedIn, Twitter, Instagram ou Facebook pour annoncer votre participation.",
+        "download": "Télécharger mon badge",
+        "tipNoLogo": "Astuce : ajoutez votre logo ci-dessus pour un badge avec votre marque (sinon votre nom de société sera affiché)."
+      },
       "commKit": {
         "section": "🎨 Kit communication",
         "intro": "Téléchargez les logos MediaDays Solutions / Paris Radio Show et utilisez la signature email officielle pour annoncer votre participation.",

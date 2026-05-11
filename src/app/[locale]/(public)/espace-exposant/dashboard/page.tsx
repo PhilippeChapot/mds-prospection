@@ -7,6 +7,7 @@ import { capitalizeName } from '@/lib/format/name';
 import { getDocumentLinks, getCommunicationKit } from '@/lib/espace-exposant/documents';
 import { ContactInfoForm } from './ContactInfoForm';
 import { SignatureCopyButton } from './SignatureCopyButton';
+import { LogoUploader } from './LogoUploader';
 import type { Locale } from 'next-intl';
 
 export const dynamic = 'force-dynamic';
@@ -243,6 +244,31 @@ export default async function EspaceExposantDashboardPage({ params }: PageProps)
           ctaLabel={t('documents.invoiceCta')}
           fallback={t('documents.invoiceNotYet')}
         />
+      </Card>
+
+      {/* P5.x.12 — Logo societe (upload via Espace Exposant) */}
+      <Card className="border-md-border space-y-4 p-5 shadow-sm sm:p-6">
+        <div>
+          <h2 className="text-md-text text-base font-semibold">{t('logoUploader.section')}</h2>
+          <p className="text-md-text-muted mt-1 text-sm">{t('logoUploader.intro')}</p>
+        </div>
+        <LogoUploader currentLogoUrl={data.company.logoUrl} companyName={data.company.name} />
+      </Card>
+
+      {/* P5.x.12 — Badge social genere via next/og */}
+      <Card className="border-md-border space-y-3 p-5 shadow-sm sm:p-6">
+        <h2 className="text-md-text text-base font-semibold">{t('badge.section')}</h2>
+        <p className="text-md-text-muted text-sm">{t('badge.intro')}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild className="bg-md-magenta hover:bg-md-magenta-soft">
+            <a href={`/api/badge/${data.company.id}/badge.png`} download>
+              {t('badge.download')} ↓
+            </a>
+          </Button>
+          {!data.company.logoUrl ? (
+            <span className="text-md-text-muted text-xs italic">{t('badge.tipNoLogo')}</span>
+          ) : null}
+        </div>
       </Card>
 
       {/* P5.x.10 — Section kit communication */}

@@ -561,6 +561,10 @@ export type Database = {
           id: string;
           last_synced_brevo_at: string | null;
           last_synced_sellsy_at: string | null;
+          logo_source: 'manual_upload' | 'connectonair_sync' | null;
+          logo_uploaded_at: string | null;
+          logo_uploaded_by: string | null;
+          logo_url: string | null;
           name: string;
           name_normalized: string;
           notes: string | null;
@@ -590,6 +594,10 @@ export type Database = {
           id?: string;
           last_synced_brevo_at?: string | null;
           last_synced_sellsy_at?: string | null;
+          logo_source?: 'manual_upload' | 'connectonair_sync' | null;
+          logo_uploaded_at?: string | null;
+          logo_uploaded_by?: string | null;
+          logo_url?: string | null;
           name: string;
           name_normalized: string;
           notes?: string | null;
@@ -619,6 +627,10 @@ export type Database = {
           id?: string;
           last_synced_brevo_at?: string | null;
           last_synced_sellsy_at?: string | null;
+          logo_source?: 'manual_upload' | 'connectonair_sync' | null;
+          logo_uploaded_at?: string | null;
+          logo_uploaded_by?: string | null;
+          logo_url?: string | null;
           name?: string;
           name_normalized?: string;
           notes?: string | null;
