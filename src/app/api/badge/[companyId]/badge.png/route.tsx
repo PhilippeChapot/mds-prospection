@@ -168,54 +168,75 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
             {isPrs ? "J'EXPOSE AU" : "J'EXPOSE AUX"}
           </div>
 
+          {/* P5.x.12.sexies : logos 400x400 (vs 280) pour impact visuel
+              fort sur le badge social. Trait separateur 160px en hauteur. */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 40,
+              gap: 60,
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoMdsUrl} alt="" width={280} height={280} />
+            <img src={logoMdsUrl} alt="" width={400} height={400} />
             {isPrs ? (
               <>
                 <div
                   style={{
                     display: 'flex',
                     width: 2,
-                    height: 120,
+                    height: 160,
                     background: 'rgba(255,255,255,0.4)',
                   }}
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={logoPrsUrl} alt="" width={280} height={280} />
+                <img src={logoPrsUrl} alt="" width={400} height={400} />
               </>
             ) : null}
           </div>
         </div>
 
-        {/* Footer dates + URL */}
+        {/* P5.x.12.sexies — Footer : dates sur une seule ligne + URL visiteur. */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: 8,
+            gap: 16,
           }}
         >
-          <div style={{ display: 'flex', fontSize: 32, color: '#fff' }}>Paris · 15 décembre</div>
-          <div style={{ display: 'flex', fontSize: 32, color: '#fff' }}>
-            Marseille · 10 décembre
-          </div>
           <div
             style={{
               display: 'flex',
-              fontSize: 24,
-              color: 'rgba(255,255,255,0.7)',
-              marginTop: 16,
+              alignItems: 'center',
+              fontSize: 32,
+              color: '#fff',
             }}
           >
-            mediadays.solutions
+            <span>Paris · 15 décembre</span>
+            <span
+              style={{
+                color: 'rgba(255,255,255,0.5)',
+                margin: '0 24px',
+              }}
+            >
+              ·
+            </span>
+            <span>Marseille · 10 décembre</span>
+          </div>
+          {/* P5.x.12.sexies : URL B2C visiteurs (mediadays.net), pas
+              mediadays.solutions qui est le site exposants. Coherent
+              avec doctrine signatures email P5.x.10.ter. */}
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 40,
+              color: 'rgba(255,255,255,0.95)',
+              fontWeight: 600,
+              marginTop: 8,
+            }}
+          >
+            mediadays.net
           </div>
         </div>
       </div>
