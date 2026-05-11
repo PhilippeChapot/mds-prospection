@@ -110,6 +110,54 @@ export async function updateExposantContactAction(input: {
 // ===========================================================================
 
 const ACCEPTED_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']);
+const RASTER_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+
+/**
+ * P5.x.12.quater — Auto-trim des bordures transparentes / quasi-blanches
+ * sur les logos raster (PNG/JPG/WebP). Permet au badge social de rendre
+ * le logo en plein cadre sans subir les marges vides du fichier source.
+ *
+ * Best-effort : si sharp.trim() throw (ex: image opaque sans bordures
+ * detectables, format corrompu), on retourne le buffer original.
+ *
+ * SVG : skip car vectoriel (pas de pixels a trimmer, et l'export d'un
+ * outil de design est generalement deja sans marges).
+ */
+async function trimLogoIfRaster(file: File): Promise<Buffer> {
+  const original = Buffer.from(await file.arrayBuffer());
+  if (!RASTER_LOGO_TYPES.has(file.type)) {
+    return original;
+  }
+  try {
+    // Import dynamique : sharp est lourd (binaire natif), on ne le
+    // charge que sur les formats raster.
+    const sharp = (await import('sharp')).default;
+    const trimmed = await sharp(original)
+      .trim({
+        // Trim sur le blanc pur ET le transparent (alpha=0). Sharp
+        // calcule le bounding box des pixels qui s'eloignent de cette
+        // couleur de reference au-dela de `threshold`.
+        background: { r: 255, g: 255, b: 255, alpha: 0 },
+        threshold: 10,
+      })
+      .toBuffer();
+    console.log(
+      '[espace-exposant/uploadLogo] trim file=%s original=%dB trimmed=%dB saved=%d%%',
+      file.name,
+      original.length,
+      trimmed.length,
+      Math.round(((original.length - trimmed.length) / Math.max(original.length, 1)) * 100),
+    );
+    return trimmed;
+  } catch (err) {
+    console.warn(
+      '[espace-exposant/uploadLogo] trim-failed file=%s msg=%s — keeping original',
+      file.name,
+      err instanceof Error ? err.message : String(err),
+    );
+    return original;
+  }
+}
 const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5 Mo
 
 export type UploadLogoResult =
@@ -172,10 +220,16 @@ export async function uploadCompanyLogoAction(formData: FormData): Promise<Uploa
   const ext = (file.name.split('.').pop() ?? 'png').toLowerCase().slice(0, 5);
   const fileName = `${companyId}/${Date.now()}.${ext}`;
 
-  const arrayBuffer = await file.arrayBuffer();
+  // P5.x.12.quater : auto-trim sur les formats raster avant upload.
+  // Supprime les marges transparentes / quasi-blanches pour que le
+  // logo affiche en plein cadre dans le badge social (zone 1000x280)
+  // sans etre reduit par des bordures vides du fichier source.
+  // SVG = vectoriel, on n'y touche pas (export tipiquement deja propre).
+  const trimmedBuffer = await trimLogoIfRaster(file);
+
   const { error: uploadErr } = await supabase.storage
     .from('company-logos')
-    .upload(fileName, arrayBuffer, {
+    .upload(fileName, trimmedBuffer, {
       contentType: file.type,
       upsert: false,
     });
