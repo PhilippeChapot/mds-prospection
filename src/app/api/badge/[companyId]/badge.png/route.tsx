@@ -1,25 +1,29 @@
 /**
- * GET /api/badge/[companyId]/badge.png — P5.x.12 (+ .bis fixes).
+ * GET /api/badge/[companyId]/badge.png — P5.x.12 (+ .bis + .ter).
  *
- * Genere un badge social 1080x1080 via next/og (Satori). Le badge
- * differe selon companies.category :
- *   - prs_exhibitor : "J'EXPOSE AU" + logos MDS + Paris Radio Show
- *     separes par un trait vertical, 280x280 chacun
- *   - autres        : "J'EXPOSE AUX" + logo MDS seul 280x280
+ * Genere un badge social 1080x1080 via next/og (Satori).
  *
- * Fallback si la company n'a pas de logo upload : on affiche le nom
- * de la societe en gros texte dans le cercle blanc.
+ * Layout P5.x.12.ter (bandeau logo plein largeur) :
+ *   - Haut (1080x360) : bandeau blanc avec logo exposant contained
+ *     (1000x280 max, padding 40px). Si pas de logo : nom societe en
+ *     gros texte adaptatif (88/64/44/32 px selon longueur).
+ *   - Bas (1080x720)  : fond bleu degrade, tagline "J'EXPOSE AU/AUX"
+ *     + logos MDS (+ PRS si prs_exhibitor, separes par trait vertical),
+ *     dates events, URL.
  *
- * P5.x.12.bis :
+ * Doctrine .ter : object-fit: contain dans le bandeau garantit qu'un
+ * logo "wordmark" rectangulaire (3:1, 4:1) prend toute la largeur
+ * disponible au lieu d'etre contraint dans un cercle 320x320.
+ *
+ * Doctrine .bis (heritee) :
  *   - Logo exposant prefetch en data URL avant Satori (sinon
  *     next/og ne fetch pas systematiquement les URLs Supabase Storage)
  *   - Wording "J'EXPOSE AU" (PRS, sing. masc.) vs "J'EXPOSE AUX"
  *     (MDS, plur.)
- *   - Logos MDS/PRS bumpees a 280x280 pour equilibre visuel
+ *   - Logos MDS/PRS 280x280
  *   - Cache `no-store` pour que les uploads se voient immediatement
  *
  * Public : pas d'auth (l'exposant partage l'URL pour social media).
- *
  * Logs : prefix [api/badge].
  */
 
@@ -71,10 +75,9 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
     Boolean(logoDataUrl),
   );
 
-  // Truncate le nom societe pour le fallback (si > ~24 chars, on
-  // reduit la font-size pour eviter overflow du cercle 280px).
-  const fallbackFontSize = company.name.length > 32 ? 22 : company.name.length > 20 ? 28 : 36;
-
+  // P5.x.12.ter : font-size adaptative pour le fallback nom societe
+  // (zone blanche 1080x360, padding 40px -> 1000x280 utiles).
+  const fallbackFontSize = adaptiveFontSize(company.name);
   const filename = `badge-mds-2026-${slugify(company.name)}.png`;
 
   return new ImageResponse(
@@ -82,32 +85,37 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
       style={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         width: '100%',
         height: '100%',
         background: 'linear-gradient(135deg, #294294 0%, #1a3170 100%)',
-        padding: '80px 60px',
         fontFamily: 'Arial, sans-serif',
       }}
     >
-      {/* Cercle logo societe / fallback nom */}
+      {/* P5.x.12.ter — HAUT : bandeau blanc plein largeur 1080x360.
+          Logo expo contained dans 1000x280 (peu importe le ratio source).
+          Fallback : nom societe en gros texte adaptatif. */}
       <div
         style={{
           display: 'flex',
-          width: 320,
-          height: 320,
-          borderRadius: '50%',
-          background: '#fff',
+          width: '100%',
+          height: 360,
+          background: '#FFFFFF',
           alignItems: 'center',
           justifyContent: 'center',
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+          padding: 40,
         }}
       >
         {logoDataUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoDataUrl} alt="" width={260} height={260} style={{ objectFit: 'contain' }} />
+          <img
+            src={logoDataUrl}
+            alt=""
+            style={{
+              maxWidth: 1000,
+              maxHeight: 280,
+              objectFit: 'contain',
+            }}
+          />
         ) : (
           <div
             style={{
@@ -116,8 +124,8 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
               fontWeight: 700,
               color: '#294294',
               textAlign: 'center',
-              padding: '0 20px',
-              lineHeight: 1.2,
+              lineHeight: 1.1,
+              maxWidth: 1000,
             }}
           >
             {company.name}
@@ -125,78 +133,90 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
         )}
       </div>
 
-      {/* Bloc central : tagline + logos events */}
+      {/* P5.x.12.ter — BAS : zone bleue 1080x720 (flex:1).
+          Tagline + logos events centres, dates + URL en bas. */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
+          flex: 1,
           alignItems: 'center',
-          gap: 24,
+          justifyContent: 'space-between',
+          padding: '60px 60px 80px',
         }}
       >
+        {/* Tagline + logos events */}
         <div
           style={{
             display: 'flex',
-            fontSize: 36,
-            color: 'rgba(255,255,255,0.92)',
-            letterSpacing: '0.25em',
-            margin: 0,
-            fontWeight: 600,
-          }}
-        >
-          {/* P5.x.12.bis : "AU" pour PRS (Paris Radio Show, sing. masc.),
-              "AUX" pour MDS (pluriel). */}
-          {isPrs ? "J'EXPOSE AU" : "J'EXPOSE AUX"}
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            gap: 40,
+            gap: 32,
           }}
         >
-          {/* P5.x.12.bis : logos 280x280 (vs 180 V1.2) pour equilibre visuel
-              avec le cercle logo expo 320x320 en haut. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoMdsUrl} alt="" width={280} height={280} />
-          {isPrs ? (
-            <>
-              <div
-                style={{
-                  display: 'flex',
-                  width: 2,
-                  height: 120,
-                  background: 'rgba(255,255,255,0.4)',
-                }}
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoPrsUrl} alt="" width={280} height={280} />
-            </>
-          ) : null}
-        </div>
-      </div>
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 40,
+              color: 'rgba(255,255,255,0.92)',
+              letterSpacing: '0.3em',
+              margin: 0,
+              fontWeight: 600,
+            }}
+          >
+            {/* P5.x.12.bis : "AU" pour PRS (sing. masc.), "AUX" pour MDS (pluriel). */}
+            {isPrs ? "J'EXPOSE AU" : "J'EXPOSE AUX"}
+          </div>
 
-      {/* Footer dates + URL */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        <div style={{ display: 'flex', fontSize: 28, color: '#fff' }}>Paris · 15 décembre</div>
-        <div style={{ display: 'flex', fontSize: 28, color: '#fff' }}>Marseille · 10 décembre</div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 40,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logoMdsUrl} alt="" width={280} height={280} />
+            {isPrs ? (
+              <>
+                <div
+                  style={{
+                    display: 'flex',
+                    width: 2,
+                    height: 120,
+                    background: 'rgba(255,255,255,0.4)',
+                  }}
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={logoPrsUrl} alt="" width={280} height={280} />
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Footer dates + URL */}
         <div
           style={{
             display: 'flex',
-            fontSize: 22,
-            color: 'rgba(255,255,255,0.7)',
-            marginTop: 16,
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 8,
           }}
         >
-          mediadays.solutions
+          <div style={{ display: 'flex', fontSize: 32, color: '#fff' }}>Paris · 15 décembre</div>
+          <div style={{ display: 'flex', fontSize: 32, color: '#fff' }}>
+            Marseille · 10 décembre
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 24,
+              color: 'rgba(255,255,255,0.7)',
+              marginTop: 16,
+            }}
+          >
+            mediadays.solutions
+          </div>
         </div>
       </div>
     </div>,
@@ -213,6 +233,19 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
       },
     },
   );
+}
+
+/**
+ * Choisit une font-size pour le fallback nom societe (zone 1000x280
+ * utiles dans le bandeau blanc). Adaptive selon longueur — empeche
+ * un nom long de deborder de la zone.
+ */
+function adaptiveFontSize(name: string): number {
+  const len = name.length;
+  if (len <= 10) return 88;
+  if (len <= 20) return 64;
+  if (len <= 35) return 44;
+  return 32;
 }
 
 function slugify(s: string): string {
