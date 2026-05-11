@@ -85,11 +85,14 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
   return new ImageResponse(
     <div
       style={{
+        // P5.x.12.octies : container racine neutre. Le gradient bleu
+        // est porte par la zone 2 (centrale) uniquement, pour laisser
+        // les zones 1 (haut) et 3 (bas) en blanc.
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
         height: '100%',
-        background: 'linear-gradient(135deg, #294294 0%, #1a3170 100%)',
+        background: '#FFFFFF',
         fontFamily: 'Arial, sans-serif',
       }}
     >
@@ -135,111 +138,107 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
         )}
       </div>
 
-      {/* P5.x.12.ter — BAS : zone bleue 1080x720 (flex:1).
-          Tagline + logos events centres, dates + URL en bas. */}
+      {/* P5.x.12.octies — ZONE 2 : bleue centrale flex:1.
+          Tagline + logos events + URL mediadays.net centres. */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
           flex: 1,
+          background: 'linear-gradient(135deg, #294294 0%, #1a3170 100%)',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '60px 60px 80px',
+          justifyContent: 'center',
+          padding: '40px 60px',
+          gap: 40,
         }}
       >
-        {/* Tagline + logos events */}
         <div
           style={{
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 32,
+            fontSize: 40,
+            color: 'rgba(255,255,255,0.92)',
+            letterSpacing: '0.3em',
+            margin: 0,
+            fontWeight: 600,
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              fontSize: 40,
-              color: 'rgba(255,255,255,0.92)',
-              letterSpacing: '0.3em',
-              margin: 0,
-              fontWeight: 600,
-            }}
-          >
-            {/* P5.x.12.bis : "AU" pour PRS (sing. masc.), "AUX" pour MDS (pluriel). */}
-            {isPrs ? "J'EXPOSE AU" : "J'EXPOSE AUX"}
-          </div>
-
-          {/* P5.x.12.sexies : logos 400x400 (vs 280) pour impact visuel
-              fort sur le badge social. Trait separateur 160px en hauteur. */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 60,
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoMdsUrl} alt="" width={400} height={400} />
-            {isPrs ? (
-              <>
-                <div
-                  style={{
-                    display: 'flex',
-                    width: 2,
-                    height: 160,
-                    background: 'rgba(255,255,255,0.4)',
-                  }}
-                />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={logoPrsUrl} alt="" width={400} height={400} />
-              </>
-            ) : null}
-          </div>
+          {/* P5.x.12.bis : "AU" pour PRS (sing. masc.), "AUX" pour MDS (pluriel). */}
+          {isPrs ? "J'EXPOSE AU" : "J'EXPOSE AUX"}
         </div>
 
-        {/* P5.x.12.sexies — Footer : dates sur une seule ligne + URL visiteur. */}
+        {/* P5.x.12.sexies : logos 400x400, trait separateur 160px. */}
         <div
           style={{
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            gap: 16,
+            gap: 60,
           }}
         >
-          <div
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoMdsUrl} alt="" width={400} height={400} />
+          {isPrs ? (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  width: 2,
+                  height: 160,
+                  background: 'rgba(255,255,255,0.4)',
+                }}
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoPrsUrl} alt="" width={400} height={400} />
+            </>
+          ) : null}
+        </div>
+
+        {/* P5.x.12.octies : URL repositionnee sous les logos (etait dans
+            le footer en P5.x.12.sexies). Permet de degager une zone
+            blanche dediee aux dates en bas (zone 3). */}
+        <div
+          style={{
+            display: 'flex',
+            fontSize: 40,
+            color: 'rgba(255,255,255,0.95)',
+            fontWeight: 600,
+          }}
+        >
+          mediadays.net
+        </div>
+      </div>
+
+      {/* P5.x.12.octies — ZONE 3 : bandeau blanc bas avec dates en
+          bleu MDS. Hauteur fixe 100, dissocie villes/logos events
+          (ne pas creer d'association implicite Paris=MDS / Marseille=PRS). */}
+      <div
+        style={{
+          display: 'flex',
+          width: '100%',
+          height: 100,
+          background: '#FFFFFF',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            fontSize: 32,
+            color: '#294294',
+            fontWeight: 600,
+          }}
+        >
+          <span>Paris · 15 décembre</span>
+          <span
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              fontSize: 32,
-              color: '#fff',
+              color: 'rgba(41, 66, 148, 0.4)',
+              margin: '0 24px',
             }}
           >
-            <span>Paris · 15 décembre</span>
-            <span
-              style={{
-                color: 'rgba(255,255,255,0.5)',
-                margin: '0 24px',
-              }}
-            >
-              ·
-            </span>
-            <span>Marseille · 10 décembre</span>
-          </div>
-          {/* P5.x.12.sexies : URL B2C visiteurs (mediadays.net), pas
-              mediadays.solutions qui est le site exposants. Coherent
-              avec doctrine signatures email P5.x.10.ter. */}
-          <div
-            style={{
-              display: 'flex',
-              fontSize: 40,
-              color: 'rgba(255,255,255,0.95)',
-              fontWeight: 600,
-              marginTop: 8,
-            }}
-          >
-            mediadays.net
-          </div>
+            ·
+          </span>
+          <span>Marseille · 10 décembre</span>
         </div>
       </div>
     </div>,
