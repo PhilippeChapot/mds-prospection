@@ -1,18 +1,24 @@
 /**
- * GET /api/badge/[companyId]/badge.png — P5.x.12
+ * GET /api/badge/[companyId]/badge.png — P5.x.12 (+ .bis fixes).
  *
- * Genere un badge social 1080x1080 "J'expose chez MDS 2026" via
- * next/og (Satori). Le badge differe selon companies.category :
- *   - prs_exhibitor : logo MDS + logo Paris Radio Show (separes par
- *     un trait vertical), tagline mixte
- *   - autres : logo MDS seul
+ * Genere un badge social 1080x1080 via next/og (Satori). Le badge
+ * differe selon companies.category :
+ *   - prs_exhibitor : "J'EXPOSE AU" + logos MDS + Paris Radio Show
+ *     separes par un trait vertical, 280x280 chacun
+ *   - autres        : "J'EXPOSE AUX" + logo MDS seul 280x280
  *
  * Fallback si la company n'a pas de logo upload : on affiche le nom
  * de la societe en gros texte dans le cercle blanc.
  *
+ * P5.x.12.bis :
+ *   - Logo exposant prefetch en data URL avant Satori (sinon
+ *     next/og ne fetch pas systematiquement les URLs Supabase Storage)
+ *   - Wording "J'EXPOSE AU" (PRS, sing. masc.) vs "J'EXPOSE AUX"
+ *     (MDS, plur.)
+ *   - Logos MDS/PRS bumpees a 280x280 pour equilibre visuel
+ *   - Cache `no-store` pour que les uploads se voient immediatement
+ *
  * Public : pas d'auth (l'exposant partage l'URL pour social media).
- * Cache : `Cache-Control: public, max-age=3600` cote HTTP — l'image
- * change rarement (logo upload).
  *
  * Logs : prefix [api/badge].
  */
@@ -44,18 +50,25 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
   }
 
   const isPrs = company.category === 'prs_exhibitor';
-  const logoUrl = company.logo_url;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
   const logoMdsUrl = `${baseUrl}/brand/MDS-LogoBlanc2026-email.png`;
   const logoPrsUrl = `${baseUrl}/brand/PRS-LogoBlanc2026-email.png`;
 
+  // P5.x.12.bis Bug 1 : prefetch le logo en data URL avant Satori.
+  // next/og (Satori) ne fetch pas systematiquement les URLs externes
+  // (notamment Supabase Storage), donc on resout cote serveur pour
+  // garantir l'embedding dans le PNG genere. Fallback null sur erreur
+  // -> on tombe sur l'affichage nom societe.
+  const logoDataUrl = await fetchLogoAsDataUrl(company.logo_url);
+
   console.log(
-    '%s render company=%s name=%s isPrs=%s hasLogo=%s',
+    '%s render company=%s name=%s isPrs=%s hasLogoUrl=%s embedded=%s',
     LOG_PREFIX,
     company.id,
     company.name,
     isPrs,
-    Boolean(logoUrl),
+    Boolean(company.logo_url),
+    Boolean(logoDataUrl),
   );
 
   // Truncate le nom societe pour le fallback (si > ~24 chars, on
@@ -92,9 +105,9 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
           boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
         }}
       >
-        {logoUrl ? (
+        {logoDataUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoUrl} alt="" width={260} height={260} style={{ objectFit: 'contain' }} />
+          <img src={logoDataUrl} alt="" width={260} height={260} style={{ objectFit: 'contain' }} />
         ) : (
           <div
             style={{
@@ -131,30 +144,34 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
             fontWeight: 600,
           }}
         >
-          J&apos;EXPOSE CHEZ
+          {/* P5.x.12.bis : "AU" pour PRS (Paris Radio Show, sing. masc.),
+              "AUX" pour MDS (pluriel). */}
+          {isPrs ? "J'EXPOSE AU" : "J'EXPOSE AUX"}
         </div>
 
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 32,
+            gap: 40,
           }}
         >
+          {/* P5.x.12.bis : logos 280x280 (vs 180 V1.2) pour equilibre visuel
+              avec le cercle logo expo 320x320 en haut. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoMdsUrl} alt="" width={180} height={180} />
+          <img src={logoMdsUrl} alt="" width={280} height={280} />
           {isPrs ? (
             <>
               <div
                 style={{
                   display: 'flex',
                   width: 2,
-                  height: 80,
+                  height: 120,
                   background: 'rgba(255,255,255,0.4)',
                 }}
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoPrsUrl} alt="" width={180} height={180} />
+              <img src={logoPrsUrl} alt="" width={280} height={280} />
             </>
           ) : null}
         </div>
@@ -188,7 +205,11 @@ export async function GET(req: Request, { params }: RouteParams): Promise<Respon
       height: 1080,
       headers: {
         'Content-Disposition': `attachment; filename="${filename}"`,
-        'Cache-Control': 'public, max-age=3600',
+        // P5.x.12.bis : no-store -> les uploads de logo se voient
+        // immediatement sans hard-refresh navigateur. Cout : pas de
+        // cache CDN, mais le badge est genere uniquement a la
+        // demande de l'exposant (volume tres faible).
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
       },
     },
   );
@@ -202,4 +223,36 @@ function slugify(s: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 50);
+}
+
+/**
+ * Fetch un logo distant et l'encode en data URL pour l'embedder
+ * directement dans le PNG genere par next/og. Satori a parfois du
+ * mal a fetch les URLs Supabase Storage en runtime ; le prefetch
+ * server-side garantit le rendu.
+ *
+ * Best-effort : si la fetch echoue, retourne null -> le caller
+ * tombe sur l'affichage "nom societe" en gros texte (acceptable).
+ */
+async function fetchLogoAsDataUrl(logoUrl: string | null): Promise<string | null> {
+  if (!logoUrl) return null;
+  try {
+    const res = await fetch(logoUrl, { cache: 'no-store' });
+    if (!res.ok) {
+      console.warn('%s fetch-logo-failed status=%d url=%s', LOG_PREFIX, res.status, logoUrl);
+      return null;
+    }
+    const buf = await res.arrayBuffer();
+    const contentType = res.headers.get('content-type') ?? 'image/png';
+    const base64 = Buffer.from(buf).toString('base64');
+    return `data:${contentType};base64,${base64}`;
+  } catch (err) {
+    console.error(
+      '%s fetch-logo-error url=%s msg=%s',
+      LOG_PREFIX,
+      logoUrl,
+      err instanceof Error ? err.message : String(err),
+    );
+    return null;
+  }
 }
