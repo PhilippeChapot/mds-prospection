@@ -126,7 +126,13 @@ export function getEmailSignatureHtml(locale: 'fr' | 'en', isPrsExhibitor: boole
     subline = 'Paris et/ou Marseille';
   }
 
-  const linkLabel = baseUrl.replace(/^https?:\/\//, '');
+  // P5.x.10.ter : double lien footer (exhibitor + visitor) avec
+  // target=_blank + rel=noopener (anti-tabnabbing) sur chaque ancre.
+  // Liens hardcodes : mediadays.solutions = B2B exposants, mediadays.net
+  // = B2C visiteurs (independants de NEXT_PUBLIC_APP_URL qui pointe
+  // sur le sous-domaine du repo courant).
+  const exhibitorLabel = locale === 'en' ? 'Exhibitor info:' : 'Infos exposants :';
+  const visitorLabel = locale === 'en' ? 'Visitor info:' : 'Infos visiteurs :';
 
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;color:#1F2240;">
   <tr>
@@ -137,11 +143,14 @@ export function getEmailSignatureHtml(locale: 'fr' | 'en', isPrsExhibitor: boole
       <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#294294;line-height:1.4;">
         ${escapeHtml(tagline)}
       </p>
-      <p style="margin:0 0 6px 0;font-size:13px;color:#5A6080;line-height:1.4;">
+      <p style="margin:0 0 8px 0;font-size:13px;color:#5A6080;line-height:1.4;">
         ${escapeHtml(subline)}
       </p>
+      <p style="margin:0 0 2px 0;font-size:13px;color:#294294;line-height:1.4;">
+        ${escapeHtml(exhibitorLabel)} <a href="https://mediadays.solutions" target="_blank" rel="noopener noreferrer" style="color:#294294;text-decoration:none;font-weight:600;">mediadays.solutions</a>
+      </p>
       <p style="margin:0;font-size:13px;color:#294294;line-height:1.4;">
-        <a href="${baseUrl}" style="color:#294294;text-decoration:none;">${escapeHtml(linkLabel)}</a>
+        ${escapeHtml(visitorLabel)} <a href="https://mediadays.net" target="_blank" rel="noopener noreferrer" style="color:#294294;text-decoration:none;font-weight:600;">mediadays.net</a>
       </p>
     </td>
   </tr>

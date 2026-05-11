@@ -57,7 +57,7 @@ describe('getCommunicationKit (P5.x.10)', () => {
   it('signature email FR par defaut (category null) = MDS variant', () => {
     const kit = getCommunicationKit('fr');
     expect(kit.emailSignatureHtml).toContain('Retrouvez-nous aux MediaDays Solutions 2026');
-    expect(kit.emailSignatureHtml).toContain('test.mediadays.solutions');
+    expect(kit.emailSignatureHtml).toContain('href="https://mediadays.solutions"');
     expect(kit.emailSignatureHtml).toContain('<table');
   });
 
@@ -76,37 +76,56 @@ describe('getEmailSignatureHtml — variants PRS/MDS (P5.x.10.bis)', () => {
     Object.assign(process.env, ENV_BACKUP);
   });
 
-  it('PRS exhibitor FR : tagline + logo PRS, pas de logo MDS', () => {
+  it('PRS exhibitor FR : tagline + logo PRS + double lien footer FR', () => {
     const html = getEmailSignatureHtml('fr', true);
     expect(html).toContain('Retrouvez-nous au Paris Radio Show / MediaDays Solutions 2026');
     expect(html).toContain('Paris, 15 décembre et/ou Marseille, 10 décembre');
     expect(html).toContain('PRS-LogoBleu2026.svg');
     expect(html).not.toContain('MDS-LogoBleu2026.svg');
     expect(html).toContain('alt="Paris Radio Show 2026"');
+    // P5.x.10.ter : double lien footer
+    expect(html).toContain('Infos exposants');
+    expect(html).toContain('href="https://mediadays.solutions"');
+    expect(html).toContain('Infos visiteurs');
+    expect(html).toContain('href="https://mediadays.net"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
   });
 
-  it('PRS exhibitor EN : tagline + logo PRS', () => {
+  it('PRS exhibitor EN : tagline + logo PRS + double lien footer EN', () => {
     const html = getEmailSignatureHtml('en', true);
     expect(html).toContain('Find us at Paris Radio Show / MediaDays Solutions 2026');
     expect(html).toContain('Paris, December 15 and/or Marseille, December 10');
     expect(html).toContain('PRS-LogoBleu2026.svg');
+    expect(html).toContain('Exhibitor info');
+    expect(html).toContain('Visitor info');
+    expect(html).toContain('href="https://mediadays.solutions"');
+    expect(html).toContain('href="https://mediadays.net"');
   });
 
-  it('MDS exhibitor FR (non-PRS) : tagline MDS + logo MDS', () => {
+  it('MDS exhibitor FR (non-PRS) : tagline MDS + logo MDS + double lien footer FR', () => {
     const html = getEmailSignatureHtml('fr', false);
     expect(html).toContain('Retrouvez-nous aux MediaDays Solutions 2026');
     expect(html).toContain('Paris et/ou Marseille');
     expect(html).toContain('MDS-LogoBleu2026.svg');
     expect(html).not.toContain('Paris Radio Show');
     expect(html).toContain('alt="MediaDays Solutions 2026"');
+    expect(html).toContain('Infos exposants');
+    expect(html).toContain('Infos visiteurs');
+    expect(html).toContain('href="https://mediadays.solutions"');
+    expect(html).toContain('href="https://mediadays.net"');
   });
 
-  it('MDS exhibitor EN : tagline anglais + logo MDS', () => {
+  it('MDS exhibitor EN : tagline anglais + logo MDS + double lien footer EN', () => {
     const html = getEmailSignatureHtml('en', false);
     expect(html).toContain('Find us at MediaDays Solutions 2026');
     expect(html).toContain('Paris and/or Marseille');
     expect(html).toContain('MDS-LogoBleu2026.svg');
     expect(html).not.toContain('Paris Radio Show');
+    expect(html).toContain('Exhibitor info');
+    expect(html).toContain('Visitor info');
+    expect(html).toContain('href="https://mediadays.solutions"');
+    expect(html).toContain('href="https://mediadays.net"');
   });
 
   it('getCommunicationKit(fr, "prs_exhibitor") -> signature PRS', () => {
