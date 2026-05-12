@@ -45,7 +45,10 @@
       "@swc/core",
       "esbuild",
       "supabase"
-    ]
+    ],
+    "overrides": {
+      "html-encoding-sniffer": "5.0.0"
+    }
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
