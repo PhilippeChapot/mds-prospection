@@ -351,6 +351,12 @@
         "download": "Download my badge",
         "tipNoLogo": "Tip: upload your logo above to get a branded badge (otherwise your company name will be displayed)."
       },
+      "linkedinCover": {
+        "section": "💼 LinkedIn cover banner",
+        "intro": "Download your LinkedIn profile banner (1584×396), ready to publish — featuring your logo and the MDS 2026 events announcement.",
+        "download": "Download my LinkedIn banner",
+        "tipNoLogo": "Tip: upload your logo for a branded banner (otherwise your company name will be displayed)."
+      },
       "commKit": {
         "section": "🎨 Communication kit",
         "intro": "Download MediaDays Solutions / Paris Radio Show logos and use the official email signature to announce your participation.",

@@ -1,23 +1,22 @@
 /**
- * GET /api/badge/[companyId]/badge.png — P5.x.12 (.bis...octies) + P5.x.14 refactor.
+ * GET /api/badge/[companyId]/linkedin-cover.png — P5.x.14.
  *
- * Genere un badge social 1080x1080 via next/og (Satori).
+ * Genere une banniere de profil LinkedIn (1584x396) via next/og (Satori).
  *
- * Layout P5.x.12.octies (3 zones) :
- *   - Zone 1 (1080x360)  : bandeau blanc avec logo exposant contained
- *     (1000x280 max, padding 40px). Si pas de logo : nom societe en
- *     gros texte adaptatif.
- *   - Zone 2 (flex:1)    : fond bleu degrade, tagline "J'EXPOSE AU/AUX"
- *     + logos events (MDS + PRS si prs_exhibitor) + URL mediadays.net.
- *   - Zone 3 (1080x100)  : bandeau blanc avec dates "Paris · 15 dec"
- *     et "Marseille · 10 dec" en bleu MDS.
+ * Layout 2 colonnes :
+ *   - Colonne gauche (792x396)  : fond blanc, logo exposant contained
+ *     (max 728x332, padding 32). Si pas de logo : nom societe en gros
+ *     texte adaptatif (base 64px).
+ *   - Colonne droite (792x396)  : gradient bleu MDS avec tagline
+ *     "J'EXPOSE AU/AUX", logos events (MDS + PRS si prs_exhibitor,
+ *     separes par trait vertical 80px) 160x160, dates Paris/Marseille
+ *     sur une ligne, et URL mediadays.net.
  *
- * P5.x.14 : tout le brand (couleurs, dates, logos events, wording,
- * helpers logo/font) extrait dans src/lib/social-assets/ pour
- * partage avec la banniere LinkedIn (/api/badge/[companyId]/linkedin-cover.png).
+ * Reutilise les helpers src/lib/social-assets/ (cf P5.x.14 Phase 0)
+ * pour partager couleurs, dates, wording avec le badge social.
  *
- * Public : pas d'auth (l'exposant partage l'URL pour social media).
- * Logs : prefix [api/badge].
+ * Public : pas d'auth (l'exposant partage l'URL pour son profil LinkedIn).
+ * Logs : prefix [api/linkedin-cover].
  */
 
 import { ImageResponse } from 'next/og';
@@ -32,7 +31,7 @@ import {
 } from '@/lib/social-assets';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 
-const LOG_PREFIX = '[api/badge]';
+const LOG_PREFIX = '[api/linkedin-cover]';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -60,9 +59,6 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
   const isPrs = company.category === 'prs_exhibitor';
   const wording = getExhibitorWording(company.category, 'fr');
 
-  // P5.x.12.bis : prefetch le logo en data URL avant Satori (Satori ne
-  // resout pas systematiquement les URLs Supabase Storage). Best-effort,
-  // fallback null -> on tombe sur l'affichage nom societe.
   const logoDataUrl = await fetchLogoAsDataUrl(company.logo_url);
 
   console.log(
@@ -75,31 +71,32 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
     Boolean(logoDataUrl),
   );
 
-  const fallbackFontSize = adaptiveFontSize(company.name, 88);
-  const filename = `badge-mds-2026-${slugify(company.name)}.png`;
+  // Base 64px : zone gauche utile ~728x332, plus petite que celle du
+  // badge (1080x360), donc texte plus modeste pour fit les noms longs.
+  const fallbackFontSize = adaptiveFontSize(company.name, 64);
+  const filename = `linkedin-cover-mds-2026-${slugify(company.name)}.png`;
 
   return new ImageResponse(
     <div
       style={{
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
         width: '100%',
         height: '100%',
         background: BRAND_COLORS.WHITE,
         fontFamily: 'Arial, sans-serif',
       }}
     >
-      {/* ZONE 1 — bandeau blanc 1080x360 : logo exposant contained ou
-          fallback nom societe en gros texte adaptatif. */}
+      {/* COLONNE GAUCHE — 792x396 blanche : logo exposant ou fallback nom */}
       <div
         style={{
           display: 'flex',
-          width: '100%',
-          height: 360,
+          width: 792,
+          height: 396,
           background: BRAND_COLORS.WHITE,
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 40,
+          padding: 32,
         }}
       >
         {logoDataUrl ? (
@@ -107,7 +104,7 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
           <img
             src={logoDataUrl}
             alt=""
-            style={{ maxWidth: 1000, maxHeight: 280, objectFit: 'contain' }}
+            style={{ maxWidth: 728, maxHeight: 332, objectFit: 'contain' }}
           />
         ) : (
           <div
@@ -118,7 +115,7 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
               color: BRAND_COLORS.MDS_BLUE,
               textAlign: 'center',
               lineHeight: 1.1,
-              maxWidth: 1000,
+              maxWidth: 728,
             }}
           >
             {company.name}
@@ -126,47 +123,47 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
         )}
       </div>
 
-      {/* ZONE 2 — fond bleu flex:1 : tagline + logos events + URL. */}
+      {/* COLONNE DROITE — 792x396 gradient bleu : tagline + logos + dates + URL */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
-          flex: 1,
+          width: 792,
+          height: 396,
           background: BRAND_COLORS.GRADIENT_BLUE,
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '40px 60px',
-          gap: 40,
+          padding: '24px 32px',
+          gap: 16,
         }}
       >
         <div
           style={{
             display: 'flex',
-            fontSize: 40,
+            fontSize: 22,
             color: BRAND_COLORS.WHITE_90,
-            letterSpacing: '0.3em',
-            margin: 0,
+            letterSpacing: '0.25em',
             fontWeight: 600,
           }}
         >
           {wording}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 60 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoMdsUrl} alt="" width={400} height={400} />
+          <img src={logoMdsUrl} alt="" width={160} height={160} />
           {isPrs ? (
             <>
               <div
                 style={{
                   display: 'flex',
                   width: 2,
-                  height: 160,
+                  height: 80,
                   background: BRAND_COLORS.WHITE_40,
                 }}
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoPrsUrl} alt="" width={400} height={400} />
+              <img src={logoPrsUrl} alt="" width={160} height={160} />
             </>
           ) : null}
         </div>
@@ -174,54 +171,42 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
         <div
           style={{
             display: 'flex',
-            fontSize: 40,
-            color: BRAND_COLORS.WHITE_90,
-            fontWeight: 600,
-          }}
-        >
-          mediadays.net
-        </div>
-      </div>
-
-      {/* ZONE 3 — bandeau blanc bas 1080x100 : dates en bleu MDS. */}
-      <div
-        style={{
-          display: 'flex',
-          width: '100%',
-          height: 100,
-          background: BRAND_COLORS.WHITE,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
             alignItems: 'center',
-            fontSize: 32,
-            color: BRAND_COLORS.MDS_BLUE,
+            fontSize: 18,
+            color: BRAND_COLORS.WHITE_90,
             fontWeight: 600,
           }}
         >
           <span>{EVENT_DATES.PARIS_FR}</span>
           <span
             style={{
-              color: BRAND_COLORS.BLUE_FADED,
-              margin: '0 24px',
+              color: BRAND_COLORS.WHITE_40,
+              margin: '0 16px',
             }}
           >
             ·
           </span>
           <span>{EVENT_DATES.MARSEILLE_FR}</span>
         </div>
+
+        <div
+          style={{
+            display: 'flex',
+            fontSize: 20,
+            color: BRAND_COLORS.WHITE_70,
+            fontWeight: 600,
+            marginTop: 4,
+          }}
+        >
+          mediadays.net
+        </div>
       </div>
     </div>,
     {
-      width: 1080,
-      height: 1080,
+      width: 1584,
+      height: 396,
       headers: {
         'Content-Disposition': `attachment; filename="${filename}"`,
-        // P5.x.12.bis : no-store -> uploads de logo visibles immediatement.
         'Cache-Control': 'no-store, no-cache, must-revalidate',
       },
     },

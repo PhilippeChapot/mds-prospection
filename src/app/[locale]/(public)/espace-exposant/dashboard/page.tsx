@@ -271,6 +271,24 @@ export default async function EspaceExposantDashboardPage({ params }: PageProps)
         </div>
       </Card>
 
+      {/* P5.x.14 — Banniere LinkedIn 1584x396 generee via next/og */}
+      <Card className="border-md-border space-y-3 p-5 shadow-sm sm:p-6">
+        <h2 className="text-md-text text-base font-semibold">{t('linkedinCover.section')}</h2>
+        <p className="text-md-text-muted text-sm">{t('linkedinCover.intro')}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild className="bg-md-magenta hover:bg-md-magenta-soft">
+            <a href={`/api/badge/${data.company.id}/linkedin-cover.png`} download>
+              {t('linkedinCover.download')} ↓
+            </a>
+          </Button>
+          {!data.company.logoUrl ? (
+            <span className="text-md-text-muted text-xs italic">
+              {t('linkedinCover.tipNoLogo')}
+            </span>
+          ) : null}
+        </div>
+      </Card>
+
       {/* P5.x.10 — Section kit communication */}
       <Card className="border-md-border space-y-4 p-5 shadow-sm sm:p-6">
         <h2 className="text-md-text text-base font-semibold">{t('commKit.section')}</h2>
