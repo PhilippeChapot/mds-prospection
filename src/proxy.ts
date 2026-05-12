@@ -82,6 +82,7 @@ export const config = {
   matcher: [
     '/((?!api|_next|_vercel|auth|brand|video|sentry-test|favicon\\.ico|robots\\.txt|sitemap\\.xml|merci-oui|merci-non|.*\\..*).*)',
     '/wp-login.php',
+    '/wp-admin/install.php',
     '/xmlrpc.php',
     '/setup-config.php',
     '/admin/install.php',
