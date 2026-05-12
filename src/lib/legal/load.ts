@@ -3,9 +3,14 @@
  *
  * - Lit le fichier .md depuis src/content/legal/<locale>/<slug>.md
  * - Parse via marked (markdown -> HTML)
- * - Sanitize via isomorphic-dompurify (defense-in-depth, meme si nos .md
+ * - Sanitize via sanitize-html (defense-in-depth, meme si nos .md
  *   sont controles ; protege si on accepte du contenu utilisateur en P5+)
  * - Extrait le titre du premier h1 du fichier
+ *
+ * P5.x.13-quater : swap isomorphic-dompurify -> sanitize-html pour
+ * eliminer la chaine de deps jsdom -> @exodus/bytes (ESM-only) qui
+ * crashait Turbopack en SSR (ERR_REQUIRE_ESM). sanitize-html est
+ * pure CommonJS, pas de DOM virtuel necessaire.
  *
  * Server-only : importe `node:fs` et `node:path`. Ne JAMAIS importer ce
  * helper depuis un client component.
@@ -14,7 +19,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { marked } from 'marked';
-import DOMPurify from 'isomorphic-dompurify';
+import sanitizeHtml from 'sanitize-html';
 import type { AppLocale } from '@/i18n/routing';
 
 /**
@@ -82,9 +87,19 @@ export async function loadLegalPage(slug: LegalSlug, locale: AppLocale): Promise
   const body = raw.replace(/^#\s+.+\r?\n/m, '');
 
   const rawHtml = await marked.parse(body, { async: true });
-  const html = DOMPurify.sanitize(rawHtml, {
-    USE_PROFILES: { html: true },
-    ADD_ATTR: ['target', 'rel'],
+  const html = sanitizeHtml(rawHtml, {
+    // sanitize-html.defaults.allowedTags couvre deja la grande majorite
+    // des balises HTML utiles (p, h1-h6, ul, li, a, blockquote, code,
+    // pre, table, etc.). On ajoute h1 + img par precaution (img si on
+    // accepte des illustrations dans le legal a l'avenir).
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h1', 'img']),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      // Liens : equivalent ADD_ATTR DOMPurify -> on autorise target/rel
+      // pour les liens "open in new tab" rel="noopener".
+      a: ['href', 'name', 'target', 'rel'],
+      img: ['src', 'alt', 'title', 'width', 'height'],
+    },
   });
 
   return { slug, locale, title, html };

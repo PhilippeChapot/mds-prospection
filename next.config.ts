@@ -4,21 +4,7 @@ import { withSentryConfig } from '@sentry/nextjs';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
-const nextConfig: NextConfig = {
-  // P5.x.13 — Fix bug 500 pages legales : Turbopack faisait require()
-  // sur @exodus/bytes (ESM-only) via la chaine de deps :
-  //   isomorphic-dompurify -> jsdom -> html-encoding-sniffer -> @exodus/bytes
-  // Crash en SSR sur toute route incluant isomorphic-dompurify (les pages
-  // legales /fr/cgv, /mentions-legales, /politique-confidentialite) avec
-  // ERR_REQUIRE_ESM. serverExternalPackages dit a Next d'externaliser ces
-  // libs vers le runtime Node natif (qui supporte ESM) au lieu du bundler.
-  serverExternalPackages: [
-    'isomorphic-dompurify',
-    'jsdom',
-    'html-encoding-sniffer',
-    '@exodus/bytes',
-  ],
-};
+const nextConfig: NextConfig = {};
 
 export default withSentryConfig(withNextIntl(nextConfig), {
   org: process.env.SENTRY_ORG,
