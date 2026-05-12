@@ -357,6 +357,12 @@
         "download": "Télécharger ma bannière LinkedIn",
         "tipNoLogo": "Astuce : ajoutez votre logo pour une bannière à votre marque (sinon votre nom de société sera affiché)."
       },
+      "storyInstagram": {
+        "section": "📱 Story Instagram / Reels",
+        "intro": "Format vertical 9:16 (1080×1920) pour Instagram, Facebook, TikTok, Reels.",
+        "download": "Télécharger ma story Instagram",
+        "tipNoLogo": "Astuce : ajoutez votre logo pour une story à votre marque (sinon votre nom de société sera affiché)."
+      },
       "commKit": {
         "section": "🎨 Kit communication",
         "intro": "Téléchargez les logos MediaDays Solutions / Paris Radio Show et utilisez la signature email officielle pour annoncer votre participation.",

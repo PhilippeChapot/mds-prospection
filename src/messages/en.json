@@ -357,6 +357,12 @@
         "download": "Download my LinkedIn banner",
         "tipNoLogo": "Tip: upload your logo for a branded banner (otherwise your company name will be displayed)."
       },
+      "storyInstagram": {
+        "section": "📱 Instagram Story / Reels",
+        "intro": "Vertical 9:16 format (1080×1920) for Instagram, Facebook, TikTok, Reels.",
+        "download": "Download my Instagram story",
+        "tipNoLogo": "Tip: upload your logo for a branded story (otherwise your company name will be displayed)."
+      },
       "commKit": {
         "section": "🎨 Communication kit",
         "intro": "Download MediaDays Solutions / Paris Radio Show logos and use the official email signature to announce your participation.",
