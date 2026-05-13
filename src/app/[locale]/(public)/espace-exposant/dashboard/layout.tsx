@@ -1,31 +1,33 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import type { Locale } from 'next-intl';
-import { capitalizeName } from '@/lib/format/name';
-import { loadDashboardData } from '@/lib/espace-exposant/session';
+import { requireEspaceExposantSession } from '@/lib/espace-exposant/session';
 import { ExposantSidebar } from './_components/ExposantSidebar';
 import { ExposantMobileMenu } from './_components/ExposantMobileMenu';
 
 /**
- * P5.x.17 — Layout shell de l'Espace Exposant V1.3.
+ * P5.x.17 / P5.x.17-bis — Layout shell de l'Espace Exposant V1.3.
  *
  * Pattern :
- *   - loadDashboardData() valide la session ET fait le redirect si
- *     manquante/expiree -> on a juste a l'appeler ici pour proteger
- *     toute la branche /dashboard/**. Comme loadDashboardData est
- *     wrap dans React.cache(), les sous-pages qui le rappellent ne
- *     refont pas le fetch DB.
+ *   - `requireEspaceExposantSession(locale)` : check rapide cookie+JWT,
+ *     redirect vers /espace-exposant?error=... si KO. ZERO query DB.
+ *     -> protege toute la branche /dashboard/** sans dupliquer le fetch
+ *     des donnees prospect/contact/company (que chaque page recharge
+ *     elle-meme via loadDashboardData).
  *
- *   - Le shell : sidebar desktop fixe (240px) a gauche + header mobile
- *     avec burger. Le sidebar est dupliquee a l'identique dans le
- *     drawer mobile via ExposantMobileMenu.
+ *   - Shell : sidebar desktop fixe 240px a gauche + header mobile burger.
+ *     Sidebar dupliquee a l'identique dans le drawer mobile via
+ *     ExposantMobileMenu.
  *
- *   - Header desktop minimal : pas de bouton logout (deplace dans
- *     le footer de la sidebar) pour gagner de la verticale ; on
- *     conserve un greeting personnalise + sous-titre.
+ *   - Le greeting personnalise ("Bonjour {firstName}") n'est pas affiche
+ *     ici -- chaque page peut l'afficher si elle veut, mais le layout
+ *     reste neutre pour eviter de devoir fetch les donnees deux fois.
  *
- * Le redirect interne de loadDashboardData garantit qu'on ne peut
- * pas atterrir sur une sous-page sans session valide (sinon redirect
- * vers /espace-exposant?error=expired).
+ * P5.x.17-bis (bugfix) : on enleve la double-load DB en layout. Symptome
+ * detecte par Phil = la nav sidebar redirigeait vers /login, comme si la
+ * session etait perdue. Le wrap React.cache initial faisait potentiellement
+ * du double-fetch a chaque sous-route, augmentant les chances de timeout
+ * silencieux ou d'inconsistance. Maintenant : layout = check cookie/JWT
+ * uniquement, pages = fetch donnees.
  */
 
 interface LayoutProps {
@@ -39,11 +41,11 @@ export default async function EspaceExposantDashboardLayout({ children, params }
   const { locale } = await params;
   setRequestLocale(locale);
 
-  // Side-effect d'auth : redirect si pas de session. Le retour sert
-  // au header pour saluer l'exposant par son prenom.
-  const data = await loadDashboardData(locale);
+  // Side-effect d'auth : redirect vers /espace-exposant?error=expired|
+  // invalid si cookie absent ou JWT pas bon. Aucun fetch DB.
+  await requireEspaceExposantSession(locale);
+
   const t = await getTranslations({ locale, namespace: 'espaceExposant.dashboard' });
-  const firstName = capitalizeName(data.contact.first_name);
 
   return (
     <div className="bg-md-bg flex min-h-svh flex-col">
@@ -72,7 +74,7 @@ export default async function EspaceExposantDashboardLayout({ children, params }
                 MediaDays Solutions 2026
               </p>
               <h1 className="text-md-text text-2xl font-extrabold tracking-tight md:text-3xl">
-                {t('greeting', { firstName: firstName || '' })}
+                {t('shortGreeting')}
               </h1>
               <p className="text-md-text-muted mt-1 text-sm">{t('welcome')}</p>
             </header>

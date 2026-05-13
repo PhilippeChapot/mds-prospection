@@ -1,12 +1,25 @@
 /**
- * Helpers session Espace Exposant — P5.x.2.
+ * Helpers session Espace Exposant — P5.x.2 / P5.x.17-bis.
  *
- * Utilise par layout.tsx du dashboard pour lire le cookie + valider le
- * JWT session, et fetch les donnees prospect via service-role (safe :
- * on filtre sur prospect.id du cookie verifie, donc pas d'enumeration).
+ * Deux niveaux d'API pour distinguer "valider l'auth" (cheap, cookie+JWT
+ * uniquement) de "charger toutes les donnees du dashboard" (DB roundtrip
+ * sur prospect/contact/company + count clicks). Sert a l'Espace Exposant
+ * V1.3 ou le layout a besoin d'un check rapide tandis que chaque page
+ * fait le fetch complet :
+ *
+ *   - `requireEspaceExposantSession(locale)` : valide cookie + JWT ;
+ *     redirect vers /espace-exposant?error=expired|invalid si KO.
+ *     Retourne `{ prospectId }`. ZERO query DB. Utilise par layout.tsx.
+ *
+ *   - `loadDashboardData(locale)` : appelle requireEspaceExposantSession
+ *     puis fetch prospect + contact + company + invite-clicks. Utilise
+ *     par chaque sous-page (stand, coordonnees, documents, etc.).
+ *
+ * P5.x.17-bis : on supprime le wrap `cache()` qui faisait double-emploi
+ * avec l'auth en layout. Une seule query par sous-page suffit (meme cout
+ * que pre-P5.x.17 quand le dashboard etait une page unique).
  */
 
-import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
@@ -15,6 +28,8 @@ import {
   EspaceExposantTokenError,
 } from './jwt';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+
+const LOG_PREFIX = '[espace-exposant/session]';
 
 export interface EspaceExposantDashboardData {
   prospect: {
@@ -72,35 +87,60 @@ export interface EspaceExposantDashboardData {
 }
 
 /**
- * Lit le cookie session, valide le JWT, fetch les donnees du prospect.
+ * Valide le cookie session Espace Exposant + JWT, SANS query DB.
  *
- * En cas d'echec (cookie absent / JWT invalide / prospect introuvable),
- * redirect vers la page de demande de magic-link avec error=expired ou
- * error=invalid. Aucune erreur ne remonte jamais au client.
+ * P5.x.17-bis — extrait de loadDashboardData pour permettre au layout
+ * du dashboard de proteger toutes les sous-routes sans relancer une
+ * query DB a chaque navigation. Les pages appellent loadDashboardData
+ * pour leur fetch complet (qui appelle ce helper en interne).
  *
- * P5.x.17 : wrap React.cache() pour dedup per-request. Le layout
- * sidebar + chaque sous-page d'Espace Exposant appellent tous cette
- * fonction ; sans cache, chaque navigation ferait 2-3 lookups DB
- * identiques sur le meme prospect/contact/company.
+ * En cas d'echec, redirect vers /espace-exposant?error=expired|invalid.
+ * Log toujours en console le resultat (raison du reject + match
+ * eventuel) pour debug Vercel.
  */
-export const loadDashboardData = cache(_loadDashboardData);
-
-async function _loadDashboardData(locale: string): Promise<EspaceExposantDashboardData> {
+export async function requireEspaceExposantSession(
+  locale: string,
+): Promise<{ prospectId: string }> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(ESPACE_EXPOSANT_SESSION_COOKIE);
   if (!sessionCookie?.value) {
+    console.warn(
+      '%s no-cookie locale=%s expected=%s — redirect to /espace-exposant?error=expired',
+      LOG_PREFIX,
+      locale,
+      ESPACE_EXPOSANT_SESSION_COOKIE,
+    );
     redirect(`/${locale}/espace-exposant?error=expired`);
   }
 
-  let prospectId: string;
   try {
     const claims = await verifySessionToken(sessionCookie.value);
-    prospectId = claims.prospectId;
+    return { prospectId: claims.prospectId };
   } catch (err) {
     const code =
       err instanceof EspaceExposantTokenError && err.code === 'expired' ? 'expired' : 'invalid';
+    console.warn(
+      '%s jwt-reject code=%s msg=%s — redirect',
+      LOG_PREFIX,
+      code,
+      err instanceof Error ? err.message : String(err),
+    );
     redirect(`/${locale}/espace-exposant?error=${code}`);
   }
+}
+
+/**
+ * Lit le cookie session, valide le JWT, fetch les donnees du prospect.
+ *
+ * Appelle requireEspaceExposantSession() en amont -> meme comportement
+ * de redirect en cas de cookie/JWT absent ou invalide.
+ *
+ * P5.x.17-bis : suppression du wrap React.cache(). Le layout fait
+ * l'auth seul (sans DB), chaque page fait son fetch. Une seule query
+ * DB par render de page, pas de cache cross-component a debugger.
+ */
+export async function loadDashboardData(locale: string): Promise<EspaceExposantDashboardData> {
+  const { prospectId } = await requireEspaceExposantSession(locale);
 
   const supabase = getSupabaseServiceClient();
   const { data: row, error } = await supabase
@@ -122,10 +162,7 @@ async function _loadDashboardData(locale: string): Promise<EspaceExposantDashboa
     .maybeSingle();
 
   if (error || !row) {
-    console.warn(
-      '[espace-exposant/session] prospect-not-found id=%s — clearing session',
-      prospectId,
-    );
+    console.warn('%s prospect-not-found id=%s — redirect invalid', LOG_PREFIX, prospectId);
     redirect(`/${locale}/espace-exposant?error=invalid`);
   }
 
@@ -149,7 +186,8 @@ async function _loadDashboardData(locale: string): Promise<EspaceExposantDashboa
       .eq('company_id', companyIdForCount);
     if (countErr) {
       console.warn(
-        '[espace-exposant/session] invite-clicks-count-failed company=%s msg=%s',
+        '%s invite-clicks-count-failed company=%s msg=%s',
+        LOG_PREFIX,
         companyIdForCount,
         countErr.message,
       );

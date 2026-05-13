@@ -79,15 +79,28 @@ export async function GET(req: NextRequest) {
 
   const dashboardUrl = new URL(`/${locale}/espace-exposant/dashboard`, req.url);
   const response = NextResponse.redirect(dashboardUrl);
+  const isSecure = process.env.NODE_ENV === 'production';
   response.cookies.set(ESPACE_EXPOSANT_SESSION_COOKIE, sessionToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     path: '/',
     maxAge: ESPACE_EXPOSANT_SESSION_MAX_AGE,
   });
 
-  console.log('%s success prospect=%s locale=%s', LOG_PREFIX, prospectId, locale);
+  // P5.x.17-bis : log diagnostics (Vercel logs) pour confirmer que le
+  // cookie est bien pose sur la response. Si Phil rapporte "no cookie
+  // dans DevTools", on peut comparer ce log a ce que le browser recoit.
+  console.log(
+    '%s success prospect=%s locale=%s cookieName=%s secure=%s maxAge=%d redirectTo=%s',
+    LOG_PREFIX,
+    prospectId,
+    locale,
+    ESPACE_EXPOSANT_SESSION_COOKIE,
+    isSecure,
+    ESPACE_EXPOSANT_SESSION_MAX_AGE,
+    dashboardUrl.toString(),
+  );
 
   return response;
 }

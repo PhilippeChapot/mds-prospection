@@ -1,14 +1,13 @@
 /**
- * P5.x.17 — helper unique pour fetch + enrichir les donnees consommees
- * par les 5 sous-pages de l'Espace Exposant V1.3 (stand, coordonnees,
- * documents, kit-communication, invitations).
+ * P5.x.17 / P5.x.17-bis — helper unique pour fetch + enrichir les donnees
+ * consommees par les 5 sous-pages de l'Espace Exposant V1.3.
  *
- * loadDashboardData est wrap dans React.cache() cote session.ts -> les
- * sous-pages qui s'appellent l'une apres l'autre (cas typique d'une
- * nav SPA) ne refont pas le fetch du prospect/contact/company.
+ * Le layout fait l'auth check (cookie + JWT) sans toucher la DB. Chaque
+ * page appelle loadSectionData ici, ce qui declenche une seule query
+ * Supabase (prospect + contact + company + count clicks) par render.
  *
- * Pareil pour getDocumentLinks / getCommunicationKit : ce sont des
- * helpers purs (pas de DB), donc juste un small wrap pour partage.
+ * getDocumentLinks / getCommunicationKit sont des helpers purs sans
+ * DB ; juste un wrap pour partage entre sections.
  */
 
 import { loadDashboardData } from '@/lib/espace-exposant/session';
