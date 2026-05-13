@@ -106,6 +106,120 @@ export async function updateExposantContactAction(input: {
 }
 
 // ===========================================================================
+// P5.x.16-bis — updateCompanySlugAction
+// ===========================================================================
+
+/**
+ * Forme acceptee : 3 a 32 chars, minuscules / chiffres / tirets simples,
+ * pas de tiret en debut/fin ni de double tiret. Le regex ci-dessous
+ * impose `<token>(-<token>)*` ou token = `[a-z0-9]+`, ce qui couvre
+ * l'ensemble des regles d'un coup.
+ */
+const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+const updateSlugSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, 'too_short')
+    .max(32, 'too_long')
+    .regex(SLUG_PATTERN, 'invalid_format'),
+});
+
+export type UpdateSlugResult =
+  | { ok: true; slug: string }
+  | {
+      ok: false;
+      error:
+        | 'unauthorized'
+        | 'invalid_session'
+        | 'forbidden'
+        | 'too_short'
+        | 'too_long'
+        | 'invalid_format'
+        | 'slug_taken'
+        | 'db_error';
+      message?: string;
+    };
+
+/**
+ * Permet a l'exposant de personnaliser le slug de sa company pour
+ * obtenir une URL d'invitation lisible (mediadays.solutions/i/<slug>).
+ *
+ * Securite :
+ *   - Auth via cookie session espace-exposant
+ *   - Lookup prospect.company_id depuis la DB (pas depuis l'input) pour
+ *     empecher la modif du slug d'une autre company
+ *   - Validation Zod + check unicite avant l'UPDATE pour distinguer une
+ *     vraie collision d'une erreur DB anonyme
+ */
+export async function updateCompanySlugAction(input: { slug: string }): Promise<UpdateSlugResult> {
+  const session = await resolveSessionProspect();
+  if (!session) return { ok: false, error: 'unauthorized' };
+
+  const parsed = updateSlugSchema.safeParse({ slug: input.slug });
+  if (!parsed.success) {
+    // On remonte le premier issue.message si reconnu, sinon invalid_format.
+    const firstIssue = parsed.error.issues[0];
+    const code = firstIssue?.message;
+    const knownCodes = new Set(['too_short', 'too_long', 'invalid_format']);
+    return {
+      ok: false,
+      error: (knownCodes.has(code ?? '') ? code : 'invalid_format') as
+        | 'too_short'
+        | 'too_long'
+        | 'invalid_format',
+    };
+  }
+
+  const supabase = getSupabaseServiceClient();
+
+  const { data: prospect } = await supabase
+    .from('prospects')
+    .select('company_id')
+    .eq('id', session.prospectId)
+    .maybeSingle();
+  if (!prospect?.company_id) return { ok: false, error: 'forbidden' };
+  const companyId = prospect.company_id;
+
+  // Check unicite : un autre exposant a deja pose ce slug ?
+  const newSlug = parsed.data.slug;
+  const { data: clash } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('slug', newSlug)
+    .neq('id', companyId)
+    .maybeSingle();
+  if (clash) {
+    return { ok: false, error: 'slug_taken' };
+  }
+
+  const { error: updateErr } = await supabase
+    .from('companies')
+    .update({ slug: newSlug })
+    .eq('id', companyId);
+
+  if (updateErr) {
+    console.error(
+      '[espace-exposant/updateSlug] db-error company=%s msg=%s',
+      companyId,
+      updateErr.message,
+    );
+    // Le code unique index pourrait encore lever une 23505 si race condition
+    // entre le check et l'UPDATE -> on traite comme slug_taken.
+    if (updateErr.code === '23505') {
+      return { ok: false, error: 'slug_taken' };
+    }
+    return { ok: false, error: 'db_error', message: updateErr.message };
+  }
+
+  revalidatePath('/fr/espace-exposant/dashboard');
+  revalidatePath('/en/espace-exposant/dashboard');
+  return { ok: true, slug: newSlug };
+}
+
+// ===========================================================================
 // P5.x.12 — uploadCompanyLogoAction
 // ===========================================================================
 

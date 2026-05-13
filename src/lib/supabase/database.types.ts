@@ -575,6 +575,7 @@ export type Database = {
           preferred_room: string | null;
           primary_domain: string | null;
           sellsy_id: string | null;
+          slug: string | null;
           updated_at: string;
           vat_country: string | null;
           vat_number: string | null;
@@ -608,6 +609,7 @@ export type Database = {
           preferred_room?: string | null;
           primary_domain?: string | null;
           sellsy_id?: string | null;
+          slug?: string | null;
           updated_at?: string;
           vat_country?: string | null;
           vat_number?: string | null;
@@ -641,6 +643,7 @@ export type Database = {
           preferred_room?: string | null;
           primary_domain?: string | null;
           sellsy_id?: string | null;
+          slug?: string | null;
           updated_at?: string;
           vat_country?: string | null;
           vat_number?: string | null;

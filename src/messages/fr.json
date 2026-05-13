@@ -373,7 +373,20 @@
         "linkCopied": "Copié ✓",
         "statsZero": "Aucun click pour le moment.",
         "statsOne": "{count} personne a cliqué sur votre invitation.",
-        "statsMany": "{count} personnes ont cliqué sur votre invitation."
+        "statsMany": "{count} personnes ont cliqué sur votre invitation.",
+        "slugEditor": {
+          "open": "Personnaliser cette URL",
+          "label": "Personnalisez votre lien d'invitation",
+          "hint": "3 à 32 caractères. Lettres minuscules, chiffres et tirets uniquement.",
+          "save": "Enregistrer",
+          "saving": "Enregistrement…",
+          "cancel": "Annuler",
+          "errorTooShort": "Le lien doit comporter au moins 3 caractères.",
+          "errorTooLong": "Le lien ne peut pas dépasser 32 caractères.",
+          "errorFormat": "Format invalide. Utilisez uniquement lettres minuscules, chiffres et tirets simples (pas en début ni en fin).",
+          "errorTaken": "Ce lien est déjà utilisé par un autre exposant. Essayez une autre variante.",
+          "errorGeneric": "Échec de l'enregistrement. Réessayez."
+        }
       },
       "commKit": {
         "section": "🎨 Kit communication",

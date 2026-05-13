@@ -373,7 +373,20 @@
         "linkCopied": "Copied ✓",
         "statsZero": "No clicks yet.",
         "statsOne": "{count} person clicked your invitation.",
-        "statsMany": "{count} people clicked your invitation."
+        "statsMany": "{count} people clicked your invitation.",
+        "slugEditor": {
+          "open": "Customise this URL",
+          "label": "Customise your invitation link",
+          "hint": "3 to 32 characters. Lowercase letters, digits and single dashes only.",
+          "save": "Save",
+          "saving": "Saving…",
+          "cancel": "Cancel",
+          "errorTooShort": "Link must be at least 3 characters.",
+          "errorTooLong": "Link cannot exceed 32 characters.",
+          "errorFormat": "Invalid format. Use only lowercase letters, digits and single dashes (no leading or trailing dash).",
+          "errorTaken": "This link is already used by another exhibitor. Try a different variant.",
+          "errorGeneric": "Save failed. Please try again."
+        }
       },
       "commKit": {
         "section": "🎨 Communication kit",

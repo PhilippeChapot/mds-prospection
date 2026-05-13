@@ -1,25 +1,22 @@
 /**
- * GET /i/[companyId] — P5.x.16.
+ * GET /i/[companyId] — P5.x.16 + P5.x.16-bis (slug court + UUID retrocompat).
  *
  * Route redirect courte pour les liens d'invitation visiteurs envoyes
- * par les exposants. Pattern :
- *   1. Verifie que la company existe (sinon redirect gracieux quand
- *      meme vers mediadays.net pour ne pas casser l'experience invite).
- *   2. Log un click dans visitor_invitations_clicks (best-effort, on
- *      n'attend pas l'insertion pour rediriger -- l'invite ne doit
- *      pas attendre une ronde DB).
- *   3. Redirect 302 vers mediadays.net.
+ * par les exposants. Le param URL est volontairement nomme `companyId`
+ * dans le filesystem pour ne pas casser le routing, mais represente
+ * en realite soit :
+ *   - le slug court nominatif de la company (P5.x.16-bis, defaut)
+ *   - le UUID complet (retrocompat liens deja envoyes pendant P5.x.16)
  *
- * Format URL volontairement court ("mediadays.solutions/i/<uuid>") pour
- * tenir dans un email/SMS/WhatsApp sans wrapping moche.
- *
- * Pas localise : la route est en racine `src/app/i/[companyId]/` (pas
- * sous `[locale]/`) -- l'invitation est en FR uniquement et l'URL doit
- * rester courte. Le proxy next-intl exclut ce path via le matcher.
+ * Pattern :
+ *   1. Lookup par slug (defaut)
+ *   2. Si rien et que le segment ressemble a un UUID -> lookup par id
+ *   3. Si toujours rien -> redirect gracieux vers mediadays.net (l'invite
+ *      ne doit jamais voir une 404)
+ *   4. Log fire-and-forget dans visitor_invitations_clicks
+ *   5. Redirect 302 vers mediadays.net
  *
  * RGPD : on hash l'IP en SHA256 (ip_hash) au lieu de la stocker brute.
- * Le user-agent et le referrer restent en clair (necessaires pour
- * tagger des sources de trafic).
  *
  * Logs : prefix [i/redirect].
  */
@@ -30,6 +27,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 
 const LOG_PREFIX = '[i/redirect]';
 const REDIRECT_TARGET = 'https://mediadays.net';
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -39,35 +37,50 @@ interface RouteParams {
 }
 
 export async function GET(req: NextRequest, { params }: RouteParams): Promise<NextResponse> {
-  const { companyId } = await params;
+  const { companyId: identifier } = await params;
   const supabase = getSupabaseServiceClient();
 
-  // Validation existence company. On garde un redirect gracieux meme
-  // en cas d'echec : l'invite ne doit jamais voir une 404.
-  const { data: company, error } = await supabase
-    .from('companies')
-    .select('id')
-    .eq('id', companyId)
-    .maybeSingle();
+  // 1. Lookup par slug (cas nominal P5.x.16-bis).
+  let resolvedCompanyId: string | null = null;
+  {
+    const { data: bySlug } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('slug', identifier)
+      .maybeSingle();
+    if (bySlug?.id) {
+      resolvedCompanyId = bySlug.id;
+    }
+  }
 
-  if (error || !company) {
-    console.warn('%s unknown-company-redirect-gracious id=%s', LOG_PREFIX, companyId);
+  // 2. Fallback UUID (retrocompat).
+  if (!resolvedCompanyId && UUID_RE.test(identifier)) {
+    const { data: byId } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('id', identifier)
+      .maybeSingle();
+    if (byId?.id) {
+      resolvedCompanyId = byId.id;
+    }
+  }
+
+  // 3. Pas trouve -> redirect gracieux.
+  if (!resolvedCompanyId) {
+    console.warn('%s unknown-identifier-redirect-gracious id=%s', LOG_PREFIX, identifier);
     return NextResponse.redirect(REDIRECT_TARGET, { status: 302 });
   }
 
-  // Hash IP en SHA256 (analytics sans PII). En cas d'IP indisponible
-  // (header absent), on tape sur "0.0.0.0" -> hash deterministe partage.
+  // 4. Log click best-effort.
   const ipRaw = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '0.0.0.0';
   const ipHash = createHash('sha256').update(ipRaw).digest('hex');
   const userAgent = req.headers.get('user-agent');
   const referrer = req.headers.get('referer');
 
-  // Fire-and-forget : on n'attend pas l'insert pour rediriger l'invite.
-  // L'erreur est logguee mais non bloquante.
   void supabase
     .from('visitor_invitations_clicks')
     .insert({
-      company_id: companyId,
+      company_id: resolvedCompanyId,
       ip_hash: ipHash,
       user_agent: userAgent,
       referrer: referrer,
@@ -77,12 +90,12 @@ export async function GET(req: NextRequest, { params }: RouteParams): Promise<Ne
         console.error(
           '%s insert-failed company=%s msg=%s',
           LOG_PREFIX,
-          companyId,
+          resolvedCompanyId,
           insertErr.message,
         );
       }
     });
 
-  console.log('%s redirect company=%s', LOG_PREFIX, companyId);
+  console.log('%s redirect identifier=%s -> company=%s', LOG_PREFIX, identifier, resolvedCompanyId);
   return NextResponse.redirect(REDIRECT_TARGET, { status: 302 });
 }

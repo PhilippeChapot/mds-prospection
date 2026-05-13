@@ -53,6 +53,8 @@ export interface EspaceExposantDashboardData {
     category: 'prs_exhibitor' | 'standard' | 'non_eligible' | null;
     /** P5.x.12 — logo upload exposant ou sync Connectonair. */
     logoUrl: string | null;
+    /** P5.x.16-bis — slug court nominatif pour URL d'invitation. */
+    slug: string | null;
   };
   /**
    * Indique si le payment-link acompte est expire au moment du fetch.
@@ -104,7 +106,7 @@ export async function loadDashboardData(locale: string): Promise<EspaceExposantD
       acompte_amount_eur, acompte_paid_at,
       acompte_payment_link_url, acompte_payment_link_expires_at,
       booth_assignment, booth_assigned_at,
-      company:companies!inner(id, name, category, logo_url),
+      company:companies!inner(id, name, slug, category, logo_url),
       contact:contacts!primary_contact_id(first_name, last_name, language, email, phone, role)
       `,
     )
@@ -184,6 +186,7 @@ export async function loadDashboardData(locale: string): Promise<EspaceExposantD
         (company as { category?: 'prs_exhibitor' | 'standard' | 'non_eligible' | null } | null)
           ?.category ?? null,
       logoUrl: (company as { logo_url?: string | null } | null)?.logo_url ?? null,
+      slug: (company as { slug?: string | null } | null)?.slug ?? null,
     },
     paymentLinkExpired,
     inviteClicks,

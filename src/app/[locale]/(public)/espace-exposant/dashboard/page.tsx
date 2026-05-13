@@ -9,6 +9,7 @@ import { ContactInfoForm } from './ContactInfoForm';
 import { SignatureCopyButton } from './SignatureCopyButton';
 import { LogoUploader } from './LogoUploader';
 import { InvitationLinkCopyButton } from './InvitationLinkCopyButton';
+import { SlugEditor } from './SlugEditor';
 import type { Locale } from 'next-intl';
 
 export const dynamic = 'force-dynamic';
@@ -308,13 +309,14 @@ export default async function EspaceExposantDashboardPage({ params }: PageProps)
         </div>
       </Card>
 
-      {/* P5.x.16 — Invitation client 1200x800 + lien tracking /i/[id] */}
+      {/* P5.x.16 + P5.x.16-bis — Invitation client 1200x800 + slug + tracking /i/[slug] */}
       {(() => {
-        // URL invitation a partager : domaine "propre" mediadays.solutions
-        // (cf brief P5.x.16) -- on reconstruit le lien cote serveur pour
-        // qu'il soit identique a celui affiche dans le PNG.
+        // URL invitation : prefere le slug court nominatif (P5.x.16-bis),
+        // fallback UUID si la migration 0038 n'est pas encore appliquee
+        // ou si le slug est null pour une raison X.
         const appOrigin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mediadays.solutions';
-        const inviteUrl = `${appOrigin}/i/${data.company.id}`;
+        const identifier = data.company.slug ?? data.company.id;
+        const inviteUrl = `${appOrigin}/i/${identifier}`;
         const clicks = data.inviteClicks;
         const statsKey =
           clicks === 0
@@ -342,13 +344,16 @@ export default async function EspaceExposantDashboardPage({ params }: PageProps)
               ) : null}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label className="text-md-text-muted text-xs font-medium">
                 {t('invitation.linkLabel')}
               </label>
               <div className="border-md-border bg-md-bg-soft flex flex-wrap items-center gap-2 rounded-md border p-2">
                 <code className="text-md-text grow font-mono text-xs break-all">{inviteUrl}</code>
                 <InvitationLinkCopyButton text={inviteUrl} />
+              </div>
+              <div className="pt-1">
+                <SlugEditor initialSlug={data.company.slug} appOrigin={appOrigin} />
               </div>
             </div>
 

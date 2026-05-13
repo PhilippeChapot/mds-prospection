@@ -53,7 +53,7 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
   const supabase = getSupabaseServiceClient();
   const { data: company, error } = await supabase
     .from('companies')
-    .select('id, name, category, logo_url')
+    .select('id, name, slug, category, logo_url')
     .eq('id', companyId)
     .maybeSingle();
 
@@ -72,7 +72,11 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
   // gagner de la place, l'exposant complete son email avec le lien
   // complet a cote du bouton). On garde le domaine pour qu'un destinataire
   // qui prend juste le PNG sache ou aller.
-  const inviteUrl = `mediadays.solutions/i/${company.id}`;
+  //
+  // P5.x.16-bis : on prefere le slug court nominatif. Fallback UUID si
+  // la company n'a pas encore de slug (cas transitoire avant que la
+  // migration 0038 ne soit appliquee, ou inserts futurs sans slug).
+  const inviteUrl = `mediadays.solutions/i/${company.slug ?? company.id}`;
 
   console.log(
     '%s render company=%s name=%s isPrs=%s hasLogoUrl=%s embedded=%s',
@@ -147,28 +151,42 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
           gap: 20,
         }}
       >
+        {/* P5.x.16-bis : container flex column avec gap explicite -- Satori
+            ne respecte pas toujours le line-height entre 2 <div> consecutifs,
+            d'ou le chevauchement visuel "<Societe>" / "vous invite aux"
+            observe sur le rendu P5.x.16. lineHeight 1.2 ajoute de l'air. */}
         <div
           style={{
             display: 'flex',
-            fontSize: 48,
-            color: BRAND_COLORS.WHITE,
-            fontWeight: 700,
-            textAlign: 'center',
-            lineHeight: 1.1,
-            maxWidth: 1100,
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 12,
           }}
         >
-          {company.name}
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            fontSize: 32,
-            color: BRAND_COLORS.WHITE_90,
-            textAlign: 'center',
-          }}
-        >
-          vous invite aux
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 48,
+              color: BRAND_COLORS.WHITE,
+              fontWeight: 700,
+              textAlign: 'center',
+              lineHeight: 1.2,
+              maxWidth: 1100,
+            }}
+          >
+            {company.name}
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 32,
+              color: BRAND_COLORS.WHITE_90,
+              textAlign: 'center',
+            }}
+          >
+            vous invite aux
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
