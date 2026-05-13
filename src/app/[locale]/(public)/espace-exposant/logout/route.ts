@@ -1,11 +1,23 @@
 /**
- * GET/POST /[locale]/espace-exposant/logout — P5.x.2.
+ * POST /[locale]/espace-exposant/logout — P5.x.2 / P5.x.17-ter.
  *
  * Efface le cookie de session Espace Exposant et redirige vers la page
  * de demande de magic-link.
  *
- * Accepte GET (lien <a href> dans le dashboard) et POST (formulaire si
- * besoin) pour rester souple.
+ * P5.x.17-ter fix critique : on supprime la variante GET. Raison =
+ * Next.js prefetch automatique des `<Link>` rendait la GET du logout
+ * lorsque le sidebar etait rendu, ce qui SUPPRIMAIT le cookie de
+ * session a peine pose par le magic-link login. Diagnostic confirme
+ * par les logs Vercel :
+ *
+ *   14:26:18 [espace-exposant/login] success cookie pose
+ *   14:26:19 GET /fr/espace-exposant/logout  (prefetch <Link>)
+ *   14:26:24 GET /dashboard/coordonnees  no-cookie -> redirect login
+ *
+ * Doctrine generale : aucune route destructive (logout, delete) en GET.
+ * Toute mutation passe par POST -> impossible a prefetch par <Link>.
+ *
+ * Le client utilise <LogoutButton /> (form POST + bouton classique).
  */
 
 import { NextResponse } from 'next/server';
@@ -15,19 +27,16 @@ import { ESPACE_EXPOSANT_SESSION_COOKIE } from '@/lib/espace-exposant/jwt';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-async function handle(request: Request, params: { locale: string }) {
+export async function POST(request: Request, { params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const cookieStore = await cookies();
   cookieStore.delete(ESPACE_EXPOSANT_SESSION_COOKIE);
 
   const url = new URL(request.url);
-  const redirectUrl = new URL(`/${params.locale}/espace-exposant`, url.origin);
-  return NextResponse.redirect(redirectUrl);
-}
-
-export async function GET(request: Request, { params }: { params: Promise<{ locale: string }> }) {
-  return handle(request, await params);
-}
-
-export async function POST(request: Request, { params }: { params: Promise<{ locale: string }> }) {
-  return handle(request, await params);
+  const redirectUrl = new URL(`/${locale}/espace-exposant`, url.origin);
+  console.log('[espace-exposant/logout] success locale=%s', locale);
+  // 303 See Other : le bon code pour rediriger apres un POST vers une
+  // resource GET (la page form). Avec 307 on conserverait la methode,
+  // ici on veut le GET de la page suivante.
+  return NextResponse.redirect(redirectUrl, { status: 303 });
 }

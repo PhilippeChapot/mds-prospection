@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EXPOSANT_NAV_ITEMS } from './nav-items';
+import { LogoutButton } from './LogoutButton';
 
 /**
  * P5.x.17 — Sidebar de l'Espace Exposant V1.3.
@@ -78,14 +78,10 @@ export function ExposantSidebar({ onNavigate }: Props) {
       </nav>
 
       <div className="border-md-border border-t pt-3">
-        <Link
-          href={`/${locale}/espace-exposant/logout`}
-          onClick={onNavigate}
-          className="text-md-text-muted hover:text-md-text hover:bg-muted flex items-center gap-2 rounded-md px-2 py-2 text-sm transition"
-        >
-          <LogOut className="size-4" aria-hidden />
-          <span>{t('logout')}</span>
-        </Link>
+        {/* P5.x.17-ter : LogoutButton (form POST) au lieu d'un <Link>
+            -- Next.js prefetchait l'ancienne route GET /logout et tuait
+            la session avant meme un clic utilisateur. */}
+        <LogoutButton onLogout={onNavigate} label={t('logout')} />
       </div>
     </div>
   );
