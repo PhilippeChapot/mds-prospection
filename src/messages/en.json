@@ -240,8 +240,19 @@
       "invalid": "Invalid access link. Request a new link below.",
       "generic": "Sign-in failed. Request a new link below."
     },
+    "nav": {
+      "sectionTitle": "Exhibitor portal",
+      "stand": "My booth",
+      "coordonnees": "My contact info",
+      "documents": "My documents",
+      "kitCommunication": "Communication kit",
+      "invitations": "My invitations",
+      "logout": "Sign out",
+      "openMenu": "Open menu"
+    },
     "dashboard": {
       "greeting": "Hi {firstName}",
+      "shortGreeting": "Exhibitor portal",
       "welcome": "Welcome to your MediaDays Solutions 2026 portal.",
       "companyLabel": "Company",
       "logout": "Sign out",

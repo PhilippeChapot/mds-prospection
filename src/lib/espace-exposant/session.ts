@@ -6,6 +6,7 @@
  * on filtre sur prospect.id du cookie verifie, donc pas d'enumeration).
  */
 
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
@@ -76,8 +77,15 @@ export interface EspaceExposantDashboardData {
  * En cas d'echec (cookie absent / JWT invalide / prospect introuvable),
  * redirect vers la page de demande de magic-link avec error=expired ou
  * error=invalid. Aucune erreur ne remonte jamais au client.
+ *
+ * P5.x.17 : wrap React.cache() pour dedup per-request. Le layout
+ * sidebar + chaque sous-page d'Espace Exposant appellent tous cette
+ * fonction ; sans cache, chaque navigation ferait 2-3 lookups DB
+ * identiques sur le meme prospect/contact/company.
  */
-export async function loadDashboardData(locale: string): Promise<EspaceExposantDashboardData> {
+export const loadDashboardData = cache(_loadDashboardData);
+
+async function _loadDashboardData(locale: string): Promise<EspaceExposantDashboardData> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(ESPACE_EXPOSANT_SESSION_COOKIE);
   if (!sessionCookie?.value) {

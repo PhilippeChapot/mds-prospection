@@ -240,8 +240,19 @@
       "invalid": "Lien d'accès invalide. Demandez un nouveau lien ci-dessous.",
       "generic": "Connexion impossible. Demandez un nouveau lien ci-dessous."
     },
+    "nav": {
+      "sectionTitle": "Espace Exposant",
+      "stand": "Mon stand",
+      "coordonnees": "Mes coordonnées",
+      "documents": "Mes documents",
+      "kitCommunication": "Kit communication",
+      "invitations": "Mes invitations",
+      "logout": "Se déconnecter",
+      "openMenu": "Ouvrir le menu"
+    },
     "dashboard": {
       "greeting": "Bonjour {firstName}",
+      "shortGreeting": "Espace Exposant",
       "welcome": "Bienvenue sur votre espace MediaDays Solutions 2026.",
       "companyLabel": "Société",
       "logout": "Se déconnecter",
