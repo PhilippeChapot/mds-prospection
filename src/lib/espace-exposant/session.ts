@@ -60,6 +60,12 @@ export interface EspaceExposantDashboardData {
    * server selon la regle ESLint react-hooks/purity).
    */
   paymentLinkExpired: boolean;
+  /**
+   * P5.x.16 — nombre de clicks sur le lien d'invitation visiteur
+   * (/i/<company_id>) genere pour cet exposant. Proxy d'engagement
+   * reseau, affiche dans la section "Invitez vos clients".
+   */
+  inviteClicks: number;
 }
 
 /**
@@ -120,6 +126,28 @@ export async function loadDashboardData(locale: string): Promise<EspaceExposantD
     ? new Date(row.acompte_payment_link_expires_at).getTime() < Date.now()
     : false;
 
+  // P5.x.16 — compteur de clicks sur le lien d'invitation visiteur.
+  // Best-effort : si la table n'existe pas encore (migration 0037 pas
+  // appliquee) ou erreur reseau, on tombe sur 0 plutot que de faire
+  // crasher le dashboard.
+  const companyIdForCount = (company as { id?: string } | null)?.id;
+  let inviteClicks = 0;
+  if (companyIdForCount) {
+    const { count, error: countErr } = await supabase
+      .from('visitor_invitations_clicks')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', companyIdForCount);
+    if (countErr) {
+      console.warn(
+        '[espace-exposant/session] invite-clicks-count-failed company=%s msg=%s',
+        companyIdForCount,
+        countErr.message,
+      );
+    } else {
+      inviteClicks = count ?? 0;
+    }
+  }
+
   return {
     prospect: {
       id: row.id,
@@ -158,6 +186,7 @@ export async function loadDashboardData(locale: string): Promise<EspaceExposantD
       logoUrl: (company as { logo_url?: string | null } | null)?.logo_url ?? null,
     },
     paymentLinkExpired,
+    inviteClicks,
   };
 }
 

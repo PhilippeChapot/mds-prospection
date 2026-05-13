@@ -363,6 +363,18 @@
         "download": "Download my Instagram story",
         "tipNoLogo": "Tip: upload your logo for a branded story (otherwise your company name will be displayed)."
       },
+      "invitation": {
+        "section": "📨 Invite your clients to MediaDays Solutions 2026",
+        "intro": "Download your personalised invitation card (1200×800) to share by email, WhatsApp or social media. Every guest who clicks your link is tracked in your dashboard.",
+        "download": "Download my invitation",
+        "tipNoLogo": "Tip: upload your logo for a branded invitation (otherwise your company name will be displayed).",
+        "linkLabel": "Link to paste in your email:",
+        "linkCopy": "Copy link",
+        "linkCopied": "Copied ✓",
+        "statsZero": "No clicks yet.",
+        "statsOne": "{count} person clicked your invitation.",
+        "statsMany": "{count} people clicked your invitation."
+      },
       "commKit": {
         "section": "🎨 Communication kit",
         "intro": "Download MediaDays Solutions / Paris Radio Show logos and use the official email signature to announce your participation.",

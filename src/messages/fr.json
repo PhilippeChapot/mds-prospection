@@ -363,6 +363,18 @@
         "download": "Télécharger ma story Instagram",
         "tipNoLogo": "Astuce : ajoutez votre logo pour une story à votre marque (sinon votre nom de société sera affiché)."
       },
+      "invitation": {
+        "section": "📨 Invitez vos clients aux MediaDays Solutions 2026",
+        "intro": "Téléchargez votre carton d'invitation personnalisé (1200×800) à partager par email, WhatsApp ou réseaux sociaux. Chaque invité qui clique sur votre lien est tracé dans votre tableau de bord.",
+        "download": "Télécharger mon invitation",
+        "tipNoLogo": "Astuce : ajoutez votre logo pour une invitation à votre marque (sinon votre nom de société sera affiché).",
+        "linkLabel": "Lien à coller dans votre email :",
+        "linkCopy": "Copier le lien",
+        "linkCopied": "Copié ✓",
+        "statsZero": "Aucun click pour le moment.",
+        "statsOne": "{count} personne a cliqué sur votre invitation.",
+        "statsMany": "{count} personnes ont cliqué sur votre invitation."
+      },
       "commKit": {
         "section": "🎨 Kit communication",
         "intro": "Téléchargez les logos MediaDays Solutions / Paris Radio Show et utilisez la signature email officielle pour annoncer votre participation.",

@@ -72,6 +72,10 @@ export const config = {
    *  - `/merci-oui` + `/merci-non` (pages RSVP Brevo standalone, pas
    *    localisees, sinon next-intl tente une redirection vers /fr/merci-oui
    *    qui n'existe pas et plante en server error).
+   *  - `/i/<id>` (P5.x.16 — route redirect tracking pour invitations
+   *    visiteurs envoyees par les exposants. URL courte sans locale
+   *    pour faire propre dans les emails. Sert le route handler
+   *    src/app/i/[companyId]/route.ts directement.)
    *
    * Matchers additionnels pour SCANNER_PATTERNS :
    *  - `.php` URLs (wp-login.php, xmlrpc.php, setup-config.php) que le
@@ -80,7 +84,7 @@ export const config = {
    *    deja capturees par le matcher principal.
    */
   matcher: [
-    '/((?!api|_next|_vercel|auth|brand|video|sentry-test|favicon\\.ico|robots\\.txt|sitemap\\.xml|merci-oui|merci-non|.*\\..*).*)',
+    '/((?!api|_next|_vercel|auth|brand|video|sentry-test|favicon\\.ico|robots\\.txt|sitemap\\.xml|merci-oui|merci-non|i/|.*\\..*).*)',
     '/wp-login.php',
     '/wp-admin/install.php',
     '/xmlrpc.php',

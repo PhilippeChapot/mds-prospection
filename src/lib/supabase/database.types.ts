@@ -1873,6 +1873,41 @@ export type Database = {
         };
         Relationships: [];
       };
+      visitor_invitations_clicks: {
+        Row: {
+          clicked_at: string;
+          company_id: string;
+          id: string;
+          ip_hash: string | null;
+          referrer: string | null;
+          user_agent: string | null;
+        };
+        Insert: {
+          clicked_at?: string;
+          company_id: string;
+          id?: string;
+          ip_hash?: string | null;
+          referrer?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          clicked_at?: string;
+          company_id?: string;
+          id?: string;
+          ip_hash?: string | null;
+          referrer?: string | null;
+          user_agent?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'visitor_invitations_clicks_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       vat_verifications: {
         Row: {
           country: string;
