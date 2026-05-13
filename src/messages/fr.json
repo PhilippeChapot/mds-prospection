@@ -220,6 +220,11 @@
   "espaceExposant": {
     "title": "Espace Exposant",
     "subtitle": "Votre portail MediaDays Solutions 2026",
+    "noLogoBanner": {
+      "title": "Pour des visuels plus impactants, ajoutez d'abord le logo de votre société.",
+      "description": "Vous pouvez quand même télécharger ces visuels (le nom de votre société sera affiché à la place du logo). Si vous ajoutez votre logo plus tard, les visuels s'adapteront automatiquement.",
+      "cta": "Ajouter mon logo"
+    },
     "requestLink": {
       "heading": "Recevez votre lien d'accès",
       "subheading": "Saisissez l'adresse email avec laquelle vous vous êtes inscrit. Vous recevrez un lien d'accès valable 15 minutes.",

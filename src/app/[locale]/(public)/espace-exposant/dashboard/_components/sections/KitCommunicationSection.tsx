@@ -19,15 +19,32 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LogoUploader } from '../../LogoUploader';
 import { SignatureCopyButton } from '../../SignatureCopyButton';
+import { NoLogoBanner } from '../NoLogoBanner';
 import type { SectionProps } from './types';
 
 export async function KitCommunicationSection({ data, locale }: SectionProps) {
   const t = await getTranslations({ locale, namespace: 'espaceExposant.dashboard' });
+  const tBanner = await getTranslations({ locale, namespace: 'espaceExposant.noLogoBanner' });
+  const hasLogo = !!data.company.logoUrl;
 
   return (
     <div className="space-y-5">
-      {/* Logo upload */}
-      <Card className="border-md-border space-y-4 p-5 shadow-sm sm:p-6">
+      {/* P5.x.18 — banner conseil si pas de logo. Pointe vers l'ancre
+          du LogoUploader plus bas dans la meme section. */}
+      {!hasLogo && (
+        <NoLogoBanner
+          title={tBanner('title')}
+          description={tBanner('description')}
+          ctaLabel={tBanner('cta')}
+          uploadHref={`/${locale}/espace-exposant/dashboard/kit-communication#logo-uploader`}
+        />
+      )}
+
+      {/* Logo upload (ancre cible du banner et du lien depuis Mes invitations) */}
+      <Card
+        id="logo-uploader"
+        className="border-md-border scroll-mt-24 space-y-4 p-5 shadow-sm sm:p-6"
+      >
         <div>
           <h2 className="text-md-text text-base font-semibold">{t('logoUploader.section')}</h2>
           <p className="text-md-text-muted mt-1 text-sm">{t('logoUploader.intro')}</p>

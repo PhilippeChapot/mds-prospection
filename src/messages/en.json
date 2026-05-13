@@ -220,6 +220,11 @@
   "espaceExposant": {
     "title": "Exhibitor Portal",
     "subtitle": "Your MediaDays Solutions 2026 portal",
+    "noLogoBanner": {
+      "title": "For more impactful visuals, upload your company logo first.",
+      "description": "You can still download these visuals (your company name will appear in place of the logo). If you upload your logo later, all visuals will update automatically.",
+      "cta": "Add my logo"
+    },
     "requestLink": {
       "heading": "Get your access link",
       "subheading": "Enter the email address you used to register. You will receive an access link valid for 15 minutes.",
