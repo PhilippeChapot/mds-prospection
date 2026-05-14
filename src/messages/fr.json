@@ -379,6 +379,24 @@
         "download": "Télécharger ma story Instagram",
         "tipNoLogo": "Astuce : ajoutez votre logo pour une story à votre marque (sinon votre nom de société sera affiché)."
       },
+      "emailSignature": {
+        "section": "✉️ Bandeau signature email",
+        "intro": "Bandeau compact (600×120) à intégrer dans votre signature email Gmail / Outlook / Apple Mail pour annoncer votre participation à chaque envoi.",
+        "download": "Télécharger ma signature email",
+        "tipNoLogo": "Astuce : ajoutez votre logo pour une signature à votre marque (sinon votre nom de société sera affiché)."
+      },
+      "zoomBackground": {
+        "section": "💻 Fond visio Zoom / Teams",
+        "intro": "Fond visio (1920×1080) à importer dans Zoom ou Teams comme arrière-plan virtuel. Bandeau bas visible derrière vous pendant tous vos calls.",
+        "download": "Télécharger mon fond Zoom/Teams",
+        "tipNoLogo": "Astuce : ajoutez votre logo pour un fond à votre marque (sinon votre nom de société sera affiché)."
+      },
+      "wallDisplay": {
+        "section": "🖥️ Visuel écran stand",
+        "intro": "Visuel statique (1920×1080) lisible de loin, à afficher sur l'écran de votre stand pendant les MediaDays Solutions 2026.",
+        "download": "Télécharger mon visuel écran stand",
+        "tipNoLogo": "Astuce : ajoutez votre logo pour un visuel à votre marque (sinon votre nom de société sera affiché)."
+      },
       "invitation": {
         "section": "📨 Invitez vos clients aux MediaDays Solutions 2026",
         "intro": "Téléchargez votre carton d'invitation personnalisé (1200×800) à partager par email, WhatsApp ou réseaux sociaux. Chaque invité qui clique sur votre lien est tracé dans votre tableau de bord.",

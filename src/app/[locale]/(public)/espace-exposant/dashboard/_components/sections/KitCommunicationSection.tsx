@@ -6,6 +6,9 @@
  *   - Badge social 1080x1080 (P5.x.12)
  *   - Banniere LinkedIn 1584x396 (P5.x.14)
  *   - Story Instagram 1080x1920 (P5.x.15)
+ *   - Bandeau signature email 600x120 (P5.x.19)
+ *   - Fond visio Zoom/Teams 1920x1080 (P5.x.19)
+ *   - Wall display ecran stand 1920x1080 (P5.x.19)
  *   - Logos events telechargeables (P5.x.10 commKit)
  *   - Signature email avec preview + copy (P5.x.10)
  *
@@ -100,6 +103,58 @@ export async function KitCommunicationSection({ data, locale }: SectionProps) {
             <span className="text-md-text-muted text-xs italic">
               {t('storyInstagram.tipNoLogo')}
             </span>
+          ) : null}
+        </div>
+      </Card>
+
+      {/* Bandeau signature email (P5.x.19) */}
+      <Card className="border-md-border space-y-3 p-5 shadow-sm sm:p-6">
+        <h2 className="text-md-text text-base font-semibold">{t('emailSignature.section')}</h2>
+        <p className="text-md-text-muted text-sm">{t('emailSignature.intro')}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild className="bg-md-magenta hover:bg-md-magenta-soft">
+            <a href={`/api/badge/${data.company.id}/email-signature.png`} download>
+              {t('emailSignature.download')} ↓
+            </a>
+          </Button>
+          {!data.company.logoUrl ? (
+            <span className="text-md-text-muted text-xs italic">
+              {t('emailSignature.tipNoLogo')}
+            </span>
+          ) : null}
+        </div>
+      </Card>
+
+      {/* Fond visio Zoom/Teams (P5.x.19) */}
+      <Card className="border-md-border space-y-3 p-5 shadow-sm sm:p-6">
+        <h2 className="text-md-text text-base font-semibold">{t('zoomBackground.section')}</h2>
+        <p className="text-md-text-muted text-sm">{t('zoomBackground.intro')}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild className="bg-md-magenta hover:bg-md-magenta-soft">
+            <a href={`/api/badge/${data.company.id}/zoom-background.png`} download>
+              {t('zoomBackground.download')} ↓
+            </a>
+          </Button>
+          {!data.company.logoUrl ? (
+            <span className="text-md-text-muted text-xs italic">
+              {t('zoomBackground.tipNoLogo')}
+            </span>
+          ) : null}
+        </div>
+      </Card>
+
+      {/* Wall display ecran stand (P5.x.19) */}
+      <Card className="border-md-border space-y-3 p-5 shadow-sm sm:p-6">
+        <h2 className="text-md-text text-base font-semibold">{t('wallDisplay.section')}</h2>
+        <p className="text-md-text-muted text-sm">{t('wallDisplay.intro')}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild className="bg-md-magenta hover:bg-md-magenta-soft">
+            <a href={`/api/badge/${data.company.id}/wall-display.png`} download>
+              {t('wallDisplay.download')} ↓
+            </a>
+          </Button>
+          {!data.company.logoUrl ? (
+            <span className="text-md-text-muted text-xs italic">{t('wallDisplay.tipNoLogo')}</span>
           ) : null}
         </div>
       </Card>

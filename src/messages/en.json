@@ -379,6 +379,24 @@
         "download": "Download my Instagram story",
         "tipNoLogo": "Tip: upload your logo for a branded story (otherwise your company name will be displayed)."
       },
+      "emailSignature": {
+        "section": "✉️ Email signature banner",
+        "intro": "Compact banner (600×120) to embed in your Gmail / Outlook / Apple Mail email signature, announcing your participation on every email you send.",
+        "download": "Download my email signature",
+        "tipNoLogo": "Tip: upload your logo for a branded signature (otherwise your company name will be displayed)."
+      },
+      "zoomBackground": {
+        "section": "💻 Zoom / Teams virtual background",
+        "intro": "Virtual background (1920×1080) to upload in Zoom or Teams. The bottom banner stays visible behind you during all your calls.",
+        "download": "Download my Zoom/Teams background",
+        "tipNoLogo": "Tip: upload your logo for a branded background (otherwise your company name will be displayed)."
+      },
+      "wallDisplay": {
+        "section": "🖥️ Booth screen display",
+        "intro": "Static visual (1920×1080), readable from a distance, to display on your booth screen during MediaDays Solutions 2026.",
+        "download": "Download my booth screen visual",
+        "tipNoLogo": "Tip: upload your logo for a branded visual (otherwise your company name will be displayed)."
+      },
       "invitation": {
         "section": "📨 Invite your clients to MediaDays Solutions 2026",
         "intro": "Download your personalised invitation card (1200×800) to share by email, WhatsApp or social media. Every guest who clicks your link is tracked in your dashboard.",
