@@ -31,7 +31,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     .from('companies')
     .select(
       `
-      id, name, primary_domain, country, category, was_prs_2026_exhibitor, notes,
+      id, name, primary_domain, alternate_domains, country, category, was_prs_2026_exhibitor, notes,
       created_at, updated_at,
       pole:poles(code, name_fr)
     `,
@@ -126,6 +126,22 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
               </span>
             )}
           </div>
+          {company.alternate_domains && company.alternate_domains.length > 0 ? (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+              <span className="text-md-text-muted">Aussi :</span>
+              {company.alternate_domains.map((d) => (
+                <a
+                  key={d}
+                  href={`https://${d}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-md-blue/10 text-md-blue rounded px-1.5 py-0.5 font-mono hover:underline"
+                >
+                  {d}
+                </a>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap gap-2">

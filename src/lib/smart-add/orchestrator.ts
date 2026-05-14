@@ -36,10 +36,24 @@ export interface FuzzyMatchedCompany {
   similarity: number;
 }
 
+export interface ExistingContactMatch {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  role: string | null;
+  is_primary: boolean;
+  language: 'FR' | 'EN';
+  company_id: string;
+  company_name: string;
+}
+
 export interface ParseResult {
   parsed: ParsedSmartAdd | null;
   fuzzyMatches: FuzzyMatchedCompany[];
   sirenMatch: AutoMatchResult;
+  existingContacts: ExistingContactMatch[];
 }
 
 async function fuzzyMatchCompanies(name: string | null): Promise<FuzzyMatchedCompany[]> {
@@ -79,7 +93,49 @@ async function fuzzyMatchCompanies(name: string | null): Promise<FuzzyMatchedCom
 }
 
 /**
- * Phase parse : appelle l'IA + fuzzy match DB + INSEE auto-match.
+ * P5.x.23-ter — recherche les contacts existants matchant par email
+ * (case-insensitive). Anti-doublon UX du Smart Add Wizard.
+ */
+async function findExistingContactsByEmail(email: string | null): Promise<ExistingContactMatch[]> {
+  if (!email || email.trim().length < 3 || !email.includes('@')) return [];
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from('contacts')
+    .select(
+      `id, email, first_name, last_name, phone, role, is_primary, language, company_id,
+       company:companies!inner(name)`,
+    )
+    .ilike('email', email.trim())
+    .limit(5);
+  if (error) {
+    console.error('%s existing-contacts-lookup-failed msg=%s', LOG_PREFIX, error.message);
+    return [];
+  }
+  return (data ?? []).map((r) => {
+    const company = pickFirst(r.company);
+    return {
+      id: r.id,
+      email: r.email,
+      first_name: r.first_name,
+      last_name: r.last_name,
+      phone: r.phone,
+      role: r.role,
+      is_primary: r.is_primary,
+      language: r.language,
+      company_id: r.company_id,
+      company_name: company?.name ?? '',
+    };
+  });
+}
+
+function pickFirst<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
+}
+
+/**
+ * Phase parse : appelle l'IA + fuzzy match DB + INSEE auto-match + dedup contact.
  */
 export async function parseSmartAddInput(rawInput: string): Promise<ParseResult> {
   const parsed = await parseInputWithAI(rawInput);
@@ -104,7 +160,9 @@ export async function parseSmartAddInput(rawInput: string): Promise<ParseResult>
     }
   }
 
-  return { parsed, fuzzyMatches, sirenMatch };
+  const existingContacts = await findExistingContactsByEmail(parsed?.person.email ?? null);
+
+  return { parsed, fuzzyMatches, sirenMatch, existingContacts };
 }
 
 // ---------------------------------------------------------------------------
@@ -136,6 +194,9 @@ export const confirmSchema = z.object({
     .enum(['prs_exhibitor', 'standard', 'non_eligible'])
     .optional()
     .default('standard'),
+  // P5.x.23-quater : domaines alternatifs (mode='new' uniquement, n'écrase
+  // pas une société existante). Filtre côté serveur si == primary_domain.
+  company_alternate_domains: z.array(z.string()).optional().default([]),
   // mode='existing' :
   company_id: z.string().uuid().optional().nullable(),
   // SIREN choisi (auto ou manual select) :
@@ -158,6 +219,9 @@ export const confirmSchema = z.object({
   contact_role: z.string().trim().max(120).optional().nullable(),
   contact_language: z.enum(['FR', 'EN']).default('FR'),
   contact_is_primary: z.boolean().default(true),
+  // P5.x.23-ter : si fourni, on UPDATE ce contact (UPSERT logic) au lieu
+  // de tenter une INSERT. Bypass de l'anti-doublon email global.
+  contact_existing_id: z.string().uuid().optional().nullable(),
 });
 
 export type ConfirmInput = z.infer<typeof confirmSchema>;
@@ -223,12 +287,22 @@ export async function confirmSmartAdd(
     const poleId = input.company_pole_code ? await findPoleId(input.company_pole_code) : null;
     const country = input.company_country ?? null;
 
+    // P5.x.23-quater : nettoyage défensif des alternate_domains
+    const { cleanDomainList, normalizeDomain } = await import('@/lib/utils/domain');
+    const primaryNormalized = input.company_primary_domain
+      ? normalizeDomain(input.company_primary_domain)
+      : null;
+    const altDomains = cleanDomainList(input.company_alternate_domains).filter(
+      (d) => d !== primaryNormalized,
+    );
+
     const { data: created, error: createErr } = await supabase
       .from('companies')
       .insert({
         name: input.company_name,
         name_normalized: input.company_name.toLowerCase().trim(),
-        primary_domain: input.company_primary_domain ?? null,
+        primary_domain: primaryNormalized,
+        alternate_domains: altDomains,
         country: country ? country.toUpperCase() : null,
         pole_id: poleId,
         pole_classified_by: input.company_pole_code ? 'ai' : 'manual',
@@ -246,52 +320,115 @@ export async function confirmSmartAdd(
     companyId = created.id;
   }
 
-  // 2. Anti-doublon email global avant INSERT contact
+  // 2. Contact : 2 chemins selon contact_existing_id
+  //    - fourni → UPSERT (enrichit les champs vides via COALESCE-in-JS,
+  //      réassigne company_id si Phil a sélectionné une autre société)
+  //    - absent → INSERT classique (anti-doublon email strict)
   const email = input.contact_email.toLowerCase().trim();
-  const { data: existingContact } = await supabase
-    .from('contacts')
-    .select('id, company_id')
-    .ilike('email', email)
-    .maybeSingle();
-  if (existingContact) {
-    return {
-      ok: false,
-      error:
-        existingContact.company_id === companyId
-          ? 'Ce contact existe déjà sur cette société.'
-          : 'Cet email est déjà utilisé par un autre contact en base.',
-    };
-  }
+  let contactId: string;
 
-  // 3. Si is_primary demandé, dé-primary les autres
-  if (input.contact_is_primary) {
-    await supabase
+  if (input.contact_existing_id) {
+    // Mode UPSERT : on va UPDATE le contact existant
+    const { data: existing, error: lookupErr } = await supabase
       .from('contacts')
-      .update({ is_primary: false })
-      .eq('company_id', companyId)
-      .eq('is_primary', true);
-  }
+      .select('id, company_id, email, first_name, last_name, phone, role, language, is_primary')
+      .eq('id', input.contact_existing_id)
+      .maybeSingle();
+    if (lookupErr || !existing) {
+      return { ok: false, error: 'Contact existant introuvable.' };
+    }
+    // COALESCE-in-JS : on n'écrase QUE les champs nuls/vides en DB
+    const patch: {
+      first_name?: string | null;
+      last_name?: string | null;
+      phone?: string | null;
+      role?: string | null;
+      company_id?: string;
+      is_primary?: boolean;
+    } = {};
+    if (!existing.first_name && input.contact_first_name) {
+      patch.first_name = input.contact_first_name;
+    }
+    if (!existing.last_name && input.contact_last_name) {
+      patch.last_name = input.contact_last_name;
+    }
+    if (!existing.phone && input.contact_phone) {
+      patch.phone = input.contact_phone;
+    }
+    if (!existing.role && input.contact_role) {
+      patch.role = input.contact_role;
+    }
+    // Si la société a changé → réassignation (V1 silencieuse, warning log)
+    if (existing.company_id !== companyId) {
+      console.warn(
+        '%s contact-reassigned contact=%s old_company=%s new_company=%s',
+        LOG_PREFIX,
+        existing.id,
+        existing.company_id,
+        companyId,
+      );
+      patch.company_id = companyId;
+    }
+    // Si l'admin a coché "primary" → dé-primary les autres + set primary
+    if (input.contact_is_primary && !existing.is_primary) {
+      await supabase
+        .from('contacts')
+        .update({ is_primary: false })
+        .eq('company_id', companyId)
+        .eq('is_primary', true);
+      patch.is_primary = true;
+    }
+    if (Object.keys(patch).length > 0) {
+      const { error: updErr } = await supabase.from('contacts').update(patch).eq('id', existing.id);
+      if (updErr) return { ok: false, error: updErr.message };
+    }
+    contactId = existing.id;
+  } else {
+    // Mode INSERT : anti-doublon strict
+    const { data: existingContact } = await supabase
+      .from('contacts')
+      .select('id, company_id')
+      .ilike('email', email)
+      .maybeSingle();
+    if (existingContact) {
+      return {
+        ok: false,
+        error:
+          existingContact.company_id === companyId
+            ? 'Ce contact existe déjà sur cette société. Utiliser le mode UPSERT.'
+            : 'Cet email est déjà utilisé par un autre contact en base.',
+      };
+    }
 
-  // 4. INSERT contact
-  const { data: contact, error: contactErr } = await supabase
-    .from('contacts')
-    .insert({
-      company_id: companyId,
-      email,
-      first_name: input.contact_first_name ?? null,
-      last_name: input.contact_last_name ?? null,
-      phone: input.contact_phone ?? null,
-      role: input.contact_role ?? null,
-      language: input.contact_language,
-      is_primary: input.contact_is_primary,
-      email_deliverability_status: 'unknown',
-      marketing_consent: true,
-      lifecycle_emails_enabled: true,
-    })
-    .select('id')
-    .single();
-  if (contactErr || !contact) {
-    return { ok: false, error: contactErr?.message ?? 'INSERT contact failed' };
+    if (input.contact_is_primary) {
+      await supabase
+        .from('contacts')
+        .update({ is_primary: false })
+        .eq('company_id', companyId)
+        .eq('is_primary', true);
+    }
+
+    const { data: contact, error: contactErr } = await supabase
+      .from('contacts')
+      .insert({
+        company_id: companyId,
+        email,
+        first_name: input.contact_first_name ?? null,
+        last_name: input.contact_last_name ?? null,
+        phone: input.contact_phone ?? null,
+        role: input.contact_role ?? null,
+        language: input.contact_language,
+        is_primary: input.contact_is_primary,
+        email_deliverability_status: 'unknown',
+        marketing_consent: true,
+        lifecycle_emails_enabled: true,
+      })
+      .select('id')
+      .single();
+    if (contactErr || !contact) {
+      return { ok: false, error: contactErr?.message ?? 'INSERT contact failed' };
+    }
+    contactId = contact.id;
   }
 
   // 5. Sync Brevo immédiate (best-effort)
@@ -315,13 +452,13 @@ export async function confirmSmartAdd(
           brevo_contact_id: brevoContactId,
           last_synced_brevo_at: new Date().toISOString(),
         })
-        .eq('id', contact.id);
+        .eq('id', contactId);
     }
   } catch (err) {
     console.warn(
       '%s brevo-sync-failed contact=%s msg=%s',
       LOG_PREFIX,
-      contact.id,
+      contactId,
       err instanceof Error ? err.message : String(err),
     );
   }
@@ -335,7 +472,7 @@ export async function confirmSmartAdd(
       parsed_payload: (input.parsed_payload as never) ?? null,
       result: {
         companyId,
-        contactId: contact.id,
+        contactId,
         brevoContactId,
         brevoKind,
         siren: input.siren ?? null,
@@ -350,7 +487,7 @@ export async function confirmSmartAdd(
     '%s confirmed company=%s contact=%s brevo=%s/%s',
     LOG_PREFIX,
     companyId,
-    contact.id,
+    contactId,
     brevoKind,
     brevoContactId ?? '-',
   );
@@ -359,7 +496,7 @@ export async function confirmSmartAdd(
     ok: true,
     data: {
       companyId,
-      contactId: contact.id,
+      contactId,
       brevoContactId,
       brevoKind,
       smartAddAttemptId,

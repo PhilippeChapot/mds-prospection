@@ -20,7 +20,7 @@ export default async function EditCompanyPage({ params }: { params: Promise<{ id
     .from('companies')
     .select(
       `
-      id, name, primary_domain, country, category, was_prs_2026_exhibitor,
+      id, name, primary_domain, alternate_domains, country, category, was_prs_2026_exhibitor,
       pole:poles(code)
     `,
     )
@@ -35,6 +35,7 @@ export default async function EditCompanyPage({ params }: { params: Promise<{ id
     id: company.id,
     name: company.name,
     primary_domain: company.primary_domain,
+    alternate_domains: company.alternate_domains ?? [],
     country: company.country,
     category: company.category,
     pole_code: pole?.code ?? 'INCONNU',

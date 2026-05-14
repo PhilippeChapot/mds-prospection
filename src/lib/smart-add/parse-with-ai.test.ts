@@ -123,4 +123,66 @@ describe('parseInputWithAI (P5.x.23)', () => {
     const result = await parseInputWithAI('input');
     expect(result?.company.suggested_pole).toBe('INCONNU');
   });
+
+  it('extracts alternate_domains, normalizes, dedupes, filters primary', async () => {
+    mockAnthropic(
+      JSON.stringify({
+        person: {
+          first_name: null,
+          last_name: null,
+          email: null,
+          phone: null,
+          role: null,
+          linkedin_url: null,
+        },
+        company: {
+          name: 'France TV',
+          website: 'https://www.francetv.fr',
+          country: 'FR',
+          primary_domain: 'francetv.fr',
+          alternate_domains: [
+            'https://www.francetelevisions.fr/',
+            'francetv.fr', // doublon avec primary → doit être filtré
+            'FRANCE.TV',
+          ],
+          description: null,
+          suggested_pole: 'AUDIO_RADIO',
+        },
+        confidence: 'high',
+        notes: null,
+      }),
+    );
+    const { parseInputWithAI } = await import('./parse-with-ai');
+    const result = await parseInputWithAI('input');
+    expect(result?.company.alternate_domains).toEqual(['francetelevisions.fr', 'france.tv']);
+  });
+
+  it('returns empty alternate_domains when AI omits the field', async () => {
+    mockAnthropic(
+      JSON.stringify({
+        person: {
+          first_name: null,
+          last_name: null,
+          email: null,
+          phone: null,
+          role: null,
+          linkedin_url: null,
+        },
+        company: {
+          name: 'X',
+          website: null,
+          country: null,
+          primary_domain: 'x.com',
+          description: null,
+          suggested_pole: 'INCONNU',
+          // alternate_domains absent volontairement
+        },
+        confidence: 'low',
+        notes: null,
+      }),
+    );
+    const { parseInputWithAI } = await import('./parse-with-ai');
+    const result = await parseInputWithAI('input');
+    expect(result?.company.alternate_domains).toEqual([]);
+  });
 });

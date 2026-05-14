@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DomainTagsInput } from '@/components/ui/DomainTagsInput';
 import type { ParsedSmartAdd } from '@/lib/smart-add/parse-with-ai';
-import type { FuzzyMatchedCompany } from '@/lib/smart-add/orchestrator';
+import type { FuzzyMatchedCompany, ExistingContactMatch } from '@/lib/smart-add/orchestrator';
 import type { AutoMatchResult, SireneEtablissement } from '@/lib/insee/sirene';
 
 type ParseResponse =
@@ -16,6 +17,7 @@ type ParseResponse =
       parsed: ParsedSmartAdd | null;
       fuzzyMatches: FuzzyMatchedCompany[];
       sirenMatch: AutoMatchResult;
+      existingContacts: ExistingContactMatch[];
     }
   | { ok: false; error: string };
 
@@ -43,6 +45,7 @@ interface FormState {
   companyId: string;
   companyName: string;
   companyDomain: string;
+  companyAlternateDomains: string[];
   companyCountry: string;
   companyPole: (typeof POLE_OPTIONS)[number];
   companyCategory: CategoryTarif;
@@ -57,6 +60,8 @@ interface FormState {
   contactRole: string;
   contactLanguage: 'FR' | 'EN';
   contactIsPrimary: boolean;
+  /** P5.x.23-ter : 'new' = créer, sinon UUID = UPSERT sur ce contact */
+  contactMode: 'new' | string;
 }
 
 const emptyForm: FormState = {
@@ -64,6 +69,7 @@ const emptyForm: FormState = {
   companyId: '',
   companyName: '',
   companyDomain: '',
+  companyAlternateDomains: [],
   companyCountry: 'FR',
   companyPole: 'INCONNU',
   companyCategory: 'standard',
@@ -76,6 +82,7 @@ const emptyForm: FormState = {
   contactRole: '',
   contactLanguage: 'FR',
   contactIsPrimary: true,
+  contactMode: 'new',
 };
 
 export function QuickAddWizard() {
@@ -128,6 +135,7 @@ export function QuickAddWizard() {
       companyId: fm?.id ?? '',
       companyName: p?.company.name ?? '',
       companyDomain: p?.company.primary_domain ?? '',
+      companyAlternateDomains: p?.company.alternate_domains ?? [],
       companyCountry: p?.company.country ?? 'FR',
       companyPole: p?.company.suggested_pole ?? 'INCONNU',
       companyCategory: 'standard',
@@ -141,6 +149,7 @@ export function QuickAddWizard() {
       contactRole: p?.person.role ?? '',
       contactLanguage: 'FR',
       contactIsPrimary: true,
+      contactMode: resp.existingContacts.length > 0 ? resp.existingContacts[0].id : 'new',
     });
   }
 
@@ -188,6 +197,8 @@ export function QuickAddWizard() {
       company_mode: form.companyMode,
       company_name: form.companyMode === 'new' ? form.companyName : null,
       company_primary_domain: form.companyMode === 'new' ? form.companyDomain || null : null,
+      company_alternate_domains:
+        form.companyMode === 'new' ? form.companyAlternateDomains : undefined,
       company_country: form.companyMode === 'new' ? form.companyCountry || null : null,
       company_pole_code: form.companyMode === 'new' ? form.companyPole : undefined,
       company_category: form.companyMode === 'new' ? form.companyCategory : undefined,
@@ -202,6 +213,7 @@ export function QuickAddWizard() {
       contact_role: form.contactRole || null,
       contact_language: form.contactLanguage,
       contact_is_primary: form.contactIsPrimary,
+      contact_existing_id: form.contactMode === 'new' ? null : form.contactMode,
     };
 
     startConfirm(async () => {
@@ -309,11 +321,19 @@ export function QuickAddWizard() {
                     onChange={(e) => setForm({ ...form, companyName: e.target.value })}
                   />
                 </Field>
-                <Field label="Domaine">
+                <Field label="Domaine principal">
                   <Input
                     value={form.companyDomain}
                     onChange={(e) => setForm({ ...form, companyDomain: e.target.value })}
                     placeholder="acme.com"
+                  />
+                </Field>
+                <Field label="Domaines alternatifs">
+                  <DomainTagsInput
+                    value={form.companyAlternateDomains}
+                    onChange={(domains) => setForm({ ...form, companyAlternateDomains: domains })}
+                    excludeDomains={form.companyDomain ? [form.companyDomain] : []}
+                    placeholder="Ex: francetelevisions.fr (Entrée)"
                   />
                 </Field>
                 <Field label="Pays (ISO2)">
@@ -447,6 +467,53 @@ export function QuickAddWizard() {
             <h2 className="text-md-blue-dark text-sm font-bold tracking-wide uppercase">
               3. Contact
             </h2>
+
+            {parseResp.existingContacts.length > 0 ? (
+              <div className="rounded-md border border-amber-200 bg-amber-50/60 p-3 text-sm">
+                <p className="text-md-text mb-2 flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
+                  ⚠ Contact(s) existant(s) avec cet email
+                </p>
+                <div className="space-y-1.5">
+                  {parseResp.existingContacts.map((c) => (
+                    <label key={c.id} className="flex items-start gap-2">
+                      <input
+                        type="radio"
+                        name="contact-mode"
+                        checked={form.contactMode === c.id}
+                        onChange={() => setForm({ ...form, contactMode: c.id })}
+                        className="mt-1"
+                      />
+                      <span>
+                        <strong>
+                          {[c.first_name, c.last_name].filter(Boolean).join(' ') || c.email}
+                        </strong>{' '}
+                        — <span className="font-mono text-xs">{c.email}</span>
+                        <div className="text-md-text-muted text-[11px]">
+                          {c.role ? `${c.role} · ` : ''}Société : {c.company_name}
+                          {c.is_primary ? ' · ★ primary' : ''}
+                        </div>
+                      </span>
+                    </label>
+                  ))}
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="radio"
+                      name="contact-mode"
+                      checked={form.contactMode === 'new'}
+                      onChange={() => setForm({ ...form, contactMode: 'new' })}
+                      className="mt-1"
+                    />
+                    <span className="text-md-text-muted italic">Créer un nouveau contact</span>
+                  </label>
+                </div>
+                <p className="text-md-text-muted mt-2 text-[11px]">
+                  Si tu lies à un contact existant, les champs vides (prénom, nom, rôle, téléphone)
+                  seront enrichis avec les valeurs ci-dessous (les valeurs DB existantes sont
+                  préservées).
+                </p>
+              </div>
+            ) : null}
+
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <Field label="Email" required>
                 <Input

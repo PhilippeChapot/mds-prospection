@@ -19,6 +19,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { POLE_CODES, type PoleCode } from '@/lib/ai/classify-signup';
+import { cleanDomainList } from '@/lib/utils/domain';
 
 const LOG_PREFIX = '[smart-add/parse]';
 const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
@@ -38,6 +39,8 @@ export interface ParsedCompany {
   website: string | null;
   country: string | null;
   primary_domain: string | null;
+  /** P5.x.23-quater : domaines alternatifs détectés par l'IA (filiales, alias). */
+  alternate_domains: string[];
   description: string | null;
   suggested_pole: PoleCode;
 }
@@ -70,6 +73,7 @@ const SYSTEM_PROMPT = `Tu es un assistant de qualification de prospects pour Med
     "website": "string | null",
     "country": "string | null",
     "primary_domain": "string | null",
+    "alternate_domains": "string[]",
     "description": "string | null",
     "suggested_pole": "AUDIO_RADIO | VIDEO_CTV | REGIES_RETAIL_MEDIA | DIFFUSION_INFRA | DATA_ADTECH | OUTDOOR_DOOH | INCONNU"
   },
@@ -90,6 +94,9 @@ Règles strictes :
 - Si une info est absente du texte, mets null. NE JAMAIS inventer.
 - country = code ISO 3166-1 alpha-2 (FR, DE, US, GB, etc.) ou null.
 - primary_domain = domaine racine sans préfixe https:// ni chemin (ex: "acme.com").
+- alternate_domains = tableau (peut être vide []) de domaines alternatifs détectés
+  (filiales, anciens noms, alias officiels mentionnés explicitement dans le texte).
+  Même format que primary_domain. NE PAS dupliquer primary_domain dans ce tableau.
 - Réponds UNIQUEMENT le JSON, sans markdown, sans fences de code.`;
 
 function getClient(): Anthropic | null {
@@ -171,6 +178,11 @@ export async function parseInputWithAI(rawInput: string): Promise<ParsedSmartAdd
         website: asStringOrNull(companyRaw.website),
         country: asStringOrNull(companyRaw.country)?.toUpperCase() ?? null,
         primary_domain: asStringOrNull(companyRaw.primary_domain)?.toLowerCase() ?? null,
+        alternate_domains: Array.isArray(companyRaw.alternate_domains)
+          ? cleanDomainList(companyRaw.alternate_domains as unknown[]).filter(
+              (d) => d !== (asStringOrNull(companyRaw.primary_domain)?.toLowerCase() ?? null),
+            )
+          : [],
         description: asStringOrNull(companyRaw.description),
         suggested_pole: suggestedPole,
       },

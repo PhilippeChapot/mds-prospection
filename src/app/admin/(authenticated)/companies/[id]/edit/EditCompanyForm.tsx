@@ -1,11 +1,12 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DomainTagsInput } from '@/components/ui/DomainTagsInput';
 import { POLE_CODES } from '@/lib/design-tokens';
 import { useFieldErrors } from '@/components/admin/use-field-errors';
 import { updateCompanyAction, type UpdateCompanyState } from './actions';
@@ -16,6 +17,7 @@ export type EditableCompany = {
   id: string;
   name: string;
   primary_domain: string | null;
+  alternate_domains: string[];
   country: string | null;
   category: 'prs_exhibitor' | 'standard' | 'non_eligible';
   pole_code: string;
@@ -25,6 +27,8 @@ export type EditableCompany = {
 export function EditCompanyForm({ company }: { company: EditableCompany }) {
   const [state, formAction] = useActionState(updateCompanyAction, initialState);
   const { errors, clear } = useFieldErrors(state.fieldErrors);
+  const [primaryDomain, setPrimaryDomain] = useState<string>(company.primary_domain ?? '');
+  const [alternateDomains, setAlternateDomains] = useState<string[]>(company.alternate_domains);
 
   function handleAnyChange(e: React.ChangeEvent<HTMLFormElement>) {
     const t = e.target as Partial<{ name: string }>;
@@ -41,7 +45,11 @@ export function EditCompanyForm({ company }: { company: EditableCompany }) {
             <Input name="name" required defaultValue={company.name} />
           </Field>
           <Field label="Domaine principal" error={errors.primary_domain}>
-            <Input name="primary_domain" defaultValue={company.primary_domain ?? ''} />
+            <Input
+              name="primary_domain"
+              value={primaryDomain}
+              onChange={(e) => setPrimaryDomain(e.target.value)}
+            />
           </Field>
           <Field label="Pays (ISO 2)" required error={errors.country}>
             <Input
@@ -50,6 +58,19 @@ export function EditCompanyForm({ company }: { company: EditableCompany }) {
               defaultValue={company.country ?? 'FR'}
               placeholder="FR"
             />
+          </Field>
+          <Field label="Domaines alternatifs" error={errors.alternate_domains}>
+            <DomainTagsInput
+              name="alternate_domains"
+              value={alternateDomains}
+              onChange={setAlternateDomains}
+              excludeDomains={primaryDomain ? [primaryDomain] : []}
+              placeholder="Ex: francetelevisions.fr (Entrée pour valider)"
+            />
+            <p className="text-md-text-muted mt-1 text-xs">
+              Domaines historiques, filiales ou alias officiels. Strip auto de <code>https://</code>{' '}
+              et <code>www.</code>.
+            </p>
           </Field>
         </div>
       </Section>

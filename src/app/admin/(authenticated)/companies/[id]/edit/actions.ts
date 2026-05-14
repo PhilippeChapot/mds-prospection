@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
+import { cleanDomainList, normalizeDomain } from '@/lib/utils/domain';
 import type { Database } from '@/lib/supabase/database.types';
 
 type CategoryTarif = Database['public']['Enums']['category_tarif'];
@@ -30,6 +31,8 @@ const InputSchema = z.object({
   company_id: z.string().uuid(),
   name: z.string().trim().min(2).max(200),
   primary_domain: z.string().trim().max(120).optional(),
+  /** Stringifié côté UI (DomainTagsInput émet JSON.stringify(value)). */
+  alternate_domains: z.string().optional().default('[]'),
   country: z.string().trim().length(2).optional(),
   category: CategoryTarifSchema,
   pole_code: PoleCodeSchema,
@@ -97,12 +100,27 @@ export async function updateCompanyAction(
     return { error: 'Pole invalide.' };
   }
 
+  // Parse + nettoie alternate_domains (JSON stringifié côté form)
+  let altDomains: string[] = [];
+  try {
+    const arr = JSON.parse(data.alternate_domains);
+    if (Array.isArray(arr)) altDomains = cleanDomainList(arr);
+  } catch {
+    // payload corrompu → on garde []
+  }
+  // Filtre defense-in-depth : exclut tout doublon avec le primary_domain
+  const normalizedPrimary = data.primary_domain ? normalizeDomain(data.primary_domain) : null;
+  if (normalizedPrimary) {
+    altDomains = altDomains.filter((d) => d !== normalizedPrimary);
+  }
+
   const { error: updateErr } = await supabase
     .from('companies')
     .update({
       name: data.name,
       name_normalized: data.name.toLowerCase(),
-      primary_domain: data.primary_domain || null,
+      primary_domain: normalizedPrimary,
+      alternate_domains: altDomains,
       country: data.country?.toUpperCase() || null,
       category: data.category,
       pole_id: poleRow.id,

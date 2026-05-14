@@ -16,6 +16,17 @@ const ENV_BACKUP = { ...process.env };
 
 interface MockState {
   existingCompany?: { id: string; siren: string | null } | null;
+  existingContact?: {
+    id: string;
+    company_id: string;
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+    phone: string | null;
+    role: string | null;
+    language: string;
+    is_primary: boolean;
+  } | null;
   inserts: Array<{ table: string; payload: Record<string, unknown> }>;
   updates: Array<{ table: string; patch: Record<string, unknown> }>;
 }
@@ -42,6 +53,12 @@ function mockSupabase(state: MockState) {
             if (table === 'companies' && lastFilter.startsWith('id=')) {
               return Promise.resolve({
                 data: state.existingCompany ?? null,
+                error: null,
+              });
+            }
+            if (table === 'contacts' && lastFilter.startsWith('id=')) {
+              return Promise.resolve({
+                data: state.existingContact ?? null,
                 error: null,
               });
             }
@@ -201,5 +218,211 @@ describe('confirmSmartAdd — category (P5.x.23-bis)', () => {
     // Aucun INSERT companies (le mode 'existing' ne touche pas à la category)
     const coInsert = state.inserts.find((i) => i.table === 'companies');
     expect(coInsert).toBeUndefined();
+  });
+
+  // ---------------------------------------------------------------------------
+  // P5.x.23-quater : alternate_domains
+  // ---------------------------------------------------------------------------
+
+  it('mode=new with company_alternate_domains → INSERT cleans + filters primary', async () => {
+    const state = makeState();
+    mockSupabase(state);
+
+    const { confirmSchema, confirmSmartAdd } = await import('./orchestrator');
+    const parsed = confirmSchema.parse({
+      raw_input: 'multi-domain',
+      company_mode: 'new',
+      company_name: 'France TV',
+      company_primary_domain: 'francetv.fr',
+      company_alternate_domains: [
+        'https://www.francetelevisions.fr/',
+        'francetv.fr', // doublon avec primary → filtré
+        'FRANCE.TV',
+        'invalid-not-a-domain',
+      ],
+      contact_email: 'lead@francetv.fr',
+    });
+
+    const result = await confirmSmartAdd(parsed, 'admin');
+    expect(result.ok).toBe(true);
+    const coInsert = state.inserts.find((i) => i.table === 'companies');
+    expect(coInsert?.payload.primary_domain).toBe('francetv.fr');
+    expect(coInsert?.payload.alternate_domains).toEqual(['francetelevisions.fr', 'france.tv']);
+  });
+
+  it('mode=new without alternate_domains → empty array', async () => {
+    const state = makeState();
+    mockSupabase(state);
+
+    const { confirmSchema, confirmSmartAdd } = await import('./orchestrator');
+    const parsed = confirmSchema.parse({
+      raw_input: 'no alt',
+      company_mode: 'new',
+      company_name: 'Solo Co',
+      contact_email: 'lead@solo.com',
+    });
+
+    const result = await confirmSmartAdd(parsed, 'admin');
+    expect(result.ok).toBe(true);
+    const coInsert = state.inserts.find((i) => i.table === 'companies');
+    expect(coInsert?.payload.alternate_domains).toEqual([]);
+  });
+
+  // ---------------------------------------------------------------------------
+  // P5.x.23-ter : contact dedup UPSERT
+  // ---------------------------------------------------------------------------
+
+  it('with contact_existing_id → UPDATE path (no INSERT contact)', async () => {
+    const companyId = '1a3e6756-5fde-476a-a735-72c25f44db6b';
+    const contactId = 'cdf8fbde-e03a-4f36-b8f2-97aae2f0b925';
+    const state = makeState({
+      existingCompany: { id: companyId, siren: null },
+      existingContact: {
+        id: contactId,
+        company_id: companyId,
+        email: 'lead@acme.com',
+        first_name: 'Existing',
+        last_name: null, // null → sera enrichi
+        phone: '+331',
+        role: null, // null → sera enrichi
+        language: 'FR',
+        is_primary: false,
+      },
+    });
+    mockSupabase(state);
+
+    const { confirmSchema, confirmSmartAdd } = await import('./orchestrator');
+    const parsed = confirmSchema.parse({
+      raw_input: 'update existing',
+      company_mode: 'existing',
+      company_id: companyId,
+      contact_email: 'lead@acme.com',
+      contact_first_name: 'Override', // NE doit PAS écraser (existing = 'Existing')
+      contact_last_name: 'Newlastname', // enrichit (existing null)
+      contact_role: 'CMO', // enrichit (existing null)
+      contact_existing_id: contactId,
+    });
+
+    const result = await confirmSmartAdd(parsed, 'admin');
+    expect(result.ok).toBe(true);
+    // No contact INSERT
+    expect(state.inserts.find((i) => i.table === 'contacts')).toBeUndefined();
+    // UPDATE patch n'inclut que les champs vides (COALESCE-in-JS)
+    const updates = state.updates.filter((u) => u.table === 'contacts');
+    const enrichUpdate = updates.find(
+      (u) =>
+        (u.patch as Record<string, unknown>).last_name === 'Newlastname' ||
+        (u.patch as Record<string, unknown>).role === 'CMO',
+    );
+    expect(enrichUpdate).toBeDefined();
+    const patch = enrichUpdate?.patch as Record<string, unknown>;
+    // first_name NE doit PAS être dans le patch (DB déjà 'Existing')
+    expect(patch.first_name).toBeUndefined();
+    // last_name + role enrichis
+    expect(patch.last_name).toBe('Newlastname');
+    expect(patch.role).toBe('CMO');
+  });
+
+  it('with contact_existing_id + different company_id → reassign company', async () => {
+    const oldCo = '1a3e6756-5fde-476a-a735-72c25f44db6b';
+    const newCo = '5402eb3e-f57d-41aa-b1ac-04a1ebc9f8af';
+    const contactId = 'cdf8fbde-e03a-4f36-b8f2-97aae2f0b925';
+    const state = makeState({
+      existingCompany: { id: newCo, siren: null },
+      existingContact: {
+        id: contactId,
+        company_id: oldCo, // attached to a DIFFERENT company
+        email: 'lead@acme.com',
+        first_name: 'Joe',
+        last_name: 'Doe',
+        phone: null,
+        role: null,
+        language: 'FR',
+        is_primary: false,
+      },
+    });
+    mockSupabase(state);
+
+    const { confirmSchema, confirmSmartAdd } = await import('./orchestrator');
+    const parsed = confirmSchema.parse({
+      raw_input: 'reassign',
+      company_mode: 'existing',
+      company_id: newCo,
+      contact_email: 'lead@acme.com',
+      contact_existing_id: contactId,
+    });
+
+    const result = await confirmSmartAdd(parsed, 'admin');
+    expect(result.ok).toBe(true);
+    const reassignUpdate = state.updates.find(
+      (u) => u.table === 'contacts' && (u.patch as Record<string, unknown>).company_id === newCo,
+    );
+    expect(reassignUpdate).toBeDefined();
+  });
+
+  it('without contact_existing_id but email already in DB → returns error (strict anti-doublon)', async () => {
+    const state = makeState();
+    // Pré-existe : un autre contact avec cet email
+    state.existingContact = null; // pas testé via existingContact (par id)
+    // On simule via mock spécifique : ilike('email', ...) renvoie un row.
+    // Plus simple : on override le mock pour cet append.
+    const localState = state;
+    vi.doMock('@/lib/supabase/service', () => ({
+      getSupabaseServiceClient: () => ({
+        from: (table: string) => {
+          if (table === 'companies') {
+            return {
+              select: () => ({
+                eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+              }),
+              insert: (payload: Record<string, unknown>) => {
+                localState.inserts.push({ table, payload });
+                return {
+                  select: () => ({
+                    single: () => Promise.resolve({ data: { id: 'co-new' }, error: null }),
+                  }),
+                };
+              },
+            };
+          }
+          if (table === 'contacts') {
+            return {
+              select: () => ({
+                ilike: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({
+                      data: { id: 'other-contact', company_id: 'other-co' },
+                      error: null,
+                    }),
+                }),
+              }),
+            };
+          }
+          return {
+            select: () => ({
+              eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+            }),
+            insert: () => ({
+              select: () => ({ single: () => Promise.resolve({ data: null, error: null }) }),
+            }),
+          };
+        },
+      }),
+    }));
+
+    const { confirmSchema, confirmSmartAdd } = await import('./orchestrator');
+    const parsed = confirmSchema.parse({
+      raw_input: 'dup',
+      company_mode: 'new',
+      company_name: 'Acme',
+      contact_email: 'lead@acme.com',
+      // pas de contact_existing_id → INSERT path strict
+    });
+
+    const result = await confirmSmartAdd(parsed, 'admin');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/déjà utilisé/i);
+    }
   });
 });
