@@ -8,10 +8,12 @@
  * Logs structurés côté server actions, retour toast côté client.
  */
 
-import { Mail, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowRight, ArrowLeft, Search } from 'lucide-react';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { countOrphanCompaniesWithDomain } from '@/lib/contacts/brevo-enrich';
 import { SyncControls } from './SyncControls';
+import { EnrichControls } from './EnrichControls';
 
 export const metadata = { title: 'Sync Brevo — Contacts' };
 
@@ -19,17 +21,19 @@ export default async function ContactsSyncPage() {
   const profile = await requireAdminProfile();
   const supabase = await createSupabaseServerClient();
 
-  const [{ count: total }, { count: synced }, { count: unsynced }] = await Promise.all([
-    supabase.from('contacts').select('id', { count: 'exact', head: true }),
-    supabase
-      .from('contacts')
-      .select('id', { count: 'exact', head: true })
-      .not('brevo_contact_id', 'is', null),
-    supabase
-      .from('contacts')
-      .select('id', { count: 'exact', head: true })
-      .is('brevo_contact_id', null),
-  ]);
+  const [{ count: total }, { count: synced }, { count: unsynced }, orphansWithDomain] =
+    await Promise.all([
+      supabase.from('contacts').select('id', { count: 'exact', head: true }),
+      supabase
+        .from('contacts')
+        .select('id', { count: 'exact', head: true })
+        .not('brevo_contact_id', 'is', null),
+      supabase
+        .from('contacts')
+        .select('id', { count: 'exact', head: true })
+        .is('brevo_contact_id', null),
+      countOrphanCompaniesWithDomain(),
+    ]);
 
   const totalCount = total ?? 0;
   const syncedCount = synced ?? 0;
@@ -98,6 +102,26 @@ export default async function ContactsSyncPage() {
           Le pull Brevo → DB est réservé aux comptes admin.
         </section>
       )}
+
+      {profile.role === 'admin' ? (
+        <section className="bg-card border-md-border rounded-xl border p-5 shadow-sm">
+          <h2 className="text-md-blue-dark mb-3 flex items-center gap-2 text-sm font-bold tracking-wide uppercase">
+            <Search className="size-4" aria-hidden /> Enrichissement par domaine (P5.x.21)
+          </h2>
+          <p className="text-md-text-muted mb-4 text-sm">
+            Pour chaque société sans contact en DB mais avec un{' '}
+            <code className="text-md-text">primary_domain</code>, on scanne Brevo (~94 000 contacts)
+            à la recherche d&apos;un email dont le domaine correspond. Si trouvé, on crée un contact
+            générique en DB et on l&apos;ajoute à la liste « MDS 2026 — Prospection Standard ».
+            Idempotent : ré-exécution = recalcul automatique des orphelines.
+          </p>
+          <div className="text-md-text-muted mb-4 text-xs">
+            Sociétés orphelines avec domaine :{' '}
+            <strong>{orphansWithDomain.toLocaleString('fr-FR')}</strong> · Durée estimée : 1-2 min
+          </div>
+          <EnrichControls orphansCount={orphansWithDomain} />
+        </section>
+      ) : null}
     </div>
   );
 }
