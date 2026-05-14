@@ -12,6 +12,7 @@ import { ActivitiesSection, type ActivityRow } from '@/components/admin/Activiti
 import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { CompanyContactsSection } from '../../companies/[id]/_components/CompanyContactsSection';
 import { listContactsForCompany } from '@/lib/contacts/admin-queries';
+import { SirenSection } from './SirenSection';
 import { DeleteProspectButton } from './DeleteButton';
 import { IsTestToggle } from './IsTestToggle';
 import { ConciergePaymentLinkDialog } from './ConciergePaymentLinkDialog';
@@ -47,7 +48,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
       sellsy_invoice_id, sellsy_invoice_number, sellsy_invoice_public_url, sellsy_invoice_emitted_at,
       booth_assignment, booth_assigned_at, booth_assigned_by,
       created_at, updated_at, last_activity_at,
-      company:companies!inner(id, name, primary_domain, country, category, sellsy_id, was_prs_2026_exhibitor, pole:poles(code, name_fr)),
+      company:companies!inner(id, name, primary_domain, country, category, sellsy_id, was_prs_2026_exhibitor, siren, siret, siren_verified_at, siren_source, pole:poles(code, name_fr)),
       contact:contacts(id, first_name, last_name, email, phone, role),
       owner:users!prospects_owner_id_fkey(id, full_name, email, role),
       booth_assignee:users!prospects_booth_assigned_by_fkey(full_name, email)
@@ -109,6 +110,31 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
 
   // P5.x.22 — tous les contacts de la societe rattachee
   const companyContacts = company ? await listContactsForCompany(company.id) : [];
+
+  // P5.x.23 — alerte SIREN ambigu pour ce prospect (si présente, non résolue)
+  const { data: sirenAlertRaw } = await supabase
+    .from('admin_alerts')
+    .select('id, details')
+    .eq('prospect_id', id)
+    .eq('kind', 'siren_ambiguous')
+    .is('resolved_at', null)
+    .maybeSingle();
+
+  interface SirenCandidate {
+    siren: string;
+    siret: string;
+    denomination: string | null;
+    ville: string | null;
+    address: string | null;
+    siege: boolean;
+  }
+  const sirenAlert = sirenAlertRaw
+    ? {
+        id: sirenAlertRaw.id,
+        candidates:
+          (sirenAlertRaw.details as { candidates?: SirenCandidate[] } | null)?.candidates ?? [],
+      }
+    : null;
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
@@ -336,6 +362,23 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           />
         </Section>
       </div>
+
+      {/* SIREN INSEE (P5.x.23) — visible si pays FR */}
+      {company && company.country === 'FR' ? (
+        <section className="bg-card border-md-border space-y-3 rounded-xl border p-5 shadow-sm">
+          <h2 className="text-md-blue-dark text-sm font-bold tracking-wide uppercase">
+            SIREN INSEE
+          </h2>
+          <SirenSection
+            prospectId={id}
+            companyId={company.id}
+            siren={company.siren ?? null}
+            sirenVerifiedAt={company.siren_verified_at ?? null}
+            sirenSource={company.siren_source ?? null}
+            ambiguousAlert={sirenAlert}
+          />
+        </section>
+      ) : null}
 
       {/* Contacts de la societe (P5.x.22) */}
       {company ? (

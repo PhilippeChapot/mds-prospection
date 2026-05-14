@@ -39,7 +39,7 @@ export interface AddonOption {
   category: string;
   scope: 'prs_only' | 'mds_only' | 'both';
   priceEurHt: number;
-  unit: 'unit' | 'per_brand' | 'per_1000';
+  unit: 'unit' | 'per_brand' | 'per_1000' | 'per_person';
   displayOrder: number;
 }
 

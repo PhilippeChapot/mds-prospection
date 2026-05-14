@@ -297,6 +297,22 @@ export async function convertSignupToProspect(
     }
   })();
 
+  // P5.x.23 — re-check SIREN INSEE pour les sociétés FR sans SIREN.
+  // Best-effort, ne bloque pas la conversion. Si ambigu → alerte admin.
+  void (async () => {
+    if (!companyId) return;
+    try {
+      const { recheckCompanySirenForProspect } = await import('@/lib/insee/recheck-prospect-siren');
+      await recheckCompanySirenForProspect(companyId, newProspect.id);
+    } catch (err) {
+      console.error(
+        '[signups/convert] siren-recheck-failed company=%s msg=%s',
+        companyId,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  })();
+
   return { success: true, data: { prospectId: newProspect.id } };
 }
 

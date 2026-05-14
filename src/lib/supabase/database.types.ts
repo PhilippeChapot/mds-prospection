@@ -33,45 +33,6 @@ export type Database = {
   };
   public: {
     Tables: {
-      admin_alerts: {
-        Row: {
-          id: string;
-          kind: string;
-          severity: 'warning' | 'critical';
-          prospect_id: string | null;
-          signup_id: string | null;
-          message: string;
-          details: Json;
-          created_at: string;
-          resolved_at: string | null;
-          resolved_by: string | null;
-        };
-        Insert: {
-          id?: string;
-          kind: string;
-          severity: 'warning' | 'critical';
-          prospect_id?: string | null;
-          signup_id?: string | null;
-          message: string;
-          details?: Json;
-          created_at?: string;
-          resolved_at?: string | null;
-          resolved_by?: string | null;
-        };
-        Update: {
-          id?: string;
-          kind?: string;
-          severity?: 'warning' | 'critical';
-          prospect_id?: string | null;
-          signup_id?: string | null;
-          message?: string;
-          details?: Json;
-          created_at?: string;
-          resolved_at?: string | null;
-          resolved_by?: string | null;
-        };
-        Relationships: [];
-      };
       activities: {
         Row: {
           body: string | null;
@@ -185,6 +146,67 @@ export type Database = {
           },
         ];
       };
+      admin_alerts: {
+        Row: {
+          created_at: string;
+          details: Json;
+          id: string;
+          kind: string;
+          message: string;
+          prospect_id: string | null;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          severity: string;
+          signup_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          details?: Json;
+          id?: string;
+          kind: string;
+          message: string;
+          prospect_id?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          severity: string;
+          signup_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          details?: Json;
+          id?: string;
+          kind?: string;
+          message?: string;
+          prospect_id?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          severity?: string;
+          signup_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'admin_alerts_prospect_id_fkey';
+            columns: ['prospect_id'];
+            isOneToOne: false;
+            referencedRelation: 'prospects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'admin_alerts_resolved_by_fkey';
+            columns: ['resolved_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'admin_alerts_signup_id_fkey';
+            columns: ['signup_id'];
+            isOneToOne: false;
+            referencedRelation: 'public_signup_attempts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       affiliate_clicks: {
         Row: {
           affiliate_id: string;
@@ -255,7 +277,7 @@ export type Database = {
           is_active: boolean;
           notes_internal: string | null;
           token: string;
-          type: 'media' | 'referral';
+          type: Database['public']['Enums']['affiliate_type'];
           updated_at: string;
         };
         Insert: {
@@ -273,7 +295,7 @@ export type Database = {
           is_active?: boolean;
           notes_internal?: string | null;
           token: string;
-          type?: 'media' | 'referral';
+          type?: Database['public']['Enums']['affiliate_type'];
           updated_at?: string;
         };
         Update: {
@@ -291,7 +313,7 @@ export type Database = {
           is_active?: boolean;
           notes_internal?: string | null;
           token?: string;
-          type?: 'media' | 'referral';
+          type?: Database['public']['Enums']['affiliate_type'];
           updated_at?: string;
         };
         Relationships: [
@@ -561,7 +583,7 @@ export type Database = {
           id: string;
           last_synced_brevo_at: string | null;
           last_synced_sellsy_at: string | null;
-          logo_source: 'manual_upload' | 'connectonair_sync' | null;
+          logo_source: Database['public']['Enums']['company_logo_source'] | null;
           logo_uploaded_at: string | null;
           logo_uploaded_by: string | null;
           logo_url: string | null;
@@ -575,6 +597,10 @@ export type Database = {
           preferred_room: string | null;
           primary_domain: string | null;
           sellsy_id: string | null;
+          siren: string | null;
+          siren_source: string | null;
+          siren_verified_at: string | null;
+          siret: string | null;
           slug: string | null;
           updated_at: string;
           vat_country: string | null;
@@ -595,7 +621,7 @@ export type Database = {
           id?: string;
           last_synced_brevo_at?: string | null;
           last_synced_sellsy_at?: string | null;
-          logo_source?: 'manual_upload' | 'connectonair_sync' | null;
+          logo_source?: Database['public']['Enums']['company_logo_source'] | null;
           logo_uploaded_at?: string | null;
           logo_uploaded_by?: string | null;
           logo_url?: string | null;
@@ -609,6 +635,10 @@ export type Database = {
           preferred_room?: string | null;
           primary_domain?: string | null;
           sellsy_id?: string | null;
+          siren?: string | null;
+          siren_source?: string | null;
+          siren_verified_at?: string | null;
+          siret?: string | null;
           slug?: string | null;
           updated_at?: string;
           vat_country?: string | null;
@@ -629,7 +659,7 @@ export type Database = {
           id?: string;
           last_synced_brevo_at?: string | null;
           last_synced_sellsy_at?: string | null;
-          logo_source?: 'manual_upload' | 'connectonair_sync' | null;
+          logo_source?: Database['public']['Enums']['company_logo_source'] | null;
           logo_uploaded_at?: string | null;
           logo_uploaded_by?: string | null;
           logo_url?: string | null;
@@ -643,6 +673,10 @@ export type Database = {
           preferred_room?: string | null;
           primary_domain?: string | null;
           sellsy_id?: string | null;
+          siren?: string | null;
+          siren_source?: string | null;
+          siren_verified_at?: string | null;
+          siret?: string | null;
           slug?: string | null;
           updated_at?: string;
           vat_country?: string | null;
@@ -653,6 +687,13 @@ export type Database = {
           website?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'companies_logo_uploaded_by_fkey';
+            columns: ['logo_uploaded_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'companies_pole_id_fkey';
             columns: ['pole_id'];
@@ -1180,7 +1221,6 @@ export type Database = {
           season_id: string;
           selected_addon_ids: string[];
           selected_booth_id: string | null;
-          signed_at: string | null;
           sellsy_devis_emitted_at: string | null;
           sellsy_devis_id: string | null;
           sellsy_devis_number: string | null;
@@ -1195,6 +1235,7 @@ export type Database = {
           sellsy_proforma_id: string | null;
           sellsy_proforma_number: string | null;
           sellsy_proforma_public_url: string | null;
+          signed_at: string | null;
           source: Database['public']['Enums']['prospect_source'];
           source_detail: string | null;
           status: Database['public']['Enums']['prospect_status'];
@@ -1244,7 +1285,6 @@ export type Database = {
           season_id: string;
           selected_addon_ids?: string[];
           selected_booth_id?: string | null;
-          signed_at?: string | null;
           sellsy_devis_emitted_at?: string | null;
           sellsy_devis_id?: string | null;
           sellsy_devis_number?: string | null;
@@ -1259,6 +1299,7 @@ export type Database = {
           sellsy_proforma_id?: string | null;
           sellsy_proforma_number?: string | null;
           sellsy_proforma_public_url?: string | null;
+          signed_at?: string | null;
           source?: Database['public']['Enums']['prospect_source'];
           source_detail?: string | null;
           status?: Database['public']['Enums']['prospect_status'];
@@ -1308,7 +1349,6 @@ export type Database = {
           season_id?: string;
           selected_addon_ids?: string[];
           selected_booth_id?: string | null;
-          signed_at?: string | null;
           sellsy_devis_emitted_at?: string | null;
           sellsy_devis_id?: string | null;
           sellsy_devis_number?: string | null;
@@ -1323,6 +1363,7 @@ export type Database = {
           sellsy_proforma_id?: string | null;
           sellsy_proforma_number?: string | null;
           sellsy_proforma_public_url?: string | null;
+          signed_at?: string | null;
           source?: Database['public']['Enums']['prospect_source'];
           source_detail?: string | null;
           status?: Database['public']['Enums']['prospect_status'];
@@ -1337,6 +1378,13 @@ export type Database = {
             columns: ['affiliate_id'];
             isOneToOne: false;
             referencedRelation: 'affiliates';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'prospects_booth_assigned_by_fkey';
+            columns: ['booth_assigned_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
@@ -1686,19 +1734,19 @@ export type Database = {
       };
       sellsy_emit_locks: {
         Row: {
-          prospect_id: string;
           acquired_at: string;
           expires_at: string;
+          prospect_id: string;
         };
         Insert: {
-          prospect_id: string;
           acquired_at?: string;
           expires_at?: string;
+          prospect_id: string;
         };
         Update: {
-          prospect_id?: string;
           acquired_at?: string;
           expires_at?: string;
+          prospect_id?: string;
         };
         Relationships: [
           {
@@ -1780,6 +1828,41 @@ export type Database = {
           unit_id?: number | null;
         };
         Relationships: [];
+      };
+      smart_add_attempts: {
+        Row: {
+          created_at: string;
+          id: string;
+          parsed_payload: Json | null;
+          raw_input: string;
+          result: Json | null;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          parsed_payload?: Json | null;
+          raw_input: string;
+          result?: Json | null;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          parsed_payload?: Json | null;
+          raw_input?: string;
+          result?: Json | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'smart_add_attempts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       stripe_events_processed: {
         Row: {
@@ -1876,6 +1959,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      vat_verifications: {
+        Row: {
+          country: string;
+          is_valid: boolean;
+          request_date: string;
+          trader_address: string | null;
+          trader_name: string | null;
+          vat_number: string;
+        };
+        Insert: {
+          country: string;
+          is_valid: boolean;
+          request_date?: string;
+          trader_address?: string | null;
+          trader_name?: string | null;
+          vat_number: string;
+        };
+        Update: {
+          country?: string;
+          is_valid?: boolean;
+          request_date?: string;
+          trader_address?: string | null;
+          trader_name?: string | null;
+          vat_number?: string;
+        };
+        Relationships: [];
+      };
       visitor_invitations_clicks: {
         Row: {
           clicked_at: string;
@@ -1911,33 +2021,6 @@ export type Database = {
           },
         ];
       };
-      vat_verifications: {
-        Row: {
-          country: string;
-          is_valid: boolean;
-          request_date: string;
-          trader_address: string | null;
-          trader_name: string | null;
-          vat_number: string;
-        };
-        Insert: {
-          country: string;
-          is_valid: boolean;
-          request_date?: string;
-          trader_address?: string | null;
-          trader_name?: string | null;
-          vat_number: string;
-        };
-        Update: {
-          country?: string;
-          is_valid?: boolean;
-          request_date?: string;
-          trader_address?: string | null;
-          trader_name?: string | null;
-          vat_number?: string;
-        };
-        Relationships: [];
-      };
     };
     Views: {
       [_ in never]: never;
@@ -1945,6 +2028,7 @@ export type Database = {
     Functions: {
       is_admin: { Args: never; Returns: boolean };
       is_admin_or_sales: { Args: never; Returns: boolean };
+      unaccent: { Args: { '': string }; Returns: string };
     };
     Enums: {
       acompte_status: 'not_required' | 'pending' | 'paid' | 'failed' | 'refunded';
@@ -1973,10 +2057,14 @@ export type Database = {
         | 'espaces'
         | 'visibilite'
         | 'communication'
-        | 'goodies';
+        | 'goodies'
+        | 'soirees'
+        | 'visuel'
+        | 'animation';
       addon_scope: 'prs_only' | 'mds_only' | 'both';
+      affiliate_type: 'media' | 'referral';
       app_setting_category: 'finance' | 'rgpd' | 'integrations' | 'general' | 'email';
-      attachment_unit: 'unit' | 'per_brand' | 'per_1000';
+      attachment_unit: 'unit' | 'per_brand' | 'per_1000' | 'per_person';
       audit_action:
         | 'create'
         | 'update'
@@ -1993,6 +2081,7 @@ export type Database = {
       chat_user_type: 'admin' | 'sales' | 'partner';
       classification_source: 'ai' | 'manual';
       commission_status: 'not_applicable' | 'due' | 'paid';
+      company_logo_source: 'manual_upload' | 'connectonair_sync';
       email_deliverability_status: 'unchecked' | 'valid' | 'invalid' | 'unknown' | 'accept_all';
       email_validation_status: 'valid' | 'free_provider' | 'disposable' | 'domain_mismatch';
       language_code: 'FR' | 'EN';
@@ -2200,10 +2289,14 @@ export const Constants = {
         'visibilite',
         'communication',
         'goodies',
+        'soirees',
+        'visuel',
+        'animation',
       ],
       addon_scope: ['prs_only', 'mds_only', 'both'],
+      affiliate_type: ['media', 'referral'],
       app_setting_category: ['finance', 'rgpd', 'integrations', 'general', 'email'],
-      attachment_unit: ['unit', 'per_brand', 'per_1000'],
+      attachment_unit: ['unit', 'per_brand', 'per_1000', 'per_person'],
       audit_action: [
         'create',
         'update',
@@ -2221,6 +2314,7 @@ export const Constants = {
       chat_user_type: ['admin', 'sales', 'partner'],
       classification_source: ['ai', 'manual'],
       commission_status: ['not_applicable', 'due', 'paid'],
+      company_logo_source: ['manual_upload', 'connectonair_sync'],
       email_deliverability_status: ['unchecked', 'valid', 'invalid', 'unknown', 'accept_all'],
       email_validation_status: ['valid', 'free_provider', 'disposable', 'domain_mismatch'],
       language_code: ['FR', 'EN'],
