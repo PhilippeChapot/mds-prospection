@@ -10,6 +10,8 @@ import { NotesEditor } from '@/components/admin/NotesEditor';
 import { updateProspectNotesAction } from './actions';
 import { ActivitiesSection, type ActivityRow } from '@/components/admin/ActivitiesSection';
 import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
+import { CompanyContactsSection } from '../../companies/[id]/_components/CompanyContactsSection';
+import { listContactsForCompany } from '@/lib/contacts/admin-queries';
 import { DeleteProspectButton } from './DeleteButton';
 import { IsTestToggle } from './IsTestToggle';
 import { ConciergePaymentLinkDialog } from './ConciergePaymentLinkDialog';
@@ -104,6 +106,9 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
   const contactName = contact
     ? [contact.first_name, contact.last_name].filter(Boolean).join(' ').trim()
     : '';
+
+  // P5.x.22 — tous les contacts de la societe rattachee
+  const companyContacts = company ? await listContactsForCompany(company.id) : [];
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
@@ -331,6 +336,20 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           />
         </Section>
       </div>
+
+      {/* Contacts de la societe (P5.x.22) */}
+      {company ? (
+        <section className="bg-card border-md-border space-y-3 rounded-xl border p-5 shadow-sm">
+          <h2 className="text-md-blue-dark text-sm font-bold tracking-wide uppercase">
+            Contacts de {company.name} ({companyContacts.length})
+          </h2>
+          <CompanyContactsSection
+            companyId={company.id}
+            contacts={companyContacts}
+            canDelete={profile.role === 'admin'}
+          />
+        </section>
+      ) : null}
 
       {/* Activites */}
       <Section title="Activites">

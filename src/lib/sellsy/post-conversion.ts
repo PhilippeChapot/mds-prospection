@@ -560,36 +560,68 @@ async function triggerAcomptePaymentLink(input: TriggerAcompteInput): Promise<vo
       (input.docDetails.publicLinkEnabled && input.docDetails.publicUrl) ||
       input.docDetails.pdfLink ||
       `https://www.sellsy.com/document/${input.documentId}`;
-    const tpl = renderProspectAcomptePaymentLinkTemplate(input.locale, {
-      firstName: input.contactFirstName,
-      companyName,
-      documentNumber: input.docDetails.number ?? `D-${input.documentId}`,
-      sellsyDocumentUrl: sellsyDocUrl,
-      paymentLinkUrl: result.url,
-      acompteAmount: formatEur(acompteTtc),
-      resteDuAmount: formatEur(resteDu),
-      autoliquidation,
-    });
 
-    await sendTransactionalEmailViaResend({
-      to: input.contactEmail,
-      toName: input.contactFirstName,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text,
-      tags: [
-        { name: 'category', value: 'prospect_acompte_paymentlink' },
-        { name: 'locale', value: input.locale },
-      ],
-    });
+    // P5.x.22 — multi-destinataires : tous les contacts de la société avec
+    // lifecycle_emails_enabled=true reçoivent l'email, prénom personnalisé.
+    const { sendLifecycleEmailToCompanyContacts } = await import('@/lib/contacts/multi-recipient');
+    const { data: pr } = await supabase
+      .from('prospects')
+      .select('company_id, primary_contact_id')
+      .eq('id', input.prospectId)
+      .maybeSingle();
+
+    const sendResult = pr?.company_id
+      ? await sendLifecycleEmailToCompanyContacts({
+          companyId: pr.company_id,
+          primaryContactId: pr.primary_contact_id ?? null,
+          tags: [{ name: 'category', value: 'prospect_acompte_paymentlink' }],
+          render: (c) =>
+            renderProspectAcomptePaymentLinkTemplate(input.locale, {
+              firstName: c.first_name ?? input.contactFirstName,
+              companyName,
+              documentNumber: input.docDetails.number ?? `D-${input.documentId}`,
+              sellsyDocumentUrl: sellsyDocUrl,
+              paymentLinkUrl: result.url,
+              acompteAmount: formatEur(acompteTtc),
+              resteDuAmount: formatEur(resteDu),
+              autoliquidation,
+            }),
+        })
+      : { attempted: 0, sent: 0, failed: 0, skipped: 0, errors: [] };
+
+    if (sendResult.attempted === 0) {
+      // Fallback : pas de contact éligible en DB → email au contact d'input
+      const tpl = renderProspectAcomptePaymentLinkTemplate(input.locale, {
+        firstName: input.contactFirstName,
+        companyName,
+        documentNumber: input.docDetails.number ?? `D-${input.documentId}`,
+        sellsyDocumentUrl: sellsyDocUrl,
+        paymentLinkUrl: result.url,
+        acompteAmount: formatEur(acompteTtc),
+        resteDuAmount: formatEur(resteDu),
+        autoliquidation,
+      });
+      await sendTransactionalEmailViaResend({
+        to: input.contactEmail,
+        toName: input.contactFirstName,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        tags: [
+          { name: 'category', value: 'prospect_acompte_paymentlink' },
+          { name: 'locale', value: input.locale },
+        ],
+      });
+    }
 
     console.log(
-      '%s acompte-payment-link-sent prospect=%s acompte=%d reste=%d to=%s',
+      '%s acompte-payment-link-sent prospect=%s acompte=%d reste=%d sent=%d failed=%d',
       LOG_PREFIX,
       input.prospectId,
       acompteTtc,
       resteDu,
-      input.contactEmail,
+      sendResult.sent,
+      sendResult.failed,
     );
   } catch (err) {
     console.error(
@@ -741,33 +773,75 @@ async function sendDevisConciergeEmail(input: SendDevisInput): Promise<void> {
 
   const totalHt = formatEur(docDetails.totalHt);
 
-  const template = renderDevisConciergeTemplate(input.locale, {
-    firstName: input.contactFirstName,
-    companyName,
-    documentNumber: docDetails.number ?? `DEV-${input.documentId}`,
-    totalHt,
-    sellsyDocumentUrl,
-  });
+  // P5.x.22 — envoi multi-destinataires : tous les contacts de la société avec
+  // lifecycle_emails_enabled=true reçoivent l'email (1 envoi séparé chacun,
+  // {{firstName}} interpolé par destinataire). Le contact primary du prospect
+  // reçoit en premier pour l'ordre de tracking.
+  const { sendLifecycleEmailToCompanyContacts, listEligibleContactsForCompany } =
+    await import('@/lib/contacts/multi-recipient');
+  const { data: pr } = await supabase
+    .from('prospects')
+    .select('company_id, primary_contact_id')
+    .eq('id', input.prospectId)
+    .maybeSingle();
 
-  await sendTransactionalEmailViaResend({
-    to: input.contactEmail,
-    toName: input.contactFirstName,
-    subject: template.subject,
-    html: template.html,
-    text: template.text,
-    tags: [
-      { name: 'category', value: 'devis_concierge' },
-      { name: 'locale', value: input.locale },
-    ],
-  });
+  const sendResult = pr?.company_id
+    ? await sendLifecycleEmailToCompanyContacts({
+        companyId: pr.company_id,
+        primaryContactId: pr.primary_contact_id ?? null,
+        tags: [{ name: 'category', value: 'devis_concierge' }],
+        render: (c) =>
+          renderDevisConciergeTemplate(input.locale, {
+            firstName: c.first_name ?? input.contactFirstName,
+            companyName,
+            documentNumber: docDetails.number ?? `DEV-${input.documentId}`,
+            totalHt,
+            sellsyDocumentUrl,
+          }),
+      })
+    : { sent: 0, failed: 0, attempted: 0, skipped: 0, errors: [] as Array<unknown> };
 
-  console.log(
-    '%s email-sent prospect_id=%s to=%s document_id=%d',
-    LOG_PREFIX,
-    input.prospectId,
-    input.contactEmail,
-    input.documentId,
-  );
+  // Fallback : si aucun contact éligible côté DB (lifecycle off partout, base
+  // pas encore peuplée, etc.), on retombe sur le contact passé en input pour
+  // éviter de perdre l'email entièrement.
+  if (sendResult.attempted === 0) {
+    const template = renderDevisConciergeTemplate(input.locale, {
+      firstName: input.contactFirstName,
+      companyName,
+      documentNumber: docDetails.number ?? `DEV-${input.documentId}`,
+      totalHt,
+      sellsyDocumentUrl,
+    });
+    await sendTransactionalEmailViaResend({
+      to: input.contactEmail,
+      toName: input.contactFirstName,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+      tags: [
+        { name: 'category', value: 'devis_concierge' },
+        { name: 'locale', value: input.locale },
+      ],
+    });
+    console.log(
+      '%s fallback-email-sent prospect_id=%s to=%s document_id=%d',
+      LOG_PREFIX,
+      input.prospectId,
+      input.contactEmail,
+      input.documentId,
+    );
+  } else {
+    // Inutile mais utile pour l'analyse statique du lint
+    void listEligibleContactsForCompany;
+    console.log(
+      '%s multi-email-sent prospect_id=%s sent=%d failed=%d document_id=%d',
+      LOG_PREFIX,
+      input.prospectId,
+      sendResult.sent,
+      sendResult.failed,
+      input.documentId,
+    );
+  }
 }
 
 interface SellsyDocumentDetails {

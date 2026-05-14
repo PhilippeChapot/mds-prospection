@@ -24,6 +24,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: '/admin', label: 'Dashboard', emoji: '📊', enabled: true },
       { href: '/admin/prospects', label: 'Prospects', emoji: '👥', enabled: true },
       { href: '/admin/companies', label: 'Societes', emoji: '🏢', enabled: true },
+      { href: '/admin/contacts', label: 'Contacts', emoji: '📞', enabled: true },
       {
         href: '/admin/signups',
         label: 'Inscriptions web',

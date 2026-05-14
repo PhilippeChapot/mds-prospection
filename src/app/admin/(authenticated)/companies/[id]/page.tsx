@@ -10,6 +10,8 @@ import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { LinkedProspectsTable, type LinkedProspect } from '@/components/admin/LinkedProspectsTable';
 import { DeleteCompanyButton } from './DeleteButton';
 import { updateCompanyNotesAction } from './actions';
+import { CompanyContactsSection } from './_components/CompanyContactsSection';
+import { listContactsForCompany } from '@/lib/contacts/admin-queries';
 import type { PoleCode } from '@/lib/design-tokens';
 
 export const metadata = { title: 'Fiche societe' };
@@ -40,6 +42,9 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   if (!company) notFound();
 
   const pole = pickFirst(company.pole);
+
+  // P5.x.22 — contacts liés à cette société
+  const companyContacts = await listContactsForCompany(id);
 
   // Prospects lies (via RLS, sales ne voit que les siens — comportement attendu)
   const { data: prospectsData } = await supabase
@@ -207,6 +212,15 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
             )}
           </div>
         )}
+      </Section>
+
+      {/* Contacts de la societe (P5.x.22) */}
+      <Section title={`Contacts (${companyContacts.length})`}>
+        <CompanyContactsSection
+          companyId={id}
+          contacts={companyContacts}
+          canDelete={profile.role === 'admin'}
+        />
       </Section>
 
       {/* Prospects lies */}
