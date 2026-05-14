@@ -30,6 +30,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         emoji: '📨',
         enabled: true,
       },
+      {
+        href: '/admin/contacts-sync',
+        label: 'Sync Brevo',
+        emoji: '📬',
+        enabled: true,
+      },
     ],
   },
   {

@@ -18,6 +18,10 @@
     {
       "path": "/api/cron/admin-alerts",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/sync-contacts-to-brevo",
+      "schedule": "30 6 * * *"
     }
   ]
 }

@@ -46,3 +46,6 @@ next-env.d.ts
 !.env.local.example
 !.env.example
 .env*.local
+
+# Working dir (artefacts SQL generes localement, exports, etc.)
+/COWORK/

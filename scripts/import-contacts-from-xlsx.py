@@ -1,0 +1,229 @@
+#!/usr/bin/env python3
+"""
+P5.x.20 — Génère le SQL bulk INSERT des contacts génériques depuis
+Prospection_MDS2026_v2.xlsx (feuille "Sociétés", colonne "Email générique").
+
+Comportement (doctrine Phil) :
+  - 1 contact "générique" par société (sans first_name/last_name/role)
+  - language = 'FR'/'EN' depuis colonne "Langue d'échange" (fallback 'FR')
+  - marketing_consent = TRUE (intérêt légitime B2B en France)
+  - lifecycle_emails_enabled = TRUE
+  - email_deliverability_status = 'unknown'
+  - is_primary = TRUE si la company n'a aucun contact primary déjà existant
+  - Match company via companies.name_normalized en testant 2 formes :
+      simple   : name.lower().strip()
+      agressif : strip-diacritics + non-alnum→space + collapse
+    (les deux formes coexistent dans la base — l'import historique a utilisé
+    les deux normalisations selon les vagues)
+  - Skip si l'email existe déjà en DB (NOT EXISTS sur lower(email))
+
+Usage :
+  python3 scripts/import-contacts-from-xlsx.py \
+    --xlsx /path/to/Prospection_MDS2026_v2.xlsx \
+    --out COWORK/contacts-import.sql
+
+Sortie : un fichier .sql à coller dans Supabase SQL Editor.
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+import unicodedata
+from pathlib import Path
+
+try:
+    from openpyxl import load_workbook
+except ImportError:
+    print("Missing dependency: pip3 install openpyxl", file=sys.stderr)
+    sys.exit(1)
+
+
+COL_NAME = 0
+COL_PHONE = 5
+COL_EMAIL = 6
+COL_LANG = 26
+
+
+def normalize_simple(s: str | None) -> str:
+    """Reproduit la normalisation utilisée par companies/new actions.ts :
+    `name.toLowerCase()` (juste lower + strip)."""
+    if not s:
+        return ""
+    return str(s).strip().lower()
+
+
+def normalize_aggressive(s: str | None) -> str:
+    """Reproduit la normalisation utilisée par l'import historique :
+    NFD-strip diacritics + non-alnum → espace + collapse spaces."""
+    if not s:
+        return ""
+    s = str(s).strip().lower()
+    s = unicodedata.normalize("NFD", s)
+    s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+    s = re.sub(r"[^a-z0-9]+", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def normalize_lang(raw: str | None) -> str:
+    if not raw:
+        return "FR"
+    v = str(raw).strip().upper()
+    return v if v in ("FR", "EN") else "FR"
+
+
+def sql_quote(s: str | None) -> str:
+    if s is None or s == "":
+        return "NULL"
+    return "'" + str(s).replace("'", "''") + "'"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Import contacts from xlsx → SQL.")
+    parser.add_argument("--xlsx", required=True, help="Path to xlsx file")
+    parser.add_argument("--out", required=True, help="Path to write SQL file")
+    args = parser.parse_args()
+
+    xlsx_path = Path(args.xlsx).expanduser()
+    out_path = Path(args.out).expanduser()
+
+    if not xlsx_path.is_file():
+        print(f"xlsx not found: {xlsx_path}", file=sys.stderr)
+        return 1
+
+    wb = load_workbook(str(xlsx_path), read_only=True, data_only=True)
+    if "Sociétés" not in wb.sheetnames:
+        print("sheet 'Sociétés' not found", file=sys.stderr)
+        return 1
+    ws = wb["Sociétés"]
+
+    rows = list(ws.iter_rows(values_only=True))
+    if len(rows) < 2:
+        print("xlsx empty", file=sys.stderr)
+        return 1
+
+    header = rows[0]
+    # Sanity check
+    if header[COL_EMAIL] not in ("Email générique", "Email generique"):
+        print(
+            f"unexpected header[col {COL_EMAIL}]={header[COL_EMAIL]!r} — expected 'Email générique'",
+            file=sys.stderr,
+        )
+        return 1
+
+    seen_emails: dict[str, str] = {}
+    incoming: list[tuple[str, str, str, str, str]] = []
+    skipped_no_email = 0
+    skipped_dupe = 0
+
+    for r in rows[1:]:
+        name = r[COL_NAME]
+        email = r[COL_EMAIL]
+        phone = r[COL_PHONE]
+        lang_raw = r[COL_LANG] if len(r) > COL_LANG else None
+
+        if not name or not email:
+            skipped_no_email += 1
+            continue
+
+        email_lower = str(email).strip().lower()
+        if not email_lower or "@" not in email_lower:
+            skipped_no_email += 1
+            continue
+
+        if email_lower in seen_emails:
+            skipped_dupe += 1
+            continue
+        seen_emails[email_lower] = str(name)
+
+        simple = normalize_simple(name)
+        aggressive = normalize_aggressive(name)
+        phone_clean = str(phone).strip() if phone else ""
+        lang = normalize_lang(lang_raw)
+
+        incoming.append((simple, aggressive, email_lower, phone_clean, lang))
+
+    print(
+        f"xlsx: {len(rows) - 1} rows | candidates: {len(incoming)} | "
+        f"skipped no-email: {skipped_no_email} | skipped dupes: {skipped_dupe}",
+        file=sys.stderr,
+    )
+
+    if not incoming:
+        print("no candidates to import", file=sys.stderr)
+        return 1
+
+    # Build SQL
+    lines: list[str] = []
+    lines.append("-- Generated by scripts/import-contacts-from-xlsx.py")
+    lines.append(f"-- Source: {xlsx_path.name}")
+    lines.append(f"-- Candidates: {len(incoming)} (after dedupe + no-email filter)")
+    lines.append("--")
+    lines.append("-- Behavior:")
+    lines.append("--   - JOIN companies.name_normalized via simple OR aggressive form")
+    lines.append("--   - Skip if email already in contacts (NOT EXISTS lower(email))")
+    lines.append("--   - is_primary = TRUE if no existing primary contact for the company")
+    lines.append("--   - marketing_consent = TRUE (B2B legitimate interest, FR opt-out covered by Brevo)")
+    lines.append("")
+    lines.append("BEGIN;")
+    lines.append("")
+    lines.append("WITH incoming(name_simple, name_agg, email, phone, lang) AS (")
+    lines.append("  VALUES")
+    value_lines = []
+    for simple, agg, email, phone, lang in incoming:
+        value_lines.append(
+            "    ("
+            f"{sql_quote(simple)}, "
+            f"{sql_quote(agg)}, "
+            f"{sql_quote(email)}, "
+            f"{sql_quote(phone if phone else None)}, "
+            f"{sql_quote(lang)}"
+            ")"
+        )
+    lines.append(",\n".join(value_lines))
+    lines.append(")")
+    lines.append("INSERT INTO public.contacts (")
+    lines.append("  id, company_id, email, phone, language,")
+    lines.append("  is_primary, email_verified, email_deliverability_status,")
+    lines.append("  marketing_consent, lifecycle_emails_enabled, created_at")
+    lines.append(")")
+    lines.append("SELECT")
+    lines.append("  gen_random_uuid(),")
+    lines.append("  c.id,")
+    lines.append("  i.email,")
+    lines.append("  i.phone,")
+    lines.append("  i.lang::public.language_code,")
+    lines.append("  NOT EXISTS (")
+    lines.append("    SELECT 1 FROM public.contacts ct")
+    lines.append("    WHERE ct.company_id = c.id AND ct.is_primary = true")
+    lines.append("  ),")
+    lines.append("  false,")
+    lines.append("  'unknown'::public.email_deliverability_status,")
+    lines.append("  true,")
+    lines.append("  true,")
+    lines.append("  now()")
+    lines.append("FROM incoming i")
+    lines.append("JOIN public.companies c")
+    lines.append("  ON c.name_normalized = i.name_simple")
+    lines.append("  OR c.name_normalized = i.name_agg")
+    lines.append("WHERE NOT EXISTS (")
+    lines.append("  SELECT 1 FROM public.contacts ct")
+    lines.append("  WHERE lower(ct.email) = lower(i.email)")
+    lines.append(");")
+    lines.append("")
+    lines.append("COMMIT;")
+    lines.append("")
+    lines.append("-- Verification:")
+    lines.append("-- SELECT count(*) FROM public.contacts;")
+    lines.append("-- SELECT count(DISTINCT company_id) FROM public.contacts;")
+    lines.append("")
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text("\n".join(lines), encoding="utf-8")
+    print(f"wrote {out_path} ({out_path.stat().st_size} bytes)", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
