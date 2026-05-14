@@ -29,6 +29,14 @@ const POLE_OPTIONS = [
   'INCONNU',
 ] as const;
 
+type CategoryTarif = 'standard' | 'prs_exhibitor' | 'non_eligible';
+
+const CATEGORY_LABELS: Record<CategoryTarif, string> = {
+  standard: 'Standard (MDS, tarif normal)',
+  prs_exhibitor: 'PRS Exhibitor (tarif préférentiel ex-PRS)',
+  non_eligible: 'Non éligible (hors cible MDS)',
+};
+
 interface FormState {
   // company
   companyMode: 'new' | 'existing';
@@ -37,6 +45,7 @@ interface FormState {
   companyDomain: string;
   companyCountry: string;
   companyPole: (typeof POLE_OPTIONS)[number];
+  companyCategory: CategoryTarif;
   // siren
   sirenChoice: 'auto' | 'manual' | 'none';
   sirenSelectedSiret: string; // SIRET when admin picks from ambiguous candidates
@@ -57,6 +66,7 @@ const emptyForm: FormState = {
   companyDomain: '',
   companyCountry: 'FR',
   companyPole: 'INCONNU',
+  companyCategory: 'standard',
   sirenChoice: 'none',
   sirenSelectedSiret: '',
   contactFirstName: '',
@@ -78,7 +88,7 @@ export function QuickAddWizard() {
 
   function handleParse() {
     if (!rawInput.trim()) {
-      toast.error('Colle un texte d&apos;abord');
+      toast.error("Colle un texte d'abord");
       return;
     }
     startParse(async () => {
@@ -95,7 +105,7 @@ export function QuickAddWizard() {
         setParseResp(json);
         prefillForm(json);
         if (!json.parsed) {
-          toast.warning('IA n&apos;a rien extrait — saisis manuellement');
+          toast.warning("IA n'a rien extrait — saisis manuellement");
         } else {
           toast.success(
             `Analyse OK (confiance ${json.parsed.confidence}) — ${json.fuzzyMatches.length} société(s) similaires trouvées`,
@@ -120,6 +130,7 @@ export function QuickAddWizard() {
       companyDomain: p?.company.primary_domain ?? '',
       companyCountry: p?.company.country ?? 'FR',
       companyPole: p?.company.suggested_pole ?? 'INCONNU',
+      companyCategory: 'standard',
       sirenChoice:
         resp.sirenMatch?.auto === true ? 'auto' : resp.sirenMatch?.ambiguous ? 'manual' : 'none',
       sirenSelectedSiret: resp.sirenMatch?.auto === true ? resp.sirenMatch.siret : '',
@@ -179,6 +190,7 @@ export function QuickAddWizard() {
       company_primary_domain: form.companyMode === 'new' ? form.companyDomain || null : null,
       company_country: form.companyMode === 'new' ? form.companyCountry || null : null,
       company_pole_code: form.companyMode === 'new' ? form.companyPole : undefined,
+      company_category: form.companyMode === 'new' ? form.companyCategory : undefined,
       company_id: form.companyMode === 'existing' ? form.companyId : null,
       siren,
       siret,
@@ -237,7 +249,7 @@ export function QuickAddWizard() {
           ) : (
             <Sparkles className="size-3.5" aria-hidden />
           )}
-          {parsePending ? 'Analyse en cours…' : 'Analyser avec l&apos;IA'}
+          {parsePending ? 'Analyse en cours…' : "Analyser avec l'IA"}
         </Button>
       </section>
 
@@ -326,6 +338,24 @@ export function QuickAddWizard() {
                     {POLE_OPTIONS.map((p) => (
                       <option key={p} value={p}>
                         {p}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Catégorie tarif">
+                  <select
+                    value={form.companyCategory}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        companyCategory: e.target.value as CategoryTarif,
+                      })
+                    }
+                    className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
+                  >
+                    {(['standard', 'prs_exhibitor', 'non_eligible'] as const).map((c) => (
+                      <option key={c} value={c}>
+                        {CATEGORY_LABELS[c]}
                       </option>
                     ))}
                   </select>

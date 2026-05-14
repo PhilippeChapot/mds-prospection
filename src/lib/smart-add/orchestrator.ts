@@ -130,6 +130,12 @@ export const confirmSchema = z.object({
       'INCONNU',
     ])
     .optional(),
+  // P5.x.23-bis : catégorie tarif (uniquement mode='new', n'écrase pas
+  // une société existante). Défaut 'standard' (= société à prospecter).
+  company_category: z
+    .enum(['prs_exhibitor', 'standard', 'non_eligible'])
+    .optional()
+    .default('standard'),
   // mode='existing' :
   company_id: z.string().uuid().optional().nullable(),
   // SIREN choisi (auto ou manual select) :
@@ -226,7 +232,7 @@ export async function confirmSmartAdd(
         country: country ? country.toUpperCase() : null,
         pole_id: poleId,
         pole_classified_by: input.company_pole_code ? 'ai' : 'manual',
-        category: 'non_eligible',
+        category: input.company_category,
         siren: input.siren ?? null,
         siret: input.siret ?? null,
         siren_verified_at: input.siren ? new Date().toISOString() : null,
