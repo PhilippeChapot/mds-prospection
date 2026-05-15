@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { normalizeDomain, isValidDomain, cleanDomainList } from './domain';
+import { normalizeDomain, isValidDomain, cleanDomainList, extractEmailDomain } from './domain';
 
 describe('normalizeDomain', () => {
   it('strips protocol + www. + trailing slash + path', () => {
@@ -58,5 +58,23 @@ describe('cleanDomainList', () => {
   });
   it('preserves order (first wins)', () => {
     expect(cleanDomainList(['z.com', 'a.com', 'z.com'])).toEqual(['z.com', 'a.com']);
+  });
+});
+
+describe('extractEmailDomain', () => {
+  it('extracts domain from valid email', () => {
+    expect(extractEmailDomain('jean.dupont@francetv.fr')).toBe('francetv.fr');
+    expect(extractEmailDomain('alice@ACME.COM')).toBe('acme.com');
+  });
+  it('returns null on invalid input', () => {
+    expect(extractEmailDomain('not an email')).toBe(null);
+    expect(extractEmailDomain('@no-local-part.com')).toBe(null);
+    expect(extractEmailDomain('no-at-sign')).toBe(null);
+    expect(extractEmailDomain('trailing-at@')).toBe(null);
+    expect(extractEmailDomain(null)).toBe(null);
+    expect(extractEmailDomain('')).toBe(null);
+  });
+  it('rejects invalid domain syntax', () => {
+    expect(extractEmailDomain('user@invalid-no-tld')).toBe(null);
   });
 });

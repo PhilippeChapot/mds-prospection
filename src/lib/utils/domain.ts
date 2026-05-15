@@ -55,3 +55,20 @@ export function cleanDomainList(raw: unknown[]): string[] {
   }
   return out;
 }
+
+/**
+ * Extrait le domaine d'un email (partie après @, lowercase, normalisée).
+ * Retourne null si l'email est invalide (pas de @, partie locale vide,
+ * partie domaine vide ou syntaxiquement invalide).
+ *
+ * Utilisé par P5.x.23-quinquies (auto-suggestion alternate_domain).
+ */
+export function extractEmailDomain(email: string | null | undefined): string | null {
+  if (!email) return null;
+  const at = email.lastIndexOf('@');
+  if (at < 1 || at === email.length - 1) return null;
+  const raw = email.slice(at + 1);
+  const domain = normalizeDomain(raw);
+  if (!domain || !isValidDomain(domain)) return null;
+  return domain;
+}

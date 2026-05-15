@@ -15,7 +15,12 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 const ENV_BACKUP = { ...process.env };
 
 interface MockState {
-  existingCompany?: { id: string; siren: string | null } | null;
+  existingCompany?: {
+    id: string;
+    siren: string | null;
+    primary_domain?: string | null;
+    alternate_domains?: string[];
+  } | null;
   existingContact?: {
     id: string;
     company_id: string;
@@ -424,5 +429,112 @@ describe('confirmSmartAdd — category (P5.x.23-bis)', () => {
     if (!result.ok) {
       expect(result.error).toMatch(/déjà utilisé/i);
     }
+  });
+
+  // ---------------------------------------------------------------------------
+  // P5.x.23-quinquies : auto-add alternate_domain
+  // ---------------------------------------------------------------------------
+
+  it('add_alternate_domain=true + mode=existing + domain mismatch → UPDATE alt_domains', async () => {
+    const companyId = '1a3e6756-5fde-476a-a735-72c25f44db6b';
+    const state = makeState({
+      existingCompany: {
+        id: companyId,
+        siren: null,
+        primary_domain: 'francetelevisions.fr',
+        alternate_domains: [],
+      },
+    });
+    mockSupabase(state);
+
+    const { confirmSchema, confirmSmartAdd } = await import('./orchestrator');
+    const parsed = confirmSchema.parse({
+      raw_input: 'mismatch',
+      company_mode: 'existing',
+      company_id: companyId,
+      contact_email: 'marie@francetv.fr',
+      add_alternate_domain: true,
+    });
+
+    const result = await confirmSmartAdd(parsed, 'admin');
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.alternateDomainAdded).toBe('francetv.fr');
+
+    // L'UPDATE alternate_domains a bien eu lieu sur la company
+    const altUpdate = state.updates.find(
+      (u) =>
+        u.table === 'companies' &&
+        Array.isArray((u.patch as Record<string, unknown>).alternate_domains),
+    );
+    expect(altUpdate).toBeDefined();
+    const alts = (altUpdate?.patch as { alternate_domains: string[] }).alternate_domains;
+    expect(alts).toEqual(['francetv.fr']);
+  });
+
+  it('add_alternate_domain=false → no UPDATE alt_domains', async () => {
+    const companyId = '1a3e6756-5fde-476a-a735-72c25f44db6b';
+    const state = makeState({
+      existingCompany: {
+        id: companyId,
+        siren: null,
+        primary_domain: 'francetelevisions.fr',
+        alternate_domains: [],
+      },
+    });
+    mockSupabase(state);
+
+    const { confirmSchema, confirmSmartAdd } = await import('./orchestrator');
+    const parsed = confirmSchema.parse({
+      raw_input: 'mismatch but unchecked',
+      company_mode: 'existing',
+      company_id: companyId,
+      contact_email: 'marie@francetv.fr',
+      add_alternate_domain: false,
+    });
+
+    const result = await confirmSmartAdd(parsed, 'admin');
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.alternateDomainAdded).toBeNull();
+
+    const altUpdate = state.updates.find(
+      (u) =>
+        u.table === 'companies' &&
+        Array.isArray((u.patch as Record<string, unknown>).alternate_domains),
+    );
+    expect(altUpdate).toBeUndefined();
+  });
+
+  it('idempotent : domain already in alternate_domains → no duplicate, no UPDATE', async () => {
+    const companyId = '1a3e6756-5fde-476a-a735-72c25f44db6b';
+    const state = makeState({
+      existingCompany: {
+        id: companyId,
+        siren: null,
+        primary_domain: 'francetelevisions.fr',
+        alternate_domains: ['francetv.fr'], // déjà présent
+      },
+    });
+    mockSupabase(state);
+
+    const { confirmSchema, confirmSmartAdd } = await import('./orchestrator');
+    const parsed = confirmSchema.parse({
+      raw_input: 'race',
+      company_mode: 'existing',
+      company_id: companyId,
+      contact_email: 'lead@francetv.fr',
+      add_alternate_domain: true, // checkbox cochée mais rien à faire
+    });
+
+    const result = await confirmSmartAdd(parsed, 'admin');
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.alternateDomainAdded).toBeNull();
+
+    // Pas d'UPDATE alternate_domains
+    const altUpdate = state.updates.find(
+      (u) =>
+        u.table === 'companies' &&
+        Array.isArray((u.patch as Record<string, unknown>).alternate_domains),
+    );
+    expect(altUpdate).toBeUndefined();
   });
 });

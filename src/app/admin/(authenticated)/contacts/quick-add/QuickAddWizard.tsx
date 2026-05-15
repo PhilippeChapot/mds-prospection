@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DomainTagsInput } from '@/components/ui/DomainTagsInput';
+import { extractEmailDomain } from '@/lib/utils/domain';
 import type { ParsedSmartAdd } from '@/lib/smart-add/parse-with-ai';
 import type { FuzzyMatchedCompany, ExistingContactMatch } from '@/lib/smart-add/orchestrator';
 import type { AutoMatchResult, SireneEtablissement } from '@/lib/insee/sirene';
@@ -62,6 +63,8 @@ interface FormState {
   contactIsPrimary: boolean;
   /** P5.x.23-ter : 'new' = créer, sinon UUID = UPSERT sur ce contact */
   contactMode: 'new' | string;
+  /** P5.x.23-quinquies : checkbox auto-suggestion alternate_domain. */
+  addAlternateDomain: boolean;
 }
 
 const emptyForm: FormState = {
@@ -83,6 +86,7 @@ const emptyForm: FormState = {
   contactLanguage: 'FR',
   contactIsPrimary: true,
   contactMode: 'new',
+  addAlternateDomain: true,
 };
 
 export function QuickAddWizard() {
@@ -92,6 +96,23 @@ export function QuickAddWizard() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [parsePending, startParse] = useTransition();
   const [confirmPending, startConfirm] = useTransition();
+
+  // P5.x.23-quinquies : détection auto-suggestion alternate_domain.
+  //   1. mode='existing' (sinon le primary du nouveau est saisi à la main)
+  //   2. domaine email extractible
+  //   3. domaine != primary_domain de la société sélectionnée
+  //   4. domaine ∉ alternate_domains actuels
+  const emailDomain = extractEmailDomain(form.contactEmail);
+  const selectedCompany =
+    parseResp?.ok && form.companyMode === 'existing' && form.companyId
+      ? (parseResp.fuzzyMatches.find((m) => m.id === form.companyId) ?? null)
+      : null;
+  const showAddAlternateDomainSuggestion =
+    form.companyMode === 'existing' &&
+    selectedCompany !== null &&
+    emailDomain !== null &&
+    selectedCompany.primary_domain?.toLowerCase() !== emailDomain &&
+    !selectedCompany.alternate_domains.map((d) => d.toLowerCase()).includes(emailDomain);
 
   function handleParse() {
     if (!rawInput.trim()) {
@@ -150,6 +171,7 @@ export function QuickAddWizard() {
       contactLanguage: 'FR',
       contactIsPrimary: true,
       contactMode: resp.existingContacts.length > 0 ? resp.existingContacts[0].id : 'new',
+      addAlternateDomain: true,
     });
   }
 
@@ -214,6 +236,7 @@ export function QuickAddWizard() {
       contact_language: form.contactLanguage,
       contact_is_primary: form.contactIsPrimary,
       contact_existing_id: form.contactMode === 'new' ? null : form.contactMode,
+      add_alternate_domain: showAddAlternateDomainSuggestion && form.addAlternateDomain,
     };
 
     startConfirm(async () => {
@@ -510,6 +533,50 @@ export function QuickAddWizard() {
                   Si tu lies à un contact existant, les champs vides (prénom, nom, rôle, téléphone)
                   seront enrichis avec les valeurs ci-dessous (les valeurs DB existantes sont
                   préservées).
+                </p>
+              </div>
+            ) : null}
+
+            {showAddAlternateDomainSuggestion && selectedCompany && emailDomain ? (
+              <div className="border-md-blue/30 bg-md-blue/5 rounded-md border p-3 text-sm">
+                <p className="text-md-blue-dark mb-2 flex items-center gap-2 text-xs font-semibold tracking-wider uppercase">
+                  💡 Le domaine de l&apos;email ne correspond pas à la société
+                </p>
+                <div className="text-md-text mb-3 space-y-0.5">
+                  <div>
+                    <strong>Email :</strong> <span className="font-mono">{form.contactEmail}</span>{' '}
+                    <span className="text-md-text-muted text-xs">
+                      (domaine :{' '}
+                      <code className="bg-md-blue/10 rounded px-1 font-mono">{emailDomain}</code>)
+                    </span>
+                  </div>
+                  <div>
+                    <strong>Société :</strong> {selectedCompany.name}{' '}
+                    <span className="text-md-text-muted text-xs">
+                      (primary :{' '}
+                      <code className="bg-md-blue/10 rounded px-1 font-mono">
+                        {selectedCompany.primary_domain ?? '—'}
+                      </code>
+                      )
+                    </span>
+                  </div>
+                </div>
+                <label className="text-md-text flex cursor-pointer items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.addAlternateDomain}
+                    onChange={(e) => setForm({ ...form, addAlternateDomain: e.target.checked })}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    Ajouter{' '}
+                    <code className="bg-md-blue/10 rounded px-1 font-mono">{emailDomain}</code> aux
+                    domaines alternatifs de {selectedCompany.name}
+                  </span>
+                </label>
+                <p className="text-md-text-muted mt-2 ml-6 text-[11px]">
+                  Les futurs contacts avec un email <code>@{emailDomain}</code> seront alors
+                  automatiquement matchés à cette société.
                 </p>
               </div>
             ) : null}

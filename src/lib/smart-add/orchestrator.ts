@@ -31,6 +31,7 @@ export interface FuzzyMatchedCompany {
   id: string;
   name: string;
   primary_domain: string | null;
+  alternate_domains: string[];
   country: string | null;
   siren: string | null;
   similarity: number;
@@ -64,7 +65,7 @@ async function fuzzyMatchCompanies(name: string | null): Promise<FuzzyMatchedCom
   // simple (le GIN index supporte ilike via gin_trgm_ops).
   const { data, error } = await supabase
     .from('companies')
-    .select('id, name, primary_domain, country, siren, name_normalized')
+    .select('id, name, primary_domain, alternate_domains, country, siren, name_normalized')
     .or(`name.ilike.${term},name_normalized.ilike.${term}`)
     .limit(5);
   if (error) {
@@ -84,6 +85,7 @@ async function fuzzyMatchCompanies(name: string | null): Promise<FuzzyMatchedCom
       id: r.id,
       name: r.name,
       primary_domain: r.primary_domain,
+      alternate_domains: (r.alternate_domains as string[] | null) ?? [],
       country: r.country,
       siren: r.siren,
       similarity,
@@ -222,6 +224,10 @@ export const confirmSchema = z.object({
   // P5.x.23-ter : si fourni, on UPDATE ce contact (UPSERT logic) au lieu
   // de tenter une INSERT. Bypass de l'anti-doublon email global.
   contact_existing_id: z.string().uuid().optional().nullable(),
+  // P5.x.23-quinquies : si true ET mode='existing' ET le domaine de
+  // contact_email ne matche pas (primary_domain | alternate_domains) →
+  // UPDATE companies.alternate_domains avec array_append du domaine.
+  add_alternate_domain: z.boolean().optional().default(false),
 });
 
 export type ConfirmInput = z.infer<typeof confirmSchema>;
@@ -232,6 +238,9 @@ export interface ConfirmResult {
   brevoContactId: string | null;
   brevoKind: string;
   smartAddAttemptId: string;
+  /** P5.x.23-quinquies : si add_alternate_domain était true et qu'on a effectivement
+   *  ajouté un domaine aux alternates, contient ce domaine. Sinon null. */
+  alternateDomainAdded: string | null;
 }
 
 async function findPoleId(code: string): Promise<string | null> {
@@ -463,7 +472,54 @@ export async function confirmSmartAdd(
     );
   }
 
-  // 6. INSERT smart_add_attempts (audit)
+  // 6. P5.x.23-quinquies : auto-ajout du domaine de l'email aux alternate_domains
+  //    si demandé (checkbox cochée) + mode='existing' + le domaine ne matche
+  //    ni primary_domain ni alternate_domains.
+  //
+  //    Lecture-modification-écriture (Supabase JS n'expose pas array_append).
+  //    Idempotent : re-vérifie juste avant l'UPDATE pour éviter les doublons
+  //    en cas de race condition.
+  let alternateDomainAdded: string | null = null;
+  if (input.add_alternate_domain && input.company_mode === 'existing') {
+    const { extractEmailDomain } = await import('@/lib/utils/domain');
+    const emailDomain = extractEmailDomain(email);
+    if (emailDomain) {
+      const { data: co } = await supabase
+        .from('companies')
+        .select('primary_domain, alternate_domains')
+        .eq('id', companyId)
+        .maybeSingle();
+      if (co) {
+        const currentAlt = (co.alternate_domains as string[] | null) ?? [];
+        const primary = co.primary_domain ?? null;
+        if (emailDomain !== primary && !currentAlt.includes(emailDomain)) {
+          const { error: updErr } = await supabase
+            .from('companies')
+            .update({ alternate_domains: [...currentAlt, emailDomain] })
+            .eq('id', companyId);
+          if (updErr) {
+            console.warn(
+              '%s alt-domain-update-failed company=%s domain=%s msg=%s',
+              LOG_PREFIX,
+              companyId,
+              emailDomain,
+              updErr.message,
+            );
+          } else {
+            alternateDomainAdded = emailDomain;
+            console.log(
+              '%s alt-domain-added company=%s domain=%s',
+              LOG_PREFIX,
+              companyId,
+              emailDomain,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // 7. INSERT smart_add_attempts (audit)
   let smartAddAttemptId = '';
   const { data: attempt } = await supabase
     .from('smart_add_attempts')
@@ -473,9 +529,11 @@ export async function confirmSmartAdd(
       result: {
         companyId,
         contactId,
+        contactMode: input.contact_existing_id ? 'upsert' : 'new',
         brevoContactId,
         brevoKind,
         siren: input.siren ?? null,
+        alternateDomainAdded,
       } as never,
       user_id: userId,
     })
@@ -484,12 +542,13 @@ export async function confirmSmartAdd(
   if (attempt) smartAddAttemptId = attempt.id;
 
   console.log(
-    '%s confirmed company=%s contact=%s brevo=%s/%s',
+    '%s confirmed company=%s contact=%s brevo=%s/%s alt-domain=%s',
     LOG_PREFIX,
     companyId,
     contactId,
     brevoKind,
     brevoContactId ?? '-',
+    alternateDomainAdded ?? '-',
   );
 
   return {
@@ -500,6 +559,7 @@ export async function confirmSmartAdd(
       brevoContactId,
       brevoKind,
       smartAddAttemptId,
+      alternateDomainAdded,
     },
   };
 }
