@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { PoleBadge } from '@/components/admin/PoleBadge';
 import type { ContactListRow } from '@/lib/contacts/admin-queries';
 import type { PoleCode } from '@/lib/design-tokens';
@@ -25,6 +26,7 @@ export function ContactsTable({ rows }: { rows: ContactListRow[] }) {
               <th className="px-4 py-3">Primary</th>
               <th className="px-4 py-3">Lifecycle</th>
               <th className="px-4 py-3">Brevo</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -82,6 +84,16 @@ export function ContactsTable({ rows }: { rows: ContactListRow[] }) {
                   ) : (
                     <span className="text-amber-600">— not sync</span>
                   )}
+                </td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/admin/prospects/new?contact_id=${row.id}`}
+                    title="Convertir en prospect"
+                    className="text-md-blue hover:text-md-blue-dark inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap"
+                  >
+                    <ArrowRight className="size-3" aria-hidden />
+                    Convertir
+                  </Link>
                 </td>
               </tr>
             ))}

@@ -3,11 +3,13 @@
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
+import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CompanyCombobox, type CompanyOption } from '@/components/admin/CompanyCombobox';
+import { CompanyCombobox } from '@/components/admin/CompanyCombobox';
+import { ContactCombobox, type ContactOption } from '@/components/admin/ContactCombobox';
 import { useFieldErrors } from '@/components/admin/use-field-errors';
 import { POLE_CODES } from '@/lib/design-tokens';
 import { createProspectAction, type CreateProspectState } from './actions';
@@ -16,24 +18,38 @@ type Owner = { id: string; label: string };
 
 const initialState: CreateProspectState = {};
 
+export type PrefillContact = ContactOption;
+export type PrefillCompany = { id: string; name: string; primary_domain: string | null };
+
 export function NewProspectForm({
-  companies,
   owners,
   currentUser,
-  prefillCompanyId,
+  prefillContact,
+  prefillCompany,
+  alreadyProspectIds,
 }: {
-  companies: CompanyOption[];
   owners: Owner[];
   currentUser: { id: string; full_name: string | null; email: string; role: 'admin' | 'sales' };
-  prefillCompanyId?: string;
+  prefillContact: PrefillContact | null;
+  prefillCompany: PrefillCompany | null;
+  alreadyProspectIds: string[];
 }) {
   const [state, formAction] = useActionState(createProspectAction, initialState);
   const { errors, clear } = useFieldErrors(state.fieldErrors);
-  const [companyMode, setCompanyMode] = useState<'existing' | 'new'>('existing');
 
-  const initialCompany = prefillCompanyId
-    ? companies.find((c) => c.id === prefillCompanyId)
-    : undefined;
+  // Mode société : prefilled si on a un contact ou une company en query param.
+  const initialCompanyId = prefillContact?.company_id ?? prefillCompany?.id ?? undefined;
+  const initialCompanyName = prefillContact?.company_name ?? prefillCompany?.name ?? undefined;
+  const [companyMode, setCompanyMode] = useState<'existing' | 'new'>('existing');
+  const [companyId, setCompanyId] = useState<string | undefined>(initialCompanyId);
+
+  // Mode contact : 'existing' si on a un prefill ; sinon 'new' (saisie manuelle).
+  const [contactMode, setContactMode] = useState<'existing' | 'new'>(
+    prefillContact ? 'existing' : 'new',
+  );
+  const [selectedContact, setSelectedContact] = useState<ContactOption | null>(
+    prefillContact ?? null,
+  );
 
   function handleAnyChange(e: React.ChangeEvent<HTMLFormElement>) {
     const t = e.target as Partial<{ name: string }>;
@@ -42,14 +58,42 @@ export function NewProspectForm({
 
   return (
     <form action={formAction} onChange={handleAnyChange} className="space-y-6">
+      {/* Edge case : contact deja prospect */}
+      {prefillContact && alreadyProspectIds.length > 0 ? (
+        <div className="border-md-warning/40 bg-md-warning/15 flex items-start gap-2 rounded-md border p-3 text-sm">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden />
+          <div>
+            <p className="text-md-text font-semibold">
+              Ce contact est déjà lié à {alreadyProspectIds.length} prospect
+              {alreadyProspectIds.length > 1 ? 's' : ''}.
+            </p>
+            <p className="text-md-text-muted text-xs">
+              Tu peux quand même créer un nouveau prospect (cas multi-saison ou pack différent).
+              Sinon :{' '}
+              {alreadyProspectIds.slice(0, 3).map((id, idx) => (
+                <span key={id}>
+                  {idx > 0 ? ', ' : ''}
+                  <Link
+                    href={`/admin/prospects/${id}`}
+                    className="text-md-blue font-medium hover:underline"
+                  >
+                    voir #{id.slice(0, 8)}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       {/* SECTION SOCIETE */}
       <Section title="Societe">
         <Field label="Societe" htmlFor="company-trigger" error={errors.company_id}>
           <CompanyCombobox
-            options={companies}
-            initialId={initialCompany?.id}
-            initialName={initialCompany?.name}
+            initialId={initialCompanyId}
+            initialName={initialCompanyName}
             onModeChange={setCompanyMode}
+            onSelect={(c) => setCompanyId(c?.id)}
           />
         </Field>
 
@@ -72,13 +116,10 @@ export function NewProspectForm({
                 <select
                   name="company_category"
                   className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
-                  defaultValue=""
+                  defaultValue="standard"
                 >
-                  <option value="" disabled>
-                    Choisir…
-                  </option>
-                  <option value="prs_exhibitor">PRS exposant</option>
                   <option value="standard">Standard</option>
+                  <option value="prs_exhibitor">PRS exposant</option>
                   <option value="non_eligible">Non eligible</option>
                 </select>
               </Field>
@@ -105,23 +146,72 @@ export function NewProspectForm({
 
       {/* SECTION CONTACT */}
       <Section title="Contact principal">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Field label="Prenom" error={errors.contact_first_name}>
-            <Input name="contact_first_name" />
-          </Field>
-          <Field label="Nom" error={errors.contact_last_name}>
-            <Input name="contact_last_name" />
-          </Field>
-          <Field label="Email" required error={errors.contact_email}>
-            <Input name="contact_email" type="email" required />
-          </Field>
-          <Field label="Telephone" error={errors.contact_phone}>
-            <Input name="contact_phone" type="tel" />
-          </Field>
-          <Field label="Fonction / role" error={errors.contact_role}>
-            <Input name="contact_role" placeholder="Direction marketing" />
-          </Field>
-        </div>
+        <Field label="Sélectionner un contact existant" error={errors.contact_id}>
+          <ContactCombobox
+            initial={prefillContact ?? null}
+            filterByCompanyId={companyMode === 'existing' ? companyId : null}
+            onSelect={(c) => setSelectedContact(c)}
+            onCreateNew={() => setSelectedContact(null)}
+            onModeChange={setContactMode}
+          />
+        </Field>
+
+        {contactMode === 'new' || !selectedContact ? (
+          <div className="bg-muted/30 border-md-border space-y-3 rounded-md border border-dashed p-3">
+            <p className="text-md-text-muted text-xs">
+              Saisie manuelle : si l&apos;email correspond à un contact existant, il sera rattaché.
+            </p>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <Field label="Prenom" error={errors.contact_first_name}>
+                <Input name="contact_first_name" />
+              </Field>
+              <Field label="Nom" error={errors.contact_last_name}>
+                <Input name="contact_last_name" />
+              </Field>
+              <Field label="Email" required error={errors.contact_email}>
+                <Input name="contact_email" type="email" required />
+              </Field>
+              <Field label="Telephone" error={errors.contact_phone}>
+                <Input name="contact_phone" type="tel" />
+              </Field>
+              <Field label="Fonction / role" error={errors.contact_role}>
+                <Input name="contact_role" placeholder="Direction marketing" />
+              </Field>
+            </div>
+          </div>
+        ) : (
+          // Mode existing : on injecte des hidden inputs pour le contact_email
+          // (validation Zod requiert un email côté action). Les autres champs
+          // sont juste descriptifs ici, le contact existant est utilisé tel
+          // quel via contact_id.
+          <div className="bg-md-blue/5 border-md-blue/30 space-y-1 rounded-md border p-3 text-sm">
+            <p className="text-md-text font-semibold">
+              {[selectedContact.first_name, selectedContact.last_name]
+                .filter(Boolean)
+                .join(' ')
+                .trim() || selectedContact.email}
+            </p>
+            <p className="text-md-text-muted text-xs">
+              <span className="font-mono">{selectedContact.email}</span>
+              {selectedContact.role ? <> · {selectedContact.role}</> : null}
+              {selectedContact.is_primary ? ' · ★ primary' : null}
+            </p>
+            <p className="text-md-text-muted text-[11px]">
+              Société : {selectedContact.company_name}
+            </p>
+            {/* Hidden inputs pour passer email + nom au server action.
+                Email obligatoire (validation Zod). */}
+            <input type="hidden" name="contact_email" value={selectedContact.email} />
+            <input
+              type="hidden"
+              name="contact_first_name"
+              value={selectedContact.first_name ?? ''}
+            />
+            <input type="hidden" name="contact_last_name" value={selectedContact.last_name ?? ''} />
+            <input type="hidden" name="contact_phone" value={selectedContact.phone ?? ''} />
+            <input type="hidden" name="contact_role" value={selectedContact.role ?? ''} />
+          </div>
+        )}
       </Section>
 
       {/* SECTION PROSPECT */}

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Loader2, Plus, Star, Mail, Pencil, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { Loader2, Plus, Star, Mail, Pencil, Trash2, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -157,7 +158,15 @@ export function CompanyContactsSection({ companyId, contacts, canDelete }: Props
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      <div className="flex gap-1">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/admin/prospects/new?contact_id=${c.id}`}
+                          title="Convertir en prospect"
+                          className="text-md-blue hover:text-md-blue-dark inline-flex items-center gap-0.5 text-[10px] font-semibold"
+                        >
+                          <ArrowRight className="size-3" aria-hidden />
+                          Convertir
+                        </Link>
                         <button
                           type="button"
                           onClick={() => setEditing(c)}

@@ -55,6 +55,11 @@ const InputSchema = z
     company_category: CategoryTarifSchema.optional(),
     company_pole_code: PoleCodeSchema.optional(),
 
+    // P5.x.24 : si fourni, on utilise ce contact existant (mode='existing').
+    // Sinon, on insère/upsert via contact_email (mode='new').
+    contact_id: z.string().uuid().optional().or(z.literal('')),
+    contact_mode: z.enum(['existing', 'new']).optional().default('new'),
+
     contact_first_name: z.string().trim().max(80).optional(),
     contact_last_name: z.string().trim().max(80).optional(),
     contact_email: z.string().trim().toLowerCase().email(),
@@ -175,40 +180,60 @@ export async function createProspectAction(
   }
 
   // 2. Resoudre/creer le contact
-  const { data: existingContact } = await supabase
-    .from('contacts')
-    .select('id, company_id')
-    .ilike('email', data.contact_email)
-    .maybeSingle();
-
+  //    P5.x.24 : si data.contact_id fourni (mode existing), on l'utilise tel
+  //    quel (avec check de rattachement à la company sélectionnée).
   let contactId: string;
-  if (existingContact) {
-    if (existingContact.company_id !== companyId) {
+  if (data.contact_id) {
+    const { data: pickedContact, error: pickedErr } = await supabase
+      .from('contacts')
+      .select('id, company_id')
+      .eq('id', data.contact_id)
+      .maybeSingle();
+    if (pickedErr || !pickedContact) {
+      return { error: 'Contact selectionne introuvable.' };
+    }
+    if (pickedContact.company_id !== companyId) {
       return {
-        error:
-          'Cet email est deja rattache a une autre societe. Verifiez ou creez un autre contact.',
-        fieldErrors: { contact_email: 'Email deja utilise sur une autre societe.' },
+        error: 'Le contact selectionne appartient a une autre societe. Ajustez la societe.',
+        fieldErrors: { contact_id: 'Contact rattache a une autre societe.' },
       };
     }
-    contactId = existingContact.id;
+    contactId = pickedContact.id;
   } else {
-    const { data: createdContact, error: contactErr } = await supabase
+    // Mode 'new' : insert ou rattachement par email
+    const { data: existingContact } = await supabase
       .from('contacts')
-      .insert({
-        company_id: companyId,
-        first_name: data.contact_first_name || null,
-        last_name: data.contact_last_name || null,
-        email: data.contact_email,
-        phone: data.contact_phone || null,
-        role: data.contact_role || null,
-        is_primary: true,
-      })
-      .select('id')
-      .single();
-    if (contactErr || !createdContact) {
-      return { error: contactErr?.message ?? 'Erreur creation contact.' };
+      .select('id, company_id')
+      .ilike('email', data.contact_email)
+      .maybeSingle();
+    if (existingContact) {
+      if (existingContact.company_id !== companyId) {
+        return {
+          error:
+            'Cet email est deja rattache a une autre societe. Verifiez ou creez un autre contact.',
+          fieldErrors: { contact_email: 'Email deja utilise sur une autre societe.' },
+        };
+      }
+      contactId = existingContact.id;
+    } else {
+      const { data: createdContact, error: contactErr } = await supabase
+        .from('contacts')
+        .insert({
+          company_id: companyId,
+          first_name: data.contact_first_name || null,
+          last_name: data.contact_last_name || null,
+          email: data.contact_email,
+          phone: data.contact_phone || null,
+          role: data.contact_role || null,
+          is_primary: true,
+        })
+        .select('id')
+        .single();
+      if (contactErr || !createdContact) {
+        return { error: contactErr?.message ?? 'Erreur creation contact.' };
+      }
+      contactId = createdContact.id;
     }
-    contactId = createdContact.id;
   }
 
   // 3. Creer le prospect
