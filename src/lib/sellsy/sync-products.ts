@@ -29,7 +29,15 @@ interface SellsyItem {
   reference?: string;
   name?: string;
   description?: string;
-  unit_amount_excluding_tax?: string | number;
+  /**
+   * P6.x.1a-ter : Sellsy V2 `/items` retourne le prix HT dans `price_excl_tax`
+   * (string décimal, ex "1950.00"). Le champ historiquement nommé
+   * `unit_amount_excluding_tax` dans le code n'existe PAS dans la réponse —
+   * cause du bug de prix null sur /admin/tarifs.
+   */
+  price_excl_tax?: string | number | null;
+  /** Alias historique pour compat, jamais peuplé par Sellsy V2 /items. */
+  unit_amount_excluding_tax?: string | number | null;
   tax_id?: number;
   unit_id?: number;
   category_id?: number;
@@ -69,8 +77,14 @@ export async function syncSellsyProducts(): Promise<SyncProductsResult> {
     reference: item.reference ?? `unknown-${item.id}`,
     name: item.name ?? null,
     description: item.description ?? null,
+    // P6.x.1a-ter : lit price_excl_tax (V2 field name actuel). Fallback sur
+    // unit_amount_excluding_tax pour compat héritage si jamais réactivé.
     price_excl_tax:
-      item.unit_amount_excluding_tax != null ? Number(item.unit_amount_excluding_tax) : null,
+      item.price_excl_tax != null
+        ? Number(item.price_excl_tax)
+        : item.unit_amount_excluding_tax != null
+          ? Number(item.unit_amount_excluding_tax)
+          : null,
     tax_id: item.tax_id ?? null,
     unit_id: item.unit_id ?? null,
     category_id: item.category_id ?? null,

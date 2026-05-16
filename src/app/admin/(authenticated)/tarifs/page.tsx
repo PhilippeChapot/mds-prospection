@@ -9,6 +9,7 @@ import {
   type ListProductsFilters,
 } from '@/lib/tarifs/admin-queries';
 import { TARIF_CATEGORIES, CATEGORY_LABELS, type TarifCategory } from '@/lib/tarifs/types';
+import { formatEurHt } from '@/lib/tarifs/format';
 import { CategoryBadge } from './_components/CategoryBadge';
 import { InlineRowControls } from './_components/InlineRowControls';
 import { EditorialSheet } from './_components/EditorialSheet';
@@ -23,11 +24,6 @@ type SearchParams = Promise<{
   featured?: string;
   archived?: string;
 }>;
-
-function fmtEur(value: number | null): string {
-  if (value === null) return '—';
-  return `${Number(value).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT`;
-}
 
 function parseCategories(raw: string | string[] | undefined): TarifCategory[] {
   if (!raw) return [];
@@ -231,7 +227,7 @@ export default async function TarifsPage({ searchParams }: { searchParams: Searc
                       ) : null}
                     </td>
                     <td className="text-md-text px-3 py-2 font-mono text-xs">
-                      {fmtEur(r.sellsy.price_excl_tax)}
+                      {formatEurHt(r.sellsy.price_excl_tax)}
                     </td>
                     <InlineRowControls row={r} />
                     <td className="px-3 py-2 text-right">

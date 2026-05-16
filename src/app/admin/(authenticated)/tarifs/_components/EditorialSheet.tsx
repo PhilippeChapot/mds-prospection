@@ -31,6 +31,7 @@ import {
 import { upsertEditorialAction, deleteEditorialAction } from '@/lib/tarifs/admin-actions';
 import { TARIF_CATEGORIES, CATEGORY_LABELS, type TarifCategory } from '@/lib/tarifs/types';
 import type { ProductWithEditorial } from '@/lib/tarifs/types';
+import { formatEurHt } from '@/lib/tarifs/format';
 
 export function EditorialSheet({
   row,
@@ -123,7 +124,7 @@ export function EditorialSheet({
             <SheetDescription>
               Sellsy #{row.sellsy.sellsy_item_id} · {row.sellsy.reference}
               {row.sellsy.price_excl_tax != null ? (
-                <> · {Number(row.sellsy.price_excl_tax).toLocaleString('fr-FR')} € HT</>
+                <> · {formatEurHt(row.sellsy.price_excl_tax)}</>
               ) : null}
             </SheetDescription>
           </div>
