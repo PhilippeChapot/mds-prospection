@@ -44,6 +44,11 @@ interface OrderRow {
 
 interface ProspectRow {
   id: string;
+  /** P6.x.1b-γ : si true, on skip facture Sellsy / email client / Brevo.
+   *  Permet de tester le flow en LIVE sans créer de vraie facture (qui
+   *  demanderait un avoir comptable pour annuler). Seul l'email admin
+   *  est envoyé, préfixé [TEST] pour clarté. */
+  is_test: boolean;
   primary_contact_email: string | null;
   primary_contact_first_name: string | null;
   company_name: string;
@@ -111,7 +116,7 @@ export async function handleSupplementaryCheckoutCompleted(
   const { data: prospectRow } = await supabase
     .from('prospects')
     .select(
-      `id,
+      `id, is_test,
        contact:contacts!primary_contact_id(email, first_name),
        company:companies!inner(name, sellsy_id)`,
     )
@@ -135,21 +140,35 @@ export async function handleSupplementaryCheckoutCompleted(
   const company = pickOne(prospectRow.company);
   const prospect: ProspectRow = {
     id: prospectRow.id,
+    is_test: Boolean(prospectRow.is_test),
     primary_contact_email: contact?.email ?? null,
     primary_contact_first_name: contact?.first_name ?? null,
     company_name: company?.name ?? '(société inconnue)',
     company_sellsy_id: company?.sellsy_id ?? null,
   };
 
+  if (prospect.is_test) {
+    console.log(
+      '%s test-mode-detected order=%s prospect=%s — skip facture/email-client/brevo, admin email préfixé [TEST]',
+      LOG_PREFIX,
+      orderId,
+      prospect.id,
+    );
+  }
+
   const items = Array.isArray(order.items) ? (order.items as SupplementaryItemRow[]) : [];
   const totalHt = Number(order.total_ht_eur);
   const totalTtc = Number(order.total_ttc_eur);
   const vatRate = Number(order.vat_rate);
 
-  // 3. Facture Sellsy (best-effort)
+  // 3. Facture Sellsy (best-effort). P6.x.1b-γ : skip si prospect.is_test
+  //    pour éviter de créer une vraie facture comptable lors d'un test
+  //    LIVE — sinon il faudrait émettre un avoir pour l'annuler.
   let factureNumber: string | null = null;
   let facturePublicUrl: string | null = null;
-  if (prospect.company_sellsy_id) {
+  if (prospect.is_test) {
+    console.log('%s facture-skipped order=%s reason=is_test', LOG_PREFIX, orderId);
+  } else if (prospect.company_sellsy_id) {
     const sellsyResult = await createSupplementaryFacture({
       orderId,
       companysSellsyId: Number(prospect.company_sellsy_id),
@@ -178,8 +197,16 @@ export async function handleSupplementaryCheckoutCompleted(
     console.warn('%s no-company-sellsy-id order=%s — facture non créée', LOG_PREFIX, orderId);
   }
 
-  // 4. Email confirmation client
-  if (prospect.primary_contact_email) {
+  // 4. Email confirmation client. P6.x.1b-γ : skip si is_test pour éviter
+  //    d'envoyer un faux mail à un vrai client lors d'un test LIVE.
+  if (prospect.is_test) {
+    console.log(
+      '%s client-email-skipped order=%s reason=is_test email=%s',
+      LOG_PREFIX,
+      orderId,
+      prospect.primary_contact_email ?? '-',
+    );
+  } else if (prospect.primary_contact_email) {
     try {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
       const orderDetailUrl = `${appUrl}/fr/espace-exposant/dashboard/commandes/${orderId}`;
@@ -215,7 +242,9 @@ export async function handleSupplementaryCheckoutCompleted(
     }
   }
 
-  // 5. Email notification admin
+  // 5. Email notification admin. P6.x.1b-γ : préfixe [TEST] dans le sujet
+  //    si is_test pour signaler clairement qu'il n'y a PAS de facture/email
+  //    client/Brevo associés (test technique uniquement).
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
     const prospectUrl = `${appUrl}/admin/prospects/${prospect.id}`;
@@ -234,7 +263,8 @@ export async function handleSupplementaryCheckoutCompleted(
       stripeSessionId: session.id ?? null,
       stripePaymentIntentId: paymentIntentId,
     });
-    await sendAdminNotification('admin_supplementary_received', tpl);
+    const adminTpl = prospect.is_test ? { ...tpl, subject: `[TEST] ${tpl.subject}` } : tpl;
+    await sendAdminNotification('admin_supplementary_received', adminTpl);
   } catch (err) {
     console.error(
       '%s admin-email-failed order=%s msg=%s',
@@ -244,15 +274,21 @@ export async function handleSupplementaryCheckoutCompleted(
     );
   }
 
-  // 6. Brevo lifecycle : ajout à la liste EXPOSANT_COMMANDE_SUPPLEMENTAIRE
-  await addToSupplementaryBrevoList(prospect.primary_contact_email).catch((err) => {
-    console.warn(
-      '%s brevo-add-failed order=%s msg=%s',
-      LOG_PREFIX,
-      orderId,
-      err instanceof Error ? err.message : String(err),
-    );
-  });
+  // 6. Brevo lifecycle : ajout à la liste EXPOSANT_COMMANDE_SUPPLEMENTAIRE.
+  //    P6.x.1b-γ : skip si is_test pour éviter de polluer les automations
+  //    Brevo (qui pourraient déclencher un drip de remerciement).
+  if (prospect.is_test) {
+    console.log('%s brevo-skipped order=%s reason=is_test', LOG_PREFIX, orderId);
+  } else {
+    await addToSupplementaryBrevoList(prospect.primary_contact_email).catch((err) => {
+      console.warn(
+        '%s brevo-add-failed order=%s msg=%s',
+        LOG_PREFIX,
+        orderId,
+        err instanceof Error ? err.message : String(err),
+      );
+    });
+  }
 
   console.log(
     '%s done order=%s prospect=%s prospectId_meta_match=%s',

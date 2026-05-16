@@ -29,6 +29,7 @@ interface State {
   } | null;
   prospect: {
     id: string;
+    is_test: boolean;
     contact: { email: string; first_name: string | null } | null;
     company: { name: string; sellsy_id: string | null } | null;
   } | null;
@@ -40,7 +41,7 @@ interface State {
     error?: string;
   };
   resendCalls: Array<{ to: string; subject: string }>;
-  adminNotifCalls: Array<string>;
+  adminNotifCalls: Array<{ category: string; subject: string }>;
   brevoCalls: number;
   factureUpdate?: Record<string, unknown>;
 }
@@ -116,9 +117,11 @@ function mockAll(state: State) {
       }),
   }));
   vi.doMock('@/lib/resend/admin-notifier', () => ({
-    sendAdminNotification: vi.fn().mockImplementation(async (category: string) => {
-      state.adminNotifCalls.push(category);
-    }),
+    sendAdminNotification: vi
+      .fn()
+      .mockImplementation(async (category: string, tpl: { subject: string }) => {
+        state.adminNotifCalls.push({ category, subject: tpl.subject });
+      }),
   }));
 
   // Brevo fetch
@@ -182,6 +185,7 @@ const REAL_ORDER = {
 
 const REAL_PROSPECT = {
   id: 'prospect-1',
+  is_test: false,
   contact: { email: 'lead@acme.com', first_name: 'Alice' },
   company: { name: 'Acme', sellsy_id: '1234' },
 };
@@ -255,7 +259,7 @@ describe('handleSupplementaryCheckoutCompleted (P6.x.1b-β)', () => {
     expect(state.resendCalls[0].subject).toMatch(/MDS 2026/);
 
     // notif admin
-    expect(state.adminNotifCalls).toContain('admin_supplementary_received');
+    expect(state.adminNotifCalls.map((c) => c.category)).toContain('admin_supplementary_received');
 
     // Brevo : 1 add
     expect(state.brevoCalls).toBe(1);
@@ -274,7 +278,7 @@ describe('handleSupplementaryCheckoutCompleted (P6.x.1b-β)', () => {
 
     // Email client tout de même envoyé (facture absente OK)
     expect(state.resendCalls).toHaveLength(1);
-    expect(state.adminNotifCalls).toContain('admin_supplementary_received');
+    expect(state.adminNotifCalls.map((c) => c.category)).toContain('admin_supplementary_received');
     // factureUpdate NON appelé puisque sellsyResult.ok=false
     expect(state.factureUpdate).toBeUndefined();
   });
@@ -289,7 +293,58 @@ describe('handleSupplementaryCheckoutCompleted (P6.x.1b-β)', () => {
     const { handleSupplementaryCheckoutCompleted } = await import('./webhook-handler');
     await handleSupplementaryCheckoutCompleted(makeSession());
     expect(state.resendCalls).toHaveLength(1);
-    expect(state.adminNotifCalls).toContain('admin_supplementary_received');
+    expect(state.adminNotifCalls.map((c) => c.category)).toContain('admin_supplementary_received');
     expect(state.factureUpdate).toBeUndefined();
+  });
+
+  // ───────── P6.x.1b-γ : prospect.is_test=true ─────────
+
+  it('is_test=true : skip facture Sellsy + skip client email + skip Brevo', async () => {
+    const state = makeState({
+      paidUpdateRows: [{ id: 'order-1' }],
+      order: REAL_ORDER,
+      prospect: { ...REAL_PROSPECT, is_test: true },
+    });
+    mockAll(state);
+    const { handleSupplementaryCheckoutCompleted } = await import('./webhook-handler');
+    await handleSupplementaryCheckoutCompleted(makeSession());
+
+    // L'order est marqué paid (la mise à jour pending→paid s'est faite)
+    // mais les 3 side-effects sont skip :
+    expect(state.factureUpdate).toBeUndefined(); // pas d'update facture
+    expect(state.resendCalls).toHaveLength(0); // pas d'email client
+    expect(state.brevoCalls).toBe(0); // pas d'ajout Brevo
+  });
+
+  it('is_test=true : admin email envoyé avec subject préfixé [TEST]', async () => {
+    const state = makeState({
+      paidUpdateRows: [{ id: 'order-1' }],
+      order: REAL_ORDER,
+      prospect: { ...REAL_PROSPECT, is_test: true },
+    });
+    mockAll(state);
+    const { handleSupplementaryCheckoutCompleted } = await import('./webhook-handler');
+    await handleSupplementaryCheckoutCompleted(makeSession());
+
+    expect(state.adminNotifCalls).toHaveLength(1);
+    const adminCall = state.adminNotifCalls[0];
+    expect(adminCall.category).toBe('admin_supplementary_received');
+    expect(adminCall.subject.startsWith('[TEST] ')).toBe(true);
+    expect(adminCall.subject).toMatch(/\[TEST\] .*Acme/);
+  });
+
+  it('is_test=false (par défaut) : admin email envoyé SANS préfixe [TEST]', async () => {
+    const state = makeState({
+      paidUpdateRows: [{ id: 'order-1' }],
+      order: REAL_ORDER,
+      prospect: REAL_PROSPECT, // is_test=false par défaut
+    });
+    mockAll(state);
+    const { handleSupplementaryCheckoutCompleted } = await import('./webhook-handler');
+    await handleSupplementaryCheckoutCompleted(makeSession());
+
+    expect(state.adminNotifCalls).toHaveLength(1);
+    const adminCall = state.adminNotifCalls[0];
+    expect(adminCall.subject.startsWith('[TEST] ')).toBe(false);
   });
 });
