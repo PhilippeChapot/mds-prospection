@@ -16,10 +16,14 @@
 import { revalidatePath } from 'next/cache';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { classifyByReference } from './auto-classify';
 import {
   upsertEditorialSchema,
   deleteEditorialSchema,
+  autoClassifySchema,
   type ActionResult,
+  type AutoClassifyResult,
+  type AutoClassifyPreviewItem,
 } from './admin-actions-schema';
 
 const LOG_PREFIX = '[admin/tarifs]';
@@ -154,4 +158,148 @@ export async function bulkInitOtherAction(): Promise<
   console.log('%s bulk-init-other inserted=%d by=%s', LOG_PREFIX, toInsert.length, profile.email);
   revalidatePath('/admin/tarifs');
   return { ok: true, data: { inserted: toInsert.length, total: products?.length ?? 0 } };
+}
+
+/**
+ * P6.x.1a-quater — auto-classification regex en masse.
+ *
+ * Pour chaque produit Sellsy non archivé :
+ *   1. Calcule la classification via classifyByReference(reference)
+ *   2. Si pas de match → skip (compte unmatched)
+ *   3. Si déjà classifié en autre chose que 'autre' ET override=false → skip
+ *   4. Sinon → upsert en DB (catégorie + sous-catégorie)
+ *
+ * Modes :
+ *   - dry_run=true → calcule le preview sans toucher la DB. Permet à Phil
+ *     de vérifier avant d'appliquer.
+ *   - override_existing=true → réécrit même les classifs manuelles
+ *     (catégorie != 'autre'). UX : checkbox dans la modale de confirm.
+ */
+export async function autoClassifyAllAction(
+  input: unknown,
+): Promise<ActionResult<AutoClassifyResult>> {
+  const profile = await requireAdminProfile();
+  if (profile.role !== 'admin') {
+    return { ok: false, error: 'Réservé aux admins.' };
+  }
+  const parsed = autoClassifySchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation' };
+  }
+  const { override_existing, dry_run } = parsed.data;
+
+  const supabase = getSupabaseServiceClient();
+
+  const [{ data: products, error: pErr }, { data: editorials, error: eErr }] = await Promise.all([
+    supabase
+      .from('sellsy_products_mirror')
+      .select('sellsy_item_id, reference, name')
+      .eq('is_archived', false),
+    supabase.from('tariff_editorial').select('sellsy_product_id, category, sub_category'),
+  ]);
+  if (pErr) return { ok: false, error: pErr.message };
+  if (eErr) return { ok: false, error: eErr.message };
+
+  const editorialByPid = new Map<number, { category: string; sub_category: string | null }>(
+    (editorials ?? []).map((e) => [
+      Number(e.sellsy_product_id),
+      { category: e.category, sub_category: e.sub_category ?? null },
+    ]),
+  );
+
+  const preview: AutoClassifyPreviewItem[] = [];
+  let classified = 0;
+  let skipped = 0;
+  let unmatched = 0;
+
+  for (const product of products ?? []) {
+    const classification = classifyByReference(product.reference);
+    if (!classification) {
+      unmatched += 1;
+      continue;
+    }
+    const existing = editorialByPid.get(Number(product.sellsy_item_id));
+    // Skip si déjà classifié en autre chose que 'autre' ET override=false
+    if (existing && existing.category !== 'autre' && !override_existing) {
+      skipped += 1;
+      continue;
+    }
+    preview.push({
+      sellsy_product_id: Number(product.sellsy_item_id),
+      reference: product.reference,
+      name: product.name ?? null,
+      current_category: existing?.category ?? null,
+      current_sub_category: existing?.sub_category ?? null,
+      new_category: classification.category,
+      new_sub_category: classification.sub_category,
+      matched_pattern: classification.matched_pattern,
+      label: classification.label,
+      confidence: classification.confidence,
+    });
+    classified += 1;
+  }
+
+  if (!dry_run && preview.length > 0) {
+    // Upsert en batch. On préserve les autres colonnes éditoriales en upsert
+    // partiel : seulement category/sub_category/updated_at. Les nouveaux INSERT
+    // récupèrent les defaults SQL (display_order=9999, featured=false, etc.).
+    const rows = preview.map((item) => ({
+      sellsy_product_id: item.sellsy_product_id,
+      category: item.new_category,
+      sub_category: item.new_sub_category,
+      updated_at: new Date().toISOString(),
+    }));
+    // Supabase upsert avec ignoreDuplicates=false écrase tout. Pour ne pas
+    // toucher aux colonnes éditoriales riches, on fait 2 paths :
+    //   - nouvelles lignes (existing absent) → INSERT
+    //   - lignes existantes → UPDATE ciblé
+    const newPids = new Set<number>();
+    for (const p of preview) {
+      if (!editorialByPid.has(p.sellsy_product_id)) newPids.add(p.sellsy_product_id);
+    }
+
+    if (newPids.size > 0) {
+      const insertRows = rows.filter((r) => newPids.has(r.sellsy_product_id));
+      const { error: insErr } = await supabase.from('tariff_editorial').insert(insertRows);
+      if (insErr) return { ok: false, error: `insert: ${insErr.message}` };
+    }
+
+    const updateRows = rows.filter((r) => !newPids.has(r.sellsy_product_id));
+    for (const row of updateRows) {
+      const { error: updErr } = await supabase
+        .from('tariff_editorial')
+        .update({
+          category: row.category,
+          sub_category: row.sub_category,
+          updated_at: row.updated_at,
+        })
+        .eq('sellsy_product_id', row.sellsy_product_id);
+      if (updErr) return { ok: false, error: `update ${row.sellsy_product_id}: ${updErr.message}` };
+    }
+
+    revalidatePath('/admin/tarifs');
+  }
+
+  console.log(
+    '%s auto-classify dry_run=%s override=%s classified=%d skipped=%d unmatched=%d by=%s',
+    LOG_PREFIX,
+    dry_run,
+    override_existing,
+    classified,
+    skipped,
+    unmatched,
+    profile.email,
+  );
+
+  return {
+    ok: true,
+    data: {
+      classified,
+      skipped,
+      unmatched,
+      preview,
+      dry_run,
+      override_existing,
+    },
+  };
 }

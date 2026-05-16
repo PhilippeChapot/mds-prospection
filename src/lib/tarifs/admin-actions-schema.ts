@@ -32,3 +32,33 @@ export type UpsertEditorialInput = z.input<typeof upsertEditorialSchema>;
 export const deleteEditorialSchema = z.object({
   sellsy_product_id: z.number().int().positive(),
 });
+
+/** P6.x.1a-quater — input pour autoClassifyAllAction. */
+export const autoClassifySchema = z.object({
+  override_existing: z.boolean().default(false),
+  dry_run: z.boolean().default(true),
+});
+
+export type AutoClassifyInput = z.input<typeof autoClassifySchema>;
+
+export interface AutoClassifyPreviewItem {
+  sellsy_product_id: number;
+  reference: string;
+  name: string | null;
+  current_category: string | null;
+  current_sub_category: string | null;
+  new_category: string;
+  new_sub_category: string | null;
+  matched_pattern: string;
+  label: string;
+  confidence: 'high' | 'medium' | 'low';
+}
+
+export interface AutoClassifyResult {
+  classified: number;
+  skipped: number;
+  unmatched: number;
+  preview: AutoClassifyPreviewItem[];
+  dry_run: boolean;
+  override_existing: boolean;
+}

@@ -14,6 +14,7 @@ import { CategoryBadge } from './_components/CategoryBadge';
 import { InlineRowControls } from './_components/InlineRowControls';
 import { EditorialSheet } from './_components/EditorialSheet';
 import { BulkInitButton } from './_components/BulkInitButton';
+import { AutoClassifyButton } from './_components/AutoClassifyButton';
 
 export const metadata = { title: 'Tarifs' };
 
@@ -83,6 +84,7 @@ export default async function TarifsPage({ searchParams }: { searchParams: Searc
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <AutoClassifyButton />
           <BulkInitButton untagged={counters.untagged} />
         </div>
       </header>
