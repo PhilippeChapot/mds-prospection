@@ -57,6 +57,17 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  // P6.x.1b-β — flow=supplementary (commandes complémentaires Espace Exposant)
+  // route vers un handler dédié AVANT la logique acompte/integral existante.
+  // Ne touche PAS aux champs prospects.acompte_*/sellsy_devis_* (transaction
+  // parallèle au parcours signup→signature).
+  if (session.metadata?.flow === 'supplementary') {
+    const { handleSupplementaryCheckoutCompleted } =
+      await import('@/lib/espace-exposant/supplementary-orders/webhook-handler');
+    await handleSupplementaryCheckoutCompleted(session);
+    return;
+  }
+
   const prospectId = session.metadata?.prospect_id;
   const sellsyDocId = session.metadata?.sellsy_document_id || null;
   // P4.x.1 Bug B : route le template admin via metadata.flow injecte cote

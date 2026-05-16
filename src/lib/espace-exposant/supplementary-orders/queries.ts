@@ -158,6 +158,63 @@ export async function getProspectForExposant(
   };
 }
 
+export interface SupplementaryOrderDetail {
+  id: string;
+  prospect_id: string;
+  status: string;
+  total_ht_eur: number;
+  total_ttc_eur: number;
+  vat_rate: number;
+  items: Array<{
+    sellsy_product_id: number;
+    reference: string;
+    name: string;
+    unit_price_ht: number;
+    qty: number;
+    line_total_ht: number;
+  }>;
+  customer_note: string | null;
+  paid_at: string | null;
+  created_at: string;
+  sellsy_facture_id: number | null;
+  sellsy_facture_number: string | null;
+  stripe_checkout_session_id: string | null;
+}
+
+export async function getSupplementaryOrderDetail(
+  orderId: string,
+  prospectId: string,
+): Promise<SupplementaryOrderDetail | null> {
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from('supplementary_orders')
+    .select(
+      `id, prospect_id, status, total_ht_eur, total_ttc_eur, vat_rate,
+       items, customer_note, paid_at, created_at,
+       sellsy_facture_id, sellsy_facture_number, stripe_checkout_session_id`,
+    )
+    .eq('id', orderId)
+    .eq('prospect_id', prospectId) // garde-fou : pas d'accès cross-prospect
+    .maybeSingle();
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    prospect_id: data.prospect_id,
+    status: data.status,
+    total_ht_eur: Number(data.total_ht_eur),
+    total_ttc_eur: Number(data.total_ttc_eur),
+    vat_rate: Number(data.vat_rate),
+    items: Array.isArray(data.items) ? (data.items as SupplementaryOrderDetail['items']) : [],
+    customer_note: data.customer_note,
+    paid_at: data.paid_at,
+    created_at: data.created_at,
+    sellsy_facture_id: data.sellsy_facture_id,
+    sellsy_facture_number: data.sellsy_facture_number,
+    stripe_checkout_session_id: data.stripe_checkout_session_id,
+  };
+}
+
 export async function listSupplementaryOrdersForProspect(prospectId: string): Promise<
   Array<{
     id: string;

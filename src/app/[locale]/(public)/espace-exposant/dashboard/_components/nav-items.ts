@@ -25,6 +25,8 @@ export const EXPOSANT_NAV_ITEMS: readonly ExposantNavItem[] = [
   // P6.x.1b — commande complémentaire. La page filtre par éligibilité
   // (signed_at non-null) et redirige avec banner explicative si non éligible.
   { labelKey: 'commander', emoji: '🛒', segment: 'commander' },
+  // P6.x.1b-β — historique des commandes complémentaires.
+  { labelKey: 'commandes', emoji: '🧾', segment: 'commandes' },
 ] as const;
 
 /**

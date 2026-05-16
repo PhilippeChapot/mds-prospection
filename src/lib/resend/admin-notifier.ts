@@ -32,7 +32,8 @@ export type AdminNotificationCategory =
   | 'admin_paymentadd'
   | 'admin_acompte_echec'
   | 'admin_signature_finale'
-  | 'admin_sync_error';
+  | 'admin_sync_error'
+  | 'admin_supplementary_received';
 
 export interface AdminNotificationTemplateInput {
   subject: string;

@@ -13,8 +13,8 @@ import { describe, it, expect } from 'vitest';
 import { EXPOSANT_NAV_ITEMS, DEFAULT_EXPOSANT_SECTION } from './nav-items';
 
 describe('EXPOSANT_NAV_ITEMS', () => {
-  it('expose exactement 6 sections (5 base + commander P6.x.1b)', () => {
-    expect(EXPOSANT_NAV_ITEMS).toHaveLength(6);
+  it('expose 7 sections (5 base + commander/commandes P6.x.1b)', () => {
+    expect(EXPOSANT_NAV_ITEMS).toHaveLength(7);
   });
 
   it('chaque segment est unique', () => {
@@ -27,10 +27,11 @@ describe('EXPOSANT_NAV_ITEMS', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it('expose stand / coordonnees / documents / kit-communication / invitations / commander', () => {
+  it('expose stand / coordonnees / documents / kit-communication / invitations / commander / commandes', () => {
     const segments = EXPOSANT_NAV_ITEMS.map((i) => i.segment).sort();
     expect(segments).toEqual([
       'commander',
+      'commandes',
       'coordonnees',
       'documents',
       'invitations',
