@@ -55,11 +55,18 @@ interface ProspectRow {
   company_sellsy_id: string | null;
 }
 
+/**
+ * P6.x.1b-β — wrapper Stripe : extrait order_id/payment_intent du
+ * checkout.session.completed et délègue à processPaidSupplementaryOrder.
+ *
+ * Garde la séparation entre le contexte Stripe (validation payment_status,
+ * extraction metadata) et la logique métier post-paiement (réutilisable par
+ * l'endpoint admin debug en P6.x.1b-δ).
+ */
 export async function handleSupplementaryCheckoutCompleted(
   session: Stripe.Checkout.Session,
 ): Promise<void> {
   const orderId = session.metadata?.supplementary_order_id;
-  const prospectIdFromMeta = session.metadata?.prospect_id;
   if (!orderId) {
     console.error('%s no-order-id session=%s', LOG_PREFIX, session.id);
     return;
@@ -73,18 +80,81 @@ export async function handleSupplementaryCheckoutCompleted(
     );
     return;
   }
-
-  const supabase = getSupabaseServiceClient();
-
-  // 1. Idempotent UPDATE : pending → paid. Si déjà paid, count=0, on skip.
   const paymentIntentId =
     typeof session.payment_intent === 'string' ? session.payment_intent : null;
+  await processPaidSupplementaryOrder(orderId, {
+    stripePaymentIntentId: paymentIntentId,
+    stripeSessionId: session.id ?? null,
+  });
+}
+
+export interface ProcessPaidContext {
+  stripePaymentIntentId: string | null;
+  stripeSessionId?: string | null;
+}
+
+export interface ProcessPaidResult {
+  /** 'paid' = transition pending→paid effectuée et side-effects exécutés.
+   *  'already_paid' = déjà payé (idempotent skip).
+   *  'not_found' = order introuvable après l'UPDATE (cas pathologique). */
+  status: 'paid' | 'already_paid' | 'not_found';
+  order_id: string;
+  sellsy_facture_id: number | null;
+  sellsy_facture_number: string | null;
+  /** Détail des side-effects (utile pour debug + tests). */
+  side_effects: {
+    facture_skipped: boolean;
+    facture_skipped_reason: 'is_test' | 'no_sellsy_id' | 'sellsy_error' | null;
+    email_client_skipped: boolean;
+    email_client_skipped_reason: 'is_test' | 'no_email' | null;
+    admin_email_test_prefix: boolean;
+    brevo_skipped: boolean;
+    brevo_skipped_reason: 'is_test' | 'no_email' | 'no_config' | null;
+  };
+}
+
+/**
+ * P6.x.1b-δ — logique post-paiement réutilisable, indépendante de Stripe.
+ *
+ * Invoquée par :
+ *   - handleSupplementaryCheckoutCompleted (webhook Stripe LIVE)
+ *   - POST /api/admin/debug/supplementary/[id]/simulate-paid (admin debug)
+ *
+ * Idempotente : UPDATE .eq('status', 'pending') + .select retourne 0 rows
+ * si déjà payé → skip tous les side-effects.
+ *
+ * Side-effects gates is_test (P6.x.1b-γ) :
+ *   - prospect.is_test=true → skip facture + email client + Brevo
+ *   - prospect.is_test=true → admin email subject préfixé [TEST]
+ */
+export async function processPaidSupplementaryOrder(
+  orderId: string,
+  ctx: ProcessPaidContext,
+): Promise<ProcessPaidResult> {
+  const supabase = getSupabaseServiceClient();
+  const result: ProcessPaidResult = {
+    status: 'not_found',
+    order_id: orderId,
+    sellsy_facture_id: null,
+    sellsy_facture_number: null,
+    side_effects: {
+      facture_skipped: false,
+      facture_skipped_reason: null,
+      email_client_skipped: false,
+      email_client_skipped_reason: null,
+      admin_email_test_prefix: false,
+      brevo_skipped: false,
+      brevo_skipped_reason: null,
+    },
+  };
+
+  // 1. Idempotent UPDATE : pending → paid. Si déjà paid, count=0, on skip.
   const { data: updated, error: updErr } = await supabase
     .from('supplementary_orders')
     .update({
       status: 'paid',
       paid_at: new Date().toISOString(),
-      stripe_payment_intent_id: paymentIntentId,
+      stripe_payment_intent_id: ctx.stripePaymentIntentId,
     })
     .eq('id', orderId)
     .eq('status', 'pending') // garde l'idempotence
@@ -92,13 +162,15 @@ export async function handleSupplementaryCheckoutCompleted(
 
   if (updErr) {
     console.error('%s update-failed order=%s msg=%s', LOG_PREFIX, orderId, updErr.message);
-    return;
+    return result;
   }
   if (!updated || updated.length === 0) {
     console.log('%s already-paid-or-missing order=%s — skip post-pay actions', LOG_PREFIX, orderId);
-    return;
+    result.status = 'already_paid';
+    return result;
   }
 
+  result.status = 'paid';
   console.log('%s marked-paid order=%s', LOG_PREFIX, orderId);
 
   // 2. Re-fetch order full + prospect snapshot
@@ -109,7 +181,7 @@ export async function handleSupplementaryCheckoutCompleted(
     .maybeSingle();
   if (!orderRaw) {
     console.error('%s order-missing-after-update order=%s', LOG_PREFIX, orderId);
-    return;
+    return result;
   }
   const order = orderRaw as OrderRow;
 
@@ -129,7 +201,7 @@ export async function handleSupplementaryCheckoutCompleted(
       orderId,
       order.prospect_id,
     );
-    return;
+    return result;
   }
 
   function pickOne<T>(v: T | T[] | null): T | null {
@@ -168,6 +240,8 @@ export async function handleSupplementaryCheckoutCompleted(
   let facturePublicUrl: string | null = null;
   if (prospect.is_test) {
     console.log('%s facture-skipped order=%s reason=is_test', LOG_PREFIX, orderId);
+    result.side_effects.facture_skipped = true;
+    result.side_effects.facture_skipped_reason = 'is_test';
   } else if (prospect.company_sellsy_id) {
     const sellsyResult = await createSupplementaryFacture({
       orderId,
@@ -178,6 +252,8 @@ export async function handleSupplementaryCheckoutCompleted(
     if (sellsyResult.ok && sellsyResult.facture_id) {
       factureNumber = sellsyResult.facture_number ?? null;
       facturePublicUrl = sellsyResult.facture_public_url ?? null;
+      result.sellsy_facture_id = sellsyResult.facture_id;
+      result.sellsy_facture_number = factureNumber;
       await supabase
         .from('supplementary_orders')
         .update({
@@ -192,9 +268,13 @@ export async function handleSupplementaryCheckoutCompleted(
         orderId,
         sellsyResult.error ?? 'unknown',
       );
+      result.side_effects.facture_skipped = true;
+      result.side_effects.facture_skipped_reason = 'sellsy_error';
     }
   } else {
     console.warn('%s no-company-sellsy-id order=%s — facture non créée', LOG_PREFIX, orderId);
+    result.side_effects.facture_skipped = true;
+    result.side_effects.facture_skipped_reason = 'no_sellsy_id';
   }
 
   // 4. Email confirmation client. P6.x.1b-γ : skip si is_test pour éviter
@@ -206,6 +286,8 @@ export async function handleSupplementaryCheckoutCompleted(
       orderId,
       prospect.primary_contact_email ?? '-',
     );
+    result.side_effects.email_client_skipped = true;
+    result.side_effects.email_client_skipped_reason = 'is_test';
   } else if (prospect.primary_contact_email) {
     try {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
@@ -240,6 +322,9 @@ export async function handleSupplementaryCheckoutCompleted(
         err instanceof Error ? err.message : String(err),
       );
     }
+  } else {
+    result.side_effects.email_client_skipped = true;
+    result.side_effects.email_client_skipped_reason = 'no_email';
   }
 
   // 5. Email notification admin. P6.x.1b-γ : préfixe [TEST] dans le sujet
@@ -260,10 +345,11 @@ export async function handleSupplementaryCheckoutCompleted(
       paidAt: new Date().toISOString(),
       factureNumber,
       facturePublicUrl,
-      stripeSessionId: session.id ?? null,
-      stripePaymentIntentId: paymentIntentId,
+      stripeSessionId: ctx.stripeSessionId ?? null,
+      stripePaymentIntentId: ctx.stripePaymentIntentId,
     });
     const adminTpl = prospect.is_test ? { ...tpl, subject: `[TEST] ${tpl.subject}` } : tpl;
+    if (prospect.is_test) result.side_effects.admin_email_test_prefix = true;
     await sendAdminNotification('admin_supplementary_received', adminTpl);
   } catch (err) {
     console.error(
@@ -279,36 +365,43 @@ export async function handleSupplementaryCheckoutCompleted(
   //    Brevo (qui pourraient déclencher un drip de remerciement).
   if (prospect.is_test) {
     console.log('%s brevo-skipped order=%s reason=is_test', LOG_PREFIX, orderId);
+    result.side_effects.brevo_skipped = true;
+    result.side_effects.brevo_skipped_reason = 'is_test';
+  } else if (!prospect.primary_contact_email) {
+    result.side_effects.brevo_skipped = true;
+    result.side_effects.brevo_skipped_reason = 'no_email';
   } else {
-    await addToSupplementaryBrevoList(prospect.primary_contact_email).catch((err) => {
-      console.warn(
-        '%s brevo-add-failed order=%s msg=%s',
-        LOG_PREFIX,
-        orderId,
-        err instanceof Error ? err.message : String(err),
-      );
-    });
+    const brevoResult = await addToSupplementaryBrevoList(prospect.primary_contact_email).catch(
+      (err) => {
+        console.warn(
+          '%s brevo-add-failed order=%s msg=%s',
+          LOG_PREFIX,
+          orderId,
+          err instanceof Error ? err.message : String(err),
+        );
+        return { skipped: false } as const;
+      },
+    );
+    if (brevoResult && brevoResult.skipped) {
+      result.side_effects.brevo_skipped = true;
+      result.side_effects.brevo_skipped_reason = 'no_config';
+    }
   }
 
-  console.log(
-    '%s done order=%s prospect=%s prospectId_meta_match=%s',
-    LOG_PREFIX,
-    orderId,
-    prospect.id,
-    prospectIdFromMeta === prospect.id,
-  );
+  console.log('%s done order=%s prospect=%s', LOG_PREFIX, orderId, prospect.id);
+  return result;
 }
 
-async function addToSupplementaryBrevoList(email: string | null): Promise<void> {
-  if (!email) return;
+async function addToSupplementaryBrevoList(email: string | null): Promise<{ skipped: boolean }> {
+  if (!email) return { skipped: true };
   const apiKey = process.env.BREVO_API_KEY;
   const listIdRaw = process.env.BREVO_LIST_ID_EXPOSANT_COMMANDE_SUPPLEMENTAIRE;
   if (!apiKey || !listIdRaw) {
     console.log('%s brevo-skip-no-config email=%s', LOG_PREFIX, email);
-    return;
+    return { skipped: true };
   }
   const listId = Number.parseInt(listIdRaw, 10);
-  if (!Number.isFinite(listId)) return;
+  if (!Number.isFinite(listId)) return { skipped: true };
 
   const res = await fetch(`${BREVO_API_BASE}/contacts/lists/${listId}/contacts/add`, {
     method: 'POST',
@@ -326,4 +419,5 @@ async function addToSupplementaryBrevoList(email: string | null): Promise<void> 
   } else {
     console.log('%s brevo-added email=%s list=%d', LOG_PREFIX, email, listId);
   }
+  return { skipped: false };
 }
