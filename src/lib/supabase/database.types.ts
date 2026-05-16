@@ -1932,6 +1932,71 @@ export type Database = {
         };
         Relationships: [];
       };
+      tariff_editorial: {
+        Row: {
+          category: string;
+          created_at: string;
+          description_md: string | null;
+          display_order: number;
+          editorial_title: string | null;
+          featured: boolean;
+          id: string;
+          image_url: string | null;
+          is_visible_public: boolean;
+          sellsy_product_id: number;
+          sub_category: string | null;
+          tagline: string | null;
+          tags: string[];
+          target_audience: string | null;
+          updated_at: string;
+          value_proposition: string | null;
+        };
+        Insert: {
+          category: string;
+          created_at?: string;
+          description_md?: string | null;
+          display_order?: number;
+          editorial_title?: string | null;
+          featured?: boolean;
+          id?: string;
+          image_url?: string | null;
+          is_visible_public?: boolean;
+          sellsy_product_id: number;
+          sub_category?: string | null;
+          tagline?: string | null;
+          tags?: string[];
+          target_audience?: string | null;
+          updated_at?: string;
+          value_proposition?: string | null;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          description_md?: string | null;
+          display_order?: number;
+          editorial_title?: string | null;
+          featured?: boolean;
+          id?: string;
+          image_url?: string | null;
+          is_visible_public?: boolean;
+          sellsy_product_id?: number;
+          sub_category?: string | null;
+          tagline?: string | null;
+          tags?: string[];
+          target_audience?: string | null;
+          updated_at?: string;
+          value_proposition?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tariff_editorial_sellsy_product_id_fkey';
+            columns: ['sellsy_product_id'];
+            isOneToOne: true;
+            referencedRelation: 'sellsy_products_mirror';
+            referencedColumns: ['sellsy_item_id'];
+          },
+        ];
+      };
       users: {
         Row: {
           created_at: string;

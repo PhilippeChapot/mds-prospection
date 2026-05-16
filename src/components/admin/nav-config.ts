@@ -51,7 +51,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         enabled: false,
         phase: 'P2',
       },
-      { href: '/admin/pricing', label: 'Tarifs', emoji: '💰', enabled: false, phase: 'P2' },
+      { href: '/admin/tarifs', label: 'Tarifs', emoji: '💰', enabled: true },
       {
         href: '/admin/sellsy-products',
         label: 'Catalogue Sellsy',
