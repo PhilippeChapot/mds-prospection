@@ -119,7 +119,7 @@ describe('admin-actions tarifs (P6.x.1a)', () => {
 
   describe('upsertEditorialSchema', () => {
     it('accepts valid payload with defaults', async () => {
-      const { upsertEditorialSchema } = await import('./admin-actions');
+      const { upsertEditorialSchema } = await import('./admin-actions-schema');
       const parsed = upsertEditorialSchema.parse({
         sellsy_product_id: 1234,
         category: 'pack',
@@ -131,7 +131,7 @@ describe('admin-actions tarifs (P6.x.1a)', () => {
     });
 
     it('rejects invalid category enum value', async () => {
-      const { upsertEditorialSchema } = await import('./admin-actions');
+      const { upsertEditorialSchema } = await import('./admin-actions-schema');
       const result = upsertEditorialSchema.safeParse({
         sellsy_product_id: 1234,
         category: 'INVALID',
@@ -140,7 +140,7 @@ describe('admin-actions tarifs (P6.x.1a)', () => {
     });
 
     it('rejects negative sellsy_product_id', async () => {
-      const { upsertEditorialSchema } = await import('./admin-actions');
+      const { upsertEditorialSchema } = await import('./admin-actions-schema');
       const result = upsertEditorialSchema.safeParse({
         sellsy_product_id: -1,
         category: 'pack',

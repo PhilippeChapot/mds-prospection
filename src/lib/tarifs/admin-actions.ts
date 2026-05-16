@@ -8,35 +8,21 @@
  *     couche éditoriale, c'est du contenu marketing géré par Phil)
  *   - utilisent le service-role client (bypass RLS, propre + prévisible)
  *   - revalidatePath('/admin/tarifs') à la fin
+ *
+ * Next.js 15 strict mode : ce fichier ne peut exporter QUE des fonctions
+ * async. Les schemas Zod + types sont dans `./admin-actions-schema.ts`.
  */
 
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
-import { TARIF_CATEGORIES } from './types';
+import {
+  upsertEditorialSchema,
+  deleteEditorialSchema,
+  type ActionResult,
+} from './admin-actions-schema';
 
 const LOG_PREFIX = '[admin/tarifs]';
-
-export type ActionResult<T = unknown> = { ok: true; data?: T } | { ok: false; error: string };
-
-export const upsertEditorialSchema = z.object({
-  sellsy_product_id: z.number().int().positive(),
-  category: z.enum(TARIF_CATEGORIES as [string, ...string[]]),
-  sub_category: z.string().trim().max(80).optional().nullable(),
-  display_order: z.number().int().min(0).max(99999).default(9999),
-  featured: z.boolean().default(false),
-  editorial_title: z.string().trim().max(200).optional().nullable(),
-  tagline: z.string().trim().max(300).optional().nullable(),
-  description_md: z.string().max(20000).optional().nullable(),
-  image_url: z.string().url().optional().nullable().or(z.literal('')),
-  tags: z.array(z.string().trim().max(40)).default([]),
-  target_audience: z.string().trim().max(200).optional().nullable(),
-  value_proposition: z.string().trim().max(500).optional().nullable(),
-  is_visible_public: z.boolean().default(true),
-});
-
-export type UpsertEditorialInput = z.input<typeof upsertEditorialSchema>;
 
 export async function upsertEditorialAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   const profile = await requireAdminProfile();
@@ -98,16 +84,12 @@ export async function upsertEditorialAction(input: unknown): Promise<ActionResul
   return { ok: true, data: { id: row.id } };
 }
 
-const deleteSchema = z.object({
-  sellsy_product_id: z.number().int().positive(),
-});
-
 export async function deleteEditorialAction(input: unknown): Promise<ActionResult> {
   const profile = await requireAdminProfile();
   if (profile.role !== 'admin') {
     return { ok: false, error: 'Réservé aux admins.' };
   }
-  const parsed = deleteSchema.safeParse(input);
+  const parsed = deleteEditorialSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: 'Validation' };
   }
