@@ -33,7 +33,8 @@ export type AdminNotificationCategory =
   | 'admin_acompte_echec'
   | 'admin_signature_finale'
   | 'admin_sync_error'
-  | 'admin_supplementary_received';
+  | 'admin_supplementary_received'
+  | 'admin_institutionnel_ecole_request';
 
 export interface AdminNotificationTemplateInput {
   subject: string;

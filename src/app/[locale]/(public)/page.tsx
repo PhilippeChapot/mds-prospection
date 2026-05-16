@@ -4,6 +4,11 @@ import { Calendar, MapPin, ArrowRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import type { Locale } from 'next-intl';
+import { getTaxonomy } from '@/lib/landing/taxonomy';
+import { PolesExplorer } from '@/components/landing/PolesExplorer';
+import { VisitorFamiliesExplorer } from '@/components/landing/VisitorFamiliesExplorer';
+import { InstitutionnelEcoleFormProvider } from '@/components/landing/institutionnel-ecole-form-context';
+import { CanvaEmbed } from '@/components/landing/CanvaEmbed';
 
 export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
@@ -13,9 +18,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
 
 function HomeContent() {
   const t = useTranslations('home');
+  const taxonomy = getTaxonomy();
 
   return (
-    <>
+    <InstitutionnelEcoleFormProvider>
       {/* Hero */}
       <section
         className="relative overflow-hidden px-6 py-20 text-white sm:py-28"
@@ -74,6 +80,43 @@ function HomeContent() {
         </div>
       </section>
 
+      {/* Pôles explorer */}
+      <section className="mx-auto max-w-6xl px-6 py-16">
+        <div className="mb-10 text-center">
+          <p className="text-md-magenta text-xs font-semibold tracking-widest uppercase">
+            6 pôles · {taxonomy.stats.total_sous_secteurs} sous-secteurs ·{' '}
+            {taxonomy.stats.total_exposants_cibles} exposants cibles
+          </p>
+          <h2 className="text-md-blue-dark mt-2 text-3xl font-extrabold tracking-tight md:text-4xl">
+            🎯 Êtes-vous concerné par MediaDays&nbsp;?
+          </h2>
+          <p className="text-md-text-muted mx-auto mt-3 max-w-2xl text-base">
+            Cliquez sur un pôle pour découvrir les sous-secteurs, exposants attendus et le bon
+            parcours d’inscription.
+          </p>
+        </div>
+        <PolesExplorer poles={taxonomy.poles} />
+      </section>
+
+      {/* Visiteurs */}
+      <section className="bg-md-blue-deep/[0.03] py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mb-10 text-center">
+            <p className="text-md-magenta text-xs font-semibold tracking-widest uppercase">
+              {taxonomy.stats.total_visiteurs_families} familles ·{' '}
+              {taxonomy.stats.total_visiteurs_entites} entités identifiées
+            </p>
+            <h2 className="text-md-blue-dark mt-2 text-3xl font-extrabold tracking-tight md:text-4xl">
+              👥 Êtes-vous un visiteur cible&nbsp;?
+            </h2>
+            <p className="text-md-text-muted mx-auto mt-3 max-w-2xl text-base">
+              MediaDays Solutions s’adresse à 14 grandes familles de visiteurs. Trouvez la vôtre.
+            </p>
+          </div>
+          <VisitorFamiliesExplorer families={taxonomy.visiteurs} poles={taxonomy.poles} />
+        </div>
+      </section>
+
       {/* Reassurance */}
       <section className="mx-auto max-w-4xl px-6 py-16 text-center">
         <h2 className="text-md-text mb-3 text-2xl font-bold md:text-3xl">{t('reassureTitle')}</h2>
@@ -81,7 +124,10 @@ function HomeContent() {
           {t('reassureBody')}
         </p>
       </section>
-    </>
+
+      {/* Canva embed */}
+      <CanvaEmbed />
+    </InstitutionnelEcoleFormProvider>
   );
 }
 

@@ -1,0 +1,1240 @@
+{
+  "version": "2.1",
+  "generated_at": "2026-05-16T23:41:34.611Z",
+  "poles": [
+    {
+      "code": "REGIES_RETAIL_MEDIA",
+      "name": "RÉGIES & RETAIL MEDIA",
+      "emoji": "🏛️",
+      "color": "#FFCDD2",
+      "category": "mediadays_classique",
+      "sub_label": null,
+      "zone": "Salle Delorme + Gabriel",
+      "description": "Offre média : régies, éditeurs, retailers, agences créa. Accueille annonceurs et agences UDECAM (visiteurs premium).",
+      "sous_secteurs": [
+        {
+          "name": "Régies TV",
+          "count": 6,
+          "exemples": [
+            "TF1 Pub",
+            "M6 Publicité",
+            "FranceTV Publicité",
+            "Canal+ Brand Solutions",
+            "BFM Régie",
+            "Altice Media Ads & Connect"
+          ]
+        },
+        {
+          "name": "Régies Radio",
+          "count": 5,
+          "exemples": [
+            "NRJ Global",
+            "Radio France Publicité",
+            "Lagardère Publicité News",
+            "Les Indés Radios",
+            "Mediakey"
+          ]
+        },
+        {
+          "name": "Régies Presse / Digital",
+          "count": 6,
+          "exemples": [
+            "Prisma Media Solutions",
+            "Media Figaro",
+            "Reworld Media Connect",
+            "Rossel Advertising",
+            "SFR Régie",
+            "Amaury Médias"
+          ]
+        },
+        {
+          "name": "Régies PQR",
+          "count": 5,
+          "exemples": [
+            "366",
+            "EBRA Médias",
+            "Ouest France Multimédia",
+            "Horyzon Media",
+            "Sud Ouest Publicité"
+          ]
+        },
+        {
+          "name": "Régies OOH / Outdoor (vendeurs d'espace)",
+          "count": 5,
+          "exemples": [
+            "JCDecaux",
+            "Clear Channel",
+            "Mediatransports",
+            "Exterion Media",
+            "Cityz Media"
+          ]
+        },
+        {
+          "name": "Régies Retail Media (enseignes)",
+          "count": 10,
+          "exemples": [
+            "Unlimitail (Carrefour/Publicis)",
+            "FnacDarty Advertising",
+            "Intermarché Média",
+            "Casino Advertising",
+            "Leroy Merlin Ads",
+            "Auchan Media",
+            "Boulanger Retail Connect",
+            "Decathlon Media",
+            "Monoprix Data & Media",
+            "But Media"
+          ]
+        },
+        {
+          "name": "Régies digitales & spécialisées",
+          "count": 7,
+          "exemples": [
+            "Leboncoin Publicité",
+            "Adverline",
+            "Mediakeys",
+            "Connect Ads",
+            "ZBO Media",
+            "Audience Square",
+            "Mistral Media"
+          ]
+        },
+        {
+          "name": "Plateformes pub grand compte",
+          "count": 3,
+          "exemples": ["Amazon Ads", "Spotify Advertising", "Yahoo Advertising"]
+        },
+        {
+          "name": "Agences créatives",
+          "count": 10,
+          "exemples": [
+            "BETC",
+            "Publicis Conseil",
+            "Havas Paris",
+            "Marcel",
+            "Rosapark",
+            "Buzzman",
+            "DDB Paris",
+            "Ogilvy France",
+            "TBWA\\Paris",
+            "Fred & Farid"
+          ]
+        },
+        {
+          "name": "Agences content / branded",
+          "count": 5,
+          "exemples": [
+            "Havas Market",
+            "Publicis Media Content",
+            "Webedia Studios",
+            "Melty Factory",
+            "Pleine Image"
+          ]
+        },
+        {
+          "name": "Éditeurs médias premium",
+          "count": 7,
+          "exemples": [
+            "20 Minutes",
+            "CMI France",
+            "Le Figaro",
+            "Les Echos",
+            "Prisma Media",
+            "La Voix du Nord",
+            "Weinbach Group"
+          ]
+        },
+        {
+          "name": "Événementiel / services médias",
+          "count": 4,
+          "exemples": ["Adwanted Events", "France Pub", "inwink", "Tomorrowland"]
+        }
+      ],
+      "total_sous_secteurs": 12,
+      "total_exposants_cibles": 73
+    },
+    {
+      "code": "AUDIO_RADIO",
+      "name": "AUDIO & RADIO",
+      "emoji": "🎙️",
+      "color": "#F8BBD0",
+      "category": "mediadays_solutions",
+      "sub_label": "Paris Radio Show",
+      "zone": "Salle Le Nôtre (rangées A-B-C) + scène PRS",
+      "description": "Solutions audio vendues aux radios, plateformes et régies audio. Cœur du Paris Radio Show.",
+      "sous_secteurs": [
+        {
+          "name": "Diffusion audio broadcast (codecs, AoIP, automation)",
+          "count": 25,
+          "exemples": [
+            "Telos Alliance",
+            "Tieline",
+            "Comrex",
+            "Digigram",
+            "Wheatstone",
+            "Lawo AG",
+            "Axel Technology",
+            "Broadcast Radio Ltd",
+            "NETIA",
+            "OmniPlayer",
+            "WinMedia",
+            "RCS Europe",
+            "Save Diffusion",
+            "2wcom Systems",
+            "AEQ",
+            "Inovonics",
+            "SOUND4",
+            "Vortex Communications",
+            "BCI Group GmbH",
+            "Broadcast Bionics",
+            "DAVID Systems GmbH",
+            "ON AIR Solutions GmbH",
+            "Radio Solutions",
+            "Appel Electronique Industries (AEI)",
+            "Broadcast-associés"
+          ]
+        },
+        {
+          "name": "Hébergement & plateformes audio/radio",
+          "count": 11,
+          "exemples": [
+            "Acast",
+            "Ausha",
+            "Audiomeans",
+            "Saooti",
+            "Ad Aures (Castopod)",
+            "Podcast.fr",
+            "Edisound",
+            "TAM",
+            "Sybel",
+            "Podcastics + 1"
+          ]
+        },
+        {
+          "name": "Ad insertion / programmatique audio",
+          "count": 10,
+          "exemples": [
+            "Audion",
+            "Triton Digital",
+            "Targetspot",
+            "RadioTarget",
+            "AdsWizz",
+            "Dailypub",
+            "Adthos + 3"
+          ]
+        },
+        {
+          "name": "Mesure d'audience audio",
+          "count": 4,
+          "exemples": ["Médiamétrie", "ACPM", "Coleman Insights", "Masslytics"]
+        },
+        {
+          "name": "Outils de production audio",
+          "count": 8,
+          "exemples": [
+            "Adobe Audition Pro",
+            "Descript",
+            "Rumble Studio",
+            "Nomono",
+            "VTrap",
+            "Zaibr Innovations",
+            "Soundcharts",
+            "ai|coustics"
+          ]
+        },
+        {
+          "name": "IA voix / synthèse vocale",
+          "count": 7,
+          "exemples": [
+            "ElevenLabs",
+            "Voxygen",
+            "etx majelan",
+            "IA Audio",
+            "PodcastAI.com",
+            "Authôt",
+            "Super-Hifi"
+          ]
+        },
+        {
+          "name": "Studios production & habillage (jingles, imagerie)",
+          "count": 18,
+          "exemples": [
+            "21 Juin Production",
+            "Agence Double Monde",
+            "Brandy",
+            "Go Script Media",
+            "Nouvelles Écoutes",
+            "Podcast Story",
+            "Stratégie Podcast",
+            "We Made Ya",
+            "Wisebuddah",
+            "Zero Janvier Jingles",
+            "BMG Production Music + 7"
+          ]
+        },
+        {
+          "name": "Équipement audio pro (micros, monitoring)",
+          "count": 17,
+          "exemples": [
+            "Lewitt",
+            "Dynaudio",
+            "Audio-Technica",
+            "Sennheiser",
+            "Shure",
+            "Focal",
+            "Genelec",
+            "RAMI Audio",
+            "Studio Design",
+            "Algam Entreprises",
+            "Yamaha + 6"
+          ]
+        },
+        {
+          "name": "Logiciels radio (automation, programmation, music scheduling)",
+          "count": 12,
+          "exemples": [
+            "Music Master (Open Radio)",
+            "RCS Europe (Zetta/GSelector)",
+            "Zenon-media",
+            "r+d.io (PadTool)",
+            "NeoGroupe",
+            "Vizion'R",
+            "IP-STUDIO",
+            "CGI OpenMedia",
+            "ACE Media Tools + 3"
+          ]
+        },
+        {
+          "name": "Radio hybride / automobile / connectée",
+          "count": 12,
+          "exemples": [
+            "DTS AutoStage",
+            "Xperi / DTS (HD Radio)",
+            "Radioplayer France",
+            "TechniSat",
+            "Roberts Radio + 7"
+          ]
+        },
+        {
+          "name": "Visuel radio / Radio visuelle / Apps plateau",
+          "count": 5,
+          "exemples": [
+            "Backscreen",
+            "MultiCAM Systems",
+            "StudioCast",
+            "Vizion'R",
+            "AIM (All In Media)"
+          ]
+        },
+        {
+          "name": "Conseil / stratégie radio",
+          "count": 7,
+          "exemples": [
+            "Médiatic Conseils",
+            "ELP Music Consulting",
+            "HyperWorld",
+            "Medialab Factory",
+            "Meanscore",
+            "Witek Media + 1"
+          ]
+        },
+        {
+          "name": "Formation / emploi audio",
+          "count": 6,
+          "exemples": [
+            "Studio École de France",
+            "La Skol",
+            "Ina Campus",
+            "EMF",
+            "Campus Groupe",
+            "ATJ"
+          ]
+        },
+        {
+          "name": "Intégrateurs broadcast & studio radio",
+          "count": 4,
+          "exemples": ["Audiopole", "Comequip (Multisys)", "Eurocom Broadcast", "Process Com"]
+        },
+        {
+          "name": "Promotion musicale & RP artistes",
+          "count": 2,
+          "exemples": ["Canitrot & Co", "Music Media Consulting"]
+        }
+      ],
+      "total_sous_secteurs": 15,
+      "total_exposants_cibles": 148
+    },
+    {
+      "code": "DIFFUSION_INFRA",
+      "name": "DIFFUSION & INFRA",
+      "emoji": "📡",
+      "color": "#E1BEE7",
+      "category": "mediadays_solutions",
+      "sub_label": null,
+      "zone": "Salle Le Nôtre (rangées D-E, centre)",
+      "description": "Cloud, distribution, transport du contenu, opérateurs FM/DAB+. Territoire différenciant vs SATIS.",
+      "sous_secteurs": [
+        {
+          "name": "Opérateurs FM / DAB+",
+          "count": 7,
+          "exemples": [
+            "TDF",
+            "Towercast",
+            "Onecast (Radio France)",
+            "Digris AG",
+            "ValoCast",
+            "MMD Monaco",
+            "Solucast"
+          ]
+        },
+        {
+          "name": "Émetteurs & infrastructure RF",
+          "count": 14,
+          "exemples": [
+            "Nautel",
+            "Elenos",
+            "AquaBroadcast",
+            "Plisch",
+            "GatesAir",
+            "Roosen",
+            "RVR Elettronica",
+            "SYES",
+            "Electrolink",
+            "Com-Tech Italia",
+            "IRTE",
+            "Paneda Tech",
+            "Be Cast Consulting + 1"
+          ]
+        },
+        {
+          "name": "Satellites & fibre broadcast",
+          "count": 4,
+          "exemples": ["Eutelsat", "SES", "Globecast", "Orange"]
+        },
+        {
+          "name": "Cloud broadcast & CDN",
+          "count": 10,
+          "exemples": [
+            "AWS Media Services",
+            "Akamai",
+            "Haivision",
+            "Brightcove",
+            "Ateme",
+            "Harmonic",
+            "CreaCast",
+            "Noovo",
+            "Limelight",
+            "Amagi"
+          ]
+        },
+        {
+          "name": "Transmission live IP / 5G",
+          "count": 6,
+          "exemples": ["LiveU", "TVU Networks", "Enensys", "Prodys", "SAPEC", "Rohde & Schwarz"]
+        },
+        {
+          "name": "Ad serving vidéo / audio",
+          "count": 6,
+          "exemples": [
+            "FreeWheel",
+            "SpringServe",
+            "Publica (FreeWheel)",
+            "SpotX",
+            "Magnite CTV",
+            "Yospace"
+          ]
+        },
+        {
+          "name": "Playout / Distribution multicanale",
+          "count": 7,
+          "exemples": [
+            "Dalet",
+            "Etere",
+            "Axeltech",
+            "Telestream",
+            "VideoMenthe",
+            "Mediaproxy",
+            "Wildmoka"
+          ]
+        },
+        {
+          "name": "Alertes / sécurité diffusion",
+          "count": 2,
+          "exemples": ["Sage Alerting Systems", "Enensys"]
+        },
+        {
+          "name": "Streaming & OTT tech",
+          "count": 5,
+          "exemples": ["Kaltura", "Viaccess-Orca", "Bitmovin", "JW Player", "Vimeo OTT"]
+        }
+      ],
+      "total_sous_secteurs": 9,
+      "total_exposants_cibles": 61
+    },
+    {
+      "code": "VIDEO_CTV",
+      "name": "VIDÉO & CTV",
+      "emoji": "🎥",
+      "color": "#BBDEFB",
+      "category": "mediadays_solutions",
+      "sub_label": null,
+      "zone": "Salle Le Nôtre (rangées F-G-H) + scène MDS",
+      "description": "Distribution, monétisation, analytics vidéo + production vidéo pro (concurrence SATIS assumée).",
+      "sous_secteurs": [
+        {
+          "name": "Players & CMS vidéo",
+          "count": 7,
+          "exemples": [
+            "JW Player",
+            "Bitmovin",
+            "Vimeo OTT",
+            "Kaltura",
+            "Dailymotion",
+            "Brightcove",
+            "Vediaud"
+          ]
+        },
+        {
+          "name": "Solutions streaming / live",
+          "count": 6,
+          "exemples": ["Wildmoka", "Grabyo", "Viaccess-Orca", "Haivision", "LiveU", "TVU Networks"]
+        },
+        {
+          "name": "CTV / AVOD / FAST",
+          "count": 6,
+          "exemples": [
+            "Pluto TV France",
+            "Samsung TV Plus",
+            "Rakuten TV",
+            "LG Channels",
+            "Xumo Play",
+            "Roku + 0"
+          ]
+        },
+        {
+          "name": "Monétisation vidéo",
+          "count": 5,
+          "exemples": ["SpotX", "FreeWheel", "Publica", "Yospace", "SpringServe"]
+        },
+        {
+          "name": "Analytics vidéo & QoE",
+          "count": 4,
+          "exemples": ["Mux", "Conviva", "NPAW (Youbora)", "Bitmovin Analytics"]
+        },
+        {
+          "name": "Optimisation contenu / IA vidéo",
+          "count": 5,
+          "exemples": ["Synamedia", "ContentWise", "IRIS.TV", "Amagi", "Perifery"]
+        },
+        {
+          "name": "Production — caméras & capture",
+          "count": 9,
+          "exemples": [
+            "Sony",
+            "Canon",
+            "ARRI",
+            "Panasonic Connect",
+            "Blackmagic Design",
+            "AJA Video Systems",
+            "RED",
+            "3D Storm",
+            "AEI Technologies"
+          ]
+        },
+        {
+          "name": "Production — post-prod & édition",
+          "count": 7,
+          "exemples": [
+            "Avid",
+            "Adobe",
+            "Post Logic",
+            "Mikros",
+            "Digital District",
+            "Innport",
+            "Dell Technologies"
+          ]
+        },
+        {
+          "name": "Production — live / régie / mélangeurs",
+          "count": 12,
+          "exemples": [
+            "EVS",
+            "Ross Video",
+            "Vizrt",
+            "Zero Density",
+            "Dreamwall",
+            "Pixelstorm",
+            "Multicam Systems",
+            "AMP Visual TV",
+            "XD Motion",
+            "Aret Engineering + 2"
+          ]
+        },
+        {
+          "name": "Éclairage plateau & cinéma",
+          "count": 2,
+          "exemples": ["Aputure", "Prolight (Prolights)"]
+        },
+        {
+          "name": "Écrans pro & LED (studio / plateau)",
+          "count": 5,
+          "exemples": ["NEC/Sharp", "Maxhub", "Viewsonic", "Arthur Holm", "Seada"]
+        },
+        {
+          "name": "Intercom & communication plateau",
+          "count": 6,
+          "exemples": [
+            "Clear-Com",
+            "Riedel Communications",
+            "Extron",
+            "Luminex",
+            "Televic",
+            "Logitech"
+          ]
+        },
+        {
+          "name": "Intégrateurs AV",
+          "count": 13,
+          "exemples": [
+            "Videlio",
+            "Visual Impact France",
+            "TRM Audiovisuel",
+            "Video Plus France",
+            "BCE France",
+            "S4U",
+            "M212",
+            "Innovatech",
+            "Aski-Da",
+            "EcmaPro",
+            "PHF COM",
+            "Imagine Communications + 1"
+          ]
+        },
+        {
+          "name": "Découpage / redistribution sociale",
+          "count": 1,
+          "exemples": ["Yuzzitpro"]
+        }
+      ],
+      "total_sous_secteurs": 14,
+      "total_exposants_cibles": 88
+    },
+    {
+      "code": "OUTDOOR_DOOH",
+      "name": "OUTDOOR & DOOH",
+      "emoji": "📢",
+      "color": "#FFE0B2",
+      "category": "mediadays_solutions",
+      "sub_label": null,
+      "zone": "Salle Le Nôtre (colonne droite vers Foyer)",
+      "description": "Tech DOOH, programmatique outdoor, solutions d'affichage. Les régies OOH (JCDecaux, Clear Channel…) sont dans le pôle RÉGIES & RETAIL MEDIA.",
+      "sous_secteurs": [
+        {
+          "name": "Plateformes DOOH / Programmatique DOOH",
+          "count": 7,
+          "exemples": [
+            "VIOOH",
+            "Hivestack",
+            "Broadsign",
+            "Displayce",
+            "Place Exchange",
+            "Vistar Media",
+            "Adomik"
+          ]
+        },
+        {
+          "name": "Data géolocalisée (usage DOOH)",
+          "count": 3,
+          "exemples": ["Azira", "S4M", "Adsquare"]
+        },
+        {
+          "name": "Technologies écrans connectés (outdoor / retail)",
+          "count": 9,
+          "exemples": [
+            "Absen",
+            "Leyard",
+            "Daktronics",
+            "SES-imagotag",
+            "Pricer",
+            "VusionGroup",
+            "LG Signage",
+            "Samsung Display + 1"
+          ]
+        },
+        {
+          "name": "Mobilier urbain connecté",
+          "count": 4,
+          "exemples": ["Telelogos", "SpinetiX", "Navori", "Scala Digital Signage"]
+        },
+        {
+          "name": "CMS / Signage software",
+          "count": 6,
+          "exemples": [
+            "Yodeck",
+            "Enplug",
+            "Stratacache",
+            "Signagelive",
+            "BrightSign",
+            "Philips PDS"
+          ]
+        },
+        {
+          "name": "In-store audio & ambiance",
+          "count": 4,
+          "exemples": ["IMS", "Storever", "Moodmedia", "Colors Corporation"]
+        }
+      ],
+      "total_sous_secteurs": 6,
+      "total_exposants_cibles": 33
+    },
+    {
+      "code": "DATA_ADTECH",
+      "name": "DATA & ADTECH",
+      "emoji": "📊",
+      "color": "#C8E6C9",
+      "category": "mediadays_solutions",
+      "sub_label": null,
+      "zone": "Salle Delorme + Salle Le Nôtre",
+      "description": "Adtech, data, mesure, IA marketing, retail media tech. Le cœur business de MediaDays Solutions.",
+      "sous_secteurs": [
+        {
+          "name": "Mesure d'audience & certification",
+          "count": 6,
+          "exemples": [
+            "Médiamétrie",
+            "Kantar Media",
+            "ACPM",
+            "Nielsen France",
+            "Audiweb",
+            "OJD Internet"
+          ]
+        },
+        {
+          "name": "DSP (achat programmatique)",
+          "count": 8,
+          "exemples": [
+            "The Trade Desk",
+            "Xandr",
+            "Google DV360",
+            "Amazon DSP",
+            "Adform",
+            "Basis Technologies",
+            "StackAdapt",
+            "MediaMath"
+          ]
+        },
+        {
+          "name": "SSP (vente programmatique)",
+          "count": 5,
+          "exemples": [
+            "Equativ (ex-Smart AdServer)",
+            "Magnite",
+            "Index Exchange",
+            "PubMatic",
+            "Xandr Publisher"
+          ]
+        },
+        {
+          "name": "Data clean rooms",
+          "count": 5,
+          "exemples": [
+            "InfoSum",
+            "Habu",
+            "AWS Clean Rooms",
+            "Google Ads Data Hub",
+            "LiveRamp Safe Haven"
+          ]
+        },
+        {
+          "name": "CDP / DMP",
+          "count": 8,
+          "exemples": [
+            "LiveRamp",
+            "Weborama",
+            "Eulerian",
+            "Commanders Act",
+            "Piano",
+            "Salesforce Marketing Cloud",
+            "Adobe Experience Platform",
+            "Tealium"
+          ]
+        },
+        {
+          "name": "Attribution & mesure",
+          "count": 5,
+          "exemples": ["AppsFlyer", "Branch", "Adjust", "Singular", "Rockerbox"]
+        },
+        {
+          "name": "Retail Media Tech",
+          "count": 7,
+          "exemples": [
+            "Criteo Retail Media",
+            "CitrusAd",
+            "Epsilon",
+            "Pathmatics",
+            "Bridge",
+            "Adadyn",
+            "Moloco"
+          ]
+        },
+        {
+          "name": "IA marketing & data science",
+          "count": 13,
+          "exemples": [
+            "Dataiku",
+            "Alteryx",
+            "Piano Analytics",
+            "AIVE",
+            "Advant Labs",
+            "BlueGriot",
+            "Audience Data",
+            "Dataventure",
+            "Cibleclick",
+            "DeepReach",
+            "Zefir",
+            "MediaSquare",
+            "Reach"
+          ]
+        },
+        {
+          "name": "Consent & privacy tech",
+          "count": 5,
+          "exemples": ["Didomi", "OneTrust", "Sourcepoint", "Usercentrics", "TrustArc"]
+        },
+        {
+          "name": "Fintech média / Monétisation / Subscription",
+          "count": 11,
+          "exemples": [
+            "Digital Virgo",
+            "Phonix",
+            "Fonix",
+            "Allopass / HiPay Mobile",
+            "Infomedia Services + 6"
+          ]
+        },
+        {
+          "name": "Identifiants alternatifs (post-cookies)",
+          "count": 4,
+          "exemples": ["ID5", "The Trade Desk UID2", "LiveRamp RampID", "Prebid"]
+        },
+        {
+          "name": "Performance / affiliation",
+          "count": 3,
+          "exemples": ["Effinity", "Kwanko", "Awin"]
+        },
+        {
+          "name": "Pub éditorialisée",
+          "count": 1,
+          "exemples": ["BeOp"]
+        }
+      ],
+      "total_sous_secteurs": 13,
+      "total_exposants_cibles": 81
+    }
+  ],
+  "visiteurs": [
+    {
+      "id": 1,
+      "name": "Annonceurs grands comptes",
+      "count": 27,
+      "affinite_poles": ["REGIES_RETAIL_MEDIA", "VIDEO_CTV", "OUTDOOR_DOOH", "DATA_ADTECH"],
+      "affinite_levels": [2, 1, 1, 1],
+      "exemples": [
+        "L'Oréal",
+        "Orange",
+        "Renault",
+        "Sanofi",
+        "LVMH",
+        "Nestlé France",
+        "Bouygues Telecom",
+        "Carrefour",
+        "Société Générale",
+        "BNP Paribas",
+        "Crédit Agricole",
+        "Axa",
+        "Coca-Cola",
+        "Danone",
+        "Pernod Ricard",
+        "Stellantis",
+        "Michelin",
+        "Airbus",
+        "SNCF",
+        "EDF",
+        "TotalEnergies",
+        "FDJ",
+        "PMU",
+        "Decathlon",
+        "Fnac-Darty",
+        "Samsung France",
+        "Apple France"
+      ],
+      "fonctions": "Direction Générale · Direction Marketing · Direction Communication · Direction Achats Médias",
+      "action_landing": "visiteur_gratuit"
+    },
+    {
+      "id": 2,
+      "name": "Agences médias UDECAM",
+      "count": 28,
+      "affinite_poles": ["REGIES_RETAIL_MEDIA", "DATA_ADTECH"],
+      "affinite_levels": [2, 2],
+      "exemples": [
+        "Havas Media",
+        "Zenith",
+        "Starcom",
+        "Spark Foundry",
+        "Wavemaker",
+        "EssenceMediacom",
+        "Mindshare",
+        "Dentsu X",
+        "Carat",
+        "iProspect",
+        "Initiative",
+        "UM",
+        "Matterkind",
+        "OMD",
+        "PHD",
+        "Hearts & Science",
+        "Annalect",
+        "Blue 449",
+        "Arena Media",
+        "CoSpirit",
+        "Fullsix Media",
+        "Fuse",
+        "Re-Mind",
+        "Values",
+        "Artefact",
+        "Big Success",
+        "Jellyfish",
+        "Agence 79"
+      ],
+      "fonctions": "Chief Client Officer · Directeurs Conseil · Head of Strategy · Directeurs TV / Radio / Digital",
+      "action_landing": "visiteur_gratuit"
+    },
+    {
+      "id": 3,
+      "name": "Agences créatives & branded content",
+      "count": 21,
+      "affinite_poles": ["REGIES_RETAIL_MEDIA", "VIDEO_CTV", "AUDIO_RADIO"],
+      "affinite_levels": [2, 1, 1],
+      "exemples": [
+        "BETC",
+        "Publicis Conseil",
+        "Havas Paris",
+        "Marcel",
+        "Rosapark",
+        "Buzzman",
+        "DDB Paris",
+        "Ogilvy France",
+        "TBWA\\Paris",
+        "McCann Paris",
+        "Altmann+Pacreau",
+        "Fred & Farid",
+        "Romance",
+        "Sid Lee",
+        "La Chose",
+        "Les Gaulois",
+        "Mnstr",
+        "Josiane",
+        "84.Paris",
+        "W Conran Design",
+        "Else"
+      ],
+      "fonctions": "Direction Générale · Direction de la Création · Directeurs Artistiques",
+      "action_landing": "visiteur_gratuit"
+    },
+    {
+      "id": 4,
+      "name": "Médias éditeurs — Radios",
+      "count": 26,
+      "affinite_poles": ["AUDIO_RADIO", "DIFFUSION_INFRA"],
+      "affinite_levels": [2, 1],
+      "exemples": [
+        "RTL",
+        "RTL2",
+        "Fun Radio",
+        "Europe 1",
+        "Virgin Radio",
+        "RFM",
+        "NRJ",
+        "Nostalgie",
+        "Chérie FM",
+        "Rire & Chansons",
+        "RMC",
+        "Radio France (Inter/Info/Bleu/Culture/Musique)",
+        "Skyrock",
+        "Radio Classique",
+        "Radio Nova",
+        "Ouï FM",
+        "FG DJ Radio",
+        "Latina",
+        "Beur FM",
+        "Africa Radio",
+        "Groupe 1981",
+        "Sud Radio",
+        "Alouette",
+        "Hit West",
+        "Vibration",
+        "RFI"
+      ],
+      "fonctions": "Direction Générale · Direction des Programmes · Direction Antenne · Direction Technique",
+      "action_landing": "visiteur_gratuit"
+    },
+    {
+      "id": 5,
+      "name": "Médias éditeurs — TV & plateformes",
+      "count": 22,
+      "affinite_poles": ["VIDEO_CTV", "DIFFUSION_INFRA"],
+      "affinite_levels": [2, 1],
+      "exemples": [
+        "TF1",
+        "M6",
+        "France TV",
+        "Canal+",
+        "Arte",
+        "BFM TV",
+        "CNews",
+        "LCI",
+        "RMC Découverte",
+        "TMC",
+        "Gulli",
+        "Teva",
+        "Netflix France",
+        "Prime Video",
+        "Disney+",
+        "Paramount+",
+        "Warner Bros Discovery",
+        "Molotov",
+        "Pluto TV",
+        "Samsung TV Plus",
+        "Rakuten TV",
+        "Dailymotion"
+      ],
+      "fonctions": "Direction Générale · Direction des Programmes · Direction des Antennes · Direction Technique",
+      "action_landing": "visiteur_gratuit"
+    },
+    {
+      "id": 6,
+      "name": "Médias éditeurs — Presse & digital",
+      "count": 16,
+      "affinite_poles": ["REGIES_RETAIL_MEDIA", "DATA_ADTECH"],
+      "affinite_levels": [2, 1],
+      "exemples": [
+        "Le Monde",
+        "Le Figaro",
+        "Les Echos",
+        "Libération",
+        "Le Parisien",
+        "Ouest-France",
+        "Sud Ouest",
+        "La Voix du Nord",
+        "Prisma Media",
+        "CMI France",
+        "Reworld Media",
+        "20 Minutes",
+        "Le Point",
+        "L'Express",
+        "Challenges",
+        "Capital"
+      ],
+      "fonctions": "Direction Générale · Rédaction en Chef · Direction Digitale",
+      "action_landing": "visiteur_gratuit"
+    },
+    {
+      "id": 7,
+      "name": "Producteurs & Studios",
+      "count": 16,
+      "affinite_poles": [],
+      "affinite_levels": [],
+      "exemples": [
+        "Iconoclast",
+        "Wanda",
+        "Big Productions",
+        "Quad Drama",
+        "Irène & Lola",
+        "Division",
+        "Partizan",
+        "General Pop",
+        "Henry de Czar",
+        "Webedia Studios",
+        "Melty Factory",
+        "Prisma Studio",
+        "Golden",
+        "Podcast Story",
+        "Nouvelles Écoutes",
+        "Louie Media"
+      ],
+      "fonctions": "Direction Générale · Producteurs exécutifs · Direction Artistique",
+      "action_landing": "visiteur_gratuit"
+    },
+    {
+      "id": 8,
+      "name": "Directeurs techniques / CTO médias",
+      "count": 6,
+      "affinite_poles": ["DIFFUSION_INFRA"],
+      "affinite_levels": [2],
+      "exemples": [
+        "DT Radios (nationales + locales)",
+        "DT TV (chaînes linéaires)",
+        "DT Plateformes OTT",
+        "CTO groupes médias",
+        "Responsables diffusion",
+        "Intégrateurs AV (Videlio, Dubbing, Telmaco)"
+      ],
+      "fonctions": "CTO · Directeurs Techniques (DT) · Direction Diffusion",
+      "action_landing": "visiteur_gratuit"
+    },
+    {
+      "id": 9,
+      "name": "Data officers & AdTech managers",
+      "count": 5,
+      "affinite_poles": ["DATA_ADTECH"],
+      "affinite_levels": [2],
+      "exemples": [
+        "Head of Data annonceurs",
+        "Head of Data régies",
+        "Chief Data Officers",
+        "Head of AdTech",
+        "Consultants médias"
+      ],
+      "fonctions": "Chief Data Officer (CDO) · Head of Data · Head of AdTech · Data Strategists · DMP Managers",
+      "action_landing": "visiteur_gratuit"
+    },
+    {
+      "id": 10,
+      "name": "Retailers & e-commerçants",
+      "count": 10,
+      "affinite_poles": ["OUTDOOR_DOOH", "DATA_ADTECH", "REGIES_RETAIL_MEDIA"],
+      "affinite_levels": [2, 1, 1],
+      "exemples": [
+        "Direction marketing Carrefour",
+        "Direction retail media Fnac-Darty",
+        "Intermarché",
+        "Casino",
+        "Leroy Merlin",
+        "Auchan",
+        "Boulanger",
+        "Decathlon",
+        "Monoprix",
+        "But"
+      ],
+      "fonctions": "Direction Générale · Direction Marketing · Direction Retail Media · Direction E-commerce",
+      "action_landing": "visiteur_gratuit"
+    },
+    {
+      "id": 11,
+      "name": "Institutionnels & Syndicats",
+      "count": 22,
+      "affinite_poles": [],
+      "affinite_levels": [],
+      "exemples": [
+        "UDECAM",
+        "UDM",
+        "SRI",
+        "UPE",
+        "IAB France",
+        "AACC",
+        "Club des AD",
+        "Club des Annonceurs",
+        "ARCOM",
+        "SACEM",
+        "SCAM",
+        "SIRTI",
+        "SNRL",
+        "CNRA",
+        "Les Locales",
+        "Ensemble pour le DAB+",
+        "WorldDAB",
+        "ACPM",
+        "CPNEF Audiovisuel",
+        "La Semaine du Son + 2"
+      ],
+      "fonctions": "Direction Générale · Délégués Généraux · Directeurs Affaires Publiques",
+      "action_landing": "institutionnel_form"
+    },
+    {
+      "id": 12,
+      "name": "Presse professionnelle",
+      "count": 20,
+      "affinite_poles": [],
+      "affinite_levels": [],
+      "exemples": [
+        "LaLettre.pro",
+        "Podcast Magazine",
+        "Stratégies",
+        "CB News",
+        "Offremedia",
+        "Mind Media",
+        "Minted",
+        "FrenchWeb",
+        "Puremédias",
+        "Satellifax",
+        "Mediakwest",
+        "Sonovision",
+        "La Réclame",
+        "Viuz",
+        "Journal du Net",
+        "Siècle Digital",
+        "BDM",
+        "Écran Total",
+        "Influencia",
+        "RedTech International"
+      ],
+      "fonctions": "Rédacteurs en chef · Journalistes spécialisés médias/pub/tech · Directeurs de Rédaction",
+      "action_landing": "visiteur_gratuit"
+    },
+    {
+      "id": 13,
+      "name": "Écoles & Formation",
+      "count": 17,
+      "affinite_poles": [],
+      "affinite_levels": [],
+      "exemples": [
+        "ECS",
+        "Iscom",
+        "CELSA",
+        "EFAP",
+        "Sciences Po Journalisme",
+        "ESJ Lille",
+        "CFJ",
+        "Dauphine",
+        "HEC",
+        "ESSEC",
+        "Sup de Pub",
+        "La Fémis",
+        "INA",
+        "Gobelins",
+        "Studio École de France",
+        "Ina Campus",
+        "La Skol"
+      ],
+      "fonctions": "Direction Générale · Direction Pédagogique · Responsables Filières Médias / Communication",
+      "action_landing": "ecole_form"
+    },
+    {
+      "id": 14,
+      "name": "Investisseurs / VCs tech média",
+      "count": 9,
+      "affinite_poles": ["DATA_ADTECH", "DIFFUSION_INFRA"],
+      "affinite_levels": [1, 1],
+      "exemples": [
+        "Idinvest",
+        "Serena Capital",
+        "Kima Ventures",
+        "Daphni",
+        "Bpifrance",
+        "Xange",
+        "Partech",
+        "Iris Capital",
+        "Rothschild & Co Media"
+      ],
+      "fonctions": "Managing Partners · Associés · Investment Managers · Principals · Analystes · Scouts",
+      "action_landing": "visiteur_gratuit"
+    }
+  ],
+  "stats": {
+    "total_poles": 6,
+    "total_sous_secteurs": 69,
+    "total_exposants_cibles": 484,
+    "total_visiteurs_families": 14,
+    "total_visiteurs_entites": 245
+  }
+}

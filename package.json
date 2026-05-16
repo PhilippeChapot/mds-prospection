@@ -27,7 +27,8 @@
     "seed:settings": "tsx scripts/seed/04_app_settings.ts",
     "seed:prs": "tsx scripts/seed/05_prs_exhibitors.ts",
     "ai:test-classification": "tsx scripts/test-ai-classification.ts",
-    "canva:resolve": "tsx scripts/resolve-canva-url.ts"
+    "canva:resolve": "tsx scripts/resolve-canva-url.ts",
+    "build:taxonomy": "tsx scripts/build-mds-taxonomy.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
