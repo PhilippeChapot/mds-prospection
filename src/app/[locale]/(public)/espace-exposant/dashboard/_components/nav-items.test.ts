@@ -1,20 +1,20 @@
 /**
- * P5.x.17 — sanity tests sur la config navigation Espace Exposant V1.3.
+ * P5.x.17 — sanity tests sur la config navigation Espace Exposant.
+ * P6.x.1b — étendu à 6 sections (ajout 'commander').
  *
  * Garanties testees :
- *   - 5 sections (cf brief)
+ *   - 6 sections (5 initiales + commander en P6.x.1b)
  *   - segments uniques (eviter de mapper 2 items sur la meme URL)
  *   - DEFAULT_EXPOSANT_SECTION pointe sur un segment connu
- *   - chaque labelKey est unique (pour eviter une cle i18n manquante
- *     ou un copier-coller)
+ *   - chaque labelKey est unique
  */
 
 import { describe, it, expect } from 'vitest';
 import { EXPOSANT_NAV_ITEMS, DEFAULT_EXPOSANT_SECTION } from './nav-items';
 
-describe('EXPOSANT_NAV_ITEMS (P5.x.17)', () => {
-  it('expose exactement 5 sections', () => {
-    expect(EXPOSANT_NAV_ITEMS).toHaveLength(5);
+describe('EXPOSANT_NAV_ITEMS', () => {
+  it('expose exactement 6 sections (5 base + commander P6.x.1b)', () => {
+    expect(EXPOSANT_NAV_ITEMS).toHaveLength(6);
   });
 
   it('chaque segment est unique', () => {
@@ -27,9 +27,10 @@ describe('EXPOSANT_NAV_ITEMS (P5.x.17)', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it('expose stand / coordonnees / documents / kit-communication / invitations', () => {
+  it('expose stand / coordonnees / documents / kit-communication / invitations / commander', () => {
     const segments = EXPOSANT_NAV_ITEMS.map((i) => i.segment).sort();
     expect(segments).toEqual([
+      'commander',
       'coordonnees',
       'documents',
       'invitations',

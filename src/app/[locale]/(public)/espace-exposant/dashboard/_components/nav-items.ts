@@ -22,6 +22,9 @@ export const EXPOSANT_NAV_ITEMS: readonly ExposantNavItem[] = [
   { labelKey: 'documents', emoji: '📄', segment: 'documents' },
   { labelKey: 'kitCommunication', emoji: '🎨', segment: 'kit-communication' },
   { labelKey: 'invitations', emoji: '📨', segment: 'invitations' },
+  // P6.x.1b — commande complémentaire. La page filtre par éligibilité
+  // (signed_at non-null) et redirige avec banner explicative si non éligible.
+  { labelKey: 'commander', emoji: '🛒', segment: 'commander' },
 ] as const;
 
 /**

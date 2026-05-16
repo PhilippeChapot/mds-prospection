@@ -1896,6 +1896,71 @@ export type Database = {
           },
         ];
       };
+      supplementary_orders: {
+        Row: {
+          admin_note: string | null;
+          created_at: string;
+          customer_note: string | null;
+          id: string;
+          items: Json;
+          paid_at: string | null;
+          prospect_id: string;
+          sellsy_facture_id: number | null;
+          sellsy_facture_number: string | null;
+          status: string;
+          stripe_checkout_session_id: string | null;
+          stripe_payment_intent_id: string | null;
+          total_ht_eur: number;
+          total_ttc_eur: number;
+          updated_at: string;
+          vat_rate: number;
+        };
+        Insert: {
+          admin_note?: string | null;
+          created_at?: string;
+          customer_note?: string | null;
+          id?: string;
+          items: Json;
+          paid_at?: string | null;
+          prospect_id: string;
+          sellsy_facture_id?: number | null;
+          sellsy_facture_number?: string | null;
+          status?: string;
+          stripe_checkout_session_id?: string | null;
+          stripe_payment_intent_id?: string | null;
+          total_ht_eur: number;
+          total_ttc_eur: number;
+          updated_at?: string;
+          vat_rate?: number;
+        };
+        Update: {
+          admin_note?: string | null;
+          created_at?: string;
+          customer_note?: string | null;
+          id?: string;
+          items?: Json;
+          paid_at?: string | null;
+          prospect_id?: string;
+          sellsy_facture_id?: number | null;
+          sellsy_facture_number?: string | null;
+          status?: string;
+          stripe_checkout_session_id?: string | null;
+          stripe_payment_intent_id?: string | null;
+          total_ht_eur?: number;
+          total_ttc_eur?: number;
+          updated_at?: string;
+          vat_rate?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'supplementary_orders_prospect_id_fkey';
+            columns: ['prospect_id'];
+            isOneToOne: false;
+            referencedRelation: 'prospects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       sync_logs: {
         Row: {
           created_at: string;
