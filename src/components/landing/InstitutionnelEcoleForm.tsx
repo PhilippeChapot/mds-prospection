@@ -27,7 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { submitInstitutionnelEcoleRequest } from '@/lib/landing/institutionnel-ecole-actions';
+import { createLeadFromLandingForm } from '@/lib/landing/lead-actions';
 import type { RequestType } from '@/lib/resend/templates/institutionnel-ecole-request';
 
 export function InstitutionnelEcoleForm({
@@ -83,7 +83,7 @@ export function InstitutionnelEcoleForm({
     setSubmitting(true);
     startTransition(async () => {
       try {
-        const result = await submitInstitutionnelEcoleRequest({
+        const result = await createLeadFromLandingForm({
           type,
           org_name: values.org_name,
           contact_name: values.contact_name,

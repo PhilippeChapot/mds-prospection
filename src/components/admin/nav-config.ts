@@ -78,12 +78,6 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         enabled: false,
         phase: 'P3',
       },
-      {
-        href: '/admin/demandes-institutionnel-ecole',
-        label: 'Demandes tarif spécial',
-        emoji: '📨',
-        enabled: true,
-      },
     ],
   },
   {

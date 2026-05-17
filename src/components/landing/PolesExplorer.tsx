@@ -23,8 +23,9 @@ import type { Pole } from '@/lib/landing/taxonomy';
 import { getSubSectorLabel } from '@/lib/landing/subsector-translations';
 
 const EXHIBITOR_SIGNUP_URL = '/inscription-exposant?category=exposant';
-const VISITOR_SIGNUP_URL = '/inscription-exposant?category=visiteur';
 const MEDIADAYS_NET_URL = 'https://mediadays.net';
+// P6.x.4-a-bis : tout CTA "S'inscrire visiteur" (pôle Régies inclus) bascule
+// sur mediadays.net — mediadays.solutions est le site exposants tech.
 
 function hexWithAlpha(hex: string, alpha: number): string {
   return `${hex}${Math.round(alpha * 255)
@@ -179,7 +180,10 @@ function PoleCta({ pole }: { pole: Pole }) {
           </a>
         </Button>
         <Button asChild variant="outline" className="w-full">
-          <a href={VISITOR_SIGNUP_URL}>{t('registerVisitorFree')}</a>
+          <a href={MEDIADAYS_NET_URL} target="_blank" rel="noopener noreferrer">
+            {t('registerVisitorFree')}
+            <ExternalLink className="ml-1.5 size-3.5" aria-hidden />
+          </a>
         </Button>
       </div>
     );

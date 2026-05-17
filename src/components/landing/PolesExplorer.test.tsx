@@ -33,13 +33,17 @@ describe('PolesExplorer (P6.x.4-a)', () => {
     expect(matches.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("CTA pôle 'mediadays_classique' propose mediadays.net + sous-CTA visiteur", () => {
+  it('P6.x.4-a-bis — pôle REGIES_RETAIL_MEDIA : 2 CTA externes vers mediadays.net (Exposer + Visiteur, target=_blank)', () => {
     renderI18n(<PolesExplorer poles={poles} />);
     const regies = poles.find((p) => p.code === 'REGIES_RETAIL_MEDIA')!;
     fireEvent.click(screen.getAllByText(regies.name)[0].closest('button')!);
     const exposerLink = screen.getByText(/Exposer sur mediadays.net/i).closest('a');
+    const visitorLink = screen.getByText(/S.inscrire comme visiteur/i).closest('a');
     expect(exposerLink?.getAttribute('href')).toBe('https://mediadays.net');
-    expect(screen.getByText(/S.inscrire comme visiteur/i)).toBeTruthy();
+    expect(exposerLink?.getAttribute('target')).toBe('_blank');
+    expect(visitorLink?.getAttribute('href')).toBe('https://mediadays.net');
+    expect(visitorLink?.getAttribute('target')).toBe('_blank');
+    expect(visitorLink?.getAttribute('rel')).toContain('noopener');
   });
 
   it("CTA pôle 'mediadays_solutions' propose 'Réserver mon stand' interne", () => {

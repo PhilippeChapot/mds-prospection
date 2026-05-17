@@ -23,8 +23,10 @@ import { getSubSectorLabel } from '@/lib/landing/subsector-translations';
 import { renderI18n } from './__test-helpers__/i18n-render';
 
 // On évite l'appel réel à la server action
-vi.mock('@/lib/landing/institutionnel-ecole-actions', () => ({
-  submitInstitutionnelEcoleRequest: vi.fn().mockResolvedValue({ ok: true, request_id: 'x' }),
+vi.mock('@/lib/landing/lead-actions', () => ({
+  createLeadFromLandingForm: vi
+    .fn()
+    .mockResolvedValue({ ok: true, prospect_id: 'p', company_id: 'co', contact_id: 'c' }),
 }));
 
 const tax = getTaxonomy();

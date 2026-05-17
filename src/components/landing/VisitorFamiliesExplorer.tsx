@@ -17,13 +17,17 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ExternalLink } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import type { Pole, VisitorFamily } from '@/lib/landing/taxonomy';
 import { useInstitutionnelEcoleForm } from './institutionnel-ecole-form-context';
 
-const VISITOR_SIGNUP_URL = '/inscription-exposant?category=visiteur';
+/**
+ * P6.x.4-a-bis : tous les CTA visiteur basculent vers mediadays.net (externe).
+ * mediadays.solutions = site EXPOSANTS uniquement, pas de flow visiteur interne.
+ */
+const MEDIADAYS_NET_URL = 'https://mediadays.net';
 
 function hexWithAlpha(hex: string, alpha: number): string {
   return `${hex}${Math.round(alpha * 255)
@@ -198,25 +202,33 @@ function FamilyDetail({
         ) : null}
       </div>
 
-      <div className="border-md-border border-t bg-white p-4">
-        {family.action_landing === 'visiteur_gratuit' ? (
+      <div className="border-md-border space-y-2 border-t bg-white p-4">
+        {family.action_landing === 'external_mediadays_net' ? (
           <Button asChild className="bg-md-magenta hover:bg-md-magenta/90 w-full">
-            <a href={VISITOR_SIGNUP_URL}>
+            <a href={MEDIADAYS_NET_URL} target="_blank" rel="noopener noreferrer">
               {tCta('registerVisitorFree')}
-              <ArrowRight className="ml-1.5 size-3.5" aria-hidden />
+              <ExternalLink className="ml-1.5 size-3.5" aria-hidden />
             </a>
           </Button>
         ) : (
-          <Button
-            type="button"
-            onClick={handleCta}
-            className="bg-md-magenta hover:bg-md-magenta/90 w-full"
-          >
-            {family.action_landing === 'institutionnel_form'
-              ? tCta('requestInstitPricing')
-              : tCta('requestSchoolPricing')}
-            <ArrowRight className="ml-1.5 size-3.5" aria-hidden />
-          </Button>
+          <>
+            <Button
+              type="button"
+              onClick={handleCta}
+              className="bg-md-magenta hover:bg-md-magenta/90 w-full"
+            >
+              {family.action_landing === 'institutionnel_form'
+                ? tCta('requestInstitPricing')
+                : tCta('requestSchoolPricing')}
+              <ArrowRight className="ml-1.5 size-3.5" aria-hidden />
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <a href={MEDIADAYS_NET_URL} target="_blank" rel="noopener noreferrer">
+                {tCta('registerVisitorFree')}
+                <ExternalLink className="ml-1.5 size-3.5" aria-hidden />
+              </a>
+            </Button>
+          </>
         )}
       </div>
     </div>

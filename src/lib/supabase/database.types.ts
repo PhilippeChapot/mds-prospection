@@ -1013,62 +1013,6 @@ export type Database = {
           },
         ];
       };
-      institutionnel_ecole_requests: {
-        Row: {
-          admin_notes: string | null;
-          assigned_to: string | null;
-          contact_email: string;
-          contact_name: string;
-          contact_phone: string | null;
-          created_at: string;
-          id: string;
-          message: string | null;
-          org_name: string;
-          status: string;
-          type: string;
-          updated_at: string;
-          website: string | null;
-        };
-        Insert: {
-          admin_notes?: string | null;
-          assigned_to?: string | null;
-          contact_email: string;
-          contact_name: string;
-          contact_phone?: string | null;
-          created_at?: string;
-          id?: string;
-          message?: string | null;
-          org_name: string;
-          status?: string;
-          type: string;
-          updated_at?: string;
-          website?: string | null;
-        };
-        Update: {
-          admin_notes?: string | null;
-          assigned_to?: string | null;
-          contact_email?: string;
-          contact_name?: string;
-          contact_phone?: string | null;
-          created_at?: string;
-          id?: string;
-          message?: string | null;
-          org_name?: string;
-          status?: string;
-          type?: string;
-          updated_at?: string;
-          website?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'institutionnel_ecole_requests_assigned_to_fkey';
-            columns: ['assigned_to'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       mcp_tokens: {
         Row: {
           call_count: number;
@@ -2287,7 +2231,13 @@ export type Database = {
         | 'OUTDOOR_DOOH'
         | 'DATA_ADTECH'
         | 'INCONNU';
-      prospect_source: 'inscription_web' | 'direct' | 'salon' | 'reference' | 'campagne';
+      prospect_source:
+        | 'inscription_web'
+        | 'direct'
+        | 'salon'
+        | 'reference'
+        | 'campagne'
+        | 'landing_form';
       prospect_status:
         | 'lead'
         | 'contact'
@@ -2517,7 +2467,14 @@ export const Constants = {
         'DATA_ADTECH',
         'INCONNU',
       ],
-      prospect_source: ['inscription_web', 'direct', 'salon', 'reference', 'campagne'],
+      prospect_source: [
+        'inscription_web',
+        'direct',
+        'salon',
+        'reference',
+        'campagne',
+        'landing_form',
+      ],
       prospect_status: [
         'lead',
         'contact',

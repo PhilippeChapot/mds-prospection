@@ -39,7 +39,8 @@ export function renderAdminInstitutionnelEcoleRequest(
   params: AdminRequestParams,
 ): RequestEmailTemplate {
   const label = TYPE_LABEL[params.type];
-  const subject = `Nouvelle demande de tarif ${label} — ${params.orgName}`;
+  // P6.x.4-a-bis : subject pointe sur le prospect dans le pipeline
+  const subject = `Nouveau prospect Landing — ${params.orgName} (${label})`;
   const fields: Array<[string, string]> = [
     ['Type', label],
     ['Organisation', params.orgName],
@@ -61,15 +62,20 @@ export function renderAdminInstitutionnelEcoleRequest(
 <body style="margin:0;padding:24px;background:#f6f7fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#333">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
     <tr><td style="background:#031A56;padding:24px 28px;color:white">
-      <h1 style="margin:0;font-size:20px">Nouvelle demande de tarif ${escapeHtml(label)}</h1>
+      <h1 style="margin:0;font-size:20px">Nouveau prospect Landing — ${escapeHtml(label)}</h1>
       <p style="margin:6px 0 0;color:#bcc4dd;font-size:14px">${escapeHtml(params.orgName)} · ${escapeHtml(params.createdAt)}</p>
     </td></tr>
     <tr><td style="padding:24px 28px">
+      <p style="margin:0 0 16px;font-size:14px;color:#444">
+        Une demande de tarif ${escapeHtml(label)} a été captée depuis la landing publique
+        et un prospect a été créé dans le pipeline (status <strong>lead</strong>, source
+        <code style="background:#f6f7fb;padding:2px 6px;border-radius:4px">landing_form</code>).
+      </p>
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;font-size:14px">
         ${rows}
       </table>
       <p style="margin:24px 0 0;text-align:center">
-        <a href="${escapeAttr(params.adminUrl)}" style="display:inline-block;padding:12px 22px;background:#E6007E;color:white;text-decoration:none;border-radius:8px;font-weight:600">Ouvrir la demande dans l'admin</a>
+        <a href="${escapeAttr(params.adminUrl)}" style="display:inline-block;padding:12px 22px;background:#E6007E;color:white;text-decoration:none;border-radius:8px;font-weight:600">Voir la fiche prospect →</a>
       </p>
     </td></tr>
   </table>
@@ -78,9 +84,11 @@ export function renderAdminInstitutionnelEcoleRequest(
   const textLines = [
     subject,
     '',
+    `Prospect créé (status: lead, source: landing_form, source_detail: ${params.type}).`,
+    '',
     ...fields.map(([k, v]) => `${k}: ${v}`),
     '',
-    `Admin: ${params.adminUrl}`,
+    `Voir la fiche prospect : ${params.adminUrl}`,
   ];
 
   return { subject, html, text: textLines.join('\n') };

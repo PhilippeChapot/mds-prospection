@@ -45,10 +45,10 @@ describe('mds-taxonomy.json (P6.x.4-a)', () => {
     expect(f13?.action_landing).toBe('ecole_form');
   });
 
-  it('toutes les autres familles → visiteur_gratuit', () => {
+  it('P6.x.4-a-bis — toutes les autres familles → external_mediadays_net', () => {
     const others = tax.visiteurs.filter((v) => v.id !== 11 && v.id !== 13);
     for (const v of others) {
-      expect(v.action_landing).toBe('visiteur_gratuit');
+      expect(v.action_landing).toBe('external_mediadays_net');
     }
   });
 

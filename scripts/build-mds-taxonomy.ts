@@ -48,7 +48,13 @@ interface VisitorFamily {
   affinite_levels: number[];
   exemples: string[];
   fonctions: string;
-  action_landing: 'visiteur_gratuit' | 'institutionnel_form' | 'ecole_form';
+  /** P6.x.4-a-bis : CTA principal de la famille.
+   *  - 'external_mediadays_net' : DEFAULT — toutes les familles 1-10, 12, 14.
+   *    mediadays.solutions = site EXPOSANTS uniquement, toute inscription visiteur
+   *    bascule vers mediadays.net.
+   *  - 'institutionnel_form' : famille 11 — CTA primaire form, CTA secondaire visiteur.
+   *  - 'ecole_form' : famille 13 — idem. */
+  action_landing: 'external_mediadays_net' | 'institutionnel_form' | 'ecole_form';
 }
 
 interface Taxonomy {
@@ -128,11 +134,13 @@ const POLE_META: Record<
   },
 };
 
-// Familles 11 (Institutionnels) et 13 (Écoles) → action dédiée
+// Familles 11 (Institutionnels) et 13 (Écoles) → action dédiée (form interne).
+// Toutes les autres familles → mediadays.net externe (P6.x.4-a-bis).
 const SPECIAL_FAMILY_ACTIONS: Record<number, VisitorFamily['action_landing']> = {
   11: 'institutionnel_form',
   13: 'ecole_form',
 };
+const DEFAULT_FAMILY_ACTION: VisitorFamily['action_landing'] = 'external_mediadays_net';
 
 /** Strip emoji + decorations + markdown bold from "**🏛️ RÉGIES & RETAIL MEDIA ⭐**" → "RÉGIES & RETAIL MEDIA". */
 function normalizePoleHeading(raw: string): string {
@@ -298,7 +306,7 @@ function parseVisitorFamilies(md: string): VisitorFamily[] {
       affinite_levels: levels,
       exemples,
       fonctions,
-      action_landing: SPECIAL_FAMILY_ACTIONS[id] ?? 'visiteur_gratuit',
+      action_landing: SPECIAL_FAMILY_ACTIONS[id] ?? DEFAULT_FAMILY_ACTION,
     });
   }
   return families;

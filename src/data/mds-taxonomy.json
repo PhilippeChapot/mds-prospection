@@ -1,6 +1,6 @@
 {
   "version": "2.1",
-  "generated_at": "2026-05-17T00:18:41.344Z",
+  "generated_at": "2026-05-17T00:40:52.144Z",
   "poles": [
     {
       "code": "REGIES_RETAIL_MEDIA",
@@ -868,7 +868,7 @@
         "Apple France"
       ],
       "fonctions": "Direction Générale · Direction Marketing · Direction Communication · Direction Achats Médias",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     },
     {
       "id": 2,
@@ -907,7 +907,7 @@
         "Agence 79"
       ],
       "fonctions": "Chief Client Officer · Directeurs Conseil · Head of Strategy · Directeurs TV / Radio / Digital",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     },
     {
       "id": 3,
@@ -939,7 +939,7 @@
         "Else"
       ],
       "fonctions": "Direction Générale · Direction de la Création · Directeurs Artistiques",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     },
     {
       "id": 4,
@@ -976,7 +976,7 @@
         "RFI"
       ],
       "fonctions": "Direction Générale · Direction des Programmes · Direction Antenne · Direction Technique",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     },
     {
       "id": 5,
@@ -1009,7 +1009,7 @@
         "Dailymotion"
       ],
       "fonctions": "Direction Générale · Direction des Programmes · Direction des Antennes · Direction Technique",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     },
     {
       "id": 6,
@@ -1036,7 +1036,7 @@
         "Capital"
       ],
       "fonctions": "Direction Générale · Rédaction en Chef · Direction Digitale",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     },
     {
       "id": 7,
@@ -1063,7 +1063,7 @@
         "Louie Media"
       ],
       "fonctions": "Direction Générale · Producteurs exécutifs · Direction Artistique",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     },
     {
       "id": 8,
@@ -1080,7 +1080,7 @@
         "Intégrateurs AV (Videlio, Dubbing, Telmaco)"
       ],
       "fonctions": "CTO · Directeurs Techniques (DT) · Direction Diffusion",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     },
     {
       "id": 9,
@@ -1096,7 +1096,7 @@
         "Consultants médias"
       ],
       "fonctions": "Chief Data Officer (CDO) · Head of Data · Head of AdTech · Data Strategists · DMP Managers",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     },
     {
       "id": 10,
@@ -1117,7 +1117,7 @@
         "But"
       ],
       "fonctions": "Direction Générale · Direction Marketing · Direction Retail Media · Direction E-commerce",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     },
     {
       "id": 11,
@@ -1179,7 +1179,7 @@
         "RedTech International"
       ],
       "fonctions": "Rédacteurs en chef · Journalistes spécialisés médias/pub/tech · Directeurs de Rédaction",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     },
     {
       "id": 13,
@@ -1227,7 +1227,7 @@
         "Rothschild & Co Media"
       ],
       "fonctions": "Managing Partners · Associés · Investment Managers · Principals · Analystes · Scouts",
-      "action_landing": "visiteur_gratuit"
+      "action_landing": "external_mediadays_net"
     }
   ],
   "stats": {

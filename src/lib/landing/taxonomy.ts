@@ -37,7 +37,7 @@ export interface VisitorFamily {
   affinite_levels: number[];
   exemples: string[];
   fonctions: string;
-  action_landing: 'visiteur_gratuit' | 'institutionnel_form' | 'ecole_form';
+  action_landing: 'external_mediadays_net' | 'institutionnel_form' | 'ecole_form';
 }
 
 export interface Taxonomy {
