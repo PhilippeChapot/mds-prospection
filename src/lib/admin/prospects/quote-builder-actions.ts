@@ -69,13 +69,12 @@ export async function saveQuoteDraftAction(input: SaveDraftInput): Promise<SaveD
     VAT_RATE_DEFAULT,
   );
 
-  // Hydrate les champs legacy pour rétrocompat (autres flows lisent encore
-  // pack_code + selected_addon_ids — ne pas casser).
-  const firstPack = items.find((i) => i.category === 'pack');
-  const addonIds = items
-    .filter((i) => i.category !== 'pack')
-    .map((i) => String(i.sellsy_product_id));
-
+  // P6.x.5-bis (Option A) : on NE TOUCHE PAS à pack_code/selected_addon_ids.
+  // Le sub_category catalogue ('standard', 'access'...) ne mappe pas vers
+  // l'enum DB pack_code = 'ACCESS' | 'CLASSIC' | 'PREMIUM' | 'A_DEFINIR'.
+  // Toute hydratation auto introduit du couplage fragile + risque enum
+  // violation. Doctrine : quote_items = nouveau monde, pack_code = legacy
+  // (intouché par ce flow).
   const supabase = getSupabaseServiceClient();
   const { error } = await supabase
     .from('prospects')
@@ -84,15 +83,9 @@ export async function saveQuoteDraftAction(input: SaveDraftInput): Promise<SaveD
       promo_pct: data.promo_pct,
       promo_reason: data.promo_reason,
       promo_excludes_premium: data.promo_excludes_premium,
-      // Rétrocompat : on hydrate ces champs si applicable (sans écraser
-      // si quote_items est vide pour préserver le legacy state).
-      ...(items.length > 0
-        ? {
-            pack_code: (firstPack?.sub_category as never) ?? 'A_DEFINIR',
-            selected_addon_ids: addonIds,
-            estimated_amount: totals.total_ht,
-          }
-        : {}),
+      // estimated_amount hydraté si on a au moins 1 item (utile pour le
+      // dashboard pipeline + le ConciergePaymentLinkDialog defaultAmountHt).
+      ...(items.length > 0 ? { estimated_amount: totals.total_ht } : {}),
     })
     .eq('id', data.prospect_id);
 

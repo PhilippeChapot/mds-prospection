@@ -171,7 +171,7 @@ describe('saveQuoteDraftAction (P6.x.5)', () => {
     expect(state.prospectUpdates).toHaveLength(0);
   });
 
-  it('happy path : update DB + hydrate pack_code + estimated_amount = total_ht remisé', async () => {
+  it('P6.x.5-bis Option A — happy path : update DB + estimated_amount remisé, mais PAS pack_code ni selected_addon_ids', async () => {
     mockEnv();
     const { saveQuoteDraftAction } = await import('./quote-builder-actions');
     const r = await saveQuoteDraftAction({
@@ -187,8 +187,9 @@ describe('saveQuoteDraftAction (P6.x.5)', () => {
     expect(upd.promo_pct).toBe(30);
     expect(upd.promo_reason).toBe('Tarif Institutionnel UDECAM');
     expect(upd.promo_excludes_premium).toBe(true);
-    expect(upd.pack_code).toBe('standard'); // hydraté depuis premier pack
-    expect(upd.selected_addon_ids).toEqual(['3']);
+    // P6.x.5-bis : pas d'hydratation pack_code/selected_addon_ids
+    expect(upd).not.toHaveProperty('pack_code');
+    expect(upd).not.toHaveProperty('selected_addon_ids');
     // total_ht = 15500 - 30% = 10850
     expect(upd.estimated_amount).toBe(10850);
   });

@@ -49,6 +49,10 @@ interface Props {
   /** Render extra admin actions in the header toolbar (Payment Link dialog,
    *  futures actions M5+). Garde Sync section agnostique des helpers Stripe. */
   extraActions?: React.ReactNode;
+  /** P6.x.5-bis : true si le prospect a soit quote_items non-vide (nouveau
+   *  flow Quote Builder) soit pack_code non-null (legacy signup→devis).
+   *  Si false, le bouton "Émettre devis Sellsy" est désactivé + tooltip. */
+  canEmit?: boolean;
 }
 
 export function SyncBadgesSection({
@@ -60,6 +64,7 @@ export function SyncBadgesSection({
   stripe,
   brevo,
   extraActions,
+  canEmit = true,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -145,12 +150,14 @@ export function SyncBadgesSection({
               type="button"
               size="sm"
               onClick={handleEmitDocument}
-              disabled={emitting || isTest}
+              disabled={emitting || isTest || !canEmit}
               className="bg-md-magenta hover:bg-md-magenta-soft"
               title={
                 isTest
                   ? 'Mode TEST : émission désactivée'
-                  : 'Créer le devis/facture Sellsy + envoyer email au prospect'
+                  : !canEmit
+                    ? "Ajoutez au moins un produit dans le Devis Builder avant d'émettre"
+                    : 'Créer le devis/facture Sellsy + envoyer email au prospect'
               }
             >
               {emitting ? (

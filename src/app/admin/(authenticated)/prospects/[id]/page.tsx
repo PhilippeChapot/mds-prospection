@@ -231,6 +231,14 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           !!prospect.sellsy_invoice_id
         }
         isCasB={!prospect.payment_path && !prospect.pack_code}
+        canEmit={
+          // P6.x.5-bis : on n'expose le bouton que s'il y a un brouillon
+          // exploitable côté quote_items (nouveau flow) OU un pack_code
+          // (legacy signup→devis). Sinon le bouton aboutirait toujours à
+          // une erreur "rien à émettre".
+          (Array.isArray(prospect.quote_items) && prospect.quote_items.length > 0) ||
+          prospect.pack_code !== null
+        }
         sellsy={{
           lastSyncedAt: prospect.last_synced_sellsy_at,
           errorMessage:

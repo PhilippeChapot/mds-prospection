@@ -115,6 +115,30 @@ export async function emitSellsyDocumentAction(
   if (profile.role !== 'admin') {
     throw new Error('Seul un admin peut emettre un document Sellsy.');
   }
+
+  // P6.x.5-bis : routing 2 chemins selon la source de vérité du devis.
+  //   - quote_items non-vide → chemin Quote Builder (nouveau flow admin/landing
+  //     leads, applique promo_pct par row, pas de step2_payload requis)
+  //   - quote_items vide → fallback runPostConversion (legacy signup→devis
+  //     qui lit pack_code + selected_addon_ids + step2_payload)
+  const { createSupabaseServerClient } = await import('@/lib/supabase/server');
+  const sb = await createSupabaseServerClient();
+  const { data: prospectMin } = await sb
+    .from('prospects')
+    .select('quote_items')
+    .eq('id', prospectId)
+    .maybeSingle();
+  const items = Array.isArray(prospectMin?.quote_items) ? prospectMin.quote_items : [];
+
+  if (items.length > 0) {
+    const { emitSellsyDevisFromQuoteBuilderAction } =
+      await import('@/lib/admin/prospects/quote-builder-actions');
+    const r = await emitSellsyDevisFromQuoteBuilderAction({ prospect_id: prospectId });
+    revalidatePath(`/admin/prospects/${prospectId}`);
+    if (!r.ok) throw new Error(r.error);
+    return { ok: true };
+  }
+
   const { runPostConversion } = await import('@/lib/sellsy/post-conversion');
   const result = await runPostConversion(prospectId);
   revalidatePath(`/admin/prospects/${prospectId}`);
