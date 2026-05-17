@@ -1216,6 +1216,10 @@ export type Database = {
           payment_path: Database['public']['Enums']['payment_path'] | null;
           primary_contact_id: string | null;
           probability: number | null;
+          promo_excludes_premium: boolean;
+          promo_pct: number;
+          promo_reason: string | null;
+          quote_items: Json;
           recap_pdf_generated_at: string | null;
           recap_pdf_url: string | null;
           season_id: string;
@@ -1280,6 +1284,10 @@ export type Database = {
           payment_path?: Database['public']['Enums']['payment_path'] | null;
           primary_contact_id?: string | null;
           probability?: number | null;
+          promo_excludes_premium?: boolean;
+          promo_pct?: number;
+          promo_reason?: string | null;
+          quote_items?: Json;
           recap_pdf_generated_at?: string | null;
           recap_pdf_url?: string | null;
           season_id: string;
@@ -1344,6 +1352,10 @@ export type Database = {
           payment_path?: Database['public']['Enums']['payment_path'] | null;
           primary_contact_id?: string | null;
           probability?: number | null;
+          promo_excludes_premium?: boolean;
+          promo_pct?: number;
+          promo_reason?: string | null;
+          quote_items?: Json;
           recap_pdf_generated_at?: string | null;
           recap_pdf_url?: string | null;
           season_id?: string;

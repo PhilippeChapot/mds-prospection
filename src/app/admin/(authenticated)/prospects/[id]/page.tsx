@@ -18,6 +18,9 @@ import { IsTestToggle } from './IsTestToggle';
 import { ConciergePaymentLinkDialog } from './ConciergePaymentLinkDialog';
 import { SyncBadgesSection } from './SyncBadgesSection';
 import { BoothAssignmentSection } from './BoothAssignmentSection';
+import { QuoteBuilder } from './_components/QuoteBuilder';
+import { getCatalogForAdminQuote } from '@/lib/admin/prospects/catalog';
+import { detectIsPremium, type QuoteItem } from '@/lib/admin/prospects/quote-calc';
 import { PACK_LABEL } from '@/lib/supabase/queries';
 import type { PoleCode } from '@/lib/design-tokens';
 import type { Database } from '@/lib/supabase/database.types';
@@ -41,6 +44,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
     .select(
       `
       id, status, pack_code, payment_path, estimated_amount, notes, owner_id, affiliate_id,
+      quote_items, promo_pct, promo_reason, promo_excludes_premium,
       is_test, last_synced_sellsy_at, last_synced_brevo_at, last_synced_stripe_at,
       last_sync_error_message, last_sync_error_provider, last_sync_error_at,
       sellsy_devis_id, sellsy_devis_number, sellsy_devis_public_url, sellsy_devis_emitted_at,
@@ -294,6 +298,17 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
         assigneeName={pickFirst(prospect.booth_assignee)?.full_name ?? null}
       />
 
+      {/* P6.x.5 — Devis Builder */}
+      <QuoteBuilder
+        prospectId={id}
+        initialItems={normalizeQuoteItems(prospect.quote_items)}
+        initialPromoPct={Number(prospect.promo_pct ?? 0)}
+        initialPromoReason={prospect.promo_reason}
+        initialExcludesPremium={prospect.promo_excludes_premium ?? true}
+        catalog={await getCatalogForAdminQuote()}
+        alreadyEmitted={Boolean(prospect.sellsy_devis_id)}
+      />
+
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Coordonnees */}
         <Section title="Coordonnees">
@@ -448,4 +463,37 @@ function pickFirst<T>(value: MaybeArray<T>): T | null {
   if (!value) return null;
   if (Array.isArray(value)) return value[0] ?? null;
   return value;
+}
+
+/**
+ * P6.x.5 — convertit le JSONB `prospects.quote_items` en QuoteItem[] typé.
+ * Tolérant : ignore les entrées malformées + recalcule is_premium au cas où
+ * un drift catalogue se serait produit.
+ */
+function normalizeQuoteItems(raw: unknown): QuoteItem[] {
+  if (!Array.isArray(raw)) return [];
+  const out: QuoteItem[] = [];
+  for (const r of raw) {
+    if (!r || typeof r !== 'object') continue;
+    const o = r as Record<string, unknown>;
+    if (typeof o.sellsy_product_id !== 'number') continue;
+    if (typeof o.reference !== 'string') continue;
+    out.push({
+      sellsy_product_id: o.sellsy_product_id,
+      reference: o.reference,
+      name: typeof o.name === 'string' ? o.name : o.reference,
+      unit_price_ht: Number(o.unit_price_ht) || 0,
+      qty: Math.max(1, Math.min(99, Number(o.qty) || 1)),
+      category: typeof o.category === 'string' ? o.category : 'option',
+      sub_category: typeof o.sub_category === 'string' ? o.sub_category : null,
+      is_premium:
+        typeof o.is_premium === 'boolean'
+          ? o.is_premium
+          : detectIsPremium({
+              sub_category: typeof o.sub_category === 'string' ? o.sub_category : null,
+              reference: o.reference,
+            }),
+    });
+  }
+  return out;
 }
