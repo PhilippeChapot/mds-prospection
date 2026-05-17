@@ -116,19 +116,25 @@ export async function emitSellsyDocumentAction(
     throw new Error('Seul un admin peut emettre un document Sellsy.');
   }
 
-  // P6.x.5-bis : routing 2 chemins selon la source de vérité du devis.
-  //   - quote_items non-vide → chemin Quote Builder (nouveau flow admin/landing
-  //     leads, applique promo_pct par row, pas de step2_payload requis)
-  //   - quote_items vide → fallback runPostConversion (legacy signup→devis
-  //     qui lit pack_code + selected_addon_ids + step2_payload)
+  // P6.x.5-bis / P6.x.5-septies : routing selon la source de vérité du devis.
+  //   - quote_items non-vide → chemin Quote Builder (nouveau flow admin/landing,
+  //     applique discount_pct par row, pas de step2_payload requis)
+  //   - sinon, fallback runPostConversion (legacy signup→devis qui lit
+  //     pack_code + selected_addon_ids + step2_payload)
+  //     ⚠ Garde-fou : si pack_code est NULL ou 'A_DEFINIR', on refuse l'émission
+  //     plutôt que de laisser le legacy créer un devis Sellsy vide. Ce cas
+  //     correspond aux prospects landing (form Institutionnel/École) qui n'ont
+  //     jamais été configurés côté pack — l'admin doit d'abord ajouter des
+  //     produits via le Devis Builder.
   const { createSupabaseServerClient } = await import('@/lib/supabase/server');
   const sb = await createSupabaseServerClient();
   const { data: prospectMin } = await sb
     .from('prospects')
-    .select('quote_items')
+    .select('quote_items, pack_code')
     .eq('id', prospectId)
     .maybeSingle();
   const items = Array.isArray(prospectMin?.quote_items) ? prospectMin.quote_items : [];
+  const packCode = prospectMin?.pack_code ?? null;
 
   if (items.length > 0) {
     const { emitSellsyDevisFromQuoteBuilderAction } =
@@ -137,6 +143,14 @@ export async function emitSellsyDocumentAction(
     revalidatePath(`/admin/prospects/${prospectId}`);
     if (!r.ok) throw new Error(r.error);
     return { ok: true };
+  }
+
+  // P6.x.5-septies : pas de quote_items ET pas de pack_code exploitable
+  // → refus explicite plutôt que devis Sellsy vide via legacy.
+  if (packCode === null || packCode === 'A_DEFINIR') {
+    throw new Error(
+      'Aucun produit à émettre. Ajoutez des produits dans le Devis Builder avant d’émettre le devis.',
+    );
   }
 
   const { runPostConversion } = await import('@/lib/sellsy/post-conversion');

@@ -275,12 +275,15 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
         }
         isCasB={!prospect.payment_path && !prospect.pack_code}
         canEmit={
-          // P6.x.5-bis : on n'expose le bouton que s'il y a un brouillon
-          // exploitable côté quote_items (nouveau flow) OU un pack_code
-          // (legacy signup→devis). Sinon le bouton aboutirait toujours à
-          // une erreur "rien à émettre".
+          // P6.x.5-bis / P6.x.5-septies : bouton actif uniquement si :
+          //   * quote_items non-vide (nouveau flow Quote Builder), OU
+          //   * pack_code non-null ET pack_code !== 'A_DEFINIR' (legacy
+          //     signup→devis avec un vrai pack choisi). 'A_DEFINIR' est la
+          //     valeur par défaut de l'enum côté DB pour les prospects landing
+          //     non encore configurés → considérée comme "pas de pack" pour
+          //     éviter le fallback legacy qui crée un devis Sellsy vide.
           (Array.isArray(prospect.quote_items) && prospect.quote_items.length > 0) ||
-          prospect.pack_code !== null
+          (prospect.pack_code !== null && prospect.pack_code !== 'A_DEFINIR')
         }
         sellsy={{
           lastSyncedAt: prospect.last_synced_sellsy_at,

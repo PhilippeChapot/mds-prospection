@@ -18,8 +18,11 @@ const legacyPathMock = vi.fn();
 
 interface MockState {
   quoteItems: unknown;
+  /** P6.x.5-septies : pack_code lu côté server action pour le garde-fou
+   *  legacy (A_DEFINIR + null sont rejetés). */
+  packCode: 'ACCESS' | 'CLASSIC' | 'PREMIUM' | 'A_DEFINIR' | null;
 }
-const state: MockState = { quoteItems: [] };
+const state: MockState = { quoteItems: [], packCode: 'ACCESS' };
 
 function mockEnv() {
   vi.doMock('@/lib/supabase/auth-helpers', () => ({
@@ -33,7 +36,10 @@ function mockEnv() {
           select: () => ({
             eq: () => ({
               maybeSingle: () =>
-                Promise.resolve({ data: { quote_items: state.quoteItems }, error: null }),
+                Promise.resolve({
+                  data: { quote_items: state.quoteItems, pack_code: state.packCode },
+                  error: null,
+                }),
             }),
           }),
         }),
@@ -51,9 +57,10 @@ function mockEnv() {
   vi.doMock('next/cache', () => ({ revalidatePath: vi.fn() }));
 }
 
-describe('emitSellsyDocumentAction routing (P6.x.5-bis)', () => {
+describe('emitSellsyDocumentAction routing (P6.x.5-bis / P6.x.5-septies)', () => {
   beforeEach(() => {
     state.quoteItems = [];
+    state.packCode = 'ACCESS'; // default pour les tests legacy nominal
     newPathMock.mockReset();
     legacyPathMock.mockReset();
     newPathMock.mockResolvedValue({ ok: true });
@@ -127,5 +134,28 @@ describe('emitSellsyDocumentAction routing (P6.x.5-bis)', () => {
     mockEnv();
     const { emitSellsyDocumentAction } = await import('./actions');
     await expect(emitSellsyDocumentAction(VALID_PROSPECT_ID)).rejects.toThrow(/Sync échouée/);
+  });
+
+  it("P6.x.5-septies — quote_items vide ET pack_code='A_DEFINIR' → throw 'Aucun produit à émettre' (pas de fallback legacy)", async () => {
+    state.quoteItems = [];
+    state.packCode = 'A_DEFINIR';
+    mockEnv();
+    const { emitSellsyDocumentAction } = await import('./actions');
+    await expect(emitSellsyDocumentAction(VALID_PROSPECT_ID)).rejects.toThrow(
+      /Aucun produit à émettre/i,
+    );
+    expect(legacyPathMock).not.toHaveBeenCalled();
+    expect(newPathMock).not.toHaveBeenCalled();
+  });
+
+  it('P6.x.5-septies — quote_items vide ET pack_code=null → throw même message (cas prospects landing non configurés)', async () => {
+    state.quoteItems = [];
+    state.packCode = null;
+    mockEnv();
+    const { emitSellsyDocumentAction } = await import('./actions');
+    await expect(emitSellsyDocumentAction(VALID_PROSPECT_ID)).rejects.toThrow(
+      /Aucun produit à émettre/i,
+    );
+    expect(legacyPathMock).not.toHaveBeenCalled();
   });
 });
