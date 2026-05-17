@@ -39,6 +39,11 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
   const profile = await requireAdminProfile();
   const supabase = await createSupabaseServerClient();
 
+  // P6.x.5-quater : on retire le `!inner` sur companies pour ne pas masquer
+  // un prospect dont le company_id pointerait sur une row supprimée (édge
+  // case rare, mais → 404 silencieux et incompréhensible côté admin sinon).
+  // En cas d'erreur supabase, on rend une page d'erreur explicite au lieu
+  // du notFound() générique (gain de diagnosticabilité en prod).
   const { data: prospect, error } = await supabase
     .from('prospects')
     .select(
@@ -52,7 +57,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
       sellsy_invoice_id, sellsy_invoice_number, sellsy_invoice_public_url, sellsy_invoice_emitted_at,
       booth_assignment, booth_assigned_at, booth_assigned_by,
       created_at, updated_at, last_activity_at,
-      company:companies!inner(id, name, primary_domain, country, category, sellsy_id, was_prs_2026_exhibitor, siren, siret, siren_verified_at, siren_source, pole:poles(code, name_fr)),
+      company:companies(id, name, primary_domain, country, category, sellsy_id, was_prs_2026_exhibitor, siren, siret, siren_verified_at, siren_source, pole:poles(code, name_fr)),
       contact:contacts(id, first_name, last_name, email, phone, role),
       owner:users!prospects_owner_id_fkey(id, full_name, email, role),
       booth_assignee:users!prospects_booth_assigned_by_fkey(full_name, email)
@@ -61,7 +66,34 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
     .eq('id', id)
     .maybeSingle();
 
-  if (error) console.error('[admin/prospects/[id]] fetch error:', error);
+  if (error) {
+    console.error('[admin/prospects/[id]] fetch error:', error);
+    // Affiche le message d'erreur Supabase au lieu d'un notFound silencieux —
+    // permet à l'admin de comprendre ce qui se passe en prod sans avoir
+    // accès aux logs Vercel.
+    return (
+      <div className="mx-auto max-w-3xl space-y-3 px-4 py-10">
+        <Link
+          href="/admin/prospects"
+          className="text-md-text-muted inline-flex items-center gap-1 text-xs hover:underline"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden />
+          Retour aux prospects
+        </Link>
+        <h1 className="text-md-blue-dark text-2xl font-extrabold">
+          Erreur de chargement du prospect
+        </h1>
+        <pre className="border-md-border bg-card overflow-x-auto rounded-lg border p-4 text-xs whitespace-pre-wrap text-red-700">
+          {error.message}
+          {error.details ? `\n\n${error.details}` : ''}
+          {error.hint ? `\n\nHint: ${error.hint}` : ''}
+        </pre>
+        <p className="text-md-text-muted text-xs">
+          Prospect id : <code>{id}</code>
+        </p>
+      </div>
+    );
+  }
   if (!prospect) notFound();
 
   // Normalisation relations
@@ -142,6 +174,17 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
+      {/* P6.x.5-quater : warning si la company liée a disparu (cas rare
+          d'intégrité référentielle — l'admin doit pouvoir voir le prospect
+          quand même pour le déboguer / le ré-affecter). */}
+      {!company ? (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          ⚠️ Société liée introuvable (company_id orphan). Cette fiche affiche les autres données du
+          prospect, mais les actions liées à la société (Sellsy, Smart Add…) ne pourront pas
+          fonctionner tant que le lien n&apos;est pas rétabli.
+        </div>
+      ) : null}
+
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
