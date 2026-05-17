@@ -1,23 +1,26 @@
 'use client';
 
 /**
- * P6.x.5 — Devis Builder sur la fiche prospect.
+ * P6.x.5 / P6.x.5-ter — Devis Builder sur la fiche prospect.
+ *
+ * P6.x.5-ter : la remise est par ligne (chaque QuoteItem porte son
+ * discount_pct). La section "Tarif préférentiel" globale est supprimée.
+ * Le champ "Note interne / Justification" reste comme champ standalone.
  *
  * 3 sections :
- *   1. ProductPickerInline — sélection produits depuis le catalogue admin
- *   2. PromoConfig — % préférentiel libre 0-100 + justification + gate premium
- *   3. QuoteRecap — récap calculé live (sous-total, remise, HT, TVA, TTC)
+ *   1. ProductPickerInline — sélection produits + qty + remise % par ligne
+ *      (input désactivé sur PREMIUM, forcé à 0)
+ *   2. Note interne / Justification — transmise à Sellsy en intro
+ *   3. QuoteRecap — sous-total, remises cumulées, HT, TVA, TTC
  *
  * Actions :
- *   - "Sauver brouillon" → saveQuoteDraftAction
- *   - "Émettre devis Sellsy" → emitSellsyDevisFromQuoteBuilderAction
- *
- * Le calcul live et le calcul Sellsy partagent la même fonction pure
- * `calculateQuoteTotals` pour garantir l'égalité parfaite des totaux.
+ *   - Sauver brouillon → saveQuoteDraftAction
+ *   - Émettre devis Sellsy → emitSellsyDevisFromQuoteBuilderAction
+ *     (envoie row.discount = { unit:'percent', value } par ligne)
  */
 
 import { useMemo, useState, useTransition } from 'react';
-import { ChevronsUpDown, Loader2, Plus, Trash2, X, Save, Send } from 'lucide-react';
+import { ChevronsUpDown, Loader2, Plus, Trash2, Save, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -32,9 +35,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   calculateQuoteTotals,
+  clampDiscountForItem,
   formatEurFr,
   type QuoteItem,
 } from '@/lib/admin/prospects/quote-calc';
@@ -56,32 +59,24 @@ const CATEGORY_LABEL: Record<string, string> = {
 export interface QuoteBuilderProps {
   prospectId: string;
   initialItems: QuoteItem[];
-  initialPromoPct: number;
   initialPromoReason: string | null;
-  initialExcludesPremium: boolean;
   catalog: AdminCatalogProduct[];
   alreadyEmitted: boolean;
 }
 
 export function QuoteBuilder(props: QuoteBuilderProps) {
   const [items, setItems] = useState<QuoteItem[]>(props.initialItems);
-  const [promoPct, setPromoPct] = useState<number>(props.initialPromoPct);
   const [promoReason, setPromoReason] = useState<string>(props.initialPromoReason ?? '');
-  const [excludesPremium, setExcludesPremium] = useState<boolean>(props.initialExcludesPremium);
   const [, startTx] = useTransition();
   const [saving, setSaving] = useState(false);
   const [emitting, setEmitting] = useState(false);
 
-  const totals = useMemo(
-    () => calculateQuoteTotals(items, promoPct, excludesPremium, VAT_RATE),
-    [items, promoPct, excludesPremium],
-  );
+  const totals = useMemo(() => calculateQuoteTotals(items, VAT_RATE), [items]);
 
   function addProduct(product: AdminCatalogProduct) {
     setItems((prev) => {
       const existing = prev.findIndex((i) => i.sellsy_product_id === product.sellsy_product_id);
       if (existing >= 0) {
-        // Si déjà présent, on incrémente qty
         const next = [...prev];
         next[existing] = { ...next[existing], qty: Math.min(99, next[existing].qty + 1) };
         return next;
@@ -101,6 +96,16 @@ export function QuoteBuilder(props: QuoteBuilderProps) {
       ),
     );
   }
+  function setDiscount(sellsyId: number, pct: number) {
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.sellsy_product_id !== sellsyId) return i;
+        // PREMIUM toujours 0 — l'UI désactive l'input mais on défend ici aussi
+        if (i.is_premium) return { ...i, discount_pct: 0 };
+        return { ...i, discount_pct: Math.max(0, Math.min(100, Number(pct) || 0)) };
+      }),
+    );
+  }
 
   function handleSave() {
     setSaving(true);
@@ -108,9 +113,7 @@ export function QuoteBuilder(props: QuoteBuilderProps) {
       const r = await saveQuoteDraftAction({
         prospect_id: props.prospectId,
         quote_items: items,
-        promo_pct: promoPct,
         promo_reason: promoReason.trim() || null,
-        promo_excludes_premium: excludesPremium,
       });
       setSaving(false);
       if (r.ok) {
@@ -128,13 +131,10 @@ export function QuoteBuilder(props: QuoteBuilderProps) {
     }
     setEmitting(true);
     startTx(async () => {
-      // On sauve d'abord pour éviter l'état "user a changé mais pas sauvé"
       const saved = await saveQuoteDraftAction({
         prospect_id: props.prospectId,
         quote_items: items,
-        promo_pct: promoPct,
         promo_reason: promoReason.trim() || null,
-        promo_excludes_premium: excludesPremium,
       });
       if (!saved.ok) {
         setEmitting(false);
@@ -160,8 +160,8 @@ export function QuoteBuilder(props: QuoteBuilderProps) {
           💰 Devis Builder
         </h2>
         <p className="text-md-text-muted mt-1 text-xs">
-          Sélectionne les produits, applique un tarif préférentiel libre (0-100%), puis émets le
-          devis Sellsy. La remise s’applique sur tous les items sauf PREMIUM (modifiable).
+          Sélectionne les produits, applique une remise libre par ligne (PREMIUM est verrouillé à
+          0%), puis émets le devis Sellsy.
         </p>
         {props.alreadyEmitted ? (
           <p className="mt-2 inline-block rounded bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-800">
@@ -176,18 +176,26 @@ export function QuoteBuilder(props: QuoteBuilderProps) {
         onAdd={addProduct}
         onRemove={removeItem}
         onSetQty={setQty}
+        onSetDiscount={setDiscount}
       />
 
-      <PromoConfig
-        pct={promoPct}
-        reason={promoReason}
-        excludesPremium={excludesPremium}
-        onPctChange={setPromoPct}
-        onReasonChange={setPromoReason}
-        onExcludesChange={setExcludesPremium}
-      />
+      <div className="space-y-2">
+        <Label
+          htmlFor="promo_reason"
+          className="text-md-blue-dark text-xs font-bold tracking-wide uppercase"
+        >
+          Note interne / Justification du devis
+        </Label>
+        <Textarea
+          id="promo_reason"
+          rows={2}
+          placeholder="ex. Tarif Institutionnel UDECAM — sera transmise en intro du devis Sellsy"
+          value={promoReason}
+          onChange={(e) => setPromoReason(e.target.value)}
+        />
+      </div>
 
-      <QuoteRecap items={items} promoPct={promoPct} excludesPremium={excludesPremium} />
+      <QuoteRecap items={items} />
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="button" variant="outline" onClick={handleSave} disabled={saving || emitting}>
@@ -226,16 +234,17 @@ function ProductPickerInline({
   onAdd,
   onRemove,
   onSetQty,
+  onSetDiscount,
 }: {
   items: QuoteItem[];
   catalog: AdminCatalogProduct[];
   onAdd: (p: AdminCatalogProduct) => void;
   onRemove: (sellsyId: number) => void;
   onSetQty: (sellsyId: number, qty: number) => void;
+  onSetDiscount: (sellsyId: number, pct: number) => void;
 }) {
   const [open, setOpen] = useState(false);
 
-  // On affiche TOUS les produits, y compris ceux déjà ajoutés (incrément qty).
   const grouped = useMemo(() => {
     const g: Record<string, AdminCatalogProduct[]> = {
       pack: [],
@@ -316,42 +325,13 @@ function ProductPickerInline({
       ) : (
         <ul className="border-md-border divide-md-border divide-y rounded-md border bg-white text-sm">
           {items.map((it) => (
-            <li key={it.sellsy_product_id} className="flex flex-wrap items-center gap-3 px-3 py-2">
-              <div className="min-w-0 flex-1">
-                <div className="text-md-text flex items-center gap-2 font-semibold">
-                  <span className="truncate">{it.name}</span>
-                  {it.is_premium ? (
-                    <span className="rounded bg-amber-100 px-1 py-0.5 text-[9px] font-bold text-amber-800">
-                      PREMIUM
-                    </span>
-                  ) : null}
-                </div>
-                <div className="text-md-text-muted text-[10px]">
-                  {CATEGORY_LABEL[it.category] ?? it.category} · {it.reference}
-                </div>
-              </div>
-              <span className="text-md-text-muted shrink-0 text-xs tabular-nums">
-                {formatEurFr(it.unit_price_ht)}
-              </span>
-              <Input
-                type="number"
-                min={1}
-                max={99}
-                value={it.qty}
-                onChange={(e) => onSetQty(it.sellsy_product_id, Number(e.target.value))}
-                className="w-16 shrink-0 text-center"
-                aria-label={`Quantité ${it.name}`}
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => onRemove(it.sellsy_product_id)}
-                aria-label={`Retirer ${it.name}`}
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </Button>
-            </li>
+            <ItemRow
+              key={it.sellsy_product_id}
+              item={it}
+              onRemove={onRemove}
+              onSetQty={onSetQty}
+              onSetDiscount={onSetDiscount}
+            />
           ))}
         </ul>
       )}
@@ -359,67 +339,85 @@ function ProductPickerInline({
   );
 }
 
-// ---------------------------------------------------------------------------
-// PromoConfig
-// ---------------------------------------------------------------------------
-
-function PromoConfig({
-  pct,
-  reason,
-  excludesPremium,
-  onPctChange,
-  onReasonChange,
-  onExcludesChange,
+function ItemRow({
+  item,
+  onRemove,
+  onSetQty,
+  onSetDiscount,
 }: {
-  pct: number;
-  reason: string;
-  excludesPremium: boolean;
-  onPctChange: (n: number) => void;
-  onReasonChange: (s: string) => void;
-  onExcludesChange: (b: boolean) => void;
+  item: QuoteItem;
+  onRemove: (sellsyId: number) => void;
+  onSetQty: (sellsyId: number, qty: number) => void;
+  onSetDiscount: (sellsyId: number, pct: number) => void;
 }) {
+  const lineHt = item.unit_price_ht * item.qty;
+  const pct = clampDiscountForItem(item);
+  const lineNet = lineHt * (1 - pct / 100);
   return (
-    <div className="space-y-3">
-      <Label className="text-md-blue-dark text-xs font-bold tracking-wide uppercase">
-        Tarif préférentiel
-      </Label>
-      <div className="grid gap-3 sm:grid-cols-[140px_1fr]">
-        <div>
-          <Label htmlFor="promo_pct" className="text-md-text-muted text-[11px]">
-            % de remise (0-100)
-          </Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="promo_pct"
-              type="number"
-              min={0}
-              max={100}
-              step={0.5}
-              value={pct}
-              onChange={(e) => onPctChange(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
-              className="w-24 text-center"
-            />
-            <span className="text-md-text-muted text-xs">%</span>
-          </div>
+    <li className="grid grid-cols-1 gap-2 px-3 py-2 sm:grid-cols-[1fr_auto_auto_auto_auto] sm:items-center">
+      <div className="min-w-0">
+        <div className="text-md-text flex items-center gap-2 font-semibold">
+          <span className="truncate">{item.name}</span>
+          {item.is_premium ? (
+            <span className="rounded bg-amber-100 px-1 py-0.5 text-[9px] font-bold text-amber-800">
+              PREMIUM
+            </span>
+          ) : null}
         </div>
-        <div>
-          <Label htmlFor="promo_reason" className="text-md-text-muted text-[11px]">
-            Justification (visible dans le devis Sellsy)
-          </Label>
-          <Input
-            id="promo_reason"
-            type="text"
-            placeholder="ex. Tarif Institutionnel UDECAM"
-            value={reason}
-            onChange={(e) => onReasonChange(e.target.value)}
-          />
+        <div className="text-md-text-muted text-[10px]">
+          {CATEGORY_LABEL[item.category] ?? item.category} · {item.reference} ·{' '}
+          {formatEurFr(item.unit_price_ht)} HT
         </div>
       </div>
-      <label className="text-md-text inline-flex cursor-pointer items-center gap-2 text-xs">
-        <Checkbox checked={excludesPremium} onCheckedChange={(c) => onExcludesChange(Boolean(c))} />
-        Exclure les produits PREMIUM de la remise
-      </label>
-    </div>
+      <div className="flex items-center gap-1">
+        <Label htmlFor={`qty-${item.sellsy_product_id}`} className="sr-only">
+          Quantité
+        </Label>
+        <Input
+          id={`qty-${item.sellsy_product_id}`}
+          type="number"
+          min={1}
+          max={99}
+          value={item.qty}
+          onChange={(e) => onSetQty(item.sellsy_product_id, Number(e.target.value))}
+          className="w-14 text-center"
+        />
+      </div>
+      <div className="flex items-center gap-1">
+        <Label htmlFor={`disc-${item.sellsy_product_id}`} className="sr-only">
+          Remise %
+        </Label>
+        <Input
+          id={`disc-${item.sellsy_product_id}`}
+          type="number"
+          min={0}
+          max={100}
+          step={0.5}
+          value={item.is_premium ? 0 : (item.discount_pct ?? 0)}
+          onChange={(e) => onSetDiscount(item.sellsy_product_id, Number(e.target.value))}
+          disabled={item.is_premium}
+          title={
+            item.is_premium
+              ? 'Pas de remise possible sur PREMIUM'
+              : 'Remise % appliquée à cette ligne'
+          }
+          className="w-16 text-center"
+        />
+        <span className="text-md-text-muted text-[10px]">%</span>
+      </div>
+      <div className="text-md-blue-deep text-right text-xs font-bold tabular-nums">
+        {formatEurFr(lineNet)}
+      </div>
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onClick={() => onRemove(item.sellsy_product_id)}
+        aria-label={`Retirer ${item.name}`}
+      >
+        <Trash2 className="size-4" aria-hidden />
+      </Button>
+    </li>
   );
 }
 
@@ -427,17 +425,9 @@ function PromoConfig({
 // QuoteRecap
 // ---------------------------------------------------------------------------
 
-function QuoteRecap({
-  items,
-  promoPct,
-  excludesPremium,
-}: {
-  items: QuoteItem[];
-  promoPct: number;
-  excludesPremium: boolean;
-}) {
-  const totals = calculateQuoteTotals(items, promoPct, excludesPremium, VAT_RATE);
-  const showDiscount = promoPct > 0 && totals.discount_amount > 0;
+function QuoteRecap({ items }: { items: QuoteItem[] }) {
+  const totals = calculateQuoteTotals(items, VAT_RATE);
+  const showDiscount = totals.discount_amount > 0;
   return (
     <div className="border-md-border bg-muted/20 rounded-md border p-4">
       <Label className="text-md-blue-dark mb-2 inline-block text-xs font-bold tracking-wide uppercase">
@@ -446,27 +436,13 @@ function QuoteRecap({
       <dl className="text-md-text grid gap-1 text-sm">
         <Row label="Sous-total HT" value={formatEurFr(totals.subtotal_ht)} />
         {showDiscount ? (
-          <>
-            <Row
-              label={
-                <span className="inline-flex items-center gap-2">
-                  Tarif préférentiel
-                  <span className="bg-md-magenta rounded-full px-2 py-0.5 text-[10px] font-bold text-white">
-                    -{promoPct}%
-                  </span>
-                  {excludesPremium ? (
-                    <span className="text-md-text-muted text-[10px]">(hors PREMIUM)</span>
-                  ) : null}
-                </span>
-              }
-              value={`- ${formatEurFr(totals.discount_amount)}`}
-              accent="magenta"
-            />
-            <Row label="Total HT" value={formatEurFr(totals.total_ht)} strong />
-          </>
-        ) : (
-          <Row label="Total HT" value={formatEurFr(totals.total_ht)} strong />
-        )}
+          <Row
+            label="Remises cumulées"
+            value={`- ${formatEurFr(totals.discount_amount)}`}
+            accent="magenta"
+          />
+        ) : null}
+        <Row label="Total HT" value={formatEurFr(totals.total_ht)} strong />
         <Row label={`TVA (${VAT_RATE}%)`} value={formatEurFr(totals.vat_amount)} />
         <Row label="Total TTC" value={formatEurFr(totals.total_ttc)} strong accent="blue-deep" />
       </dl>

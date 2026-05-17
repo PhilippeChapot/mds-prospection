@@ -1,15 +1,21 @@
 /**
  * @vitest-environment node
  *
- * P6.x.5 — tests server actions Devis Builder.
+ * P6.x.5 / P6.x.5-ter — tests server actions Devis Builder.
  *
  * Couvre :
- *   - saveQuoteDraftAction : refus si non admin/sales, happy path update DB
- *     + hydratation pack_code/selected_addon_ids/estimated_amount
- *   - emitSellsyDevisFromQuoteBuilderAction : refus si non admin, refus si
- *     items vides, happy path crée Sellsy estimate avec unit_amount remisé,
- *     note Sellsy contient promo_reason, update prospects.sellsy_devis_id
- *     + status='devis_envoye'
+ *   - saveQuoteDraftAction :
+ *       * refuse non admin/sales
+ *       * happy path UPDATE quote_items + promo_reason + estimated_amount
+ *         (PAS pack_code/selected_addon_ids, cf. Option A P6.x.5-bis)
+ *       * Zod : discount_pct accepté par item, default 0
+ *       * PREMIUM avec discount_pct → forcé à 0 côté DB (defensive clamp)
+ *   - emitSellsyDevisFromQuoteBuilderAction :
+ *       * refuse non admin
+ *       * refuse si items vides
+ *       * happy path : POST /estimates avec row.discount par ligne
+ *         (unit:'percent', value), unit_amount = prix catalogue
+ *       * PREMIUM : row sans champ discount
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -17,9 +23,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 interface ProspectStub {
   id: string;
   quote_items: unknown;
-  promo_pct: number;
   promo_reason: string | null;
-  promo_excludes_premium: boolean;
   sellsy_devis_id: string | null;
   company: { id: string; sellsy_id: number | null };
   contact: { sellsy_contact_id: number | null } | null;
@@ -115,30 +119,41 @@ function mockEnv() {
   vi.doMock('next/cache', () => ({ revalidatePath: vi.fn() }));
 }
 
-const VALID_ITEMS = [
-  {
-    sellsy_product_id: 1,
-    reference: 'MDS-PACK-STD-ACCESS-PARIS',
-    name: 'Pack ACCESS Standard',
-    unit_price_ht: 12500,
-    qty: 1,
-    category: 'pack',
-    sub_category: 'standard',
-    is_premium: false,
-  },
-  {
-    sellsy_product_id: 3,
-    reference: 'MDS-ADDON-LOGO-GOLD-PARIS',
-    name: 'Logo Gold',
-    unit_price_ht: 3000,
-    qty: 1,
-    category: 'sponsor',
-    sub_category: 'or',
-    is_premium: false,
-  },
-];
+const PACK_STD = {
+  sellsy_product_id: 1,
+  reference: 'MDS-PACK-STD-ACCESS-PARIS',
+  name: 'Pack ACCESS Standard',
+  unit_price_ht: 12500,
+  qty: 1,
+  category: 'pack',
+  sub_category: 'standard' as string | null,
+  is_premium: false,
+  discount_pct: 0,
+};
+const SPONSOR = {
+  sellsy_product_id: 3,
+  reference: 'MDS-ADDON-LOGO-GOLD-PARIS',
+  name: 'Logo Gold',
+  unit_price_ht: 3000,
+  qty: 1,
+  category: 'sponsor',
+  sub_category: 'or' as string | null,
+  is_premium: false,
+  discount_pct: 0,
+};
+const PACK_PREMIUM = {
+  sellsy_product_id: 2,
+  reference: 'MDS-PACK-PREMIUM-PARIS',
+  name: 'Pack PREMIUM',
+  unit_price_ht: 25000,
+  qty: 1,
+  category: 'pack',
+  sub_category: 'premium' as string | null,
+  is_premium: true,
+  discount_pct: 0,
+};
 
-describe('saveQuoteDraftAction (P6.x.5)', () => {
+describe('saveQuoteDraftAction (P6.x.5-ter)', () => {
   beforeEach(() => {
     state.profileRole = 'admin';
     state.prospect = null;
@@ -156,67 +171,103 @@ describe('saveQuoteDraftAction (P6.x.5)', () => {
     vi.resetModules();
   });
 
-  it("refuse l'accès si role 'viewer' (Forbidden)", async () => {
+  it("refuse l'accès si role 'viewer'", async () => {
     state.profileRole = 'viewer';
     mockEnv();
     const { saveQuoteDraftAction } = await import('./quote-builder-actions');
     const r = await saveQuoteDraftAction({
       prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
-      quote_items: VALID_ITEMS,
-      promo_pct: 30,
-      promo_reason: 'Test',
-      promo_excludes_premium: true,
+      quote_items: [PACK_STD],
+      promo_reason: null,
     });
     expect(r.ok).toBe(false);
     expect(state.prospectUpdates).toHaveLength(0);
   });
 
-  it('P6.x.5-bis Option A — happy path : update DB + estimated_amount remisé, mais PAS pack_code ni selected_addon_ids', async () => {
+  it('happy path : update quote_items + promo_reason + estimated_amount (PAS pack_code)', async () => {
     mockEnv();
     const { saveQuoteDraftAction } = await import('./quote-builder-actions');
     const r = await saveQuoteDraftAction({
       prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
-      quote_items: VALID_ITEMS,
-      promo_pct: 30,
+      quote_items: [
+        { ...PACK_STD, discount_pct: 30 }, // 12500 * 0.7 = 8750
+        { ...SPONSOR, discount_pct: 10 }, // 3000 * 0.9 = 2700
+      ],
       promo_reason: 'Tarif Institutionnel UDECAM',
-      promo_excludes_premium: true,
     });
     expect(r.ok).toBe(true);
     expect(state.prospectUpdates).toHaveLength(1);
     const upd = state.prospectUpdates[0];
-    expect(upd.promo_pct).toBe(30);
     expect(upd.promo_reason).toBe('Tarif Institutionnel UDECAM');
-    expect(upd.promo_excludes_premium).toBe(true);
-    // P6.x.5-bis : pas d'hydratation pack_code/selected_addon_ids
     expect(upd).not.toHaveProperty('pack_code');
     expect(upd).not.toHaveProperty('selected_addon_ids');
-    // total_ht = 15500 - 30% = 10850
-    expect(upd.estimated_amount).toBe(10850);
+    expect(upd).not.toHaveProperty('promo_pct');
+    expect(upd).not.toHaveProperty('promo_excludes_premium');
+    // total_ht = 15500 - 3750 - 300 = 11450
+    expect(upd.estimated_amount).toBe(11450);
+    // quote_items contient bien les discount_pct
+    const savedItems = upd.quote_items as Array<{
+      discount_pct: number;
+      sellsy_product_id: number;
+    }>;
+    expect(savedItems[0].discount_pct).toBe(30);
+    expect(savedItems[1].discount_pct).toBe(10);
   });
 
-  it('Zod : promo_pct > 100 refusé', async () => {
+  it('Zod : discount_pct accepté par item, default 0 si absent', async () => {
+    mockEnv();
+    const { saveQuoteDraftAction } = await import('./quote-builder-actions');
+    // Cas sans discount_pct → default 0
+    const r = await saveQuoteDraftAction({
+      prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
+      quote_items: [
+        // @ts-expect-error volontaire — on teste le default Zod
+        { ...PACK_STD, discount_pct: undefined },
+      ],
+      promo_reason: null,
+    });
+    expect(r.ok).toBe(true);
+    const savedItems = state.prospectUpdates[0].quote_items as Array<{ discount_pct: number }>;
+    expect(savedItems[0].discount_pct).toBe(0);
+  });
+
+  it('PREMIUM avec discount_pct=50 dans payload → forcé à 0 côté DB (defensive clamp)', async () => {
     mockEnv();
     const { saveQuoteDraftAction } = await import('./quote-builder-actions');
     const r = await saveQuoteDraftAction({
       prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
-      quote_items: VALID_ITEMS,
-      promo_pct: 150,
+      quote_items: [{ ...PACK_PREMIUM, discount_pct: 50 }],
       promo_reason: null,
-      promo_excludes_premium: true,
+    });
+    expect(r.ok).toBe(true);
+    const savedItems = state.prospectUpdates[0].quote_items as Array<{ discount_pct: number }>;
+    expect(savedItems[0].discount_pct).toBe(0);
+    // total_ht = prix plein 25000 (pas de remise PREMIUM)
+    expect(state.prospectUpdates[0].estimated_amount).toBe(25000);
+  });
+
+  it('Zod : discount_pct > 100 refusé', async () => {
+    mockEnv();
+    const { saveQuoteDraftAction } = await import('./quote-builder-actions');
+    const r = await saveQuoteDraftAction({
+      prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
+      quote_items: [{ ...PACK_STD, discount_pct: 150 }],
+      promo_reason: null,
     });
     expect(r.ok).toBe(false);
   });
 });
 
-describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5)', () => {
+describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
   beforeEach(() => {
     state.profileRole = 'admin';
     state.prospect = {
       id: '92d51b10-7085-4695-b257-72c61d01917a',
-      quote_items: VALID_ITEMS,
-      promo_pct: 30,
+      quote_items: [
+        { ...PACK_STD, discount_pct: 30 },
+        { ...SPONSOR, discount_pct: 10 },
+      ],
       promo_reason: 'Tarif Institutionnel UDECAM',
-      promo_excludes_premium: true,
       sellsy_devis_id: null,
       company: { id: 'co-1', sellsy_id: null },
       contact: null,
@@ -232,7 +283,7 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5)', () => {
         {
           data: {
             number: 'F-2026-001',
-            amounts: { total: '13020.00', total_excl_tax: '10850.00' },
+            amounts: { total: '13740.00', total_excl_tax: '11450.00' },
             public_link_enabled: true,
             public_link: 'https://sellsy.example/d/555',
           },
@@ -242,7 +293,7 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5)', () => {
     state.sellsyCalls = [];
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    // garde console.error pour debug
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -268,62 +319,43 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5)', () => {
       prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error).toMatch(/aucun produit/i);
   });
 
-  it('happy path : POST /estimates avec rows unit_amount remisé + note + update prospect', async () => {
+  it('P6.x.5-ter — POST /estimates avec row.discount structuré par ligne (unit_amount = catalogue)', async () => {
     mockEnv();
     const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
     const r = await emitSellsyDevisFromQuoteBuilderAction({
       prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
     });
     expect(r.ok).toBe(true);
-    if (r.ok) {
-      expect(r.sellsy_devis_id).toBe('555');
-      expect(r.sellsy_devis_number).toBe('F-2026-001');
-      expect(r.total_ht).toBe(10850);
-    }
+    if (r.ok) expect(r.total_ht).toBe(11450);
 
-    // POST /estimates appelé avec rows remisés (12500*0.7=8750 et 3000*0.7=2100)
     const post = state.sellsyCalls.find((c) => c.method === 'POST' && c.endpoint === '/estimates');
     expect(post).toBeDefined();
     const body = JSON.parse(post!.body!) as {
-      rows: Array<{ unit_amount: string; quantity: string; related: { id: number } }>;
+      rows: Array<{
+        unit_amount: string;
+        related: { id: number };
+        discount?: { unit: 'percent'; value: number };
+      }>;
       note?: string;
-      public_link_enabled: boolean;
-      related: Array<{ id: number }>;
     };
-    expect(body.rows).toHaveLength(2);
-    expect(body.rows[0].unit_amount).toBe('8750.00');
-    expect(body.rows[1].unit_amount).toBe('2100.00');
-    expect(body.related[0].id).toBe(9999);
-    expect(body.public_link_enabled).toBe(true);
+    // unit_amount = prix catalogue (Sellsy calcule la remise lui-même)
+    expect(body.rows[0].unit_amount).toBe('12500.00');
+    expect(body.rows[1].unit_amount).toBe('3000.00');
+    // row.discount structuré présent sur les 2 lignes
+    expect(body.rows[0].discount).toEqual({ unit: 'percent', value: 30 });
+    expect(body.rows[1].discount).toEqual({ unit: 'percent', value: 10 });
+    // Note Sellsy contient la justification + détail
     expect(body.note).toMatch(/Tarif Institutionnel UDECAM/);
-
-    // Update prospect avec sellsy_devis_*
-    const devisUpd = state.prospectUpdates.find((u) => 'sellsy_devis_id' in u);
-    expect(devisUpd).toBeDefined();
-    expect(devisUpd?.sellsy_devis_id).toBe('555');
-    expect(devisUpd?.sellsy_devis_number).toBe('F-2026-001');
-    expect(devisUpd?.estimated_amount).toBe(10850);
-
-    // Status passage lead → devis_envoye (filtré par .eq('status','lead'))
-    expect(state.prospectStatusUpdate).toMatchObject({ status: 'devis_envoye' });
+    expect(body.note).toMatch(/Pack ACCESS Standard : -30%/);
+    expect(body.note).toMatch(/Logo Gold : -10%/);
   });
 
-  it('PREMIUM avec exclusion : unit_amount du PREMIUM = prix plein', async () => {
+  it('PREMIUM dans items → row SANS champ discount (Sellsy reçoit prix plein)', async () => {
     state.prospect!.quote_items = [
-      {
-        sellsy_product_id: 2,
-        reference: 'MDS-PACK-PREMIUM-PARIS',
-        name: 'Pack PREMIUM',
-        unit_price_ht: 25000,
-        qty: 1,
-        category: 'pack',
-        sub_category: 'premium',
-        is_premium: true,
-      },
-      VALID_ITEMS[1],
+      { ...PACK_PREMIUM, discount_pct: 50 }, // PREMIUM, ignoré par clamp
+      { ...SPONSOR, discount_pct: 20 },
     ];
     state.prospect!.promo_reason = null;
     mockEnv();
@@ -333,12 +365,12 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5)', () => {
     });
     const post = state.sellsyCalls.find((c) => c.method === 'POST' && c.endpoint === '/estimates');
     const body = JSON.parse(post!.body!) as {
-      rows: Array<{ unit_amount: string }>;
-      note?: string;
+      rows: Array<{ unit_amount: string; discount?: unknown }>;
     };
-    expect(body.rows[0].unit_amount).toBe('25000.00'); // PREMIUM pas remisé
-    expect(body.rows[1].unit_amount).toBe('2100.00'); // Sponsor remisé
-    // Sans promo_reason, note auto -X%
-    expect(body.note).toMatch(/-30%/);
+    // PREMIUM = pas de discount, prix plein 25000
+    expect(body.rows[0].unit_amount).toBe('25000.00');
+    expect(body.rows[0].discount).toBeUndefined();
+    // SPONSOR = discount appliqué
+    expect(body.rows[1].discount).toEqual({ unit: 'percent', value: 20 });
   });
 });

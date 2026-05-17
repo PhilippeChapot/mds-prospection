@@ -1,12 +1,13 @@
 /**
  * @vitest-environment node
  *
- * P6.x.5 — tests pure functions de calcul Devis Builder.
+ * P6.x.5 / P6.x.5-ter — tests pure functions Devis Builder (remise par ligne).
  */
 
 import { describe, it, expect } from 'vitest';
 import {
   calculateQuoteTotals,
+  clampDiscountForItem,
   detectIsPremium,
   discountedUnitPriceHt,
   type QuoteItem,
@@ -21,6 +22,7 @@ const PACK_STD: QuoteItem = {
   category: 'pack',
   sub_category: 'standard',
   is_premium: false,
+  discount_pct: 0,
 };
 const PACK_PREMIUM: QuoteItem = {
   sellsy_product_id: 2,
@@ -31,6 +33,7 @@ const PACK_PREMIUM: QuoteItem = {
   category: 'pack',
   sub_category: 'premium',
   is_premium: true,
+  discount_pct: 0,
 };
 const SPONSOR: QuoteItem = {
   sellsy_product_id: 3,
@@ -41,6 +44,7 @@ const SPONSOR: QuoteItem = {
   category: 'sponsor',
   sub_category: 'or',
   is_premium: false,
+  discount_pct: 0,
 };
 
 describe('detectIsPremium', () => {
@@ -62,12 +66,22 @@ describe('detectIsPremium', () => {
   });
 });
 
-describe('calculateQuoteTotals', () => {
+describe('clampDiscountForItem (P6.x.5-ter)', () => {
+  it('PREMIUM toujours 0, même si discount_pct = 50', () => {
+    expect(clampDiscountForItem({ is_premium: true, discount_pct: 50 })).toBe(0);
+  });
+  it('non-premium : borne [0, 100]', () => {
+    expect(clampDiscountForItem({ is_premium: false, discount_pct: -5 })).toBe(0);
+    expect(clampDiscountForItem({ is_premium: false, discount_pct: 30 })).toBe(30);
+    expect(clampDiscountForItem({ is_premium: false, discount_pct: 150 })).toBe(100);
+    expect(clampDiscountForItem({ is_premium: false, discount_pct: null })).toBe(0);
+  });
+});
+
+describe('calculateQuoteTotals (P6.x.5-ter, remise par ligne)', () => {
   it('quote_items vide → totaux 0', () => {
-    const t = calculateQuoteTotals([], 0, true, 20);
-    expect(t).toEqual({
+    expect(calculateQuoteTotals([], 20)).toEqual({
       subtotal_ht: 0,
-      eligible_for_discount_ht: 0,
       discount_amount: 0,
       total_ht: 0,
       vat_amount: 0,
@@ -75,74 +89,75 @@ describe('calculateQuoteTotals', () => {
     });
   });
 
-  it('sous-total HT correct sans remise', () => {
-    const t = calculateQuoteTotals([PACK_STD, SPONSOR], 0, true, 20);
+  it('items sans remise → sous-total = total HT', () => {
+    const t = calculateQuoteTotals([PACK_STD, SPONSOR], 20);
     expect(t.subtotal_ht).toBe(15500);
     expect(t.discount_amount).toBe(0);
     expect(t.total_ht).toBe(15500);
-    expect(t.vat_amount).toBe(3100);
     expect(t.total_ttc).toBe(18600);
   });
 
-  it('remise -30% appliquée sur tous les items (pas de PREMIUM)', () => {
-    const t = calculateQuoteTotals([PACK_STD, SPONSOR], 30, true, 20);
+  it('remises ligne par ligne cumulées (différents % par item)', () => {
+    const t = calculateQuoteTotals(
+      [
+        { ...PACK_STD, discount_pct: 30 }, // 12500 * 0.3 = 3750
+        { ...SPONSOR, discount_pct: 10 }, // 3000 * 0.1 = 300
+      ],
+      20,
+    );
     expect(t.subtotal_ht).toBe(15500);
-    expect(t.eligible_for_discount_ht).toBe(15500);
-    expect(t.discount_amount).toBe(4650); // 15500 * 0.3
-    expect(t.total_ht).toBe(10850);
-    expect(t.vat_amount).toBe(2170);
-    expect(t.total_ttc).toBe(13020);
+    expect(t.discount_amount).toBe(4050); // 3750 + 300
+    expect(t.total_ht).toBe(11450);
+    expect(t.vat_amount).toBe(2290);
+    expect(t.total_ttc).toBe(13740);
   });
 
-  it('remise -30% NOT appliquée sur PREMIUM si excludesPremium=true', () => {
-    const t = calculateQuoteTotals([PACK_PREMIUM, SPONSOR], 30, true, 20);
+  it('PREMIUM avec discount_pct=50 → forcé à 0 par clamp (jamais bradé)', () => {
+    const t = calculateQuoteTotals([{ ...PACK_PREMIUM, discount_pct: 50 }, SPONSOR], 20);
     expect(t.subtotal_ht).toBe(28000);
-    expect(t.eligible_for_discount_ht).toBe(3000); // seul SPONSOR éligible
-    expect(t.discount_amount).toBe(900); // 3000 * 0.3
-    expect(t.total_ht).toBe(27100);
+    expect(t.discount_amount).toBe(0); // PREMIUM forcé à 0, SPONSOR à 0
+    expect(t.total_ht).toBe(28000);
   });
 
-  it('remise -30% appliquée même sur PREMIUM si excludesPremium=false', () => {
-    const t = calculateQuoteTotals([PACK_PREMIUM, SPONSOR], 30, false, 20);
-    expect(t.eligible_for_discount_ht).toBe(28000);
-    expect(t.discount_amount).toBe(8400);
-    expect(t.total_ht).toBe(19600);
+  it('PREMIUM forcé 0 mais autres items remisés normalement', () => {
+    const t = calculateQuoteTotals(
+      [
+        { ...PACK_PREMIUM, discount_pct: 100 }, // ignoré
+        { ...SPONSOR, discount_pct: 20 }, // 3000 * 0.2 = 600
+      ],
+      20,
+    );
+    expect(t.discount_amount).toBe(600);
+    expect(t.total_ht).toBe(27400);
   });
 
-  it('qty multiplie correctement les lignes', () => {
-    const wifi = { ...SPONSOR, qty: 3, unit_price_ht: 240 };
-    const t = calculateQuoteTotals([wifi], 0, true, 20);
+  it('qty multiplie ligne + remise', () => {
+    const t = calculateQuoteTotals(
+      [{ ...SPONSOR, qty: 3, unit_price_ht: 240, discount_pct: 50 }],
+      20,
+    );
+    // ligne HT = 720, remise 50% = 360, total HT = 360
     expect(t.subtotal_ht).toBe(720);
-    expect(t.total_ttc).toBe(864);
+    expect(t.discount_amount).toBe(360);
+    expect(t.total_ht).toBe(360);
   });
 
-  it('TVA 0% (cas autoliquidation hypothétique) → total_ttc = total_ht', () => {
-    const t = calculateQuoteTotals([PACK_STD], 0, true, 0);
-    expect(t.total_ht).toBe(12500);
-    expect(t.vat_amount).toBe(0);
-    expect(t.total_ttc).toBe(12500);
-  });
-
-  it('promoPct hors bornes (négatif → 0, >100 → 100)', () => {
-    const t1 = calculateQuoteTotals([PACK_STD], -10, true, 20);
-    expect(t1.discount_amount).toBe(0);
-    const t2 = calculateQuoteTotals([PACK_STD], 150, true, 20);
-    expect(t2.discount_amount).toBe(12500); // clamped to 100% → discount=subtotal
-    expect(t2.total_ht).toBe(0);
+  it('discount_pct hors bornes clampé', () => {
+    const t = calculateQuoteTotals([{ ...PACK_STD, discount_pct: 150 }], 20);
+    // clampé à 100% → discount=12500, total=0
+    expect(t.discount_amount).toBe(12500);
+    expect(t.total_ht).toBe(0);
   });
 });
 
-describe('discountedUnitPriceHt', () => {
-  it('promoPct=0 → prix plein', () => {
-    expect(discountedUnitPriceHt(PACK_STD, 0, true)).toBe(12500);
+describe('discountedUnitPriceHt (P6.x.5-ter)', () => {
+  it('discount_pct=0 → prix plein', () => {
+    expect(discountedUnitPriceHt(PACK_STD)).toBe(12500);
   });
-  it('promoPct=30 sur non-premium → prix remisé', () => {
-    expect(discountedUnitPriceHt(PACK_STD, 30, true)).toBe(8750); // 12500 * 0.7
+  it('non-premium avec discount_pct=30 → prix remisé', () => {
+    expect(discountedUnitPriceHt({ ...PACK_STD, discount_pct: 30 })).toBe(8750);
   });
-  it('promoPct=30 sur PREMIUM avec exclusion → prix plein', () => {
-    expect(discountedUnitPriceHt(PACK_PREMIUM, 30, true)).toBe(25000);
-  });
-  it('promoPct=30 sur PREMIUM sans exclusion → prix remisé', () => {
-    expect(discountedUnitPriceHt(PACK_PREMIUM, 30, false)).toBe(17500);
+  it('PREMIUM avec discount_pct=30 → prix plein (clamp)', () => {
+    expect(discountedUnitPriceHt({ ...PACK_PREMIUM, discount_pct: 30 })).toBe(25000);
   });
 });

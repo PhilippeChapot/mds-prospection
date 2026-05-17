@@ -1,15 +1,16 @@
 'use server';
 
 /**
- * P6.x.5 — server actions Devis Builder.
+ * P6.x.5 / P6.x.5-ter — server actions Devis Builder.
  *
- *   - saveQuoteDraftAction : persiste quote_items + promo_pct + promo_reason
- *     + promo_excludes_premium dans prospects. Hydrate aussi pack_code +
- *     selected_addon_ids (rétrocompat) + estimated_amount (HT après remise).
+ *   - saveQuoteDraftAction : persiste quote_items (avec discount_pct par
+ *     item) + promo_reason (justification globale) + estimated_amount.
+ *     Ne touche jamais à pack_code (cf. P6.x.5-bis Option A).
  *
- *   - emitSellsyDevisFromQuoteBuilderAction : émet le devis Sellsy à partir
- *     des quote_items en appliquant la remise ligne par ligne (unit_amount
- *     déjà remisé, pas via Sellsy V2 row.discount — moins risqué).
+ *   - emitSellsyDevisFromQuoteBuilderAction : émet le devis Sellsy en
+ *     passant le row.discount structuré { unit:'percent', value }
+ *     ligne par ligne (P6.x.5-ter, remplace l'approche unit_amount remisé).
+ *     PREMIUM toujours à 0% (forcé par clampDiscountForItem).
  *     Ce chemin est PARALLÈLE à `runPostConversion` (qui dépend de
  *     public_signup_attempts.step2_payload, absent pour les leads landing).
  */
@@ -21,11 +22,12 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { sellsyFetch } from '@/lib/sellsy/client';
 import { syncProspectToSellsy } from '@/lib/sellsy/sync-prospect';
 import { endpointForDocumentType } from '@/lib/sellsy/create-document';
-import { calculateQuoteTotals, discountedUnitPriceHt, type QuoteItem } from './quote-calc';
+import { calculateQuoteTotals, clampDiscountForItem, type QuoteItem } from './quote-calc';
 
 const LOG_PREFIX = '[admin/quote-builder]';
 const VAT_RATE_DEFAULT = 20;
 
+// P6.x.5-ter : chaque item porte son discount_pct
 const quoteItemSchema = z.object({
   sellsy_product_id: z.number().int().positive(),
   reference: z.string().trim().min(1).max(120),
@@ -35,14 +37,13 @@ const quoteItemSchema = z.object({
   category: z.string().trim().min(1).max(40),
   sub_category: z.string().trim().max(60).nullable(),
   is_premium: z.boolean(),
+  discount_pct: z.number().min(0).max(100).default(0),
 });
 
 const saveDraftSchema = z.object({
   prospect_id: z.string().uuid(),
   quote_items: z.array(quoteItemSchema).max(50),
-  promo_pct: z.number().min(0).max(100),
   promo_reason: z.string().trim().max(500).nullable(),
-  promo_excludes_premium: z.boolean(),
 });
 
 export type SaveDraftInput = z.infer<typeof saveDraftSchema>;
@@ -61,30 +62,19 @@ export async function saveQuoteDraftAction(input: SaveDraftInput): Promise<SaveD
   }
   const data = parsed.data;
 
-  const items: QuoteItem[] = data.quote_items as QuoteItem[];
-  const totals = calculateQuoteTotals(
-    items,
-    data.promo_pct,
-    data.promo_excludes_premium,
-    VAT_RATE_DEFAULT,
-  );
+  // Normalisation défensive : PREMIUM forcé à 0 (le clamp UI ne suffit pas).
+  const items: QuoteItem[] = data.quote_items.map((it) => ({
+    ...it,
+    discount_pct: clampDiscountForItem(it),
+  }));
+  const totals = calculateQuoteTotals(items, VAT_RATE_DEFAULT);
 
-  // P6.x.5-bis (Option A) : on NE TOUCHE PAS à pack_code/selected_addon_ids.
-  // Le sub_category catalogue ('standard', 'access'...) ne mappe pas vers
-  // l'enum DB pack_code = 'ACCESS' | 'CLASSIC' | 'PREMIUM' | 'A_DEFINIR'.
-  // Toute hydratation auto introduit du couplage fragile + risque enum
-  // violation. Doctrine : quote_items = nouveau monde, pack_code = legacy
-  // (intouché par ce flow).
   const supabase = getSupabaseServiceClient();
   const { error } = await supabase
     .from('prospects')
     .update({
       quote_items: items as unknown as never,
-      promo_pct: data.promo_pct,
       promo_reason: data.promo_reason,
-      promo_excludes_premium: data.promo_excludes_premium,
-      // estimated_amount hydraté si on a au moins 1 item (utile pour le
-      // dashboard pipeline + le ConciergePaymentLinkDialog defaultAmountHt).
       ...(items.length > 0 ? { estimated_amount: totals.total_ht } : {}),
     })
     .eq('id', data.prospect_id);
@@ -100,11 +90,10 @@ export async function saveQuoteDraftAction(input: SaveDraftInput): Promise<SaveD
   }
 
   console.log(
-    '%s draft-saved prospect=%s items=%d promo=%s total_ht=%d',
+    '%s draft-saved prospect=%s items=%d total_ht=%d',
     LOG_PREFIX,
     data.prospect_id,
     items.length,
-    data.promo_pct,
     totals.total_ht,
   );
   revalidatePath(`/admin/prospects/${data.prospect_id}`);
@@ -131,6 +120,8 @@ interface SellsyRowPayload {
   quantity: string;
   related: { id: number; type: 'product' };
   unit_amount?: string;
+  /** P6.x.5-ter — remise structurée Sellsy V2. unit='percent' + value 0-100. */
+  discount?: { unit: 'percent'; value: number };
 }
 
 export async function emitSellsyDevisFromQuoteBuilderAction(input: {
@@ -147,8 +138,7 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
   const { data: prospect, error: pErr } = await supabase
     .from('prospects')
     .select(
-      `id, quote_items, promo_pct, promo_reason, promo_excludes_premium,
-       sellsy_devis_id,
+      `id, quote_items, promo_reason, sellsy_devis_id,
        company:companies!inner(id, sellsy_id),
        contact:contacts(sellsy_contact_id)`,
     )
@@ -181,25 +171,35 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
     };
   }
 
-  // 3. Build rows Sellsy V2 avec unit_amount déjà remisé
-  const promoPct = Number(prospect.promo_pct) || 0;
-  const excludesPremium = Boolean(prospect.promo_excludes_premium);
+  // 3. Build rows Sellsy V2 avec row.discount structuré (P6.x.5-ter).
+  //    unit_amount = catalog price ; Sellsy calcule la remise via row.discount.
   const rows: SellsyRowPayload[] = items.map((it) => {
-    const unitDiscounted = discountedUnitPriceHt(it, promoPct, excludesPremium);
-    return {
+    const pct = clampDiscountForItem(it);
+    const row: SellsyRowPayload = {
       type: 'catalog',
       quantity: String(it.qty),
       related: { id: it.sellsy_product_id, type: 'product' },
-      unit_amount: unitDiscounted.toFixed(2),
+      unit_amount: Number(it.unit_price_ht).toFixed(2),
     };
+    if (pct > 0) row.discount = { unit: 'percent', value: pct };
+    return row;
   });
 
-  // 4. Construire la note : tarif préférentiel si applicable
+  // 4. Note Sellsy : justification globale + détail des items remisés
+  const anyDiscount = items.some((it) => clampDiscountForItem(it) > 0);
   const noteLines: string[] = [];
-  if (promoPct > 0 && prospect.promo_reason) {
-    noteLines.push(`Tarif préférentiel appliqué : ${prospect.promo_reason}`);
-  } else if (promoPct > 0) {
-    noteLines.push(`Tarif préférentiel appliqué : -${promoPct}%`);
+  if (anyDiscount) {
+    if (prospect.promo_reason) noteLines.push(prospect.promo_reason);
+    const discountedSummary = items
+      .filter((it) => clampDiscountForItem(it) > 0)
+      .map((it) => `• ${it.name} : -${clampDiscountForItem(it)}%`)
+      .join('\n');
+    if (discountedSummary) {
+      noteLines.push('Remises appliquées :');
+      noteLines.push(discountedSummary);
+    }
+  } else if (prospect.promo_reason) {
+    noteLines.push(prospect.promo_reason);
   }
   const note = noteLines.length > 0 ? noteLines.join('\n') : undefined;
 
@@ -267,7 +267,7 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
 
   // 7. Update prospect : sellsy_devis_* + status='devis_envoye' (si lead)
   const now = new Date().toISOString();
-  const totals = calculateQuoteTotals(items, promoPct, excludesPremium, VAT_RATE_DEFAULT);
+  const totals = calculateQuoteTotals(items, VAT_RATE_DEFAULT);
 
   await supabase
     .from('prospects')

@@ -44,7 +44,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
     .select(
       `
       id, status, pack_code, payment_path, estimated_amount, notes, owner_id, affiliate_id,
-      quote_items, promo_pct, promo_reason, promo_excludes_premium,
+      quote_items, promo_reason,
       is_test, last_synced_sellsy_at, last_synced_brevo_at, last_synced_stripe_at,
       last_sync_error_message, last_sync_error_provider, last_sync_error_at,
       sellsy_devis_id, sellsy_devis_number, sellsy_devis_public_url, sellsy_devis_emitted_at,
@@ -306,13 +306,11 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
         assigneeName={pickFirst(prospect.booth_assignee)?.full_name ?? null}
       />
 
-      {/* P6.x.5 — Devis Builder */}
+      {/* P6.x.5 / P6.x.5-ter — Devis Builder (remise par ligne) */}
       <QuoteBuilder
         prospectId={id}
         initialItems={normalizeQuoteItems(prospect.quote_items)}
-        initialPromoPct={Number(prospect.promo_pct ?? 0)}
         initialPromoReason={prospect.promo_reason}
-        initialExcludesPremium={prospect.promo_excludes_premium ?? true}
         catalog={await getCatalogForAdminQuote()}
         alreadyEmitted={Boolean(prospect.sellsy_devis_id)}
       />
@@ -501,6 +499,8 @@ function normalizeQuoteItems(raw: unknown): QuoteItem[] {
               sub_category: typeof o.sub_category === 'string' ? o.sub_category : null,
               reference: o.reference,
             }),
+      discount_pct:
+        typeof o.discount_pct === 'number' ? Math.max(0, Math.min(100, o.discount_pct)) : 0,
     });
   }
   return out;

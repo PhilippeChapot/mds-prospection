@@ -99,5 +99,6 @@ export function catalogProductToQuoteItem(p: AdminCatalogProduct, qty: number): 
     category: p.category,
     sub_category: p.sub_category,
     is_premium: p.is_premium,
+    discount_pct: 0, // P6.x.5-ter : init à 0, admin peut éditer ensuite
   };
 }
