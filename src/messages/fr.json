@@ -483,5 +483,159 @@
     "sectionStatus": "Statuts pipeline",
     "sectionButtons": "Boutons",
     "sectionTypography": "Typographie"
+  },
+  "landing": {
+    "polesSection": {
+      "eyebrow": "{poles} pôles · {sectors} sous-secteurs · {exhibitors} exposants cibles",
+      "title": "Êtes-vous concerné par MediaDays ?",
+      "subtitle": "Cliquez sur un pôle pour découvrir les sous-secteurs, exposants attendus et le bon parcours d’inscription."
+    },
+    "visitorsSection": {
+      "eyebrow": "{families} familles · {entities} entités identifiées",
+      "title": "Êtes-vous un visiteur cible ?",
+      "subtitle": "MediaDays Solutions s’adresse à 14 grandes familles de visiteurs. Trouvez la vôtre."
+    },
+    "card": {
+      "subSectorsStats": "{count} sous-secteurs · {exhibitors} exposants cibles",
+      "entities": "{count} entités",
+      "transversalAccess": "accès transversal",
+      "explore": "Explorer",
+      "view": "Voir",
+      "mediadays": "MediaDays",
+      "mdSolutions": "MD Solutions"
+    },
+    "drawer": {
+      "hostingRoom": "Salle d’accueil",
+      "stats": "Stats",
+      "subSectorsTitle": "Sous-secteurs",
+      "examplesTitle": "Exemples",
+      "targetedRolesTitle": "Fonctions visées",
+      "familyHeading": "Famille #{id} · {count} entités identifiées",
+      "affinityStrong": "(forte affinité)",
+      "affinityWeak": "(affinité légère)"
+    },
+    "cta": {
+      "exhibitMediadaysNet": "Exposer sur mediadays.net",
+      "registerVisitorFree": "S’inscrire comme visiteur (gratuit)",
+      "bookMyBooth": "Réserver mon stand",
+      "requestInstitPricing": "Demander un tarif Institutionnel",
+      "requestSchoolPricing": "Demander un tarif École"
+    },
+    "form": {
+      "titleInstitutionnel": "Demander un tarif Institutionnel",
+      "titleEcole": "Demander un tarif École",
+      "descriptionInstitutionnel": "Syndicats, fédérations, organismes professionnels : décrivez votre intérêt pour MediaDays Solutions. Notre équipe revient vers vous sous 48h.",
+      "descriptionEcole": "Écoles, formations supérieures, organismes de formation continue : précisez votre projet d’accès. Notre équipe revient vers vous sous 48h.",
+      "fieldOrgName": "Organisation",
+      "fieldContactName": "Nom complet",
+      "fieldContactEmail": "Email",
+      "fieldContactPhone": "Téléphone",
+      "fieldWebsite": "Site web",
+      "fieldMessage": "Message (optionnel)",
+      "messagePlaceholder": "Décrivez votre intérêt pour MediaDays Solutions / vos besoins",
+      "submit": "Envoyer la demande",
+      "submitting": "Envoi…",
+      "cancel": "Annuler",
+      "validationMinLength": "Minimum 2 caractères",
+      "validationEmail": "Email invalide",
+      "toastSuccess": "Demande envoyée — nous revenons vers vous sous 48h.",
+      "toastErrorFallback": "Échec de l’envoi.",
+      "toastErrorUnknown": "Erreur inconnue."
+    },
+    "canva": {
+      "title": "Découvrir MediaDays en image",
+      "subtitle": "La présentation complète de l’événement.",
+      "iframeTitle": "Présentation MediaDays Solutions"
+    },
+    "poles": {
+      "REGIES_RETAIL_MEDIA": {
+        "name": "RÉGIES & RETAIL MEDIA",
+        "description": "Offre média : régies, éditeurs, retailers, agences créa. Accueille annonceurs et agences UDECAM (visiteurs premium).",
+        "subLabel": ""
+      },
+      "AUDIO_RADIO": {
+        "name": "AUDIO & RADIO",
+        "description": "Solutions audio vendues aux radios, plateformes et régies audio. Cœur du Paris Radio Show.",
+        "subLabel": "Paris Radio Show"
+      },
+      "DIFFUSION_INFRA": {
+        "name": "DIFFUSION & INFRA",
+        "description": "Cloud, distribution, transport du contenu, opérateurs FM/DAB+/TNT/5G.",
+        "subLabel": ""
+      },
+      "VIDEO_CTV": {
+        "name": "VIDÉO & CTV",
+        "description": "Distribution, monétisation, analytics vidéo + production vidéo pro.",
+        "subLabel": ""
+      },
+      "OUTDOOR_DOOH": {
+        "name": "OUTDOOR & DOOH",
+        "description": "Tech DOOH, programmatique outdoor, solutions d’affichage. Les régies OOH (JCDecaux, Clear Channel…) sont dans le pôle RÉGIES & RETAIL MEDIA.",
+        "subLabel": ""
+      },
+      "DATA_ADTECH": {
+        "name": "DATA & ADTECH",
+        "description": "Adtech, data, mesure, IA marketing, retail media tech. Le cœur business de MediaDays Solutions.",
+        "subLabel": ""
+      }
+    },
+    "families": {
+      "1": {
+        "name": "Annonceurs grands comptes",
+        "fonctions": "Direction Générale · Direction Marketing · Direction Communication · Direction Achats Médias"
+      },
+      "2": {
+        "name": "Agences médias UDECAM",
+        "fonctions": "Chief Client Officer · Directeurs Conseil · Head of Strategy · Directeurs TV / Radio / Digital"
+      },
+      "3": {
+        "name": "Agences créatives & branded content",
+        "fonctions": "Direction Générale · Direction de la Création · Directeurs Artistiques"
+      },
+      "4": {
+        "name": "Médias éditeurs — Radios",
+        "fonctions": "Direction Générale · Direction des Programmes · Direction Antenne · Direction Technique"
+      },
+      "5": {
+        "name": "Médias éditeurs — TV & plateformes",
+        "fonctions": "Direction Générale · Direction des Programmes · Direction des Antennes · Direction Technique"
+      },
+      "6": {
+        "name": "Médias éditeurs — Presse & digital",
+        "fonctions": "Direction Générale · Rédaction en Chef · Direction Digitale"
+      },
+      "7": {
+        "name": "Producteurs & Studios",
+        "fonctions": "Direction Générale · Producteurs exécutifs · Direction Artistique"
+      },
+      "8": {
+        "name": "Directeurs techniques / CTO médias",
+        "fonctions": "CTO · Directeurs Techniques (DT) · Direction Diffusion"
+      },
+      "9": {
+        "name": "Data officers & AdTech managers",
+        "fonctions": "Chief Data Officer (CDO) · Head of Data · Head of AdTech · Data Strategists · DMP Managers"
+      },
+      "10": {
+        "name": "Retailers & e-commerçants",
+        "fonctions": "Direction Générale · Direction Marketing · Direction Retail Media · Direction E-commerce"
+      },
+      "11": {
+        "name": "Institutionnels & Syndicats",
+        "fonctions": "Direction Générale · Délégués Généraux · Directeurs Affaires Publiques"
+      },
+      "12": {
+        "name": "Presse professionnelle",
+        "fonctions": "Rédacteurs en chef · Journalistes spécialisés médias/pub/tech · Directeurs de Rédaction"
+      },
+      "13": {
+        "name": "Écoles & Formation",
+        "fonctions": "Direction Générale · Direction Pédagogique · Responsables Filières Médias / Communication"
+      },
+      "14": {
+        "name": "Investisseurs / VCs tech média",
+        "fonctions": "Managing Partners · Associés · Investment Managers · Principals · Analystes · Scouts"
+      }
+    }
   }
 }

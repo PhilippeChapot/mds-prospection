@@ -5,15 +5,16 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { PolesExplorer } from './PolesExplorer';
 import { getTaxonomy } from '@/lib/landing/taxonomy';
+import { renderI18n } from './__test-helpers__/i18n-render';
 
 const poles = getTaxonomy().poles;
 
 describe('PolesExplorer (P6.x.4-a)', () => {
   it('rend les 6 pôles', () => {
-    render(<PolesExplorer poles={poles} />);
+    renderI18n(<PolesExplorer poles={poles} />);
     for (const p of poles) {
       // Le nom du pôle apparaît dans la card
       expect(screen.getAllByText(p.name).length).toBeGreaterThanOrEqual(1);
@@ -21,7 +22,7 @@ describe('PolesExplorer (P6.x.4-a)', () => {
   });
 
   it('clique sur un pôle ouvre le drawer Sheet avec son contenu', () => {
-    render(<PolesExplorer poles={poles} />);
+    renderI18n(<PolesExplorer poles={poles} />);
     const audio = poles.find((p) => p.code === 'AUDIO_RADIO')!;
     const card = screen.getAllByText(audio.name)[0].closest('button');
     expect(card).toBeTruthy();
@@ -33,7 +34,7 @@ describe('PolesExplorer (P6.x.4-a)', () => {
   });
 
   it("CTA pôle 'mediadays_classique' propose mediadays.net + sous-CTA visiteur", () => {
-    render(<PolesExplorer poles={poles} />);
+    renderI18n(<PolesExplorer poles={poles} />);
     const regies = poles.find((p) => p.code === 'REGIES_RETAIL_MEDIA')!;
     fireEvent.click(screen.getAllByText(regies.name)[0].closest('button')!);
     const exposerLink = screen.getByText(/Exposer sur mediadays.net/i).closest('a');
@@ -42,7 +43,7 @@ describe('PolesExplorer (P6.x.4-a)', () => {
   });
 
   it("CTA pôle 'mediadays_solutions' propose 'Réserver mon stand' interne", () => {
-    render(<PolesExplorer poles={poles} />);
+    renderI18n(<PolesExplorer poles={poles} />);
     const data = poles.find((p) => p.code === 'DATA_ADTECH')!;
     fireEvent.click(screen.getAllByText(data.name)[0].closest('button')!);
     const cta = screen.getByText(/Réserver mon stand/i).closest('a');

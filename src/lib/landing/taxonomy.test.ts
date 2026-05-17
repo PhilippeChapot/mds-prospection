@@ -72,4 +72,12 @@ describe('mds-taxonomy.json (P6.x.4-a)', () => {
     expect(f1?.affinite_poles[0]).toBe('REGIES_RETAIL_MEDIA');
     expect(f1?.affinite_levels[0]).toBe(2);
   });
+
+  it('P6.x.4-a-ter — DIFFUSION & VIDÉO descriptions ne mentionnent plus aucun concurrent (SATIS)', () => {
+    const diff = getPoleByCode('DIFFUSION_INFRA');
+    expect(diff?.description).toContain('FM/DAB+/TNT/5G');
+    expect(diff?.description).not.toMatch(/SATIS|concurrent/i);
+    const video = getPoleByCode('VIDEO_CTV');
+    expect(video?.description).not.toMatch(/SATIS|concurrence/i);
+  });
 });

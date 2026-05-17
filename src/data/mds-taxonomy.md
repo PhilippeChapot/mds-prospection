@@ -85,7 +85,7 @@ Ce document est la **référence unique** de la commercialisation MediaDays 2026
 
 ## 📡 DIFFUSION & INFRA ⭐
 
-**Cloud, distribution, transport du contenu, opérateurs FM/DAB+**. Territoire différenciant vs SATIS.
+**Cloud, distribution, transport du contenu, opérateurs FM/DAB+/TNT/5G**.
 
 **Zone principale** : Salle Le Nôtre (rangées D-E, centre)
 **9 sous-secteurs · 61 exposants cibles**
@@ -104,7 +104,7 @@ Ce document est la **référence unique** de la commercialisation MediaDays 2026
 
 ## 🎥 VIDÉO & CTV
 
-**Distribution, monétisation, analytics vidéo + production vidéo pro** (concurrence SATIS assumée).
+**Distribution, monétisation, analytics vidéo + production vidéo pro**.
 
 **Zone principale** : Salle Le Nôtre (rangées F-G-H) + scène MDS
 **14 sous-secteurs · 88 exposants cibles**

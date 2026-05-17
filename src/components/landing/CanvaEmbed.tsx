@@ -1,18 +1,18 @@
 /**
  * P6.x.4-a — embed Canva static iframe (présentation MediaDays).
  *
- * Server Component (pas d'état). Lazy-loaded au scroll grâce à
- * loading="lazy" sur l'iframe, donc pas de coût initial sur la landing.
+ * P6.x.4-a-ter : titre / sous-titre / iframe title via next-intl.
  */
 
+import { useTranslations } from 'next-intl';
+
 export function CanvaEmbed() {
+  const t = useTranslations('landing.canva');
   return (
     <section className="mx-auto my-16 max-w-5xl px-6">
       <div className="mb-8 text-center">
-        <h2 className="text-md-blue-dark mb-2 text-3xl font-bold md:text-4xl">
-          Découvrir MediaDays en image
-        </h2>
-        <p className="text-md-text-muted">La présentation complète de l’événement.</p>
+        <h2 className="text-md-blue-dark mb-2 text-3xl font-bold md:text-4xl">{t('title')}</h2>
+        <p className="text-md-text-muted">{t('subtitle')}</p>
       </div>
       <div
         className="mx-auto max-w-4xl"
@@ -43,7 +43,7 @@ export function CanvaEmbed() {
           src="https://www.canva.com/design/DAHJ3nuKMro/usLzmtOR_EVUFLtGDRULBA/view?embed"
           allowFullScreen
           allow="fullscreen"
-          title="Présentation MediaDays Solutions"
+          title={t('iframeTitle')}
         />
       </div>
     </section>

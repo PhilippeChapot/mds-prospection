@@ -18,6 +18,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
 
 function HomeContent() {
   const t = useTranslations('home');
+  const tLanding = useTranslations('landing');
   const taxonomy = getTaxonomy();
 
   return (
@@ -84,15 +85,17 @@ function HomeContent() {
       <section className="mx-auto max-w-6xl px-6 py-16">
         <div className="mb-10 text-center">
           <p className="text-md-magenta text-xs font-semibold tracking-widest uppercase">
-            6 pôles · {taxonomy.stats.total_sous_secteurs} sous-secteurs ·{' '}
-            {taxonomy.stats.total_exposants_cibles} exposants cibles
+            {tLanding('polesSection.eyebrow', {
+              poles: taxonomy.stats.total_poles,
+              sectors: taxonomy.stats.total_sous_secteurs,
+              exhibitors: taxonomy.stats.total_exposants_cibles,
+            })}
           </p>
           <h2 className="text-md-blue-dark mt-2 text-3xl font-extrabold tracking-tight md:text-4xl">
-            🎯 Êtes-vous concerné par MediaDays&nbsp;?
+            🎯 {tLanding('polesSection.title')}
           </h2>
           <p className="text-md-text-muted mx-auto mt-3 max-w-2xl text-base">
-            Cliquez sur un pôle pour découvrir les sous-secteurs, exposants attendus et le bon
-            parcours d’inscription.
+            {tLanding('polesSection.subtitle')}
           </p>
         </div>
         <PolesExplorer poles={taxonomy.poles} />
@@ -103,14 +106,16 @@ function HomeContent() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-10 text-center">
             <p className="text-md-magenta text-xs font-semibold tracking-widest uppercase">
-              {taxonomy.stats.total_visiteurs_families} familles ·{' '}
-              {taxonomy.stats.total_visiteurs_entites} entités identifiées
+              {tLanding('visitorsSection.eyebrow', {
+                families: taxonomy.stats.total_visiteurs_families,
+                entities: taxonomy.stats.total_visiteurs_entites,
+              })}
             </p>
             <h2 className="text-md-blue-dark mt-2 text-3xl font-extrabold tracking-tight md:text-4xl">
-              👥 Êtes-vous un visiteur cible&nbsp;?
+              👥 {tLanding('visitorsSection.title')}
             </h2>
             <p className="text-md-text-muted mx-auto mt-3 max-w-2xl text-base">
-              MediaDays Solutions s’adresse à 14 grandes familles de visiteurs. Trouvez la vôtre.
+              {tLanding('visitorsSection.subtitle')}
             </p>
           </div>
           <VisitorFamiliesExplorer families={taxonomy.visiteurs} poles={taxonomy.poles} />

@@ -3,6 +3,9 @@
 /**
  * P6.x.4-a — grid 14 familles visiteurs + drawer Sheet sur clic.
  *
+ * P6.x.4-a-ter — wiring next-intl : noms et fonctions traduits via
+ * landing.families.{id}.* + labels CTA + drawer.
+ *
  * Doctrine messaging (cf. brief) :
  *   - action_landing='visiteur_gratuit' (familles 1-10, 12, 14) →
  *     "S'inscrire comme visiteur (gratuit)" vers wizard visiteur.
@@ -13,6 +16,7 @@
  */
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -65,12 +69,15 @@ export function VisitorFamiliesExplorer({
 }
 
 function PoleBadge({ pole, level }: { pole: Pole | undefined; level: number }) {
+  const t = useTranslations('landing.drawer');
+  const tPolesAll = useTranslations('landing.poles');
   if (!pole) return null;
+  const poleName = tPolesAll(`${pole.code}.name`);
   return (
     <span
       className="text-md-blue-dark inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
       style={{ background: hexWithAlpha(pole.color, 0.6) }}
-      title={pole.name + (level >= 2 ? ' (forte)' : ' (faible)')}
+      title={`${poleName} ${level >= 2 ? t('affinityStrong') : t('affinityWeak')}`}
     >
       <span className="leading-none">{pole.emoji}</span>
       {level >= 2 ? '⚫⚫' : '⚫'}
@@ -87,6 +94,10 @@ function FamilyCard({
   polesByCode: Map<string, Pole>;
   onClick: () => void;
 }) {
+  const t = useTranslations('landing');
+  const tf = useTranslations(`landing.families.${family.id}`);
+  const name = tf('name');
+
   return (
     <button
       type="button"
@@ -94,9 +105,9 @@ function FamilyCard({
       className="border-md-border bg-card hover:border-md-magenta/40 group focus-visible:ring-md-magenta/40 flex flex-col rounded-xl border p-4 text-left transition focus:outline-none focus-visible:ring-2"
     >
       <div className="mb-2 flex items-start justify-between gap-2">
-        <h3 className="text-md-blue-dark line-clamp-2 text-sm font-bold">{family.name}</h3>
+        <h3 className="text-md-blue-dark line-clamp-2 text-sm font-bold">{name}</h3>
         <span className="text-md-text-muted text-[10px] font-semibold whitespace-nowrap">
-          {family.count} entités
+          {t('card.entities', { count: family.count })}
         </span>
       </div>
       {family.affinite_poles.length > 0 ? (
@@ -110,13 +121,15 @@ function FamilyCard({
           ))}
         </div>
       ) : (
-        <div className="text-md-text-muted mb-2 text-[10px] italic">accès transversal</div>
+        <div className="text-md-text-muted mb-2 text-[10px] italic">
+          {t('card.transversalAccess')}
+        </div>
       )}
       <p className="text-md-text-muted line-clamp-2 text-xs">
         {family.exemples.slice(0, 3).join(' · ')}
       </p>
       <span className="text-md-magenta mt-3 flex items-center gap-1 text-xs font-semibold transition-all group-hover:gap-2">
-        Voir <ArrowRight className="size-3" aria-hidden />
+        {t('card.view')} <ArrowRight className="size-3" aria-hidden />
       </span>
     </button>
   );
@@ -132,6 +145,11 @@ function FamilyDetail({
   onAction: () => void;
 }) {
   const { openForm } = useInstitutionnelEcoleForm();
+  const t = useTranslations('landing');
+  const tCta = useTranslations('landing.cta');
+  const tf = useTranslations(`landing.families.${family.id}`);
+  const name = tf('name');
+  const fonctions = tf('fonctions');
 
   function handleCta() {
     if (family.action_landing === 'institutionnel_form') {
@@ -146,9 +164,9 @@ function FamilyDetail({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-black/5 px-2 py-4">
-        <SheetTitle className="text-md-blue-dark text-xl font-extrabold">{family.name}</SheetTitle>
+        <SheetTitle className="text-md-blue-dark text-xl font-extrabold">{name}</SheetTitle>
         <SheetDescription className="text-md-text-muted text-xs">
-          Famille #{family.id} · {family.count} entités identifiées
+          {t('drawer.familyHeading', { id: family.id, count: family.count })}
         </SheetDescription>
         {family.affinite_poles.length > 0 ? (
           <div className="mt-3 flex flex-wrap gap-1">
@@ -166,16 +184,16 @@ function FamilyDetail({
       <div className="flex-1 overflow-y-auto px-2 py-4">
         <section className="mb-5">
           <h4 className="text-md-blue-dark mb-2 text-sm font-bold tracking-wide uppercase">
-            Exemples
+            {t('drawer.examplesTitle')}
           </h4>
           <p className="text-md-text text-sm leading-relaxed">{family.exemples.join(' · ')}</p>
         </section>
-        {family.fonctions ? (
+        {fonctions ? (
           <section>
             <h4 className="text-md-blue-dark mb-2 text-sm font-bold tracking-wide uppercase">
-              Fonctions visées
+              {t('drawer.targetedRolesTitle')}
             </h4>
-            <p className="text-md-text text-sm leading-relaxed">{family.fonctions}</p>
+            <p className="text-md-text text-sm leading-relaxed">{fonctions}</p>
           </section>
         ) : null}
       </div>
@@ -184,7 +202,7 @@ function FamilyDetail({
         {family.action_landing === 'visiteur_gratuit' ? (
           <Button asChild className="bg-md-magenta hover:bg-md-magenta/90 w-full">
             <a href={VISITOR_SIGNUP_URL}>
-              S’inscrire comme visiteur (gratuit)
+              {tCta('registerVisitorFree')}
               <ArrowRight className="ml-1.5 size-3.5" aria-hidden />
             </a>
           </Button>
@@ -195,8 +213,8 @@ function FamilyDetail({
             className="bg-md-magenta hover:bg-md-magenta/90 w-full"
           >
             {family.action_landing === 'institutionnel_form'
-              ? 'Demander un tarif Institutionnel'
-              : 'Demander un tarif École'}
+              ? tCta('requestInstitPricing')
+              : tCta('requestSchoolPricing')}
             <ArrowRight className="ml-1.5 size-3.5" aria-hidden />
           </Button>
         )}

@@ -1,6 +1,6 @@
 {
   "version": "2.1",
-  "generated_at": "2026-05-16T23:41:34.611Z",
+  "generated_at": "2026-05-17T00:18:41.344Z",
   "poles": [
     {
       "code": "REGIES_RETAIL_MEDIA",
@@ -371,7 +371,7 @@
       "category": "mediadays_solutions",
       "sub_label": null,
       "zone": "Salle Le Nôtre (rangées D-E, centre)",
-      "description": "Cloud, distribution, transport du contenu, opérateurs FM/DAB+. Territoire différenciant vs SATIS.",
+      "description": "Cloud, distribution, transport du contenu, opérateurs FM/DAB+/TNT/5G.",
       "sous_secteurs": [
         {
           "name": "Opérateurs FM / DAB+",
@@ -478,7 +478,7 @@
       "category": "mediadays_solutions",
       "sub_label": null,
       "zone": "Salle Le Nôtre (rangées F-G-H) + scène MDS",
-      "description": "Distribution, monétisation, analytics vidéo + production vidéo pro (concurrence SATIS assumée).",
+      "description": "Distribution, monétisation, analytics vidéo + production vidéo pro.",
       "sous_secteurs": [
         {
           "name": "Players & CMS vidéo",

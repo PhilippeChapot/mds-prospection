@@ -483,5 +483,159 @@
     "sectionStatus": "Pipeline statuses",
     "sectionButtons": "Buttons",
     "sectionTypography": "Typography"
+  },
+  "landing": {
+    "polesSection": {
+      "eyebrow": "{poles} hubs · {sectors} sub-sectors · {exhibitors} target exhibitors",
+      "title": "Is MediaDays Solutions for you?",
+      "subtitle": "Click on a hub to discover sub-sectors, exhibitor examples, and the registration path."
+    },
+    "visitorsSection": {
+      "eyebrow": "{families} categories · {entities} identified entities",
+      "title": "Are you a target visitor?",
+      "subtitle": "MediaDays Solutions welcomes 14 main visitor categories. Find yours."
+    },
+    "card": {
+      "subSectorsStats": "{count} sub-sectors · {exhibitors} target exhibitors",
+      "entities": "{count} entities",
+      "transversalAccess": "transversal access",
+      "explore": "Explore",
+      "view": "View",
+      "mediadays": "MediaDays",
+      "mdSolutions": "MD Solutions"
+    },
+    "drawer": {
+      "hostingRoom": "Hosting room",
+      "stats": "Stats",
+      "subSectorsTitle": "Sub-sectors",
+      "examplesTitle": "Examples",
+      "targetedRolesTitle": "Targeted roles",
+      "familyHeading": "Category #{id} · {count} identified entities",
+      "affinityStrong": "(strong affinity)",
+      "affinityWeak": "(light affinity)"
+    },
+    "cta": {
+      "exhibitMediadaysNet": "Exhibit on mediadays.net",
+      "registerVisitorFree": "Register as a visitor (free)",
+      "bookMyBooth": "Book my booth",
+      "requestInstitPricing": "Request institutional pricing",
+      "requestSchoolPricing": "Request school pricing"
+    },
+    "form": {
+      "titleInstitutionnel": "Request institutional pricing",
+      "titleEcole": "Request school pricing",
+      "descriptionInstitutionnel": "Industry bodies, federations, professional associations: tell us about your interest in MediaDays Solutions. We'll get back to you within 48h.",
+      "descriptionEcole": "Schools, higher education programs, training organizations: tell us about your access project. We'll get back to you within 48h.",
+      "fieldOrgName": "Organization",
+      "fieldContactName": "Full name",
+      "fieldContactEmail": "Email",
+      "fieldContactPhone": "Phone",
+      "fieldWebsite": "Website",
+      "fieldMessage": "Message (optional)",
+      "messagePlaceholder": "Describe your interest in MediaDays Solutions / your needs",
+      "submit": "Submit my request",
+      "submitting": "Sending…",
+      "cancel": "Cancel",
+      "validationMinLength": "At least 2 characters",
+      "validationEmail": "Invalid email",
+      "toastSuccess": "Request submitted — we'll get back to you within 48h.",
+      "toastErrorFallback": "Submission failed.",
+      "toastErrorUnknown": "Unknown error."
+    },
+    "canva": {
+      "title": "Discover MediaDays in pictures",
+      "subtitle": "The full presentation of the event.",
+      "iframeTitle": "MediaDays Solutions presentation"
+    },
+    "poles": {
+      "REGIES_RETAIL_MEDIA": {
+        "name": "MEDIA AGENCIES & RETAIL MEDIA",
+        "description": "Media offering: media agencies, publishers, retailers, creative agencies. Welcomes advertisers and UDECAM agencies (premium visitors).",
+        "subLabel": ""
+      },
+      "AUDIO_RADIO": {
+        "name": "AUDIO & RADIO",
+        "description": "Audio solutions sold to radios, platforms and audio media agencies. The heart of Paris Radio Show.",
+        "subLabel": "Paris Radio Show"
+      },
+      "DIFFUSION_INFRA": {
+        "name": "BROADCAST & INFRASTRUCTURE",
+        "description": "Cloud, content distribution & transport, FM/DAB+/DTT/5G operators.",
+        "subLabel": ""
+      },
+      "VIDEO_CTV": {
+        "name": "VIDEO & CTV",
+        "description": "Video distribution, monetization, analytics + pro video production.",
+        "subLabel": ""
+      },
+      "OUTDOOR_DOOH": {
+        "name": "OUTDOOR & DOOH",
+        "description": "DOOH tech, programmatic outdoor, signage solutions. OOH media agencies (JCDecaux, Clear Channel…) belong to the MEDIA AGENCIES & RETAIL MEDIA hub.",
+        "subLabel": ""
+      },
+      "DATA_ADTECH": {
+        "name": "DATA & ADTECH",
+        "description": "Adtech, data, measurement, marketing AI, retail media tech. The business heart of MediaDays Solutions.",
+        "subLabel": ""
+      }
+    },
+    "families": {
+      "1": {
+        "name": "Major brand advertisers",
+        "fonctions": "Senior leadership · Marketing leadership · Communications leadership · Media buying leadership"
+      },
+      "2": {
+        "name": "UDECAM media agencies",
+        "fonctions": "Chief Client Officer · Account directors · Head of Strategy · TV / Radio / Digital directors"
+      },
+      "3": {
+        "name": "Creative agencies & branded content",
+        "fonctions": "Senior leadership · Creative leadership · Art directors"
+      },
+      "4": {
+        "name": "Radio publishers",
+        "fonctions": "Senior leadership · Programming leadership · On-air leadership · Technical leadership"
+      },
+      "5": {
+        "name": "TV & platform publishers",
+        "fonctions": "Senior leadership · Programming leadership · Channel leadership · Technical leadership"
+      },
+      "6": {
+        "name": "Press & digital publishers",
+        "fonctions": "Senior leadership · Editors-in-chief · Digital leadership"
+      },
+      "7": {
+        "name": "Producers & Studios",
+        "fonctions": "Senior leadership · Executive producers · Artistic direction"
+      },
+      "8": {
+        "name": "Technical Directors / Media CTOs",
+        "fonctions": "CTO · Technical Directors · Broadcast leadership"
+      },
+      "9": {
+        "name": "Data officers & AdTech managers",
+        "fonctions": "Chief Data Officer (CDO) · Head of Data · Head of AdTech · Data Strategists · DMP Managers"
+      },
+      "10": {
+        "name": "Retailers & e-commerce",
+        "fonctions": "Senior leadership · Marketing leadership · Retail Media leadership · E-commerce leadership"
+      },
+      "11": {
+        "name": "Industry bodies & associations",
+        "fonctions": "Senior leadership · General delegates · Public affairs directors"
+      },
+      "12": {
+        "name": "Trade press",
+        "fonctions": "Editors-in-chief · Media/ad/tech specialist journalists · Editorial directors"
+      },
+      "13": {
+        "name": "Schools & Education",
+        "fonctions": "Senior leadership · Academic leadership · Media / Communications program heads"
+      },
+      "14": {
+        "name": "Investors / Media tech VCs",
+        "fonctions": "Managing Partners · Partners · Investment Managers · Principals · Analysts · Scouts"
+      }
+    }
   }
 }

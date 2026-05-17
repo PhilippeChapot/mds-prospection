@@ -5,10 +5,11 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { VisitorFamiliesExplorer } from './VisitorFamiliesExplorer';
 import { InstitutionnelEcoleFormProvider } from './institutionnel-ecole-form-context';
 import { getTaxonomy } from '@/lib/landing/taxonomy';
+import { renderI18n } from './__test-helpers__/i18n-render';
 
 // Mock le form modal pour éviter de rendre un dialog complet (et son server action)
 vi.mock('./InstitutionnelEcoleForm', () => ({
@@ -18,8 +19,10 @@ vi.mock('./InstitutionnelEcoleForm', () => ({
 
 const tax = getTaxonomy();
 
-function renderWithProvider(jsx: React.ReactNode) {
-  return render(<InstitutionnelEcoleFormProvider>{jsx}</InstitutionnelEcoleFormProvider>);
+function renderWithProvider(jsx: React.ReactNode, locale: 'fr' | 'en' = 'fr') {
+  return renderI18n(<InstitutionnelEcoleFormProvider>{jsx}</InstitutionnelEcoleFormProvider>, {
+    locale,
+  });
 }
 
 describe('VisitorFamiliesExplorer (P6.x.4-a)', () => {
