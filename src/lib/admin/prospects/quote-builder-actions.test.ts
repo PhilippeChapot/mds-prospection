@@ -105,14 +105,39 @@ function mockEnv() {
     syncProspectToSellsy: vi.fn().mockResolvedValue(undefined),
   }));
 
+  // SellsyError minimal local (équivalent à src/lib/sellsy/client.ts) — on
+  // évite l'import du vrai module qui chargerait ses dépendances réseau.
+  class SellsyErrorMock extends Error {
+    status: number;
+    body: unknown;
+    constructor(message: string, status: number, body: unknown) {
+      super(message);
+      this.name = 'SellsyError';
+      this.status = status;
+      this.body = body;
+    }
+  }
   vi.doMock('@/lib/sellsy/client', () => ({
+    SellsyError: SellsyErrorMock,
     sellsyFetch: vi.fn(async (endpoint: string, opts?: { method?: string; body?: string }) => {
       state.sellsyCalls.push({
         endpoint,
         method: opts?.method ?? 'GET',
         body: opts?.body,
       });
-      return state.sellsyResponses.get(`${opts?.method ?? 'GET'} ${endpoint}`) ?? {};
+      const key = `${opts?.method ?? 'GET'} ${endpoint}`;
+      const resp = state.sellsyResponses.get(key);
+      // Convention test : si la response est de la forme { __throw: { status, body } },
+      // on throw une SellsyError au lieu de renvoyer la valeur.
+      if (resp && typeof resp === 'object' && '__throw' in (resp as Record<string, unknown>)) {
+        const t = (resp as { __throw: { status: number; body: unknown } }).__throw;
+        throw new SellsyErrorMock(
+          `Sellsy fetch ${endpoint} failed (${t.status})`,
+          t.status,
+          t.body,
+        );
+      }
+      return resp ?? {};
     }),
   }));
 
@@ -321,7 +346,7 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
     expect(r.ok).toBe(false);
   });
 
-  it('P6.x.5-ter — POST /estimates avec row.discount structuré par ligne (unit_amount = catalogue)', async () => {
+  it('P6.x.5-quinquies — POST /estimates avec unit_amount déjà remisé (fallback safe, pas de row.discount)', async () => {
     mockEnv();
     const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
     const r = await emitSellsyDevisFromQuoteBuilderAction({
@@ -333,26 +358,25 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
     const post = state.sellsyCalls.find((c) => c.method === 'POST' && c.endpoint === '/estimates');
     expect(post).toBeDefined();
     const body = JSON.parse(post!.body!) as {
-      rows: Array<{
-        unit_amount: string;
-        related: { id: number };
-        discount?: { unit: 'percent'; value: number };
-      }>;
+      rows: Array<{ unit_amount: string; related: { id: number }; discount?: unknown }>;
       note?: string;
     };
-    // unit_amount = prix catalogue (Sellsy calcule la remise lui-même)
-    expect(body.rows[0].unit_amount).toBe('12500.00');
-    expect(body.rows[1].unit_amount).toBe('3000.00');
-    // row.discount structuré présent sur les 2 lignes
-    expect(body.rows[0].discount).toEqual({ unit: 'percent', value: 30 });
-    expect(body.rows[1].discount).toEqual({ unit: 'percent', value: 10 });
-    // Note Sellsy contient la justification + détail
+    // unit_amount = prix remisé côté client (PACK 12500 * 0.7 = 8750, SPONSOR 3000 * 0.9 = 2700)
+    expect(body.rows[0].unit_amount).toBe('8750.00');
+    expect(body.rows[1].unit_amount).toBe('2700.00');
+    // Aucun champ discount (Sellsy V2 ne supporte pas le format `row.discount` qu'on
+    // tentait en P6.x.5-ter — fallback : prix remisé directement)
+    expect(body.rows[0].discount).toBeUndefined();
+    expect(body.rows[1].discount).toBeUndefined();
+    // Note Sellsy : justification + traçabilité comptable ligne par ligne
     expect(body.note).toMatch(/Tarif Institutionnel UDECAM/);
-    expect(body.note).toMatch(/Pack ACCESS Standard : -30%/);
-    expect(body.note).toMatch(/Logo Gold : -10%/);
+    expect(body.note).toMatch(/Pack ACCESS Standard/);
+    expect(body.note).toMatch(/Remise 30% appliquée/);
+    expect(body.note).toMatch(/Logo Gold/);
+    expect(body.note).toMatch(/Remise 10% appliquée/);
   });
 
-  it('PREMIUM dans items → row SANS champ discount (Sellsy reçoit prix plein)', async () => {
+  it('PREMIUM dans items → unit_amount = prix plein (clamp forcé 0%)', async () => {
     state.prospect!.quote_items = [
       { ...PACK_PREMIUM, discount_pct: 50 }, // PREMIUM, ignoré par clamp
       { ...SPONSOR, discount_pct: 20 },
@@ -366,11 +390,39 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
     const post = state.sellsyCalls.find((c) => c.method === 'POST' && c.endpoint === '/estimates');
     const body = JSON.parse(post!.body!) as {
       rows: Array<{ unit_amount: string; discount?: unknown }>;
+      note?: string;
     };
-    // PREMIUM = pas de discount, prix plein 25000
+    // PREMIUM = prix plein 25000 (clamp forcé 0)
     expect(body.rows[0].unit_amount).toBe('25000.00');
+    // SPONSOR = prix remisé 20% (3000 * 0.8 = 2400)
+    expect(body.rows[1].unit_amount).toBe('2400.00');
+    // Aucun row.discount sur aucune ligne (fallback unit_amount)
     expect(body.rows[0].discount).toBeUndefined();
-    // SPONSOR = discount appliqué
-    expect(body.rows[1].discount).toEqual({ unit: 'percent', value: 20 });
+    expect(body.rows[1].discount).toBeUndefined();
+    // Note ne mentionne PAS le PREMIUM dans les remises, mais bien le SPONSOR
+    expect(body.note).not.toMatch(/Pack PREMIUM.*Remise/);
+    expect(body.note).toMatch(/Logo Gold.*Remise 20% appliquée/);
+  });
+
+  it('P6.x.5-quinquies — SellsyError 400 → action retourne le body Sellsy dans error (debug admin)', async () => {
+    // Pré-charge la réponse "throw SellsyError" pour le POST /estimates
+    state.sellsyResponses.set('POST /estimates', {
+      __throw: {
+        status: 400,
+        body: { error: { code: 'invalid_field', message: 'unknown field row.discount' } },
+      },
+    });
+    mockEnv();
+    const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
+    const r = await emitSellsyDevisFromQuoteBuilderAction({
+      prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error).toMatch(/400/);
+      // Le body Sellsy est sérialisé et inclus dans l'erreur — gain de
+      // debugabilité côté admin (toast affiche le message Sellsy précis).
+      expect(r.error).toMatch(/unknown field/);
+    }
   });
 });

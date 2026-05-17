@@ -22,7 +22,14 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { sellsyFetch } from '@/lib/sellsy/client';
 import { syncProspectToSellsy } from '@/lib/sellsy/sync-prospect';
 import { endpointForDocumentType } from '@/lib/sellsy/create-document';
-import { calculateQuoteTotals, clampDiscountForItem, type QuoteItem } from './quote-calc';
+import { SellsyError } from '@/lib/sellsy/client';
+import {
+  calculateQuoteTotals,
+  clampDiscountForItem,
+  discountedUnitPriceHt,
+  formatEurFr,
+  type QuoteItem,
+} from './quote-calc';
 
 const LOG_PREFIX = '[admin/quote-builder]';
 const VAT_RATE_DEFAULT = 20;
@@ -119,9 +126,13 @@ interface SellsyRowPayload {
   type: 'catalog';
   quantity: string;
   related: { id: number; type: 'product' };
+  /** P6.x.5-quinquies — unit_amount déjà remisé côté client. On a tenté en
+   *  P6.x.5-ter le champ structuré `row.discount = { unit:'percent', value }`
+   *  mais Sellsy V2 renvoie 400 sur ce format (cf. retour Phil). Format
+   *  alternatif (discount_value, discount_percent, etc.) non documenté
+   *  côté API publique → fallback safe : prix unitaire déjà remisé +
+   *  traçabilité dans la `note` du devis. */
   unit_amount?: string;
-  /** P6.x.5-ter — remise structurée Sellsy V2. unit='percent' + value 0-100. */
-  discount?: { unit: 'percent'; value: number };
 }
 
 export async function emitSellsyDevisFromQuoteBuilderAction(input: {
@@ -171,37 +182,41 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
     };
   }
 
-  // 3. Build rows Sellsy V2 avec row.discount structuré (P6.x.5-ter).
-  //    unit_amount = catalog price ; Sellsy calcule la remise via row.discount.
+  // 3. Build rows Sellsy V2 avec unit_amount déjà remisé (P6.x.5-quinquies
+  //    fallback safe — cf. note sur SellsyRowPayload).
   const rows: SellsyRowPayload[] = items.map((it) => {
-    const pct = clampDiscountForItem(it);
-    const row: SellsyRowPayload = {
+    const unitDiscounted = discountedUnitPriceHt(it);
+    return {
       type: 'catalog',
       quantity: String(it.qty),
       related: { id: it.sellsy_product_id, type: 'product' },
-      unit_amount: Number(it.unit_price_ht).toFixed(2),
+      unit_amount: unitDiscounted.toFixed(2),
     };
-    if (pct > 0) row.discount = { unit: 'percent', value: pct };
-    return row;
   });
 
-  // 4. Note Sellsy : justification globale + détail des items remisés
+  // 4. Note Sellsy : justification + traçabilité comptable ligne par ligne.
+  //    Sellsy ne voyant pas la remise comme % séparé, on documente dans la
+  //    note le prix catalogue + % remise + prix net appliqué, pour que la
+  //    compta puisse rapprocher avec le tarif officiel.
   const anyDiscount = items.some((it) => clampDiscountForItem(it) > 0);
   const noteLines: string[] = [];
-  if (anyDiscount) {
-    if (prospect.promo_reason) noteLines.push(prospect.promo_reason);
-    const discountedSummary = items
-      .filter((it) => clampDiscountForItem(it) > 0)
-      .map((it) => `• ${it.name} : -${clampDiscountForItem(it)}%`)
-      .join('\n');
-    if (discountedSummary) {
-      noteLines.push('Remises appliquées :');
-      noteLines.push(discountedSummary);
-    }
-  } else if (prospect.promo_reason) {
+  if (prospect.promo_reason) {
     noteLines.push(prospect.promo_reason);
+    noteLines.push('');
   }
-  const note = noteLines.length > 0 ? noteLines.join('\n') : undefined;
+  if (anyDiscount) {
+    noteLines.push('Remises appliquées :');
+    for (const it of items) {
+      const pct = clampDiscountForItem(it);
+      if (pct === 0) continue;
+      const net = discountedUnitPriceHt(it);
+      noteLines.push(
+        `• ${it.name} — Prix catalogue ${formatEurFr(it.unit_price_ht)} · ` +
+          `Remise ${pct}% appliquée → ${formatEurFr(net)} HT/unité`,
+      );
+    }
+  }
+  const note = noteLines.length > 0 ? noteLines.join('\n').trim() : undefined;
 
   const contactRow = Array.isArray(prospect.contact) ? prospect.contact[0] : prospect.contact;
 
@@ -214,6 +229,14 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
   };
 
   // 5. POST /estimates
+  // P6.x.5-quinquies : on log le payload complet AVANT le call pour pouvoir
+  // diagnostiquer rapidement une erreur Sellsy future (côté Vercel logs).
+  console.log(
+    '%s sellsy-post-estimates prospect=%s payload=%s',
+    LOG_PREFIX,
+    parsed.data.prospect_id,
+    JSON.stringify(payload),
+  );
   let documentId: number;
   try {
     const createdRaw = await sellsyFetch<unknown>(endpointForDocumentType('estimate'), {
@@ -232,14 +255,27 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
       return { ok: false, error: 'Sellsy n’a pas renvoyé d’id' };
     }
   } catch (err) {
+    // P6.x.5-quinquies : on extrait le body Sellsy de l'exception pour le
+    // surfacer dans le toast admin — sans ça, l'admin ne voit qu'un 400
+    // opaque côté UI et doit aller dans les logs Vercel.
+    let bodyDetails = '';
+    if (err instanceof SellsyError && err.body) {
+      try {
+        const serialized = JSON.stringify(err.body);
+        bodyDetails = ` — Sellsy: ${serialized.slice(0, 500)}`;
+      } catch {
+        /* noop */
+      }
+    }
     const msg = err instanceof Error ? err.message : String(err);
     console.error(
-      '%s sellsy-create-failed prospect=%s msg=%s',
+      '%s sellsy-create-failed prospect=%s msg=%s body=%s',
       LOG_PREFIX,
       parsed.data.prospect_id,
       msg,
+      bodyDetails,
     );
-    return { ok: false, error: `Émission Sellsy échouée : ${msg.slice(0, 200)}` };
+    return { ok: false, error: `Émission Sellsy échouée : ${msg}${bodyDetails}` };
   }
 
   // 6. Fetch détails (number, public_link) — best-effort
