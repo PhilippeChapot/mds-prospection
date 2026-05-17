@@ -23,13 +23,7 @@ import { sellsyFetch } from '@/lib/sellsy/client';
 import { syncProspectToSellsy } from '@/lib/sellsy/sync-prospect';
 import { endpointForDocumentType } from '@/lib/sellsy/create-document';
 import { SellsyError } from '@/lib/sellsy/client';
-import {
-  calculateQuoteTotals,
-  clampDiscountForItem,
-  discountedUnitPriceHt,
-  formatEurFr,
-  type QuoteItem,
-} from './quote-calc';
+import { calculateQuoteTotals, clampDiscountForItem, type QuoteItem } from './quote-calc';
 
 const LOG_PREFIX = '[admin/quote-builder]';
 const VAT_RATE_DEFAULT = 20;
@@ -126,13 +120,14 @@ interface SellsyRowPayload {
   type: 'catalog';
   quantity: string;
   related: { id: number; type: 'product' };
-  /** P6.x.5-quinquies — unit_amount déjà remisé côté client. On a tenté en
-   *  P6.x.5-ter le champ structuré `row.discount = { unit:'percent', value }`
-   *  mais Sellsy V2 renvoie 400 sur ce format (cf. retour Phil). Format
-   *  alternatif (discount_value, discount_percent, etc.) non documenté
-   *  côté API publique → fallback safe : prix unitaire déjà remisé +
-   *  traçabilité dans la `note` du devis. */
   unit_amount?: string;
+  /** P6.x.5-sexies — row.discount Sellsy V2 (format officiel, audité depuis
+   *  l'OpenAPI sellsy.v2.latest.yaml). Shape :
+   *    { type: 'percent' | 'amount', value: <STRING> }
+   *  La key est `type` (PAS `unit` comme on tentait en P6.x.5-ter — c'est
+   *  ce qui causait le 400). La `value` est une STRING (cohérent avec
+   *  quirk #15 sur quantity/unit_amount). */
+  discount?: { type: 'percent' | 'amount'; value: string };
 }
 
 export async function emitSellsyDevisFromQuoteBuilderAction(input: {
@@ -182,41 +177,28 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
     };
   }
 
-  // 3. Build rows Sellsy V2 avec unit_amount déjà remisé (P6.x.5-quinquies
-  //    fallback safe — cf. note sur SellsyRowPayload).
+  // 3. Build rows Sellsy V2 avec row.discount natif (format officiel OpenAPI
+  //    audité — cf. note sur SellsyRowPayload). unit_amount = prix catalogue,
+  //    Sellsy applique la remise et affiche le % séparé dans la colonne
+  //    dédiée de la grille Sellsy.
   const rows: SellsyRowPayload[] = items.map((it) => {
-    const unitDiscounted = discountedUnitPriceHt(it);
-    return {
+    const pct = clampDiscountForItem(it);
+    const row: SellsyRowPayload = {
       type: 'catalog',
       quantity: String(it.qty),
       related: { id: it.sellsy_product_id, type: 'product' },
-      unit_amount: unitDiscounted.toFixed(2),
+      unit_amount: Number(it.unit_price_ht).toFixed(2),
     };
+    if (pct > 0) {
+      row.discount = { type: 'percent', value: pct.toString() };
+    }
+    return row;
   });
 
-  // 4. Note Sellsy : justification + traçabilité comptable ligne par ligne.
-  //    Sellsy ne voyant pas la remise comme % séparé, on documente dans la
-  //    note le prix catalogue + % remise + prix net appliqué, pour que la
-  //    compta puisse rapprocher avec le tarif officiel.
-  const anyDiscount = items.some((it) => clampDiscountForItem(it) > 0);
-  const noteLines: string[] = [];
-  if (prospect.promo_reason) {
-    noteLines.push(prospect.promo_reason);
-    noteLines.push('');
-  }
-  if (anyDiscount) {
-    noteLines.push('Remises appliquées :');
-    for (const it of items) {
-      const pct = clampDiscountForItem(it);
-      if (pct === 0) continue;
-      const net = discountedUnitPriceHt(it);
-      noteLines.push(
-        `• ${it.name} — Prix catalogue ${formatEurFr(it.unit_price_ht)} · ` +
-          `Remise ${pct}% appliquée → ${formatEurFr(net)} HT/unité`,
-      );
-    }
-  }
-  const note = noteLines.length > 0 ? noteLines.join('\n').trim() : undefined;
+  // 4. Note Sellsy : justification libre uniquement (la remise par ligne
+  //    est désormais visible dans la colonne native Sellsy, pas besoin
+  //    de doubler dans la note — évite la redondance vue par le client).
+  const note = prospect.promo_reason?.trim() || undefined;
 
   const contactRow = Array.isArray(prospect.contact) ? prospect.contact[0] : prospect.contact;
 

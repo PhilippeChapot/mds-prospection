@@ -346,7 +346,7 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
     expect(r.ok).toBe(false);
   });
 
-  it('P6.x.5-quinquies — POST /estimates avec unit_amount déjà remisé (fallback safe, pas de row.discount)', async () => {
+  it('P6.x.5-sexies — POST /estimates avec row.discount Sellsy V2 natif (unit_amount = prix catalogue)', async () => {
     mockEnv();
     const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
     const r = await emitSellsyDevisFromQuoteBuilderAction({
@@ -358,25 +358,25 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
     const post = state.sellsyCalls.find((c) => c.method === 'POST' && c.endpoint === '/estimates');
     expect(post).toBeDefined();
     const body = JSON.parse(post!.body!) as {
-      rows: Array<{ unit_amount: string; related: { id: number }; discount?: unknown }>;
+      rows: Array<{
+        unit_amount: string;
+        related: { id: number };
+        discount?: { type: 'percent' | 'amount'; value: string };
+      }>;
       note?: string;
     };
-    // unit_amount = prix remisé côté client (PACK 12500 * 0.7 = 8750, SPONSOR 3000 * 0.9 = 2700)
-    expect(body.rows[0].unit_amount).toBe('8750.00');
-    expect(body.rows[1].unit_amount).toBe('2700.00');
-    // Aucun champ discount (Sellsy V2 ne supporte pas le format `row.discount` qu'on
-    // tentait en P6.x.5-ter — fallback : prix remisé directement)
-    expect(body.rows[0].discount).toBeUndefined();
-    expect(body.rows[1].discount).toBeUndefined();
-    // Note Sellsy : justification + traçabilité comptable ligne par ligne
-    expect(body.note).toMatch(/Tarif Institutionnel UDECAM/);
-    expect(body.note).toMatch(/Pack ACCESS Standard/);
-    expect(body.note).toMatch(/Remise 30% appliquée/);
-    expect(body.note).toMatch(/Logo Gold/);
-    expect(body.note).toMatch(/Remise 10% appliquée/);
+    // unit_amount = prix catalogue (Sellsy applique la remise et affiche %)
+    expect(body.rows[0].unit_amount).toBe('12500.00');
+    expect(body.rows[1].unit_amount).toBe('3000.00');
+    // row.discount : type='percent', value=STRING (format OpenAPI officiel)
+    expect(body.rows[0].discount).toEqual({ type: 'percent', value: '30' });
+    expect(body.rows[1].discount).toEqual({ type: 'percent', value: '10' });
+    // Note Sellsy : justification libre uniquement (la remise s'affiche
+    // dans la colonne native Sellsy, plus de redondance dans la note)
+    expect(body.note).toBe('Tarif Institutionnel UDECAM');
   });
 
-  it('PREMIUM dans items → unit_amount = prix plein (clamp forcé 0%)', async () => {
+  it('PREMIUM dans items → pas de champ discount (clamp forcé 0%), unit_amount = prix plein', async () => {
     state.prospect!.quote_items = [
       { ...PACK_PREMIUM, discount_pct: 50 }, // PREMIUM, ignoré par clamp
       { ...SPONSOR, discount_pct: 20 },
@@ -389,19 +389,41 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
     });
     const post = state.sellsyCalls.find((c) => c.method === 'POST' && c.endpoint === '/estimates');
     const body = JSON.parse(post!.body!) as {
+      rows: Array<{ unit_amount: string; discount?: { type: string; value: string } }>;
+      note?: string;
+    };
+    // PREMIUM = prix catalogue, AUCUN champ discount (clamp forcé 0)
+    expect(body.rows[0].unit_amount).toBe('25000.00');
+    expect(body.rows[0].discount).toBeUndefined();
+    // SPONSOR = prix catalogue + discount 20% structuré
+    expect(body.rows[1].unit_amount).toBe('3000.00');
+    expect(body.rows[1].discount).toEqual({ type: 'percent', value: '20' });
+    // Pas de promo_reason → pas de note
+    expect(body.note).toBeUndefined();
+  });
+
+  it('Aucune remise sur tous les items → aucun row sans champ discount + note vide si pas de justification', async () => {
+    state.prospect!.quote_items = [
+      { ...PACK_STD, discount_pct: 0 },
+      { ...SPONSOR, discount_pct: 0 },
+    ];
+    state.prospect!.promo_reason = null;
+    mockEnv();
+    const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
+    await emitSellsyDevisFromQuoteBuilderAction({
+      prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
+    });
+    const post = state.sellsyCalls.find((c) => c.method === 'POST' && c.endpoint === '/estimates');
+    const body = JSON.parse(post!.body!) as {
       rows: Array<{ unit_amount: string; discount?: unknown }>;
       note?: string;
     };
-    // PREMIUM = prix plein 25000 (clamp forcé 0)
-    expect(body.rows[0].unit_amount).toBe('25000.00');
-    // SPONSOR = prix remisé 20% (3000 * 0.8 = 2400)
-    expect(body.rows[1].unit_amount).toBe('2400.00');
-    // Aucun row.discount sur aucune ligne (fallback unit_amount)
+    // unit_amount = prix catalogue, aucun champ discount sur aucune ligne
+    expect(body.rows[0].unit_amount).toBe('12500.00');
     expect(body.rows[0].discount).toBeUndefined();
+    expect(body.rows[1].unit_amount).toBe('3000.00');
     expect(body.rows[1].discount).toBeUndefined();
-    // Note ne mentionne PAS le PREMIUM dans les remises, mais bien le SPONSOR
-    expect(body.note).not.toMatch(/Pack PREMIUM.*Remise/);
-    expect(body.note).toMatch(/Logo Gold.*Remise 20% appliquée/);
+    expect(body.note).toBeUndefined();
   });
 
   it('P6.x.5-quinquies — SellsyError 400 → action retourne le body Sellsy dans error (debug admin)', async () => {
