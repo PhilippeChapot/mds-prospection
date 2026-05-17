@@ -76,6 +76,15 @@ describe('Landing — EN locale (P6.x.4-a-ter)', () => {
     expect(screen.getByText('Cancel')).toBeTruthy();
   });
 
+  it("P6.x.4-a-quater — form EN affiche 'First name' + 'Last name' (split)", () => {
+    renderI18n(
+      <InstitutionnelEcoleForm open={true} onOpenChange={() => undefined} type="institutionnel" />,
+      { locale: 'en' },
+    );
+    expect(screen.getByText(/First name/)).toBeTruthy();
+    expect(screen.getByText(/Last name/)).toBeTruthy();
+  });
+
   it('subsector-translations table : 5 clés représentatives mappées', () => {
     expect(getSubSectorLabel('Régies TV', 'en')).toBe('TV media agencies');
     expect(getSubSectorLabel('Opérateurs FM / DAB+', 'en')).toBe('FM / DAB+ operators');

@@ -6,6 +6,10 @@
  *
  * P6.x.4-a-ter : labels + validations + toasts via next-intl
  * (clés sous landing.form.*).
+ *
+ * P6.x.4-a-quater :
+ *   - split Nom/Prénom en 2 champs distincts (FIRSTNAME/LASTNAME Brevo)
+ *   - useLocale() → propage language='FR'|'EN' au server action
  */
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
@@ -13,7 +17,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -40,6 +44,7 @@ export function InstitutionnelEcoleForm({
   type: RequestType;
 }) {
   const t = useTranslations('landing.form');
+  const locale = useLocale();
   const [, startTransition] = useTransition();
   const [submitting, setSubmitting] = useState(false);
 
@@ -47,7 +52,8 @@ export function InstitutionnelEcoleForm({
     () =>
       z.object({
         org_name: z.string().trim().min(2, t('validationMinLength')).max(200),
-        contact_name: z.string().trim().min(2, t('validationMinLength')).max(120),
+        first_name: z.string().trim().min(2, t('validationMinLength')).max(120),
+        last_name: z.string().trim().min(2, t('validationMinLength')).max(120),
         contact_email: z.string().trim().email(t('validationEmail')).max(180),
         contact_phone: z.string().trim().max(40).optional(),
         website: z.string().trim().max(300).optional(),
@@ -67,7 +73,8 @@ export function InstitutionnelEcoleForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       org_name: '',
-      contact_name: '',
+      first_name: '',
+      last_name: '',
       contact_email: '',
       contact_phone: '',
       website: '',
@@ -86,11 +93,13 @@ export function InstitutionnelEcoleForm({
         const result = await createLeadFromLandingForm({
           type,
           org_name: values.org_name,
-          contact_name: values.contact_name,
+          first_name: values.first_name,
+          last_name: values.last_name,
           contact_email: values.contact_email,
           contact_phone: values.contact_phone ?? '',
           website: values.website ?? '',
           message: values.message ?? '',
+          language: locale === 'en' ? 'EN' : 'FR',
         });
         if (result.ok) {
           toast.success(t('toastSuccess'));
@@ -129,28 +138,37 @@ export function InstitutionnelEcoleForm({
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label htmlFor="contact_name">
-                {t('fieldContactName')} <span className="text-md-magenta">*</span>
+              <Label htmlFor="first_name">
+                {t('fieldFirstName')} <span className="text-md-magenta">*</span>
               </Label>
-              <Input id="contact_name" autoComplete="name" {...register('contact_name')} />
-              {errors.contact_name ? (
-                <p className="text-md-magenta mt-1 text-xs">{errors.contact_name.message}</p>
+              <Input id="first_name" autoComplete="given-name" {...register('first_name')} />
+              {errors.first_name ? (
+                <p className="text-md-magenta mt-1 text-xs">{errors.first_name.message}</p>
               ) : null}
             </div>
             <div>
-              <Label htmlFor="contact_email">
-                {t('fieldContactEmail')} <span className="text-md-magenta">*</span>
+              <Label htmlFor="last_name">
+                {t('fieldLastName')} <span className="text-md-magenta">*</span>
               </Label>
-              <Input
-                id="contact_email"
-                type="email"
-                autoComplete="email"
-                {...register('contact_email')}
-              />
-              {errors.contact_email ? (
-                <p className="text-md-magenta mt-1 text-xs">{errors.contact_email.message}</p>
+              <Input id="last_name" autoComplete="family-name" {...register('last_name')} />
+              {errors.last_name ? (
+                <p className="text-md-magenta mt-1 text-xs">{errors.last_name.message}</p>
               ) : null}
             </div>
+          </div>
+          <div>
+            <Label htmlFor="contact_email">
+              {t('fieldContactEmail')} <span className="text-md-magenta">*</span>
+            </Label>
+            <Input
+              id="contact_email"
+              type="email"
+              autoComplete="email"
+              {...register('contact_email')}
+            />
+            {errors.contact_email ? (
+              <p className="text-md-magenta mt-1 text-xs">{errors.contact_email.message}</p>
+            ) : null}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
