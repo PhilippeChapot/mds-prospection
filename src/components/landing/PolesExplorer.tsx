@@ -16,8 +16,14 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { ArrowRight, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
+import { ArrowRight, ExternalLink, ChevronDown, ChevronUp, X } from 'lucide-react';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import type { Pole } from '@/lib/landing/taxonomy';
 import { getSubSectorLabel } from '@/lib/landing/subsector-translations';
@@ -35,6 +41,7 @@ function hexWithAlpha(hex: string, alpha: number): string {
 
 export function PolesExplorer({ poles }: { poles: Pole[] }) {
   const [selected, setSelected] = useState<Pole | null>(null);
+  const t = useTranslations('landing.drawer');
 
   return (
     <>
@@ -45,6 +52,16 @@ export function PolesExplorer({ poles }: { poles: Pole[] }) {
       </div>
       <Sheet open={selected !== null} onOpenChange={(o) => !o && setSelected(null)}>
         <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
+          {/* P6.x.4-a-sexies — bouton fermer visible mobile + desktop (44x44 touch target). */}
+          <SheetClose asChild>
+            <button
+              type="button"
+              aria-label={t('close')}
+              className="text-md-blue-dark focus-visible:ring-md-magenta/40 absolute top-3 right-3 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-md ring-1 ring-black/5 hover:bg-white focus-visible:ring-2 focus-visible:outline-none"
+            >
+              <X className="size-5" aria-hidden />
+            </button>
+          </SheetClose>
           {selected ? <PoleDetail pole={selected} /> : null}
         </SheetContent>
       </Sheet>

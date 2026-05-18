@@ -512,7 +512,8 @@
       "targetedRolesTitle": "Targeted roles",
       "familyHeading": "Category #{id} · {count} identified entities",
       "affinityStrong": "(strong affinity)",
-      "affinityWeak": "(light affinity)"
+      "affinityWeak": "(light affinity)",
+      "close": "Close"
     },
     "cta": {
       "exhibitMediadaysNet": "Exhibit on mediadays.net",

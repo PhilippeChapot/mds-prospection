@@ -67,4 +67,38 @@ describe('VisitorFamiliesExplorer (P6.x.4-a)', () => {
     fireEvent.click(screen.getByText(/Demander un tarif École/i));
     expect(screen.getByTestId('form-open-ecole')).toBeTruthy();
   });
+
+  it('P6.x.4-a-sexies — drawer ouvert : bouton fermer présent (FR aria-label="Fermer", touch 44x44)', () => {
+    renderWithProvider(<VisitorFamiliesExplorer families={tax.visiteurs} poles={tax.poles} />);
+    const fam = tax.visiteurs.find((v) => v.id === 1)!;
+    fireEvent.click(screen.getAllByText(fam.name)[0].closest('button')!);
+    const closeBtn = screen.getByRole('button', { name: 'Fermer' });
+    expect(closeBtn).toBeTruthy();
+    expect(closeBtn.className).toMatch(/h-11/);
+    expect(closeBtn.className).toMatch(/w-11/);
+  });
+
+  it('P6.x.4-a-sexies — bouton fermer aria-label="Close" en EN', () => {
+    renderWithProvider(
+      <VisitorFamiliesExplorer families={tax.visiteurs} poles={tax.poles} />,
+      'en',
+    );
+    const fam = tax.visiteurs.find((v) => v.id === 1)!;
+    // En EN les noms de familles sont en anglais — on ouvre la première
+    // carte trouvée plutôt que de matcher un nom localisé.
+    const allCards = screen.getAllByRole('button');
+    // Première vraie card (les boutons d'ouverture sont des <button>)
+    fireEvent.click(allCards.find((b) => b.textContent?.includes('#1')) ?? allCards[0]);
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
+  });
+
+  it('P6.x.4-a-sexies — click sur bouton fermer ferme bien le drawer', () => {
+    renderWithProvider(<VisitorFamiliesExplorer families={tax.visiteurs} poles={tax.poles} />);
+    const fam = tax.visiteurs.find((v) => v.id === 1)!;
+    fireEvent.click(screen.getAllByText(fam.name)[0].closest('button')!);
+    // Le drawer est ouvert (familyHeading "Famille #1 · ..." présent)
+    expect(screen.getAllByText(/Famille #1 ·/).length).toBeGreaterThanOrEqual(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer' }));
+    expect(screen.queryByText(/Famille #1 ·/)).toBeNull();
+  });
 });

@@ -17,8 +17,14 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, ExternalLink } from 'lucide-react';
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
+import { ArrowRight, ExternalLink, X } from 'lucide-react';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import type { Pole, VisitorFamily } from '@/lib/landing/taxonomy';
 import { useInstitutionnelEcoleForm } from './institutionnel-ecole-form-context';
@@ -44,6 +50,7 @@ export function VisitorFamiliesExplorer({
 }) {
   const [selected, setSelected] = useState<VisitorFamily | null>(null);
   const polesByCode = new Map(poles.map((p) => [p.code, p]));
+  const t = useTranslations('landing.drawer');
 
   return (
     <>
@@ -59,6 +66,16 @@ export function VisitorFamiliesExplorer({
       </div>
       <Sheet open={selected !== null} onOpenChange={(o) => !o && setSelected(null)}>
         <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
+          {/* P6.x.4-a-sexies — bouton fermer visible mobile + desktop (44x44 touch target). */}
+          <SheetClose asChild>
+            <button
+              type="button"
+              aria-label={t('close')}
+              className="text-md-blue-dark focus-visible:ring-md-magenta/40 absolute top-3 right-3 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-md ring-1 ring-black/5 hover:bg-white focus-visible:ring-2 focus-visible:outline-none"
+            >
+              <X className="size-5" aria-hidden />
+            </button>
+          </SheetClose>
           {selected ? (
             <FamilyDetail
               family={selected}

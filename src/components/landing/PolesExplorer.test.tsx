@@ -53,4 +53,36 @@ describe('PolesExplorer (P6.x.4-a)', () => {
     const cta = screen.getByText(/Réserver mon stand/i).closest('a');
     expect(cta?.getAttribute('href')).toContain('/inscription-exposant');
   });
+
+  it('P6.x.4-a-sexies — drawer ouvert affiche un bouton fermer accessible (aria-label="Fermer", FR)', () => {
+    renderI18n(<PolesExplorer poles={poles} />);
+    const audio = poles.find((p) => p.code === 'AUDIO_RADIO')!;
+    fireEvent.click(screen.getAllByText(audio.name)[0].closest('button')!);
+    const closeBtn = screen.getByRole('button', { name: 'Fermer' });
+    expect(closeBtn).toBeTruthy();
+    // touch target ≥ 44x44 (h-11 w-11 = 44px Tailwind)
+    expect(closeBtn.className).toMatch(/h-11/);
+    expect(closeBtn.className).toMatch(/w-11/);
+  });
+
+  it('P6.x.4-a-sexies — bouton fermer aria-label="Close" en locale EN', () => {
+    renderI18n(<PolesExplorer poles={poles} />, { locale: 'en' });
+    // Nom EN du pôle AUDIO_RADIO (messages/en.json)
+    const enName = 'AUDIO & RADIO';
+    const card = screen.getAllByText(enName)[0]?.closest('button');
+    expect(card).toBeTruthy();
+    fireEvent.click(card!);
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
+  });
+
+  it('P6.x.4-a-sexies — click sur le bouton fermer ferme le drawer', () => {
+    renderI18n(<PolesExplorer poles={poles} />);
+    const audio = poles.find((p) => p.code === 'AUDIO_RADIO')!;
+    fireEvent.click(screen.getAllByText(audio.name)[0].closest('button')!);
+    // Le contenu unique du drawer "Paris Radio Show" est visible
+    expect(screen.getAllByText('Paris Radio Show').length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer' }));
+    // Après fermeture : seule la card reste (1 occurrence), le drawer a été démonté
+    expect(screen.getAllByText('Paris Radio Show').length).toBe(1);
+  });
 });

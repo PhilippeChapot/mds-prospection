@@ -512,7 +512,8 @@
       "targetedRolesTitle": "Fonctions visées",
       "familyHeading": "Famille #{id} · {count} entités identifiées",
       "affinityStrong": "(forte affinité)",
-      "affinityWeak": "(affinité légère)"
+      "affinityWeak": "(affinité légère)",
+      "close": "Fermer"
     },
     "cta": {
       "exhibitMediadaysNet": "Exposer sur mediadays.net",
