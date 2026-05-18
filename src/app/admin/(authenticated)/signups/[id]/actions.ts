@@ -246,6 +246,42 @@ export async function convertSignupToProspect(
     return { success: false, error: `INSERT prospect: ${prospectErr?.message ?? 'unknown'}` };
   }
 
+  // 4.bis (P6.x.5-octies) — Hydrate prospects.quote_items depuis la sélection
+  // wizard captée (pack_code + selected_addon_ids). Permet à l'admin
+  // d'ouvrir le Devis Builder pré-rempli au lieu d'avoir à tout re-saisir.
+  // Best-effort : si le helper rencontre des produits non-résolvables, il
+  // log un warning et continue avec les items résolus (jamais throw).
+  try {
+    const { hydrateQuoteItemsFromSelection } =
+      await import('@/lib/admin/prospects/hydrate-quote-items');
+    const { quote_items, warnings } = await hydrateQuoteItemsFromSelection({
+      pack_code: (a?.packCode as 'ACCESS' | 'CLASSIC' | 'PREMIUM' | undefined) ?? null,
+      selected_addon_ids: a?.addonIds ?? [],
+      events_interest: eventsInterest,
+      categorie: signup.derived_category ?? null,
+    });
+    if (quote_items.length > 0) {
+      await supabase
+        .from('prospects')
+        .update({ quote_items: quote_items as never })
+        .eq('id', newProspect.id);
+      console.log(
+        '[signups/convert] quote_items-hydrated prospect=%s count=%d warnings=%d',
+        newProspect.id,
+        quote_items.length,
+        warnings.length,
+      );
+    }
+  } catch (err) {
+    // Pas bloquant : conversion réussie, l'admin remplira le Devis Builder
+    // manuellement si l'hydration échoue (ex: pack non mappé Sellsy).
+    console.error(
+      '[signups/convert] hydrate-quote-items-failed prospect=%s msg=%s',
+      newProspect.id,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
   // 5. UPDATE signup
   const { error: updateSignupErr } = await supabase
     .from('public_signup_attempts')
