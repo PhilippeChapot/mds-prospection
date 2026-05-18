@@ -38,11 +38,16 @@ const SALLE_LABEL: Record<string, string> = {
   soufflot: 'Salle Soufflot',
 };
 
-const STATUS_COLOR: Record<string, { bg: string; ring: string; label: string }> = {
+// P6.x.2a-bis : couleurs alignées sur le plan Canva officiel.
+//   libre  = vert  (emerald)  — stand commercialisable
+//   reserve = orange           — engagement en cours (devis envoyé / lead)
+//   paye   = rouge             — engagement financier acté (acompte/signé/intégral)
+//   bloque = gris foncé        — hors-vente (couloirs, scènes, zones techniques)
+export const STATUS_COLOR: Record<string, { bg: string; ring: string; label: string }> = {
   libre: { bg: 'bg-emerald-50 hover:bg-emerald-100', ring: 'ring-emerald-300', label: 'Libre' },
-  reserve: { bg: 'bg-blue-50', ring: 'ring-blue-400', label: 'Réservé' },
-  paye: { bg: 'bg-violet-100', ring: 'ring-violet-400', label: 'Payé' },
-  bloque: { bg: 'bg-slate-200', ring: 'ring-slate-400', label: 'Bloqué' },
+  reserve: { bg: 'bg-orange-100 hover:bg-orange-200', ring: 'ring-orange-400', label: 'Réservé' },
+  paye: { bg: 'bg-red-100 hover:bg-red-200', ring: 'ring-red-400', label: 'Payé' },
+  bloque: { bg: 'bg-slate-300', ring: 'ring-slate-500', label: 'Bloqué' },
 };
 
 const PROSPECT_DRAG_TYPE = 'application/x-prospect-id';
@@ -134,12 +139,12 @@ export function EmplacementsClient({
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
       <div className="space-y-6">
-        {/* KPIs */}
+        {/* KPIs — couleurs alignées sur les status (P6.x.2a-bis) */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Kpi label="Total" value={initialKpis.total} accent="default" />
           <Kpi label="Libres" value={initialKpis.libre} accent="emerald" />
-          <Kpi label="Réservés" value={initialKpis.reserve} accent="blue" />
-          <Kpi label="Payés" value={initialKpis.paye} accent="violet" />
+          <Kpi label="Réservés" value={initialKpis.reserve} accent="orange" />
+          <Kpi label="Payés" value={initialKpis.paye} accent="red" />
         </div>
 
         {/* Filtres */}
@@ -256,13 +261,13 @@ function Kpi({
 }: {
   label: string;
   value: number;
-  accent: 'default' | 'emerald' | 'blue' | 'violet';
+  accent: 'default' | 'emerald' | 'orange' | 'red';
 }) {
   const accentClass = {
     default: 'text-md-text',
     emerald: 'text-emerald-700',
-    blue: 'text-blue-700',
-    violet: 'text-violet-700',
+    orange: 'text-orange-700',
+    red: 'text-red-700',
   }[accent];
   return (
     <div className="border-md-border bg-card rounded-lg border p-3 text-center">

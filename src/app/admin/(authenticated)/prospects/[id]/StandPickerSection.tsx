@@ -29,11 +29,13 @@ import {
   removeStandFromProspectAction,
 } from '@/lib/admin/stands/actions';
 
-const STATUS_LABEL: Record<string, string> = {
-  libre: 'Libre',
-  reserve: 'Réservé',
-  paye: 'Payé',
-  bloque: 'Bloqué',
+// Couleurs cohérentes avec /admin/emplacements (P6.x.2a-bis) :
+//   libre  = vert · reserve = orange · paye = rouge · bloque = gris
+const STATUS_BADGE: Record<string, { className: string; label: string }> = {
+  libre: { className: 'bg-emerald-100 text-emerald-800', label: 'Libre' },
+  reserve: { className: 'bg-orange-100 text-orange-800', label: 'Réservé' },
+  paye: { className: 'bg-red-100 text-red-800', label: 'Payé' },
+  bloque: { className: 'bg-slate-300 text-slate-800', label: 'Bloqué' },
 };
 
 interface StandLite {
@@ -150,10 +152,18 @@ export function StandPickerSection(props: StandPickerSectionProps) {
         <div className="flex items-center gap-3">
           <MapPin className="text-md-blue size-5 shrink-0" aria-hidden />
           <div>
-            <div className="text-md-text text-lg font-bold">Stand {props.currentStand.number}</div>
+            <div className="text-md-text flex items-center gap-2 text-lg font-bold">
+              Stand {props.currentStand.number}
+              <span
+                className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                  STATUS_BADGE[props.currentStand.status]?.className ?? 'bg-slate-200'
+                }`}
+              >
+                {STATUS_BADGE[props.currentStand.status]?.label ?? props.currentStand.status}
+              </span>
+            </div>
             <div className="text-md-text-muted text-xs">
-              {props.currentStand.salle} · {props.currentStand.taille_m2} m² ·{' '}
-              {STATUS_LABEL[props.currentStand.status] ?? props.currentStand.status}
+              {props.currentStand.salle} · {props.currentStand.taille_m2} m²
             </div>
           </div>
         </div>
