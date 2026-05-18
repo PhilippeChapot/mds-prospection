@@ -2,12 +2,30 @@
  * P6.x.4-a — embed Canva static iframe (présentation MediaDays).
  *
  * P6.x.4-a-ter : titre / sous-titre / iframe title via next-intl.
+ * P6.x.4-a-quinquies : URL Canva différenciée par locale (FR vs EN). Avant
+ * ce fix, l'URL FR était hardcodée — la version /en/ affichait donc le
+ * Canva français malgré les labels traduits autour.
+ *
+ * `useLocale()` est universel next-intl : fonctionne en Server Component
+ * dès lors que la page racine a appelé `setRequestLocale(locale)` (cf.
+ * src/app/[locale]/(public)/page.tsx P6.x.4-a).
+ *
+ * Comparaison stricte `=== 'en'` (au lieu de `CANVA_URLS[locale]`) : plus
+ * robuste si la locale arrive avec un casing/format inattendu — fallback
+ * automatique sur FR (langue par défaut MDS).
  */
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+
+export const CANVA_URLS = {
+  fr: 'https://www.canva.com/design/DAHJ3nuKMro/usLzmtOR_EVUFLtGDRULBA/view?embed',
+  en: 'https://www.canva.com/design/DAHJ31nTEq0/view?embed',
+} as const;
 
 export function CanvaEmbed() {
   const t = useTranslations('landing.canva');
+  const locale = useLocale();
+  const canvaSrc = locale === 'en' ? CANVA_URLS.en : CANVA_URLS.fr;
   return (
     <section className="mx-auto my-16 max-w-5xl px-6">
       <div className="mb-8 text-center">
@@ -40,7 +58,7 @@ export function CanvaEmbed() {
             padding: 0,
             margin: 0,
           }}
-          src="https://www.canva.com/design/DAHJ3nuKMro/usLzmtOR_EVUFLtGDRULBA/view?embed"
+          src={canvaSrc}
           allowFullScreen
           allow="fullscreen"
           title={t('iframeTitle')}
