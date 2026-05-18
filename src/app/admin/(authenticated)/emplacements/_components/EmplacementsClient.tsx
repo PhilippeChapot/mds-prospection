@@ -12,7 +12,7 @@
  * - Clic sur stand → drawer Sheet avec détails + actions (retirer/bloquer)
  */
 
-import { useMemo, useState, useTransition } from 'react';
+import { Fragment, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { X, Lock, MapPin } from 'lucide-react';
@@ -49,6 +49,28 @@ export const STATUS_COLOR: Record<string, { bg: string; ring: string; label: str
   paye: { bg: 'bg-red-100 hover:bg-red-200', ring: 'ring-red-400', label: 'Payé' },
   bloque: { bg: 'bg-slate-300', ring: 'ring-slate-500', label: 'Bloqué' },
 };
+
+// P6.x.2a-ter — Couleurs de zone (background pâle de chaque cellule selon
+// son pôle recommandé) pour reproduire la sectorisation du plan Canva.
+export const POLE_ZONE_BG: Record<string, string> = {
+  AUDIO_RADIO: 'bg-pink-50',
+  DIFFUSION_INFRA: 'bg-purple-50',
+  VIDEO_CTV: 'bg-blue-50',
+  DATA_ADTECH: 'bg-green-50',
+  OUTDOOR_DOOH: 'bg-yellow-50',
+};
+export const POLE_ZONE_LABEL: Record<string, string> = {
+  AUDIO_RADIO: 'Radio & Audio',
+  DIFFUSION_INFRA: 'Diffusion & Infra',
+  VIDEO_CTV: 'Vidéo & CTV',
+  DATA_ADTECH: 'Data & Adtech',
+  OUTDOOR_DOOH: 'Outdoor & DOOH',
+};
+
+// Grille physique du plan Canva : 8 rangées (A-H) × 11 colonnes (0-10).
+// Colonnes affichées de droite à gauche dans le plan → on itère [10..0].
+const PLAN_ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
+const PLAN_COLS = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0] as const;
 
 const PROSPECT_DRAG_TYPE = 'application/x-prospect-id';
 
@@ -177,15 +199,23 @@ export function EmplacementsClient({
           </div>
         </div>
 
-        {/* Grid par salle */}
-        {groupedBySalle.length === 0 ? (
-          <div className="text-md-text-muted rounded-lg border border-dashed p-8 text-center text-sm">
-            Aucun stand pour ces filtres.
-          </div>
-        ) : (
-          groupedBySalle.map(([salle, list]) => (
+        {/* Grid 2D plan Canva — Salle Le Nôtre uniquement (P6.x.2a-ter) */}
+        <Legend />
+        <PlanGrid
+          stands={filteredStands.filter((s) => s.salle === 'le_notre')}
+          dragOverId={dragOverId}
+          setDragOverId={setDragOverId}
+          onDrop={handleDrop}
+          onSelect={(s) => setSelectedStand(s)}
+        />
+
+        {/* Autres salles : flat grid fallback (rare, mais sécurise l'UI si
+            l'admin ajoute manuellement un stand dans Foyer/Mezzanine/etc.). */}
+        {groupedBySalle
+          .filter(([salle]) => salle !== 'le_notre')
+          .map(([salle, list]) => (
             <section key={salle}>
-              <h2 className="text-md-blue-dark mb-3 text-sm font-bold tracking-wide uppercase">
+              <h2 className="text-md-blue-dark mt-6 mb-3 text-sm font-bold tracking-wide uppercase">
                 {SALLE_LABEL[salle] ?? salle} ({list.length})
               </h2>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -195,7 +225,6 @@ export function EmplacementsClient({
                     stand={s}
                     isDragTarget={dragOverId === s.id}
                     onDragOver={(e) => {
-                      // Accepte le drop seulement si stand libre + drag-source = prospect
                       if (
                         s.status === 'libre' &&
                         e.dataTransfer.types.includes(PROSPECT_DRAG_TYPE)
@@ -216,8 +245,7 @@ export function EmplacementsClient({
                 ))}
               </div>
             </section>
-          ))
-        )}
+          ))}
       </div>
 
       {/* Sidebar : prospects sans stand */}
@@ -449,5 +477,200 @@ function StandDetail({
         ) : null}
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// P6.x.2a-ter — Légende + Grid 2D reproduisant le plan Canva
+// ---------------------------------------------------------------------------
+
+function Legend() {
+  const poles: Array<keyof typeof POLE_ZONE_BG> = [
+    'AUDIO_RADIO',
+    'DIFFUSION_INFRA',
+    'VIDEO_CTV',
+    'DATA_ADTECH',
+    'OUTDOOR_DOOH',
+  ];
+  return (
+    <div className="border-md-border bg-card flex flex-wrap items-center gap-4 rounded-lg border p-3 text-xs">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-md-text-muted text-[10px] font-bold tracking-wide uppercase">
+          Zones
+        </span>
+        {poles.map((p) => (
+          <span key={p} className="inline-flex items-center gap-1.5">
+            <span
+              className={`size-3 rounded ${POLE_ZONE_BG[p]} ring-1 ring-black/10`}
+              aria-hidden
+            />
+            {POLE_ZONE_LABEL[p]}
+          </span>
+        ))}
+      </div>
+      <div className="ml-auto flex flex-wrap items-center gap-3">
+        <span className="text-md-text-muted text-[10px] font-bold tracking-wide uppercase">
+          Statut
+        </span>
+        <StatusDot color="bg-emerald-400" label="Libre" />
+        <StatusDot color="bg-orange-500" label="Réservé" />
+        <StatusDot color="bg-red-500" label="Payé" />
+        <StatusDot color="bg-slate-500" label="Bloqué" />
+      </div>
+    </div>
+  );
+}
+
+function StatusDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`size-2.5 rounded-full ${color}`} aria-hidden />
+      {label}
+    </span>
+  );
+}
+
+function PlanGrid({
+  stands,
+  dragOverId,
+  setDragOverId,
+  onDrop,
+  onSelect,
+}: {
+  stands: StandWithProspect[];
+  dragOverId: string | null;
+  setDragOverId: (id: string | null) => void;
+  onDrop: (stand: StandWithProspect, prospectId: string) => void;
+  onSelect: (stand: StandWithProspect) => void;
+}) {
+  const byNumber = useMemo(() => {
+    const m = new Map<string, StandWithProspect>();
+    for (const s of stands) m.set(s.number, s);
+    return m;
+  }, [stands]);
+
+  return (
+    <section>
+      <h2 className="text-md-blue-dark mb-3 text-sm font-bold tracking-wide uppercase">
+        Salle Le Nôtre — Plan
+      </h2>
+      <div
+        className="grid gap-1.5 sm:gap-2"
+        style={{ gridTemplateColumns: 'auto repeat(11, minmax(0, 1fr))' }}
+      >
+        {/* Header colonnes (10 → 0, gauche → droite, comme dans le plan Canva) */}
+        <div aria-hidden />
+        {PLAN_COLS.map((col) => (
+          <div
+            key={`h-${col}`}
+            className="text-md-text-muted text-center text-[10px] font-bold tracking-wide uppercase"
+          >
+            {col}
+          </div>
+        ))}
+
+        {/* Rangées A → H */}
+        {PLAN_ROWS.map((row) => (
+          <Fragment key={row}>
+            <div className="text-md-blue-dark flex items-center justify-center text-lg font-extrabold">
+              {row}
+            </div>
+            {PLAN_COLS.map((col) => {
+              const num = `${row}${col}`;
+              const stand = byNumber.get(num);
+              if (!stand) {
+                return (
+                  <div
+                    key={num}
+                    aria-hidden
+                    className="aspect-square rounded bg-slate-50/60"
+                    title={`${num} — pas de stand (allée / scène)`}
+                  />
+                );
+              }
+              return (
+                <StandCell
+                  key={num}
+                  stand={stand}
+                  isDragTarget={dragOverId === stand.id}
+                  onDragOver={(e) => {
+                    if (
+                      stand.status === 'libre' &&
+                      e.dataTransfer.types.includes(PROSPECT_DRAG_TYPE)
+                    ) {
+                      e.preventDefault();
+                      setDragOverId(stand.id);
+                    }
+                  }}
+                  onDragLeave={() => setDragOverId(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOverId(null);
+                    const prospectId = e.dataTransfer.getData(PROSPECT_DRAG_TYPE);
+                    if (prospectId) onDrop(stand, prospectId);
+                  }}
+                  onClick={() => onSelect(stand)}
+                />
+              );
+            })}
+          </Fragment>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StandCell({
+  stand,
+  isDragTarget,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onClick,
+}: {
+  stand: StandWithProspect;
+  isDragTarget: boolean;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  onClick: () => void;
+}) {
+  const status = STATUS_COLOR[stand.status];
+  const zoneBg = (stand.pole_recommended && POLE_ZONE_BG[stand.pole_recommended]) || 'bg-slate-50';
+  // Border colorée selon le status (couleurs P6.x.2a-ter : vert/orange/rouge/gris).
+  const borderClass = {
+    libre: 'border-emerald-500',
+    reserve: 'border-orange-500',
+    paye: 'border-red-500',
+    bloque: 'border-slate-400',
+  }[stand.status];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      data-stand-number={stand.number}
+      data-stand-status={stand.status}
+      data-pole-zone={stand.pole_recommended ?? ''}
+      className={`relative flex aspect-square flex-col items-start gap-0.5 rounded border-2 p-1.5 text-left transition hover:shadow-md ${zoneBg} ${borderClass} ${
+        isDragTarget ? 'ring-md-magenta scale-[1.04] ring-2' : ''
+      }`}
+      title={`${stand.number} — ${stand.taille_m2} m² — ${status.label}${
+        stand.prospect ? ` — ${stand.prospect.company_name}` : ''
+      }`}
+    >
+      <span className="text-md-blue-dark text-xs leading-none font-extrabold">{stand.number}</span>
+      <span className="text-md-text-muted text-[9px] leading-none">{stand.taille_m2}m²</span>
+      {stand.prospect ? (
+        <span className="text-md-text mt-0.5 line-clamp-1 text-[9px] leading-tight font-semibold">
+          {stand.prospect.company_name}
+        </span>
+      ) : null}
+      {stand.status === 'bloque' ? (
+        <Lock className="text-md-text-muted absolute right-1 bottom-1 size-2.5" aria-hidden />
+      ) : null}
+    </button>
   );
 }
