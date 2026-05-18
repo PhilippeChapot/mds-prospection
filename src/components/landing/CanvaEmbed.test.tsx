@@ -32,6 +32,15 @@ describe('CanvaEmbed (P6.x.4-a / quinquies)', () => {
     expect(iframe?.getAttribute('src')).toContain('DAHJ31nTEq0');
   });
 
+  it('P6.x.4-a-septies — URL EN inclut le token de partage Canva (u0b0MJ1xXEDao5Fg5NOZoQ)', () => {
+    // Sans ce token, Canva renvoie une page d'erreur "design not found" dans
+    // l'iframe (cf. regression P6.x.4-a-septies — token perdu lors d'un refresh).
+    expect(CANVA_URLS.en).toContain('u0b0MJ1xXEDao5Fg5NOZoQ');
+    expect(CANVA_URLS.en).toBe(
+      'https://www.canva.com/design/DAHJ31nTEq0/u0b0MJ1xXEDao5Fg5NOZoQ/view?embed',
+    );
+  });
+
   it('renders the FR section heading "Découvrir MediaDays en image"', () => {
     const { getByText } = renderI18n(<CanvaEmbed />, { locale: 'fr' });
     expect(getByText(/Découvrir MediaDays en image/)).toBeTruthy();

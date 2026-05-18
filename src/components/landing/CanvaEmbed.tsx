@@ -19,7 +19,7 @@ import { useLocale, useTranslations } from 'next-intl';
 
 export const CANVA_URLS = {
   fr: 'https://www.canva.com/design/DAHJ3nuKMro/usLzmtOR_EVUFLtGDRULBA/view?embed',
-  en: 'https://www.canva.com/design/DAHJ31nTEq0/view?embed',
+  en: 'https://www.canva.com/design/DAHJ31nTEq0/u0b0MJ1xXEDao5Fg5NOZoQ/view?embed',
 } as const;
 
 export function CanvaEmbed() {
