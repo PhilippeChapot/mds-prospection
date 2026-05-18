@@ -144,9 +144,10 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
   const { data: prospect, error: pErr } = await supabase
     .from('prospects')
     .select(
-      `id, quote_items, promo_reason, sellsy_devis_id,
-       company:companies!inner(id, sellsy_id),
-       contact:contacts(sellsy_contact_id)`,
+      `id, quote_items, promo_reason, sellsy_devis_id, sellsy_devis_number,
+       acompte_payment_link_id, is_test,
+       company:companies!inner(id, name, sellsy_id),
+       contact:contacts(sellsy_contact_id, email, first_name, language)`,
     )
     .eq('id', parsed.data.prospect_id)
     .maybeSingle();
@@ -159,6 +160,12 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
   if (!Array.isArray(items) || items.length === 0) {
     return { ok: false, error: 'Aucun produit sélectionné' };
   }
+
+  // P6.x.5-nonies : ré-émission — capture l'ancien devis avant la sync
+  // pour pouvoir l'annuler après création du nouveau.
+  const oldSellsyDevisId = prospect.sellsy_devis_id ? Number(prospect.sellsy_devis_id) : null;
+  const oldSellsyDevisNumber = prospect.sellsy_devis_number ?? null;
+  const oldPaymentLinkId = prospect.acompte_payment_link_id ?? null;
 
   // 1. Sync Sellsy (find-or-create company) pour s'assurer du sellsy_id
   await syncProspectToSellsy(parsed.data.prospect_id);
@@ -315,6 +322,38 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
     totals.total_ht,
   );
 
+  // P6.x.5-nonies — si on remplace un ancien devis : annulation Sellsy +
+  // désactivation Stripe payment link + commentaire de traçabilité +
+  // email client + audit log. Tout best-effort : un échec côté Sellsy
+  // (devis déjà signé/payé) ou Stripe (lien déjà archivé) ne bloque pas
+  // l'émission du nouveau qui vient d'aboutir.
+  if (oldSellsyDevisId && oldSellsyDevisId !== documentId) {
+    await runReemissionCleanup({
+      oldSellsyDevisId,
+      oldSellsyDevisNumber,
+      oldPaymentLinkId,
+      newSellsyDevisId: documentId,
+      newSellsyDevisNumber: devisNumber,
+      newDevisUrl: publicUrl,
+      newTotalTtc: totalTtc,
+      prospectId: parsed.data.prospect_id,
+      isTest: prospect.is_test === true,
+      contact: (() => {
+        const c = Array.isArray(prospect.contact) ? prospect.contact[0] : prospect.contact;
+        return c
+          ? {
+              email: c.email as string | null,
+              first_name: c.first_name as string | null,
+              language: c.language as 'FR' | 'EN' | null,
+            }
+          : null;
+      })(),
+      companyName:
+        (Array.isArray(prospect.company) ? prospect.company[0] : prospect.company)?.name ?? '',
+      adminUserId: profile.id,
+    });
+  }
+
   revalidatePath(`/admin/prospects/${parsed.data.prospect_id}`);
   return {
     ok: true,
@@ -322,4 +361,155 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
     sellsy_devis_number: devisNumber,
     total_ht: totals.total_ht,
   };
+}
+
+// ---------------------------------------------------------------------------
+// P6.x.5-nonies — runReemissionCleanup
+// ---------------------------------------------------------------------------
+
+interface ReemissionContext {
+  oldSellsyDevisId: number;
+  oldSellsyDevisNumber: string | null;
+  oldPaymentLinkId: string | null;
+  newSellsyDevisId: number;
+  newSellsyDevisNumber: string | null;
+  newDevisUrl: string | null;
+  newTotalTtc: number | null;
+  prospectId: string;
+  isTest: boolean;
+  contact: {
+    email: string | null;
+    first_name: string | null;
+    language: 'FR' | 'EN' | null;
+  } | null;
+  companyName: string;
+  adminUserId: string;
+}
+
+/**
+ * Orchestre les étapes de fin de ré-émission. Best-effort sur chaque
+ * étape (jamais throw) — on log un warning si quelque chose échoue, mais
+ * le nouveau devis Sellsy reste valide.
+ */
+async function runReemissionCleanup(ctx: ReemissionContext): Promise<void> {
+  const supabase = getSupabaseServiceClient();
+
+  // 1. Annuler l'ancien devis Sellsy (PUT /estimates/{id}/status cancelled).
+  const { cancelSellsyDevis, addCommentToSellsyDevis } = await import('@/lib/sellsy/cancel-devis');
+  const reason = `Devis remplacé par ${ctx.newSellsyDevisNumber ?? `#${ctx.newSellsyDevisId}`} suite à modification du Devis Builder`;
+  const cancelResult = await cancelSellsyDevis({
+    sellsy_devis_id: ctx.oldSellsyDevisId,
+    reason,
+  });
+
+  // 2. Désactiver le Stripe payment link associé (best-effort).
+  if (ctx.oldPaymentLinkId && !ctx.isTest) {
+    const { cancelStripePaymentLink } = await import('@/lib/stripe/cancel-payment-link');
+    await cancelStripePaymentLink(ctx.oldPaymentLinkId);
+  }
+  // Nettoie aussi les colonnes prospect (le lien n'est plus exploitable).
+  if (ctx.oldPaymentLinkId) {
+    await supabase
+      .from('prospects')
+      .update({
+        acompte_payment_link_id: null,
+        acompte_payment_link_url: null,
+        acompte_payment_link_expires_at: null,
+      })
+      .eq('id', ctx.prospectId);
+  }
+
+  // 3. Ajouter un commentaire de traçabilité sur l'ancien devis Sellsy.
+  if (cancelResult.cancelled) {
+    await addCommentToSellsyDevis({
+      sellsy_devis_id: ctx.oldSellsyDevisId,
+      comment: reason,
+    });
+  }
+
+  // 4. Email "Devis mis à jour" au prospect (sauf is_test).
+  if (!ctx.isTest && ctx.contact?.email) {
+    try {
+      const { renderProspectDevisUpdated } =
+        await import('@/lib/resend/templates/prospect-devis-updated');
+      const { sendTransactionalEmailViaResend } = await import('@/lib/resend/client');
+      const locale = ctx.contact.language === 'EN' ? 'en' : 'fr';
+      const formatter = new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'fr-FR', {
+        style: 'currency',
+        currency: 'EUR',
+      });
+      const tpl = renderProspectDevisUpdated(locale, {
+        firstName: ctx.contact.first_name ?? '',
+        companyName: ctx.companyName,
+        newDevisNumber: ctx.newSellsyDevisNumber ?? `#${ctx.newSellsyDevisId}`,
+        oldDevisNumber: ctx.oldSellsyDevisNumber,
+        newTotalTtc: formatter.format(ctx.newTotalTtc ?? 0),
+        newDevisUrl: ctx.newDevisUrl ?? `https://go.sellsy.com/estimates/${ctx.newSellsyDevisId}`,
+        senderEmail: process.env.RESEND_DEFAULT_FROM_EMAIL ?? 'philippe@mediadays.solutions',
+      });
+      await sendTransactionalEmailViaResend({
+        to: ctx.contact.email,
+        toName: ctx.contact.first_name ?? undefined,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        tags: [{ name: 'category', value: 'prospect_devis_updated' }],
+      });
+      console.log(
+        '%s reemit-email-sent prospect=%s to=%s',
+        LOG_PREFIX,
+        ctx.prospectId,
+        ctx.contact.email,
+      );
+    } catch (err) {
+      console.warn(
+        '%s reemit-email-failed prospect=%s msg=%s',
+        LOG_PREFIX,
+        ctx.prospectId,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  } else if (ctx.isTest) {
+    console.log('%s reemit-email-skipped reason=is_test prospect=%s', LOG_PREFIX, ctx.prospectId);
+  }
+
+  // 5. Audit log — action 'update' avec metadata typed pour le timeline UI.
+  //    On n'a pas d'enum 'devis_reemit' dans audit_action, donc on utilise
+  //    'update' + un champ before/after explicite pour signaler la ré-émission.
+  try {
+    await supabase.from('audit_log').insert({
+      user_id: ctx.adminUserId,
+      action: 'update',
+      entity_type: 'prospects',
+      entity_id: ctx.prospectId,
+      before: {
+        kind: 'devis_reemit',
+        sellsy_devis_id: String(ctx.oldSellsyDevisId),
+        sellsy_devis_number: ctx.oldSellsyDevisNumber,
+      } as never,
+      after: {
+        kind: 'devis_reemit',
+        sellsy_devis_id: String(ctx.newSellsyDevisId),
+        sellsy_devis_number: ctx.newSellsyDevisNumber,
+        cancelled_old: cancelResult.cancelled,
+        cancelled_old_message: cancelResult.message ?? null,
+      } as never,
+    });
+  } catch (err) {
+    console.warn(
+      '%s reemit-audit-failed prospect=%s msg=%s',
+      LOG_PREFIX,
+      ctx.prospectId,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  console.log(
+    '%s reemit-cleanup-done prospect=%s old=%d new=%d cancelled=%s',
+    LOG_PREFIX,
+    ctx.prospectId,
+    ctx.oldSellsyDevisId,
+    ctx.newSellsyDevisId,
+    cancelResult.cancelled,
+  );
 }

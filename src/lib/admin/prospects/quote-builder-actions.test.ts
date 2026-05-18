@@ -25,9 +25,25 @@ interface ProspectStub {
   quote_items: unknown;
   promo_reason: string | null;
   sellsy_devis_id: string | null;
-  company: { id: string; sellsy_id: number | null };
-  contact: { sellsy_contact_id: number | null } | null;
+  sellsy_devis_number?: string | null;
+  acompte_payment_link_id?: string | null;
+  is_test?: boolean;
+  company: { id: string; sellsy_id: number | null; name?: string };
+  contact: {
+    sellsy_contact_id: number | null;
+    email?: string | null;
+    first_name?: string | null;
+    language?: 'FR' | 'EN' | null;
+  } | null;
   status: 'lead' | 'devis_envoye' | string;
+}
+
+interface ReemissionCalls {
+  cancelDevis: Array<{ sellsy_devis_id: number; reason?: string }>;
+  addComment: Array<{ sellsy_devis_id: number; comment: string }>;
+  cancelStripeLink: string[];
+  emailsSent: Array<{ to: string; subject: string; locale: 'fr' | 'en' }>;
+  auditInserts: Array<Record<string, unknown>>;
 }
 
 interface MockState {
@@ -38,6 +54,9 @@ interface MockState {
   prospectStatusUpdate: Record<string, unknown> | null;
   sellsyResponses: Map<string, unknown>;
   sellsyCalls: Array<{ endpoint: string; method: string; body?: string }>;
+  reemit: ReemissionCalls;
+  cancelDevisOk: boolean;
+  stripeUpdateThrow: boolean;
 }
 
 const state: MockState = {
@@ -48,6 +67,15 @@ const state: MockState = {
   prospectStatusUpdate: null,
   sellsyResponses: new Map(),
   sellsyCalls: [],
+  reemit: {
+    cancelDevis: [],
+    addComment: [],
+    cancelStripeLink: [],
+    emailsSent: [],
+    auditInserts: [],
+  },
+  cancelDevisOk: true,
+  stripeUpdateThrow: false,
 };
 
 function mockEnv() {
@@ -96,9 +124,62 @@ function mockEnv() {
             }),
           };
         }
+        if (table === 'audit_log') {
+          return {
+            insert: (row: Record<string, unknown>) => {
+              state.reemit.auditInserts.push(row);
+              return Promise.resolve({ error: null });
+            },
+          };
+        }
         return {};
       },
     }),
+  }));
+
+  // P6.x.5-nonies — helpers utilisés par runReemissionCleanup (imports
+  // dynamiques dans le code prod, donc mockés ici pour les capturer).
+  vi.doMock('@/lib/sellsy/cancel-devis', () => ({
+    cancelSellsyDevis: vi.fn(async (input: { sellsy_devis_id: number; reason?: string }) => {
+      state.reemit.cancelDevis.push(input);
+      return state.cancelDevisOk
+        ? { ok: true, cancelled: true }
+        : { ok: false, cancelled: false, message: 'Sellsy refused' };
+    }),
+    addCommentToSellsyDevis: vi.fn(async (input: { sellsy_devis_id: number; comment: string }) => {
+      state.reemit.addComment.push(input);
+      return { ok: true };
+    }),
+  }));
+  vi.doMock('@/lib/stripe/cancel-payment-link', () => ({
+    cancelStripePaymentLink: vi.fn(async (linkId: string) => {
+      state.reemit.cancelStripeLink.push(linkId);
+      if (state.stripeUpdateThrow) {
+        return { ok: false, message: 'No such payment_link' };
+      }
+      return { ok: true };
+    }),
+  }));
+  vi.doMock('@/lib/resend/templates/prospect-devis-updated', () => ({
+    renderProspectDevisUpdated: vi.fn(
+      (locale: 'fr' | 'en', params: { newDevisNumber: string }) => ({
+        subject:
+          locale === 'en'
+            ? `[MDS 2026] Your quote has been updated — ${params.newDevisNumber}`
+            : `[MDS 2026] Votre devis a été mis à jour — ${params.newDevisNumber}`,
+        html: '<html></html>',
+        text: 'text',
+      }),
+    ),
+  }));
+  vi.doMock('@/lib/resend/client', () => ({
+    sendTransactionalEmailViaResend: vi.fn(
+      async (input: { to: string; subject: string; html: string }) => {
+        const locale: 'fr' | 'en' = input.subject.startsWith('[MDS 2026] Your') ? 'en' : 'fr';
+        state.reemit.emailsSent.push({ to: input.to, subject: input.subject, locale });
+        return { id: 'resend_test_id' };
+      },
+    ),
   }));
 
   vi.doMock('@/lib/sellsy/sync-prospect', () => ({
@@ -187,6 +268,15 @@ describe('saveQuoteDraftAction (P6.x.5-ter)', () => {
     state.prospectStatusUpdate = null;
     state.sellsyResponses = new Map();
     state.sellsyCalls = [];
+    state.reemit = {
+      cancelDevis: [],
+      addComment: [],
+      cancelStripeLink: [],
+      emailsSent: [],
+      auditInserts: [],
+    };
+    state.cancelDevisOk = true;
+    state.stripeUpdateThrow = false;
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -316,6 +406,15 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
       ],
     ]);
     state.sellsyCalls = [];
+    state.reemit = {
+      cancelDevis: [],
+      addComment: [],
+      cancelStripeLink: [],
+      emailsSent: [],
+      auditInserts: [],
+    };
+    state.cancelDevisOk = true;
+    state.stripeUpdateThrow = false;
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -446,5 +545,171 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
       // debugabilité côté admin (toast affiche le message Sellsy précis).
       expect(r.error).toMatch(/unknown field/);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P6.x.5-nonies — ré-émission devis (cancel old + email + audit)
+// ---------------------------------------------------------------------------
+
+describe('emitSellsyDevisFromQuoteBuilderAction — ré-émission (P6.x.5-nonies)', () => {
+  beforeEach(() => {
+    state.profileRole = 'admin';
+    state.prospect = {
+      id: '92d51b10-7085-4695-b257-72c61d01917a',
+      quote_items: [{ ...PACK_STD, discount_pct: 30 }],
+      promo_reason: 'Tarif revu',
+      // Ancien devis présent → la ré-émission doit le ré-annuler
+      sellsy_devis_id: '4242',
+      sellsy_devis_number: 'D-20260518-02702',
+      acompte_payment_link_id: 'plink_old_123',
+      is_test: false,
+      company: { id: 'co-1', sellsy_id: 9999, name: 'Acme Media' },
+      contact: {
+        sellsy_contact_id: 7,
+        email: 'jean@acme.example',
+        first_name: 'jean-marc',
+        language: 'FR',
+      },
+      status: 'devis_envoye',
+    };
+    state.companySellsyIdPostSync = 9999;
+    state.prospectUpdates = [];
+    state.prospectStatusUpdate = null;
+    state.sellsyResponses = new Map([
+      ['POST /estimates', { data: { id: 999 } }],
+      [
+        'GET /estimates/999',
+        {
+          data: {
+            number: 'D-20260519-00010',
+            amounts: { total: '10500.00', total_excl_tax: '8750.00' },
+            public_link_enabled: true,
+            public_link: 'https://sellsy.example/d/999',
+          },
+        },
+      ],
+    ]);
+    state.sellsyCalls = [];
+    state.reemit = {
+      cancelDevis: [],
+      addComment: [],
+      cancelStripeLink: [],
+      emailsSent: [],
+      auditInserts: [],
+    };
+    state.cancelDevisOk = true;
+    state.stripeUpdateThrow = false;
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.resetModules();
+  });
+
+  it('Ré-émission : ancien devis annulé + stripe link désactivé + commentaire + email FR + audit log', async () => {
+    mockEnv();
+    const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
+    const r = await emitSellsyDevisFromQuoteBuilderAction({
+      prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
+    });
+    expect(r.ok).toBe(true);
+
+    // 1. Sellsy cancel appelé avec l'ID de l'ancien devis (4242)
+    expect(state.reemit.cancelDevis).toHaveLength(1);
+    expect(state.reemit.cancelDevis[0].sellsy_devis_id).toBe(4242);
+    expect(state.reemit.cancelDevis[0].reason).toMatch(/D-20260519-00010/);
+
+    // 2. Stripe payment link désactivé (best-effort, !is_test)
+    expect(state.reemit.cancelStripeLink).toEqual(['plink_old_123']);
+
+    // 3. Commentaire ajouté sur l'ancien devis
+    expect(state.reemit.addComment).toHaveLength(1);
+    expect(state.reemit.addComment[0].sellsy_devis_id).toBe(4242);
+
+    // 4. Email envoyé en FR (contact.language='FR')
+    expect(state.reemit.emailsSent).toHaveLength(1);
+    expect(state.reemit.emailsSent[0].to).toBe('jean@acme.example');
+    expect(state.reemit.emailsSent[0].locale).toBe('fr');
+    expect(state.reemit.emailsSent[0].subject).toMatch(/Votre devis/);
+
+    // 5. Audit log inséré (action='update', metadata kind='devis_reemit')
+    expect(state.reemit.auditInserts).toHaveLength(1);
+    const audit = state.reemit.auditInserts[0];
+    expect(audit.action).toBe('update');
+    expect(audit.entity_type).toBe('prospects');
+    expect((audit.before as { kind: string }).kind).toBe('devis_reemit');
+    expect((audit.before as { sellsy_devis_id: string }).sellsy_devis_id).toBe('4242');
+    expect((audit.after as { sellsy_devis_id: string }).sellsy_devis_id).toBe('999');
+  });
+
+  it('Première émission (pas d’ancien devis) → aucune annulation, aucun email "mis à jour"', async () => {
+    state.prospect!.sellsy_devis_id = null;
+    state.prospect!.sellsy_devis_number = null;
+    state.prospect!.acompte_payment_link_id = null;
+    mockEnv();
+    const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
+    const r = await emitSellsyDevisFromQuoteBuilderAction({
+      prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
+    });
+    expect(r.ok).toBe(true);
+    expect(state.reemit.cancelDevis).toHaveLength(0);
+    expect(state.reemit.cancelStripeLink).toHaveLength(0);
+    expect(state.reemit.emailsSent).toHaveLength(0);
+    expect(state.reemit.auditInserts).toHaveLength(0);
+  });
+
+  it('Échec annulation Sellsy → nouveau devis reste valide (cleanup best-effort)', async () => {
+    state.cancelDevisOk = false; // Sellsy refuse l'annulation
+    mockEnv();
+    const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
+    const r = await emitSellsyDevisFromQuoteBuilderAction({
+      prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
+    });
+    // Le nouveau devis a quand même été émis avec succès
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.sellsy_devis_id).toBe('999');
+    // L'annulation a été tentée, mais le commentaire NE doit PAS être posté
+    // (puisque l'ancien n'a pas été cancelled)
+    expect(state.reemit.cancelDevis).toHaveLength(1);
+    expect(state.reemit.addComment).toHaveLength(0);
+    // L'audit log reste tracé avec cancelled_old=false
+    expect(state.reemit.auditInserts).toHaveLength(1);
+    const audit = state.reemit.auditInserts[0];
+    expect((audit.after as { cancelled_old: boolean }).cancelled_old).toBe(false);
+  });
+
+  it('contact.language=EN → email envoyé avec sujet anglais', async () => {
+    state.prospect!.contact = {
+      sellsy_contact_id: 7,
+      email: 'sarah@acme.example',
+      first_name: 'sarah',
+      language: 'EN',
+    };
+    mockEnv();
+    const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
+    await emitSellsyDevisFromQuoteBuilderAction({
+      prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
+    });
+    expect(state.reemit.emailsSent).toHaveLength(1);
+    expect(state.reemit.emailsSent[0].locale).toBe('en');
+    expect(state.reemit.emailsSent[0].subject).toMatch(/Your quote/);
+  });
+
+  it('is_test=true → pas d’email envoyé ni de désactivation Stripe (mais Sellsy cancel + audit OK)', async () => {
+    state.prospect!.is_test = true;
+    mockEnv();
+    const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
+    const r = await emitSellsyDevisFromQuoteBuilderAction({
+      prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
+    });
+    expect(r.ok).toBe(true);
+    expect(state.reemit.emailsSent).toHaveLength(0);
+    expect(state.reemit.cancelStripeLink).toHaveLength(0);
+    // L'annulation Sellsy est tentée même en test (utile pour QA sandbox)
+    expect(state.reemit.cancelDevis).toHaveLength(1);
+    expect(state.reemit.auditInserts).toHaveLength(1);
   });
 });
