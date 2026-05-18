@@ -43,7 +43,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   {
     title: 'Salon',
     items: [
-      { href: '/admin/booths', label: 'Emplacements', emoji: '🪑', enabled: false, phase: 'P2' },
+      { href: '/admin/emplacements', label: 'Emplacements', emoji: '🪑', enabled: true },
       {
         href: '/admin/booths/plan',
         label: 'Plan Canva',

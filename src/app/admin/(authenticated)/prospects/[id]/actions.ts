@@ -31,6 +31,22 @@ export async function updateProspectStatusAction(prospectId: string, newStatus: 
   revalidatePath(`/admin/prospects/${prospectId}`);
   revalidatePath('/admin/prospects');
 
+  // P6.x.2a : si un stand est assigné, on sync son statut (lead/devis_envoye
+  // → reserve, acompte_paye/signe/paye_integral → paye, perdu → libère).
+  // Best-effort en ligne (pas en background) car le stand fait partie de
+  // l'UX immédiate de la fiche.
+  try {
+    const { syncStandStatusFromProspect } = await import('@/lib/admin/stands/actions');
+    await syncStandStatusFromProspect(prospectId);
+    revalidatePath('/admin/emplacements');
+  } catch (err) {
+    console.error(
+      '[admin/updateProspectStatusAction] stand-sync-failed prospect=%s msg=%s',
+      prospectId,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
   // P5.x.4 Phase C : sync Brevo en background pour repercuter la
   // transition de statut (notamment isLost=true sur passage 'perdu' ->
   // sortie de toutes les automations lifecycle). Fire-and-forget : on

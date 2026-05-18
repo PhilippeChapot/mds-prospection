@@ -17,7 +17,8 @@ import { DeleteProspectButton } from './DeleteButton';
 import { IsTestToggle } from './IsTestToggle';
 import { ConciergePaymentLinkDialog } from './ConciergePaymentLinkDialog';
 import { SyncBadgesSection } from './SyncBadgesSection';
-import { BoothAssignmentSection } from './BoothAssignmentSection';
+import { StandPickerSection } from './StandPickerSection';
+import { listStands } from '@/lib/admin/stands/queries';
 import { QuoteBuilder } from './_components/QuoteBuilder';
 import { getCatalogForAdminQuote } from '@/lib/admin/prospects/catalog';
 import { detectIsPremium, type QuoteItem } from '@/lib/admin/prospects/quote-calc';
@@ -344,13 +345,8 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
         }
       />
 
-      {/* P5.x.10 — Attribution de stand (booth allocation) */}
-      <BoothAssignmentSection
-        prospectId={id}
-        current={prospect.booth_assignment}
-        assignedAt={prospect.booth_assigned_at}
-        assigneeName={pickFirst(prospect.booth_assignee)?.full_name ?? null}
-      />
+      {/* P6.x.2a — Attribution de stand (catalogue relationnel) */}
+      {await renderStandPickerSection(id)}
 
       {/* P6.x.5 / P6.x.5-ter — Devis Builder (remise par ligne) */}
       <QuoteBuilder
@@ -550,4 +546,39 @@ function normalizeQuoteItems(raw: unknown): QuoteItem[] {
     });
   }
   return out;
+}
+
+/**
+ * P6.x.2a — charge le stand courant + les stands assignables, puis rend
+ * la section <StandPickerSection>. Helper async appelé inline depuis le
+ * JSX du Server Component (await dans JSX = OK en Next.js 16 RSC).
+ */
+async function renderStandPickerSection(prospectId: string) {
+  const available = await listStands({ available_for: prospectId });
+  const currentRaw = available.find((s) => s.prospect_id === prospectId) ?? null;
+  return (
+    <StandPickerSection
+      prospectId={prospectId}
+      currentStand={
+        currentRaw
+          ? {
+              id: currentRaw.id,
+              number: currentRaw.number,
+              salle: currentRaw.salle,
+              taille_m2: currentRaw.taille_m2,
+              status: currentRaw.status,
+            }
+          : null
+      }
+      availableStands={available.map((s) => ({
+        id: s.id,
+        number: s.number,
+        salle: s.salle,
+        taille_m2: s.taille_m2,
+        pole_recommended: s.pole_recommended,
+        status: s.status,
+        prospect_id: s.prospect_id,
+      }))}
+    />
+  );
 }

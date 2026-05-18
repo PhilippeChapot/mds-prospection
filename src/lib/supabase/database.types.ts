@@ -1870,6 +1870,65 @@ export type Database = {
           },
         ];
       };
+      stands: {
+        Row: {
+          created_at: string;
+          id: string;
+          notes: string | null;
+          number: string;
+          pole_recommended: string | null;
+          position_h: number | null;
+          position_w: number | null;
+          position_x: number | null;
+          position_y: number | null;
+          prospect_id: string | null;
+          salle: string;
+          status: string;
+          taille_m2: number;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          notes?: string | null;
+          number: string;
+          pole_recommended?: string | null;
+          position_h?: number | null;
+          position_w?: number | null;
+          position_x?: number | null;
+          position_y?: number | null;
+          prospect_id?: string | null;
+          salle: string;
+          status?: string;
+          taille_m2: number;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          notes?: string | null;
+          number?: string;
+          pole_recommended?: string | null;
+          position_h?: number | null;
+          position_w?: number | null;
+          position_x?: number | null;
+          position_y?: number | null;
+          prospect_id?: string | null;
+          salle?: string;
+          status?: string;
+          taille_m2?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'stands_prospect_id_fkey';
+            columns: ['prospect_id'];
+            isOneToOne: false;
+            referencedRelation: 'prospects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       stripe_events_processed: {
         Row: {
           event_id: string;
