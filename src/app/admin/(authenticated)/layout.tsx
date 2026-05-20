@@ -58,7 +58,10 @@ export default async function AuthenticatedAdminLayout({
       <div className="flex min-h-svh flex-col">
         <AdminTopbar fullName={profile.full_name} email={profile.email} role={profile.role} />
         <div className="flex flex-1">
-          <AdminSidebar />
+          {/* P6.x-mobile-burger : aside desktop, burger Sheet mobile (cf. AdminMobileMenu dans Topbar). */}
+          <aside className="border-md-border bg-card hidden w-60 shrink-0 border-r md:flex">
+            <AdminSidebar />
+          </aside>
           <main className="bg-md-bg flex-1 overflow-x-auto px-4 py-6 sm:px-6 lg:px-8">
             {children}
           </main>

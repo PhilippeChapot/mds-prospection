@@ -6,13 +6,25 @@ import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ADMIN_NAV_SECTIONS, type AdminNavItem } from './nav-config';
 
-export function AdminSidebar() {
+/**
+ * P6.x-mobile-burger : `AdminSidebar` rend uniquement le contenu interne
+ * (sans `<aside>` ni `hidden md:flex`). Le wrapper desktop est applique par
+ * `(authenticated)/layout.tsx` ; le drawer mobile (`AdminMobileMenu`) reutilise
+ * le meme contenu et passe `onNavigate` pour fermer le Sheet apres un clic.
+ */
+interface Props {
+  /** Callback optionnel apres un clic sur un item (ferme le drawer mobile). */
+  onNavigate?: () => void;
+}
+
+export function AdminSidebar({ onNavigate }: Props = {}) {
   const pathname = usePathname();
 
   return (
-    <aside className="border-md-border bg-card hidden w-60 shrink-0 flex-col gap-4 border-r p-3 md:flex">
+    <div className="flex h-full flex-col gap-4 p-3">
       <Link
         href="/admin/quotes/new"
+        onClick={onNavigate}
         className={cn(
           'bg-md-magenta hover:bg-md-magenta-soft inline-flex items-center justify-center gap-2',
           'rounded-md px-3 py-2.5 text-sm font-bold text-white shadow-sm transition',
@@ -31,18 +43,26 @@ export function AdminSidebar() {
             <ul className="space-y-0.5">
               {section.items.map((item) => (
                 <li key={item.href}>
-                  <SidebarItem item={item} pathname={pathname} />
+                  <SidebarItem item={item} pathname={pathname} onNavigate={onNavigate} />
                 </li>
               ))}
             </ul>
           </div>
         ))}
       </nav>
-    </aside>
+    </div>
   );
 }
 
-function SidebarItem({ item, pathname }: { item: AdminNavItem; pathname: string }) {
+function SidebarItem({
+  item,
+  pathname,
+  onNavigate,
+}: {
+  item: AdminNavItem;
+  pathname: string;
+  onNavigate?: () => void;
+}) {
   const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href);
 
   if (!item.enabled) {
@@ -67,6 +87,7 @@ function SidebarItem({ item, pathname }: { item: AdminNavItem; pathname: string 
   return (
     <Link
       href={item.href}
+      onClick={onNavigate}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
         'group relative flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition',

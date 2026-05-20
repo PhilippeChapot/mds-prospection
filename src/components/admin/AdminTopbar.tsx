@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { HeaderLogo } from '@/components/brand/HeaderLogo';
+import { AdminMobileMenu } from './AdminMobileMenu';
 import { Breadcrumb } from './Breadcrumb';
 import { SeasonSwitcher } from './SeasonSwitcher';
 import { UserMenu } from './UserMenu';
@@ -15,7 +16,9 @@ export function AdminTopbar({
 }) {
   return (
     <header className="bg-md-blue-deep flex h-14 items-center justify-between gap-4 px-4 shadow-md sm:px-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
+        {/* P6.x-mobile-burger : burger trigger (visible < md uniquement). */}
+        <AdminMobileMenu />
         <Link href="/admin" className="flex items-center" aria-label="Retour au dashboard">
           <HeaderLogo category="admin" theme="dark" size={26} />
         </Link>
