@@ -6,6 +6,11 @@
  * - Marseille & Paris : CTA interne vers /inscription-exposant?venue=... (wizard).
  * - Bruxelles : lecture seule (pas de back office). CTA = mailto contact MDS.
  *
+ * P6.x.4-a-nonies : la carte n'est plus enveloppee dans un anchor — seul le
+ * bouton est cliquable. Evite l'anchor imbrique (carte<a> + bouton<a>) qui
+ * cassait le click sur certains navigateurs (notamment Safari mobile sur le
+ * mailto Bruxelles).
+ *
  * Sync Server Component : utilise `useTranslations` (next-intl set via
  * setRequestLocale dans la page parente).
  */
@@ -20,7 +25,7 @@ interface Etape {
   id: 'marseille' | 'paris' | 'bruxelles';
   flag: string;
   image: string;
-  /** Query string interne (Link vers /inscription-exposant) ; null pour CTA externes. */
+  /** Param venue interne ; null pour les CTA externes (mailto Bruxelles). */
   venueParam: 'marseille' | 'paris' | null;
   externalHref: string | null;
   cardClass: string;
@@ -31,7 +36,7 @@ export const ETAPES: readonly Etape[] = [
   {
     id: 'marseille',
     flag: '🇫🇷',
-    image: '/landing/etape-marseille.svg',
+    image: '/landing/etape-marseille.png',
     venueParam: 'marseille',
     externalHref: null,
     cardClass: 'bg-blue-50',
@@ -40,7 +45,7 @@ export const ETAPES: readonly Etape[] = [
   {
     id: 'paris',
     flag: '🇫🇷',
-    image: '/landing/etape-paris.svg',
+    image: '/landing/etape-paris.png',
     venueParam: 'paris',
     externalHref: null,
     cardClass: 'bg-pink-50',
@@ -49,7 +54,7 @@ export const ETAPES: readonly Etape[] = [
   {
     id: 'bruxelles',
     flag: '🇧🇪',
-    image: '/landing/etape-bruxelles.svg',
+    image: '/landing/etape-bruxelles.png',
     venueParam: null,
     externalHref: 'mailto:contact@mediadays.solutions?subject=MediaDays%20Bruxelles%202026',
     cardClass: 'bg-amber-50',
@@ -81,19 +86,16 @@ export function EtapesSection() {
 
 function EtapeCard({ etape }: { etape: Etape }) {
   const t = useTranslations(`landing.etapes.${etape.id}`);
-  const cardClasses = cn(
-    'group relative flex flex-col overflow-hidden rounded-2xl shadow-md transition hover:-translate-y-0.5 hover:shadow-xl',
-    etape.cardClass,
-  );
-  const inner = (
-    <>
+  return (
+    <article
+      className={cn(
+        'flex flex-col overflow-hidden rounded-2xl shadow-md transition hover:shadow-xl',
+        etape.cardClass,
+      )}
+    >
       <div className="relative h-48 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={etape.image}
-          alt={t('title')}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        <img src={etape.image} alt={t('title')} className="h-full w-full object-cover" />
         <div className="absolute top-2 right-3 text-3xl drop-shadow-md" aria-hidden>
           {etape.flag}
         </div>
@@ -111,35 +113,38 @@ function EtapeCard({ etape }: { etape: Etape }) {
           <span>{t('venue')}</span>
         </div>
         <div className="mt-auto">
-          <Button asChild className={cn('w-full', etape.buttonClass)}>
-            <span className="inline-flex items-center justify-center gap-1.5">
-              {t('cta')}
-              <ArrowRight className="size-4" aria-hidden />
-            </span>
-          </Button>
+          <EtapeCta etape={etape} label={t('cta')} ariaLabel={`${t('title')} — ${t('cta')}`} />
         </div>
       </div>
-    </>
+    </article>
   );
+}
 
+function EtapeCta({ etape, label, ariaLabel }: { etape: Etape; label: string; ariaLabel: string }) {
+  const className = cn('w-full', etape.buttonClass);
   if (etape.venueParam) {
     return (
-      <Link
-        href={{ pathname: '/inscription-exposant', query: { venue: etape.venueParam } }}
-        className={cardClasses}
-        aria-label={`${t('title')} — ${t('date')}`}
-      >
-        {inner}
-      </Link>
+      <Button asChild className={className}>
+        <Link
+          href={{ pathname: '/inscription-exposant', query: { venue: etape.venueParam } }}
+          aria-label={ariaLabel}
+        >
+          <span className="inline-flex items-center justify-center gap-1.5">
+            {label}
+            <ArrowRight className="size-4" aria-hidden />
+          </span>
+        </Link>
+      </Button>
     );
   }
   return (
-    <a
-      href={etape.externalHref ?? '#'}
-      className={cardClasses}
-      aria-label={`${t('title')} — ${t('date')}`}
-    >
-      {inner}
-    </a>
+    <Button asChild className={className}>
+      <a href={etape.externalHref ?? '#'} aria-label={ariaLabel}>
+        <span className="inline-flex items-center justify-center gap-1.5">
+          {label}
+          <ArrowRight className="size-4" aria-hidden />
+        </span>
+      </a>
+    </Button>
   );
 }

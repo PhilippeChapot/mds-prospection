@@ -1,6 +1,6 @@
 import { setRequestLocale } from 'next-intl/server';
 import { useTranslations } from 'next-intl';
-import { Calendar, MapPin, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import type { Locale } from 'next-intl';
@@ -46,19 +46,8 @@ function HomeContent() {
             </p>
           </div>
 
-          {/* Dates events */}
-          <div className="grid w-full max-w-2xl gap-3 sm:grid-cols-2">
-            <EventCard
-              title={t('event1.title')}
-              date={t('event1.date')}
-              location={t('event1.location')}
-            />
-            <EventCard
-              title={t('event2.title')}
-              date={t('event2.date')}
-              location={t('event2.location')}
-            />
-          </div>
+          {/* P6.x.4-a-nonies — cards quick-info Marseille/Paris retirees du hero
+              (doublon avec la section "Les etapes 2026" plus bas). */}
 
           {/* CTAs */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
@@ -137,23 +126,5 @@ function HomeContent() {
       {/* Canva embed */}
       <CanvaEmbed />
     </InstitutionnelEcoleFormProvider>
-  );
-}
-
-function EventCard({ title, date, location }: { title: string; date: string; location: string }) {
-  return (
-    <div className="rounded-xl border border-white/15 bg-white/5 p-5 text-left backdrop-blur">
-      <p className="text-md-magenta-soft mb-2 text-xs font-semibold tracking-wide uppercase">
-        {title}
-      </p>
-      <div className="flex items-center gap-2 text-sm text-white">
-        <Calendar className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-        <span>{date}</span>
-      </div>
-      <div className="mt-1 flex items-center gap-2 text-sm text-white/80">
-        <MapPin className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-        <span>{location}</span>
-      </div>
-    </div>
   );
 }
