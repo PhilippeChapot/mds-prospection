@@ -9,6 +9,7 @@ import { PolesExplorer } from '@/components/landing/PolesExplorer';
 import { VisitorFamiliesExplorer } from '@/components/landing/VisitorFamiliesExplorer';
 import { InstitutionnelEcoleFormProvider } from '@/components/landing/institutionnel-ecole-form-context';
 import { CanvaEmbed } from '@/components/landing/CanvaEmbed';
+import { EtapesSection } from '@/components/landing/EtapesSection';
 
 export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
@@ -80,6 +81,9 @@ function HomeContent() {
           </div>
         </div>
       </section>
+
+      {/* P6.x.4-a-octies — 3 étapes 2026 (Marseille / Paris / Bruxelles) */}
+      <EtapesSection />
 
       {/* Pôles explorer */}
       <section className="mx-auto max-w-6xl px-6 py-16">

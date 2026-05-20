@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky-m" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7CB9E8"/>
+      <stop offset="1" stop-color="#FFD89E"/>
+    </linearGradient>
+    <linearGradient id="sea-m" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1E6FB3"/>
+      <stop offset="1" stop-color="#0B3D72"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="280" fill="url(#sky-m)"/>
+  <rect y="280" width="800" height="120" fill="url(#sea-m)"/>
+  <!-- Palais du Pharo silhouette -->
+  <g fill="#E8DCC0" stroke="#8C7B5C" stroke-width="2">
+    <rect x="220" y="190" width="360" height="100"/>
+    <rect x="220" y="170" width="80" height="20"/>
+    <rect x="500" y="170" width="80" height="20"/>
+    <rect x="350" y="150" width="100" height="40"/>
+    <polygon points="350,150 400,110 450,150"/>
+    <rect x="260" y="220" width="30" height="50" fill="#8C7B5C"/>
+    <rect x="310" y="220" width="30" height="50" fill="#8C7B5C"/>
+    <rect x="460" y="220" width="30" height="50" fill="#8C7B5C"/>
+    <rect x="510" y="220" width="30" height="50" fill="#8C7B5C"/>
+    <rect x="385" y="220" width="30" height="50" fill="#8C7B5C"/>
+  </g>
+  <!-- Sea waves -->
+  <path d="M0,310 Q200,300 400,310 T800,310 L800,400 L0,400 Z" fill="#1E6FB3" opacity="0.6"/>
+  <text x="40" y="60" font-family="Inter, system-ui, sans-serif" font-size="56" font-weight="800" fill="#031A56">🌊</text>
+  <text x="720" y="60" font-family="Inter, system-ui, sans-serif" font-size="56" font-weight="800">🇫🇷</text>
+</svg>

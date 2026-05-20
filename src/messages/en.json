@@ -504,6 +504,28 @@
       "mediadays": "MediaDays",
       "mdSolutions": "MD Solutions"
     },
+    "etapes": {
+      "sectionTitle": "The 2026 edition stages",
+      "sectionSubtitle": "Three events, three cities, one ambition: grow the professional media ecosystem.",
+      "marseille": {
+        "title": "MEDIADAYS MARSEILLE",
+        "date": "December 10, 2026",
+        "venue": "Palais du Pharo",
+        "cta": "Book my booth"
+      },
+      "paris": {
+        "title": "MEDIADAYS PARIS",
+        "date": "December 15, 2026",
+        "venue": "Carrousel du Louvre",
+        "cta": "Book my booth"
+      },
+      "bruxelles": {
+        "title": "MEDIADAYS BRUXELLES",
+        "date": "November 26, 2026",
+        "venue": "Mix Brussels",
+        "cta": "Contact us"
+      }
+    },
     "drawer": {
       "hostingRoom": "Hosting room",
       "stats": "Stats",

@@ -504,6 +504,28 @@
       "mediadays": "MediaDays",
       "mdSolutions": "MD Solutions"
     },
+    "etapes": {
+      "sectionTitle": "Les étapes de l’édition 2026",
+      "sectionSubtitle": "Trois rendez-vous, trois villes, une même ambition : faire grandir l’écosystème des médias professionnels.",
+      "marseille": {
+        "title": "MEDIADAYS MARSEILLE",
+        "date": "10 décembre 2026",
+        "venue": "Palais du Pharo",
+        "cta": "Réserver mon stand"
+      },
+      "paris": {
+        "title": "MEDIADAYS PARIS",
+        "date": "15 décembre 2026",
+        "venue": "Carrousel du Louvre",
+        "cta": "Réserver mon stand"
+      },
+      "bruxelles": {
+        "title": "MEDIADAYS BRUXELLES",
+        "date": "26 novembre 2026",
+        "venue": "Mix Brussels",
+        "cta": "Nous contacter"
+      }
+    },
     "drawer": {
       "hostingRoom": "Salle d’accueil",
       "stats": "Stats",
