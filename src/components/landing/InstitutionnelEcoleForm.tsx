@@ -115,9 +115,19 @@ export function InstitutionnelEcoleForm({
     });
   }
 
-  const title = type === 'institutionnel' ? t('titleInstitutionnel') : t('titleEcole');
+  // P6.x.4-a-decies : 3e type 'bruxelles' (lecture seule, demande d'info).
+  const title =
+    type === 'institutionnel'
+      ? t('titleInstitutionnel')
+      : type === 'ecole'
+        ? t('titleEcole')
+        : t('titleBruxelles');
   const description =
-    type === 'institutionnel' ? t('descriptionInstitutionnel') : t('descriptionEcole');
+    type === 'institutionnel'
+      ? t('descriptionInstitutionnel')
+      : type === 'ecole'
+        ? t('descriptionEcole')
+        : t('descriptionBruxelles');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

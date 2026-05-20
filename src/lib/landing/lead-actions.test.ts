@@ -405,6 +405,26 @@ describe('createLeadFromLandingForm (P6.x.4-a-bis + a-quater)', () => {
     expect(adminNotifMock.mock.calls[0][1].subject).toMatch(/École/);
   });
 
+  it('P6.x.4-a-decies — type=bruxelles : prospect créé avec source_detail=bruxelles, subject "Bruxelles"', async () => {
+    mockEnv();
+    const { createLeadFromLandingForm } = await import('./lead-actions');
+    const r = await createLeadFromLandingForm({
+      ...VALID_INPUT,
+      type: 'bruxelles',
+      org_name: 'Belga Media',
+      contact_email: 'contact@belga.be',
+      message: 'On veut comprendre comment exposer à Bruxelles',
+    });
+    expect(r.ok).toBe(true);
+    expect(state.insertedProspects[0].source_detail).toBe('bruxelles');
+    // Source toujours 'landing_form' (un seul source pour tous les flows landing)
+    expect(state.insertedProspects[0].source).toBe('landing_form');
+    // Note header dédié
+    expect(state.insertedProspects[0].notes).toMatch(/Demande info MediaDays Bruxelles/);
+    // Subject admin email = "Nouveau prospect Landing — Belga Media (Bruxelles)"
+    expect(adminNotifMock.mock.calls[0][1].subject).toMatch(/Bruxelles/);
+  });
+
   it('Brevo skip silencieux si BREVO_API_KEY absente', async () => {
     mockEnv();
     const { createLeadFromLandingForm } = await import('./lead-actions');

@@ -20,14 +20,14 @@ import { ArrowRight, Calendar, MapPin } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { BruxellesCtaButton } from './BruxellesCtaButton';
 
 interface Etape {
   id: 'marseille' | 'paris' | 'bruxelles';
   flag: string;
   image: string;
-  /** Param venue interne ; null pour les CTA externes (mailto Bruxelles). */
+  /** Param venue interne ; null pour Bruxelles (CTA = ouverture du form contact). */
   venueParam: 'marseille' | 'paris' | null;
-  externalHref: string | null;
   cardClass: string;
   buttonClass: string;
 }
@@ -38,7 +38,6 @@ export const ETAPES: readonly Etape[] = [
     flag: '🇫🇷',
     image: '/landing/etape-marseille.png',
     venueParam: 'marseille',
-    externalHref: null,
     cardClass: 'bg-blue-50',
     buttonClass: 'bg-md-magenta hover:bg-md-magenta-soft text-white',
   },
@@ -47,7 +46,6 @@ export const ETAPES: readonly Etape[] = [
     flag: '🇫🇷',
     image: '/landing/etape-paris.png',
     venueParam: 'paris',
-    externalHref: null,
     cardClass: 'bg-pink-50',
     buttonClass: 'bg-md-magenta hover:bg-md-magenta-soft text-white',
   },
@@ -56,7 +54,6 @@ export const ETAPES: readonly Etape[] = [
     flag: '🇧🇪',
     image: '/landing/etape-bruxelles.png',
     venueParam: null,
-    externalHref: 'mailto:contact@mediadays.solutions?subject=MediaDays%20Bruxelles%202026',
     cardClass: 'bg-amber-50',
     buttonClass: 'bg-md-blue-dark hover:bg-md-blue-deep text-white',
   },
@@ -137,14 +134,6 @@ function EtapeCta({ etape, label, ariaLabel }: { etape: Etape; label: string; ar
       </Button>
     );
   }
-  return (
-    <Button asChild className={className}>
-      <a href={etape.externalHref ?? '#'} aria-label={ariaLabel}>
-        <span className="inline-flex items-center justify-center gap-1.5">
-          {label}
-          <ArrowRight className="size-4" aria-hidden />
-        </span>
-      </a>
-    </Button>
-  );
+  // P6.x.4-a-decies : Bruxelles ouvre le form contact (plus de mailto)
+  return <BruxellesCtaButton label={label} ariaLabel={ariaLabel} className={etape.buttonClass} />;
 }

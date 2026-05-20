@@ -31,12 +31,13 @@
     "legalNotice": "Mentions légales",
     "privacyPolicy": "Politique de confidentialité",
     "eventsSection": "Événements 2026",
-    "eventMarseille": "MediaDays Marseille — 10 décembre 2026",
-    "eventParis": "Paris Radio Show — 15 décembre 2026"
+    "eventBruxelles": "📅 26 novembre 2026 — Mix Brussels 🇧🇪",
+    "eventMarseille": "📅 10 décembre 2026 — Palais du Pharo, Marseille 🇫🇷",
+    "eventParis": "📅 15 décembre 2026 — Carrousel du Louvre, Paris 🇫🇷"
   },
   "home": {
     "eyebrow": "Édition 2026",
-    "tagline": "Le rendez-vous des médias français",
+    "tagline": "Le NOUVEAU rendez-vous des médias",
     "subtitle": "Deux journées professionnelles dédiées aux acteurs de la radio, du podcast, de la vidéo et du média numérique.",
     "ctaExhibitor": "M'inscrire comme exposant",
     "ctaPartner": "M'inscrire comme partenaire",
@@ -523,7 +524,7 @@
         "title": "MEDIADAYS BRUXELLES",
         "date": "26 novembre 2026",
         "venue": "Mix Brussels",
-        "cta": "Nous contacter"
+        "cta": "Demander des infos"
       }
     },
     "drawer": {
@@ -547,8 +548,10 @@
     "form": {
       "titleInstitutionnel": "Demander un tarif Institutionnel",
       "titleEcole": "Demander un tarif École",
+      "titleBruxelles": "Demander des informations Bruxelles",
       "descriptionInstitutionnel": "Syndicats, fédérations, organismes professionnels : décrivez votre intérêt pour MediaDays Solutions. Notre équipe revient vers vous sous 48h.",
       "descriptionEcole": "Écoles, formations supérieures, organismes de formation continue : précisez votre projet d’accès. Notre équipe revient vers vous sous 48h.",
+      "descriptionBruxelles": "MediaDays Bruxelles · 26 novembre 2026 · Mix Brussels. Laissez-nous vos coordonnées : on revient vers vous avec le programme et les modalités sous 48h.",
       "fieldOrgName": "Organisation",
       "fieldFirstName": "Prénom",
       "fieldLastName": "Nom",

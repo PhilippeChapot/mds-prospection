@@ -31,12 +31,13 @@
     "legalNotice": "Legal notice",
     "privacyPolicy": "Privacy policy",
     "eventsSection": "2026 events",
-    "eventMarseille": "MediaDays Marseille — December 10, 2026",
-    "eventParis": "Paris Radio Show — December 15, 2026"
+    "eventBruxelles": "📅 November 26, 2026 — Mix Brussels 🇧🇪",
+    "eventMarseille": "📅 December 10, 2026 — Palais du Pharo, Marseille 🇫🇷",
+    "eventParis": "📅 December 15, 2026 — Carrousel du Louvre, Paris 🇫🇷"
   },
   "home": {
     "eyebrow": "2026 edition",
-    "tagline": "Where the French media industry meets",
+    "tagline": "The NEW media industry meeting point",
     "subtitle": "Two professional days dedicated to the radio, podcast, video and digital media ecosystem.",
     "ctaExhibitor": "Register as an exhibitor",
     "ctaPartner": "Register as a partner",
@@ -523,7 +524,7 @@
         "title": "MEDIADAYS BRUXELLES",
         "date": "November 26, 2026",
         "venue": "Mix Brussels",
-        "cta": "Contact us"
+        "cta": "Request info"
       }
     },
     "drawer": {
@@ -547,8 +548,10 @@
     "form": {
       "titleInstitutionnel": "Request institutional pricing",
       "titleEcole": "Request school pricing",
+      "titleBruxelles": "Request Brussels information",
       "descriptionInstitutionnel": "Industry bodies, federations, professional associations: tell us about your interest in MediaDays Solutions. We'll get back to you within 48h.",
       "descriptionEcole": "Schools, higher education programs, training organizations: tell us about your access project. We'll get back to you within 48h.",
+      "descriptionBruxelles": "MediaDays Brussels · November 26, 2026 · Mix Brussels. Leave us your details and we'll get back to you with the program and details within 48h.",
       "fieldOrgName": "Organization",
       "fieldFirstName": "First name",
       "fieldLastName": "Last name",

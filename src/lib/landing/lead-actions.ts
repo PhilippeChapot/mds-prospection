@@ -37,7 +37,7 @@ const LOG_PREFIX = '[landing/lead-action]';
 const BREVO_API_BASE = 'https://api.brevo.com/v3';
 
 const submitSchema = z.object({
-  type: z.enum(['institutionnel', 'ecole']),
+  type: z.enum(['institutionnel', 'ecole', 'bruxelles']),
   org_name: z.string().trim().min(2).max(200),
   first_name: z.string().trim().min(2).max(120),
   last_name: z.string().trim().min(2).max(120),
@@ -416,7 +416,11 @@ export async function createLeadFromLandingForm(
     // 3. Prospect — création systématique (pas de dedupe au niveau prospect)
     const seasonId = await getActiveSeasonId();
     const supabase = getSupabaseServiceClient();
-    const noteHeader = `[Demande tarif ${requestType} via landing]`;
+    // P6.x.4-a-decies : header dedie pour bruxelles (info, pas tarif)
+    const noteHeader =
+      requestType === 'bruxelles'
+        ? `[Demande info MediaDays Bruxelles via landing]`
+        : `[Demande tarif ${requestType} via landing]`;
     const notes = data.message ? `${noteHeader}\n\n${data.message}` : noteHeader;
     const { data: prospect, error: prospectErr } = await supabase
       .from('prospects')

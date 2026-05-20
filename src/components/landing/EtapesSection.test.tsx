@@ -12,6 +12,24 @@ import { screen } from '@testing-library/react';
 import { EtapesSection, ETAPES } from './EtapesSection';
 import { renderI18n } from './__test-helpers__/i18n-render';
 
+// P6.x.4-a-decies — mock BruxellesCtaButton pour eviter de monter le
+// provider <InstitutionnelEcoleFormProvider> dans chaque test.
+vi.mock('./BruxellesCtaButton', () => ({
+  BruxellesCtaButton: ({
+    label,
+    ariaLabel,
+    className,
+  }: {
+    label: string;
+    ariaLabel: string;
+    className?: string;
+  }) => (
+    <button type="button" aria-label={ariaLabel} className={className}>
+      {label}
+    </button>
+  ),
+}));
+
 // next-intl Link routing : mock minimal pour eviter le runtime next/navigation.
 vi.mock('@/i18n/navigation', () => {
   return {
@@ -63,14 +81,16 @@ describe('EtapesSection (P6.x.4-a-octies/nonies)', () => {
     expect(link.getAttribute('href')).toBe('/inscription-exposant?venue=paris');
   });
 
-  it('Bruxelles → CTA <a> mailto cliquable (P6.x.4-a-nonies : pas d’anchor imbrique)', () => {
+  it('P6.x.4-a-decies — Bruxelles CTA = bouton (plus de mailto), label "Demander des infos" en FR', () => {
+    // BruxellesCtaButton est mocke (cf. mock plus bas) -> rend juste un bouton type=button.
     renderI18n(<EtapesSection />);
-    const link = screen.getByRole('link', { name: /MEDIADAYS BRUXELLES.*Nous contacter/ });
-    const href = link.getAttribute('href') ?? '';
-    expect(href.startsWith('mailto:contact@mediadays.solutions')).toBe(true);
-    expect(href).toContain('Bruxelles');
-    // L'<a> n'est jamais nested dans un autre <a>.
-    expect(link.closest('a:not([href="' + href + '"])')).toBeNull();
+    const btn = screen.getByRole('button', { name: /MEDIADAYS BRUXELLES.*Demander des infos/ });
+    expect(btn).toBeInTheDocument();
+    // Plus aucun anchor mailto dans la section.
+    const mailtoLinks = screen
+      .queryAllByRole('link')
+      .filter((a) => (a.getAttribute('href') ?? '').startsWith('mailto:'));
+    expect(mailtoLinks).toHaveLength(0);
   });
 
   it('EN — titres section, dates et CTA traduits', () => {
@@ -80,7 +100,8 @@ describe('EtapesSection (P6.x.4-a-octies/nonies)', () => {
     expect(screen.getByText('December 15, 2026')).toBeInTheDocument();
     expect(screen.getByText('November 26, 2026')).toBeInTheDocument();
     expect(screen.getAllByText(/Book my booth/).length).toBe(2);
-    expect(screen.getByText(/Contact us/)).toBeInTheDocument();
+    // P6.x.4-a-decies : Bruxelles CTA = "Request info" (plus de "Contact us")
+    expect(screen.getByText(/Request info/)).toBeInTheDocument();
   });
 
   it('venues affiches : Palais du Pharo, Carrousel du Louvre, Mix Brussels', () => {

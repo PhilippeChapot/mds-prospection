@@ -9,7 +9,9 @@
  * milestone restent FR ; EN fallback FR — cf. P6.x.4-a brief).
  */
 
-export type RequestType = 'institutionnel' | 'ecole';
+/** P6.x.4-a-decies — 'bruxelles' rejoint 'institutionnel' et 'ecole' :
+ *  formulaire de contact landing pour l'edition Bruxelles (lecture seule). */
+export type RequestType = 'institutionnel' | 'ecole' | 'bruxelles';
 
 export interface AdminRequestParams {
   type: RequestType;
@@ -33,6 +35,7 @@ export interface RequestEmailTemplate {
 const TYPE_LABEL: Record<RequestType, string> = {
   institutionnel: 'Institutionnel',
   ecole: 'École',
+  bruxelles: 'Bruxelles',
 };
 
 export function renderAdminInstitutionnelEcoleRequest(
@@ -40,7 +43,11 @@ export function renderAdminInstitutionnelEcoleRequest(
 ): RequestEmailTemplate {
   const label = TYPE_LABEL[params.type];
   // P6.x.4-a-bis : subject pointe sur le prospect dans le pipeline
-  const subject = `Nouveau prospect Landing — ${params.orgName} (${label})`;
+  // P6.x.4-a-decies : Bruxelles a un wording dedie (pas "demande de tarif")
+  const subject =
+    params.type === 'bruxelles'
+      ? `Nouveau prospect Landing — ${params.orgName} (Bruxelles)`
+      : `Nouveau prospect Landing — ${params.orgName} (${label})`;
   const fields: Array<[string, string]> = [
     ['Type', label],
     ['Organisation', params.orgName],
@@ -67,7 +74,11 @@ export function renderAdminInstitutionnelEcoleRequest(
     </td></tr>
     <tr><td style="padding:24px 28px">
       <p style="margin:0 0 16px;font-size:14px;color:#444">
-        Une demande de tarif ${escapeHtml(label)} a été captée depuis la landing publique
+        ${
+          params.type === 'bruxelles'
+            ? `Une demande d'information <strong>MediaDays Bruxelles</strong> a été captée depuis la landing publique`
+            : `Une demande de tarif ${escapeHtml(label)} a été captée depuis la landing publique`
+        }
         et un prospect a été créé dans le pipeline (status <strong>lead</strong>, source
         <code style="background:#f6f7fb;padding:2px 6px;border-radius:4px">landing_form</code>).
       </p>
@@ -104,7 +115,11 @@ export function renderClientInstitutionnelEcoleConfirmation(
   params: ClientConfirmationParams,
 ): RequestEmailTemplate {
   const label = TYPE_LABEL[params.type];
-  const subject = `Demande de tarif ${label} reçue — MediaDays Solutions 2026`;
+  // P6.x.4-a-decies : wording Bruxelles dedie (info, pas "tarif")
+  const subject =
+    params.type === 'bruxelles'
+      ? `Demande d'information MediaDays Bruxelles reçue — MediaDays Solutions 2026`
+      : `Demande de tarif ${label} reçue — MediaDays Solutions 2026`;
   const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:24px;background:#f6f7fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#333">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
@@ -113,7 +128,11 @@ export function renderClientInstitutionnelEcoleConfirmation(
       <p style="margin:8px 0 0;color:#bcc4dd;font-size:14px">MediaDays Solutions 2026</p>
     </td></tr>
     <tr><td style="padding:28px 32px;font-size:15px;line-height:1.55">
-      <p style="margin:0 0 14px">Nous avons bien reçu la demande de tarif <strong>${escapeHtml(label)}</strong> pour <strong>${escapeHtml(params.orgName)}</strong>.</p>
+      <p style="margin:0 0 14px">${
+        params.type === 'bruxelles'
+          ? `Nous avons bien reçu votre demande d'information pour <strong>MediaDays Bruxelles</strong> au nom de <strong>${escapeHtml(params.orgName)}</strong>.`
+          : `Nous avons bien reçu la demande de tarif <strong>${escapeHtml(label)}</strong> pour <strong>${escapeHtml(params.orgName)}</strong>.`
+      }</p>
       <p style="margin:0 0 14px">Notre équipe revient vers vous sous 48h avec une proposition adaptée à votre organisation.</p>
       <p style="margin:0 0 14px">En attendant, rendez-vous sur <a href="https://mediadays.solutions" style="color:#E6007E;font-weight:600">mediadays.solutions</a> pour explorer les 6 pôles du salon et les 245 entités visiteurs déjà identifiées.</p>
       <p style="margin:28px 0 0;color:#666;font-size:13px">— L'équipe MediaDays Solutions</p>
@@ -122,7 +141,9 @@ export function renderClientInstitutionnelEcoleConfirmation(
 </body></html>`;
   const text =
     `Merci ${params.contactName} —\n\n` +
-    `Nous avons bien reçu votre demande de tarif ${label} pour ${params.orgName}.\n` +
+    (params.type === 'bruxelles'
+      ? `Nous avons bien reçu votre demande d'information pour MediaDays Bruxelles au nom de ${params.orgName}.\n`
+      : `Nous avons bien reçu votre demande de tarif ${label} pour ${params.orgName}.\n`) +
     `Notre équipe revient vers vous sous 48h.\n\n` +
     `— L'équipe MediaDays Solutions\nhttps://mediadays.solutions\n`;
   return { subject, html, text };

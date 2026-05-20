@@ -53,7 +53,10 @@ export function PublicFooter() {
 
         <div className="space-y-2 text-sm">
           <p className="text-md-text font-semibold">{t('eventsSection')}</p>
+          {/* P6.x.4-a-decies — 3 etapes 2026 dans l'ordre CHRONOLOGIQUE
+              (Bruxelles 26 nov → Marseille 10 dec → Paris 15 dec). */}
           <ul className="text-md-text-muted space-y-1.5">
+            <li>{t('eventBruxelles')}</li>
             <li>{t('eventMarseille')}</li>
             <li>{t('eventParis')}</li>
           </ul>
