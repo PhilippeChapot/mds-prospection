@@ -1,16 +1,21 @@
 /**
- * GET /api/affilie/kit/banner-linkedin/[token].png — P7.x.1.C
+ * GET /api/affilie/kit/banner-linkedin.png — P7.x.1.E (refonte B2B)
  *
  * Banniere LinkedIn 1200x627 (format share image) generee via next/og.
- * Pattern direct copie de /api/badge/[companyId]/linkedin-cover.png
- * (P5.x.14).
  *
- * Auth : verifie le cookie de session affilie ET que le token de l'URL
- * matche bien le slug de l'affilie connecte. Pas de leak public — un
- * affilie ne peut PAS generer la banniere d'un autre.
+ * Layout B2B (refonte E) :
+ *   - Split horizontal 50/50
+ *   - Gauche  : 3 photos venues empilees (Marseille / Paris / Bruxelles)
+ *               sur fond marine, avec libelle ville + date sous chaque
+ *   - Droite  : fond gradient marine -> magenta avec
+ *       * Logos MDS + PRS en haut
+ *       * Headline "Vos prochains clients pro sont à MediaDays 2026"
+ *       * 3 dates inline
+ *       * CTA "Réservez votre stand → mediadays.solutions/?ref={token}"
+ *       * Footer discret "Recommandé par {affilie}"
  *
- * Pas de cache Supabase Storage en V1 (CPU acceptable a faible volume,
- * 10-30 affilies). A optimiser en V2 si necessaire.
+ * Auth : session affilie via cookie (source de verite, pas de token URL
+ * pour eviter les conflits typage Next.js sur segments [param].png).
  */
 
 import { ImageResponse } from 'next/og';
@@ -27,10 +32,13 @@ export const dynamic = 'force-dynamic';
 
 const LOG_PREFIX = '[api/affilie/kit/banner-linkedin]';
 
+const VENUES = [
+  { label: 'Bruxelles', date: '26 nov', image: '/landing/etape-bruxelles.png', flag: '🇧🇪' },
+  { label: 'Marseille', date: '10 déc', image: '/landing/etape-marseille.png', flag: '🇫🇷' },
+  { label: 'Paris', date: '15 déc', image: '/landing/etape-paris.png', flag: '🇫🇷' },
+] as const;
+
 export async function GET(): Promise<Response> {
-  // 1. Verifie la session affilie via cookie (session = source de verite,
-  //    pas de token dans l'URL pour eviter les conflits typage Next.js
-  //    sur les segments [param].png).
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(AFFILIE_SESSION_COOKIE);
   if (!sessionCookie?.value) {
@@ -46,7 +54,6 @@ export async function GET(): Promise<Response> {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  // 2. Lookup affilie
   const supabase = getSupabaseServiceClient();
   const { data: affiliate } = await supabase
     .from('affiliates')
@@ -58,9 +65,11 @@ export async function GET(): Promise<Response> {
     return new Response('Not Found', { status: 404 });
   }
 
-  // baseUrl peut etre staging (preview Vercel) ou prod ; pour la baniere
-  // visible, on utilise toujours le host nu mediadays.solutions (plus
-  // propre dans une cover LinkedIn imprimee).
+  // Satori (next/og) ne peut pas resoudre les paths /public via les <img/>
+  // sans hostname — on passe par baseUrl absolu pour charger les assets.
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
+  const logoMds = `${baseUrl}/brand/MDS-LogoBlanc-badge.png`;
+  const logoPrs = `${baseUrl}/brand/PRS-LogoBlanc-badge.png`;
   const trackingUrl = `mediadays.solutions/?ref=${encodeURIComponent(affiliate.token)}`;
 
   console.log('%s render affiliate=%s', LOG_PREFIX, affiliateId);
@@ -71,69 +80,175 @@ export async function GET(): Promise<Response> {
         height: '100%',
         width: '100%',
         display: 'flex',
-        flexDirection: 'column',
-        background: 'linear-gradient(135deg, #031A56 0%, #294294 60%, #E6007E 100%)',
+        flexDirection: 'row',
+        background: '#031A56',
         fontFamily: 'system-ui',
-        padding: 64,
         color: 'white',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <span
-          style={{
-            fontSize: 18,
-            fontWeight: 700,
-            letterSpacing: 6,
-            textTransform: 'uppercase',
-            color: '#FFB1D2',
-          }}
-        >
-          MediaDays Solutions 2026
-        </span>
-        <span style={{ fontSize: 56, fontWeight: 900, lineHeight: 1.05, marginTop: 12 }}>
-          Je serai aux MediaDays
-        </span>
-        <span style={{ fontSize: 56, fontWeight: 900, lineHeight: 1.05 }}>Solutions 2026</span>
-      </div>
-
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-        <span style={{ fontSize: 36, fontWeight: 700, opacity: 0.95 }}>
-          {affiliate.display_name}
-        </span>
-      </div>
-
+      {/* Colonne gauche 50% : 3 photos venues empilees */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 12,
-          paddingTop: 16,
-          borderTop: '2px solid rgba(255,255,255,0.25)',
+          width: 600,
+          height: 627,
+          background: '#0a1f60',
         }}
       >
+        {VENUES.map((venue) => (
+          <div
+            key={venue.label}
+            style={{
+              display: 'flex',
+              flex: 1,
+              position: 'relative',
+              borderBottom: '2px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${baseUrl}${venue.image}`}
+              alt={venue.label}
+              width={600}
+              height={209}
+              style={{
+                width: 600,
+                height: 209,
+                objectFit: 'cover',
+                opacity: 0.92,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 12,
+                left: 16,
+                display: 'flex',
+                gap: 10,
+                alignItems: 'center',
+                background: 'rgba(3,26,86,0.85)',
+                padding: '6px 14px',
+                borderRadius: 6,
+              }}
+            >
+              <span style={{ fontSize: 22 }}>{venue.flag}</span>
+              <span style={{ fontSize: 18, fontWeight: 800 }}>{venue.date}</span>
+              <span style={{ fontSize: 18, fontWeight: 600, opacity: 0.9 }}>{venue.label}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Colonne droite 50% : pitch B2B + logos + CTA */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          width: 600,
+          height: 627,
+          background: 'linear-gradient(135deg, #031A56 0%, #294294 50%, #E6007E 130%)',
+          padding: 48,
+        }}
+      >
+        {/* Logos MDS + PRS */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoMds} alt="MediaDays Solutions" width={140} height={48} />
+          <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.4)' }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoPrs} alt="Paris Radio Show" width={140} height={48} />
+        </div>
+
+        {/* Headline B2B */}
         <div
           style={{
             display: 'flex',
-            gap: 32,
-            fontSize: 22,
-            fontWeight: 600,
-            color: 'rgba(255,255,255,0.95)',
+            flexDirection: 'column',
+            gap: 8,
+            marginTop: 32,
+            flex: 1,
           }}
         >
-          <span>🇫🇷 10 déc — Marseille</span>
-          <span>🇫🇷 15 déc — Paris</span>
-          <span>🇧🇪 26 nov — Bruxelles</span>
+          <span
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              letterSpacing: 6,
+              textTransform: 'uppercase',
+              color: '#FFB1D2',
+            }}
+          >
+            Édition 2026 · NOUVEAU
+          </span>
+          <span
+            style={{
+              fontSize: 36,
+              fontWeight: 900,
+              lineHeight: 1.1,
+              marginTop: 10,
+            }}
+          >
+            Vos prochains clients pro
+          </span>
+          <span
+            style={{
+              fontSize: 36,
+              fontWeight: 900,
+              lineHeight: 1.1,
+            }}
+          >
+            sont à MediaDays 2026
+          </span>
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 500,
+              color: 'rgba(255,255,255,0.85)',
+              marginTop: 16,
+              lineHeight: 1.45,
+            }}
+          >
+            Régies, annonceurs, agences UDECAM, retailers, éditeurs, producteurs.
+          </span>
         </div>
-        <span
+
+        {/* CTA + tracking URL */}
+        <div
           style={{
-            fontSize: 24,
-            fontWeight: 800,
-            color: '#FFB1D2',
-            letterSpacing: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            paddingTop: 16,
+            borderTop: '2px solid rgba(255,255,255,0.25)',
           }}
         >
-          👉 {trackingUrl}
-        </span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: 'white' }}>
+            👉 Réservez votre stand
+          </span>
+          <span
+            style={{
+              fontSize: 18,
+              fontWeight: 800,
+              color: '#FFB1D2',
+              letterSpacing: 0.5,
+            }}
+          >
+            {trackingUrl}
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 500,
+              color: 'rgba(255,255,255,0.55)',
+              marginTop: 6,
+              textTransform: 'uppercase',
+              letterSpacing: 2,
+            }}
+          >
+            Recommandé par {affiliate.display_name}
+          </span>
+        </div>
       </div>
     </div>,
     {
@@ -141,8 +256,6 @@ export async function GET(): Promise<Response> {
       height: 627,
       headers: {
         // Pas de cache CDN agressif : le nom affilie peut changer.
-        // L'image se regenere a chaque request, mais c'est leger (10-30
-        // affilies). Cache-control browser uniquement.
         'cache-control': 'private, max-age=300',
       },
     },

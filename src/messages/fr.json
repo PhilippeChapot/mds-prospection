@@ -278,6 +278,7 @@
       "kit": {
         "title": "🎨 Kit de communication",
         "subtitle": "Vos assets personnalisés à partager avec votre audience : bannière LinkedIn, signature email, copy à utiliser dans vos campagnes.",
+        "b2bNote": "Rappel : l'affiliation MediaDays Solutions concerne uniquement les exposants (solutions tech audio, vidéo, adtech, OOH, data, diffusion). Les visiteurs ont l'entrée gratuite sur mediadays.net et ne génèrent pas de commission. Orientez vos communications vers les pros qui pourraient exposer.",
         "copyHtml": "Copier le HTML",
         "copyText": "Copier le texte",
         "copied": "Copié !",

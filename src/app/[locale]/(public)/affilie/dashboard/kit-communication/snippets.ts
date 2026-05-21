@@ -1,59 +1,100 @@
 /**
- * Snippets kit communication affilie — P7.x.1.C
+ * Snippets kit communication affilie — P7.x.1.E (refonte B2B)
  *
- * Pure functions (no DB / no React) :
- *   - buildEmailSignatureHtml : table HTML inline 2 colonnes, brandee MDS
- *   - buildEmailCopy(locale)  : texte type a copier dans un email perso
+ * Pure functions (no DB / no React) — testables sans runtime React.
+ *
+ * Doctrine B2B (P7.x.1.E) : l'affiliation MDS concerne UNIQUEMENT les
+ * exposants (tech audio/video/adtech/etc.). Les visiteurs ont l'entree
+ * gratuite via mediadays.net et ne generent PAS de commission. Le copy
+ * et la signature doivent donc orienter vers le wizard exposant
+ * (`/inscription-exposant?ref=...`), pas vers la landing visiteur.
  */
 
 export interface SignatureParams {
   affilieName: string;
-  trackingUrl: string;
+  /** Lien tracking vers le wizard EXPOSANT (B2B). */
+  trackingUrlExposant: string;
 }
 
+/**
+ * Signature email HTML pro avec :
+ *   - bande verticale magenta brand
+ *   - tagline MDS 2026 + 3 dates avec emojis villes
+ *   - CTA principal "Réservez votre stand" (B2B)
+ *   - sous-CTA secondaire mediadays.net (annonceur/agence gratuit)
+ *
+ * Pas de logo en image : les clients mail filtrent souvent les remote
+ * images (Gmail proxify et bloque par defaut), donc on opte pour du
+ * texte brand-colored (bande gauche + #294294 marine + #E6007E magenta).
+ */
 export function buildEmailSignatureHtml(params: SignatureParams): string {
   const name = escapeHtml(params.affilieName);
-  const href = escapeAttr(params.trackingUrl);
+  const exposantHref = escapeAttr(params.trackingUrlExposant);
   return [
-    '<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.45;">',
+    '<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.5;">',
     '<tr>',
-    '<td style="padding-right: 12px; border-right: 2px solid #E6007E;">',
-    `<strong style="color: #294294;">${name}</strong><br/>`,
-    'Partenaire MediaDays Solutions 2026',
+    '<td style="padding-right: 14px; padding-left: 12px; border-left: 3px solid #E6007E;">',
+    `<strong style="color: #294294; font-size: 14px;">${name}</strong><br/>`,
+    '<span style="color: #5c6b80; font-size: 12px;">Partenaire MediaDays Solutions 2026</span>',
     '</td>',
-    '<td style="padding-left: 12px;">',
-    '<strong>10 déc Marseille &middot; 15 déc Paris &middot; 26 nov Bruxelles</strong><br/>',
-    `<a href="${href}" style="color: #E6007E; text-decoration: none;">→ Inscrivez-vous (entrée gratuite)</a>`,
+    '<td style="padding-left: 16px;">',
+    '<strong style="color: #294294;">MediaDays Solutions 2026</strong> — Le NOUVEAU rendez-vous des médias<br/>',
+    '🇧🇪 26 nov Bruxelles &middot; 🇫🇷 10 déc Marseille &middot; 🇫🇷 15 déc Paris<br/>',
+    `<a href="${exposantHref}" style="color: #E6007E; text-decoration: none; font-weight: 600;">→ Réservez votre stand</a><br/>`,
+    '<span style="color: #5c6b80; font-size: 11px;">Annonceur ou agence ? <a href="https://mediadays.net" style="color: #294294;">Inscription visiteur gratuite</a></span>',
     '</td>',
     '</tr>',
     '</table>',
   ].join('');
 }
 
-export function buildEmailCopy(locale: 'fr' | 'en', params: { trackingUrl: string }): string {
+export interface CopyParams {
+  trackingUrlExposant: string;
+  /** Nom de l'affilie pour signer l'email. */
+  affilieName: string;
+}
+
+/**
+ * Texte type B2B a copier dans un email pro.
+ *
+ * Tone FR : tutoiement (les affilies MDS sont des contacts pros directs).
+ * Pitch : qui sera la (regies/annonceurs/agences UDECAM/etc.) + qui devrait
+ * exposer (solutions tech). CTA = wizard EXPOSANT, pas landing visiteur.
+ */
+export function buildEmailCopy(locale: 'fr' | 'en', params: CopyParams): string {
   if (locale === 'en') {
     return [
       'Hi {first_name},',
       '',
-      "I'm attending MediaDays Solutions 2026, the pro media event in Paris,",
-      'Marseille and Brussels (Nov 26 / Dec 10 / Dec 15). Entry is free for',
-      'qualified professionals.',
+      'On November 26 in Brussels, December 10 in Marseille and December 15',
+      "in Paris, MediaDays Solutions 2026 brings together France's pro media",
+      'ecosystem: ad networks, advertisers, UDECAM agencies, retailers,',
+      'publishers, content producers.',
       '',
-      `Register here: ${params.trackingUrl}`,
+      'If you sell a tech solution (audio, video, adtech, OOH, data,',
+      'broadcasting), this is THE event to meet your next clients in one day.',
       '',
-      'See you there!',
+      `👉 Book your booth: ${params.trackingUrlExposant}`,
+      '',
+      'See you there,',
+      params.affilieName,
     ].join('\n');
   }
   return [
     'Bonjour {prenom},',
     '',
-    'Je participe à MediaDays Solutions 2026, le rendez-vous pro des médias',
-    "à Paris, Marseille et Bruxelles (26 nov / 10 déc / 15 déc). L'entrée est",
-    'gratuite pour les professionnels qualifiés.',
+    'Le 10/12 à Marseille, le 15/12 à Paris (et le 26/11 à Bruxelles),',
+    "MediaDays Solutions 2026 réunit l'écosystème pro des médias français :",
+    'régies, annonceurs, agences UDECAM, retailers, éditeurs, producteurs.',
     '',
-    `Inscrivez-vous ici : ${params.trackingUrl}`,
+    'Si tu commercialises une solution tech (audio, vidéo, adtech, OOH, data,',
+    "diffusion), c'est LE rendez-vous pour rencontrer tes prochains clients",
+    'en 1 journée.',
     '',
-    'À très bientôt,',
+    `👉 Réserve ton stand : ${params.trackingUrlExposant}`,
+    '',
+    'À très vite,',
+    params.affilieName,
   ].join('\n');
 }
 

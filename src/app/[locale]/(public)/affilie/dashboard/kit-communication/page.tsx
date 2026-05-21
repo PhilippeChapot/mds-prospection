@@ -36,15 +36,29 @@ export default async function AffilieKitCommPage({ params }: PageProps) {
   const { profile } = await loadAffilieDashboardData(affiliateId);
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mediadays.solutions';
 
-  const trackingFr = `${baseUrl}/fr?ref=${encodeURIComponent(profile.token)}`;
+  // P7.x.1.E (refonte B2B) : on cible le wizard exposant (B2B), pas la
+  // landing visiteur (entree gratuite, pas de commission). Le copy + la
+  // signature pointent donc vers /inscription-exposant?ref=.
+  const trackingExposantFr = `${baseUrl}/fr/inscription-exposant?ref=${encodeURIComponent(
+    profile.token,
+  )}`;
+  const trackingExposantEn = `${baseUrl}/en/exhibitor-registration?ref=${encodeURIComponent(
+    profile.token,
+  )}`;
   const bannerUrl = `/api/affilie/kit/banner-linkedin.png`;
 
   const signatureHtml = buildEmailSignatureHtml({
     affilieName: profile.displayName,
-    trackingUrl: trackingFr,
+    trackingUrlExposant: trackingExposantFr,
   });
-  const copyFr = buildEmailCopy('fr', { trackingUrl: trackingFr });
-  const copyEn = buildEmailCopy('en', { trackingUrl: trackingFr });
+  const copyFr = buildEmailCopy('fr', {
+    affilieName: profile.displayName,
+    trackingUrlExposant: trackingExposantFr,
+  });
+  const copyEn = buildEmailCopy('en', {
+    affilieName: profile.displayName,
+    trackingUrlExposant: trackingExposantEn,
+  });
 
   return (
     <section className="space-y-4">
@@ -52,6 +66,11 @@ export default async function AffilieKitCommPage({ params }: PageProps) {
         <h2 className="text-md-text text-xl font-bold tracking-tight">{t('title')}</h2>
         <p className="text-md-text-muted mt-1 text-sm">{t('subtitle')}</p>
       </header>
+
+      {/* P7.x.1.E — Rappel doctrine B2B (affiliation = exposants uniquement) */}
+      <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        💡 {t('b2bNote')}
+      </div>
 
       {/* Banniere LinkedIn */}
       <Card className="border-md-border bg-card space-y-3 p-5 shadow-sm sm:p-6">
