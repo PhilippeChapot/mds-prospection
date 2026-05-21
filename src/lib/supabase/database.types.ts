@@ -263,6 +263,7 @@ export type Database = {
       };
       affiliates: {
         Row: {
+          bic: string | null;
           commission_percent: number;
           company_id: string | null;
           contact_email: string | null;
@@ -273,14 +274,18 @@ export type Database = {
           created_by_user_id: string | null;
           display_name: string;
           display_name_normalized: string;
+          iban: string | null;
           id: string;
           is_active: boolean;
+          last_login_at: string | null;
+          nom_titulaire_compte: string | null;
           notes_internal: string | null;
           token: string;
           type: Database['public']['Enums']['affiliate_type'];
           updated_at: string;
         };
         Insert: {
+          bic?: string | null;
           commission_percent?: number;
           company_id?: string | null;
           contact_email?: string | null;
@@ -291,14 +296,18 @@ export type Database = {
           created_by_user_id?: string | null;
           display_name: string;
           display_name_normalized: string;
+          iban?: string | null;
           id?: string;
           is_active?: boolean;
+          last_login_at?: string | null;
+          nom_titulaire_compte?: string | null;
           notes_internal?: string | null;
           token: string;
           type?: Database['public']['Enums']['affiliate_type'];
           updated_at?: string;
         };
         Update: {
+          bic?: string | null;
           commission_percent?: number;
           company_id?: string | null;
           contact_email?: string | null;
@@ -309,8 +318,11 @@ export type Database = {
           created_by_user_id?: string | null;
           display_name?: string;
           display_name_normalized?: string;
+          iban?: string | null;
           id?: string;
           is_active?: boolean;
+          last_login_at?: string | null;
+          nom_titulaire_compte?: string | null;
           notes_internal?: string | null;
           token?: string;
           type?: Database['public']['Enums']['affiliate_type'];
