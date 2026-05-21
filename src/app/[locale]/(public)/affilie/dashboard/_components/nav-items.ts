@@ -27,13 +27,7 @@ export const AFFILIE_NAV_ITEMS: readonly AffilieNavItem[] = [
   { labelKey: 'stats', emoji: '📊', segment: 'stats', enabled: true },
   { labelKey: 'tracking', emoji: '🔗', segment: 'tracking', enabled: true },
   { labelKey: 'paiements', emoji: '💰', segment: 'paiements', enabled: true },
-  {
-    labelKey: 'kitCommunication',
-    emoji: '🎨',
-    segment: 'kit-communication',
-    enabled: false,
-    phase: 'P7.x.1.C',
-  },
+  { labelKey: 'kitCommunication', emoji: '🎨', segment: 'kit-communication', enabled: true },
   { labelKey: 'profil', emoji: '👤', segment: 'profil', enabled: true },
 ] as const;
 

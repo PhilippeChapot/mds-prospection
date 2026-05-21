@@ -275,6 +275,30 @@
         "statusPaid": "Paid",
         "statusNotApplicable": "—"
       },
+      "kit": {
+        "title": "🎨 Communication kit",
+        "subtitle": "Your personalized assets to share with your audience: LinkedIn banner, email signature, and copy templates for your campaigns.",
+        "copyHtml": "Copy HTML",
+        "copyText": "Copy text",
+        "copied": "Copied!",
+        "banner": {
+          "title": "📥 LinkedIn banner 1200 × 627",
+          "help": "Personalized PNG image with your name. Ideal for LinkedIn posts or profile cover.",
+          "download": "Download PNG banner"
+        },
+        "signature": {
+          "title": "✉️ Email HTML signature",
+          "help": "HTML snippet to paste in your email client's signature (Gmail, Outlook, Apple Mail). Rendering may vary by client."
+        },
+        "emailFr": {
+          "title": "📨 Email template (FR)",
+          "help": "Template text to send to your French contacts. Replace {prenom} before sending."
+        },
+        "emailEn": {
+          "title": "📨 Email template (EN)",
+          "help": "Template text to send to your English-speaking contacts. Replace {first_name} before sending."
+        }
+      },
       "profil": {
         "title": "👤 My profile",
         "subtitle": "Your affiliate information and bank details for commission payments.",

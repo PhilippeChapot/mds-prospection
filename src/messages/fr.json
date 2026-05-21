@@ -275,6 +275,30 @@
         "statusPaid": "Payée",
         "statusNotApplicable": "—"
       },
+      "kit": {
+        "title": "🎨 Kit de communication",
+        "subtitle": "Vos assets personnalisés à partager avec votre audience : bannière LinkedIn, signature email, copy à utiliser dans vos campagnes.",
+        "copyHtml": "Copier le HTML",
+        "copyText": "Copier le texte",
+        "copied": "Copié !",
+        "banner": {
+          "title": "📥 Bannière LinkedIn 1200 × 627",
+          "help": "Image PNG personnalisée à votre nom. Idéale pour vos posts ou bannière de profil LinkedIn.",
+          "download": "Télécharger la bannière PNG"
+        },
+        "signature": {
+          "title": "✉️ Signature email HTML",
+          "help": "Snippet HTML à coller dans la signature de votre client mail (Gmail, Outlook, Apple Mail). Le rendu peut varier selon le client."
+        },
+        "emailFr": {
+          "title": "📨 Email type à copier (FR)",
+          "help": "Texte type à envoyer à vos contacts français. Remplacez {prenom} avant l'envoi."
+        },
+        "emailEn": {
+          "title": "📨 Email template (EN)",
+          "help": "Template to send to your English-speaking contacts. Replace {first_name} before sending."
+        }
+      },
       "profil": {
         "title": "👤 Mon profil",
         "subtitle": "Vos informations affilié et coordonnées bancaires pour le règlement de vos commissions.",
