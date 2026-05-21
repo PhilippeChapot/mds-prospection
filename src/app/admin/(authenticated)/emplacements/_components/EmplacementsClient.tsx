@@ -18,16 +18,19 @@ import { toast } from 'sonner';
 import { X, Lock, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   assignStandToProspectAction,
   removeStandFromProspectAction,
   updateStandAction,
+  updateStandPositionAction,
 } from '@/lib/admin/stands/actions';
 import type {
   StandWithProspect,
   StandKpis,
   ProspectWithoutStand,
 } from '@/lib/admin/stands/queries';
+import { PlanCanvaInteractive } from '@/components/admin/plan/PlanCanvaInteractive';
 
 const SALLE_LABEL: Record<string, string> = {
   delorme: 'Salle Delorme',
@@ -91,6 +94,8 @@ export function EmplacementsClient({
   const [selectedStand, setSelectedStand] = useState<StandWithProspect | null>(null);
   const [, startTx] = useTransition();
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  // P6.x.3 — toggle vue Grid 2D (default) <-> Plan visuel Canva
+  const [view, setView] = useState<'grid' | 'plan'>('grid');
 
   const filteredStands = useMemo(() => {
     let list = initialStands;
@@ -199,15 +204,32 @@ export function EmplacementsClient({
           </div>
         </div>
 
-        {/* Grid 2D plan Canva — Salle Le Nôtre uniquement (P6.x.2a-ter) */}
+        {/* P6.x.3 — toggle vue Grid 2D <-> Plan visuel Canva.
+            Grid 2D reste le defaut (drag-drop fonctionne, lookup rapide).
+            Plan visuel : iframe Canva + overlay clickable. */}
         <Legend />
-        <PlanGrid
-          stands={filteredStands.filter((s) => s.salle === 'le_notre')}
-          dragOverId={dragOverId}
-          setDragOverId={setDragOverId}
-          onDrop={handleDrop}
-          onSelect={(s) => setSelectedStand(s)}
-        />
+        <Tabs value={view} onValueChange={(v) => setView(v as 'grid' | 'plan')}>
+          <TabsList>
+            <TabsTrigger value="grid">📊 Grid 2D</TabsTrigger>
+            <TabsTrigger value="plan">🗺️ Plan visuel</TabsTrigger>
+          </TabsList>
+          <TabsContent value="grid">
+            <PlanGrid
+              stands={filteredStands.filter((s) => s.salle === 'le_notre')}
+              dragOverId={dragOverId}
+              setDragOverId={setDragOverId}
+              onDrop={handleDrop}
+              onSelect={(s) => setSelectedStand(s)}
+            />
+          </TabsContent>
+          <TabsContent value="plan">
+            <PlanCanvaInteractive
+              mode="admin"
+              stands={filteredStands.filter((s) => s.salle === 'le_notre')}
+              onStandClick={(s) => setSelectedStand(s)}
+            />
+          </TabsContent>
+        </Tabs>
 
         {/* Autres salles : flat grid fallback (rare, mais sécurise l'UI si
             l'admin ajoute manuellement un stand dans Foyer/Mezzanine/etc.). */}
@@ -274,6 +296,7 @@ export function EmplacementsClient({
               stand={selectedStand}
               onRemove={() => handleRemove(selectedStand.id)}
               onToggleBloque={() => handleToggleBloque(selectedStand)}
+              onPositionSaved={() => router.refresh()}
             />
           ) : null}
         </SheetContent>
@@ -412,10 +435,12 @@ function StandDetail({
   stand,
   onRemove,
   onToggleBloque,
+  onPositionSaved,
 }: {
   stand: StandWithProspect;
   onRemove: () => void;
   onToggleBloque: () => void;
+  onPositionSaved?: () => void;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -460,6 +485,9 @@ function StandDetail({
             <strong>Notes :</strong> {stand.notes}
           </p>
         ) : null}
+
+        {/* P6.x.3 — calibration position overlay plan Canva */}
+        <PositionCalibration stand={stand} onSaved={onPositionSaved} />
       </div>
 
       <div className="border-md-border space-y-2 border-t bg-white p-4">
@@ -672,5 +700,103 @@ function StandCell({
         <Lock className="text-md-text-muted absolute right-1 bottom-1 size-2.5" aria-hidden />
       ) : null}
     </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// P6.x.3 — PositionCalibration : 4 inputs % pour ajuster la position du
+//          rectangle overlay sur le plan Canva.
+// ---------------------------------------------------------------------------
+
+function PositionCalibration({
+  stand,
+  onSaved,
+}: {
+  stand: StandWithProspect;
+  onSaved?: () => void;
+}) {
+  const [x, setX] = useState<string>(stand.position_x?.toString() ?? '');
+  const [y, setY] = useState<string>(stand.position_y?.toString() ?? '');
+  const [w, setW] = useState<string>(stand.position_w?.toString() ?? '');
+  const [h, setH] = useState<string>(stand.position_h?.toString() ?? '');
+  const [saving, startTx] = useTransition();
+
+  function save() {
+    const nx = Number(x);
+    const ny = Number(y);
+    const nw = Number(w);
+    const nh = Number(h);
+    if ([nx, ny, nw, nh].some((n) => !Number.isFinite(n) || n < 0 || n > 100)) {
+      toast.error('Toutes les coordonnées doivent être comprises entre 0 et 100.');
+      return;
+    }
+    startTx(async () => {
+      const r = await updateStandPositionAction({
+        stand_id: stand.id,
+        position_x: nx,
+        position_y: ny,
+        position_w: nw,
+        position_h: nh,
+      });
+      if (r.ok) {
+        toast.success(`Position du stand ${stand.number} mise à jour.`);
+        onSaved?.();
+      } else {
+        toast.error(r.error);
+      }
+    });
+  }
+
+  return (
+    <section className="mt-6 border-t pt-4">
+      <h4 className="text-md-blue-dark mb-1 text-xs font-bold tracking-wide uppercase">
+        📍 Position sur le plan visuel
+      </h4>
+      <p className="text-md-text-muted mb-3 text-[10px]">
+        Coordonnées en % (0-100) relatives au plan Canva. Ajustez pour aligner le rectangle sur la
+        case du stand.
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        <PositionInput label="X (gauche)" value={x} onChange={setX} />
+        <PositionInput label="Y (haut)" value={y} onChange={setY} />
+        <PositionInput label="Largeur" value={w} onChange={setW} />
+        <PositionInput label="Hauteur" value={h} onChange={setH} />
+      </div>
+      <Button
+        type="button"
+        onClick={save}
+        disabled={saving}
+        size="sm"
+        className="mt-3 w-full"
+        variant="outline"
+      >
+        {saving ? 'Enregistrement…' : 'Mettre à jour la position'}
+      </Button>
+    </section>
+  );
+}
+
+function PositionInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-md-text-muted text-[10px]">{label}</span>
+      <input
+        type="number"
+        min={0}
+        max={100}
+        step={0.1}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="border-md-border focus:border-md-magenta rounded border px-2 py-1 text-sm focus:outline-none"
+      />
+    </label>
   );
 }

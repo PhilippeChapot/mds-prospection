@@ -248,6 +248,56 @@ export async function updateStandAction(
   return { ok: true, data: { stand_id } };
 }
 
+// ---------------------------------------------------------------------------
+// P6.x.3 — updateStandPositionAction (admin calibration plan Canva)
+// ---------------------------------------------------------------------------
+//
+// Bornes 0-100 (% relatifs au plan Canva). Validation Zod stricte pour
+// eviter qu'un input UI buggy ne pose une position hors plan.
+
+const positionSchema = z.object({
+  stand_id: z.string().uuid(),
+  position_x: z.number().min(0).max(100),
+  position_y: z.number().min(0).max(100),
+  position_w: z.number().min(0).max(100),
+  position_h: z.number().min(0).max(100),
+});
+
+export async function updateStandPositionAction(
+  input: z.infer<typeof positionSchema>,
+): Promise<ActionResult<{ stand_id: string }>> {
+  const profile = await requireAdminProfile();
+  if (profile.role !== 'admin') return { ok: false, error: 'Forbidden' };
+  const parsed = positionSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'invalid' };
+  }
+  const { stand_id, position_x, position_y, position_w, position_h } = parsed.data;
+  const supabase = getSupabaseServiceClient();
+  const { error } = await supabase
+    .from('stands')
+    .update({
+      position_x,
+      position_y,
+      position_w,
+      position_h,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', stand_id);
+  if (error) return { ok: false, error: error.message };
+  console.log(
+    '%s position-updated stand=%s x=%s y=%s w=%s h=%s',
+    LOG_PREFIX,
+    stand_id,
+    position_x,
+    position_y,
+    position_w,
+    position_h,
+  );
+  revalidatePath('/admin/emplacements');
+  return { ok: true, data: { stand_id } };
+}
+
 const createSchema = z.object({
   number: z.string().trim().min(1).max(40),
   salle: z.enum(SALLE_VALUES),

@@ -26,6 +26,11 @@ export interface StandRow {
   status: StandStatus;
   prospect_id: string | null;
   notes: string | null;
+  /** P6.x.3 — coordonnees overlay plan Canva (en % 0-100, peuvent etre null). */
+  position_x: number | null;
+  position_y: number | null;
+  position_w: number | null;
+  position_h: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -35,6 +40,8 @@ export interface StandWithProspect extends StandRow {
     id: string;
     status: string;
     company_name: string | null;
+    /** P6.x.3 — RGPD voisins : si false, nom non affiche cote exposant. */
+    company_public_visibility: boolean;
     contact_email: string | null;
   } | null;
 }
@@ -55,9 +62,10 @@ export async function listStands(filters: ListStandsFilters = {}): Promise<Stand
     .from('stands')
     .select(
       `id, number, salle, taille_m2, pole_recommended, status, prospect_id, notes,
+       position_x, position_y, position_w, position_h,
        created_at, updated_at,
        prospect:prospects(id, status,
-         company:companies(name),
+         company:companies(name, public_visibility),
          contact:contacts(email))`,
     )
     .order('salle', { ascending: true })
@@ -90,10 +98,14 @@ export async function listStands(filters: ListStandsFilters = {}): Promise<Stand
       r.prospect as {
         id: string;
         status: string;
-        company: { name: string | null } | { name: string | null }[] | null;
+        company:
+          | { name: string | null; public_visibility: boolean | null }
+          | { name: string | null; public_visibility: boolean | null }[]
+          | null;
         contact: { email: string } | { email: string }[] | null;
       } | null,
     );
+    const company = p ? pickOne(p.company) : null;
     return {
       id: r.id,
       number: r.number,
@@ -103,13 +115,19 @@ export async function listStands(filters: ListStandsFilters = {}): Promise<Stand
       status: r.status as StandStatus,
       prospect_id: r.prospect_id,
       notes: r.notes,
+      position_x: r.position_x === null ? null : Number(r.position_x),
+      position_y: r.position_y === null ? null : Number(r.position_y),
+      position_w: r.position_w === null ? null : Number(r.position_w),
+      position_h: r.position_h === null ? null : Number(r.position_h),
       created_at: r.created_at,
       updated_at: r.updated_at,
       prospect: p
         ? {
             id: p.id,
             status: p.status,
-            company_name: pickOne(p.company)?.name ?? null,
+            company_name: company?.name ?? null,
+            // Default TRUE pour les lignes anciennes ou les anciennes inserts.
+            company_public_visibility: company?.public_visibility ?? true,
             contact_email: pickOne(p.contact)?.email ?? null,
           }
         : null,

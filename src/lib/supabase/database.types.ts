@@ -596,6 +596,7 @@ export type Database = {
           pole_id: string | null;
           preferred_room: string | null;
           primary_domain: string | null;
+          public_visibility: boolean;
           sellsy_id: string | null;
           siren: string | null;
           siren_source: string | null;
@@ -634,6 +635,7 @@ export type Database = {
           pole_id?: string | null;
           preferred_room?: string | null;
           primary_domain?: string | null;
+          public_visibility?: boolean;
           sellsy_id?: string | null;
           siren?: string | null;
           siren_source?: string | null;
@@ -672,6 +674,7 @@ export type Database = {
           pole_id?: string | null;
           preferred_room?: string | null;
           primary_domain?: string | null;
+          public_visibility?: boolean;
           sellsy_id?: string | null;
           siren?: string | null;
           siren_source?: string | null;

@@ -15,6 +15,7 @@ import { getTranslations } from 'next-intl/server';
 import { MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { PlanCanvaInteractive } from '@/components/admin/plan/PlanCanvaInteractive';
 import { Row } from '../Row';
 import { makeFormatters } from '../section-loader';
 import type { SectionProps } from './types';
@@ -98,6 +99,23 @@ export async function StandSection({ data, locale }: SectionProps) {
           </div>
         ) : null}
       </Card>
+
+      {/* P6.x.3 — Plan visuel interactif (Le Notre) avec stand de l'exposant
+          mis en evidence (ring rose). Affiche aussi les voisins (tooltip
+          au survol). Cache si pas de stand assigne (rien a "highlight"). */}
+      {data.myStand && data.leNotreStands.length > 0 ? (
+        <Card className="border-md-border space-y-3 p-5 shadow-sm sm:p-6">
+          <h2 className="text-md-text text-base font-semibold">{t('booth.planTitle')}</h2>
+          <p className="text-md-text-muted text-sm">
+            {t('booth.planHelp', { number: data.myStand.number })}
+          </p>
+          <PlanCanvaInteractive
+            mode="exposant"
+            stands={data.leNotreStands}
+            highlightedStandId={data.myStand.id}
+          />
+        </Card>
+      ) : null}
 
       {/* Devis Sellsy */}
       <Card className="border-md-border space-y-3 p-5 shadow-sm sm:p-6">

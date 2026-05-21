@@ -317,7 +317,9 @@
         "label": "Stand",
         "assignedOn": "Attribué le {date}",
         "notYet": "Votre emplacement vous sera communiqué prochainement.",
-        "seeFloorPlan": "Voir le plan de salle"
+        "seeFloorPlan": "Voir le plan de salle",
+        "planTitle": "📍 Mon stand sur le plan visuel",
+        "planHelp": "Votre stand {number} est mis en évidence (encadré rose). Identifiez vos voisins en survolant les autres stands."
       },
       "contactInfo": {
         "section": "📞 Mes coordonnées",

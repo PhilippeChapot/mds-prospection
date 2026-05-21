@@ -317,3 +317,71 @@ describe('syncStandStatusFromProspect (P6.x.2a)', () => {
     expect(prospUpd?.patch.booth_assignment).toBe(null);
   });
 });
+
+describe('updateStandPositionAction (P6.x.3)', () => {
+  beforeEach(() => {
+    resetState();
+    state.stands.set(STAND_ID, {
+      id: STAND_ID,
+      number: 'A1',
+      salle: 'le_notre',
+      status: 'libre',
+      prospect_id: null,
+    });
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.resetModules();
+  });
+
+  it('admin happy path : 0-100 → persiste position_x/y/w/h en DB', async () => {
+    mockEnv();
+    const { updateStandPositionAction } = await import('./actions');
+    const r = await updateStandPositionAction({
+      stand_id: STAND_ID,
+      position_x: 22.5,
+      position_y: 12,
+      position_w: 6.8,
+      position_h: 8.5,
+    });
+    expect(r.ok).toBe(true);
+    const upd = state.standUpdates.find((u) => u.id === STAND_ID);
+    expect(upd?.patch.position_x).toBe(22.5);
+    expect(upd?.patch.position_y).toBe(12);
+    expect(upd?.patch.position_w).toBe(6.8);
+    expect(upd?.patch.position_h).toBe(8.5);
+  });
+
+  it('Zod : refuse une valeur hors bornes (x=150 > 100)', async () => {
+    mockEnv();
+    const { updateStandPositionAction } = await import('./actions');
+    const r = await updateStandPositionAction({
+      stand_id: STAND_ID,
+      position_x: 150,
+      position_y: 10,
+      position_w: 5,
+      position_h: 5,
+    });
+    expect(r.ok).toBe(false);
+    // Aucune update DB n'a été tentée
+    expect(state.standUpdates.find((u) => u.id === STAND_ID)).toBeUndefined();
+  });
+
+  it('refuse role=sales (admin only — calibration sensible)', async () => {
+    state.profileRole = 'sales';
+    mockEnv();
+    const { updateStandPositionAction } = await import('./actions');
+    const r = await updateStandPositionAction({
+      stand_id: STAND_ID,
+      position_x: 10,
+      position_y: 10,
+      position_w: 5,
+      position_h: 5,
+    });
+    expect(r.ok).toBe(false);
+    expect(state.standUpdates).toHaveLength(0);
+  });
+});

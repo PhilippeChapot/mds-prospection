@@ -317,7 +317,9 @@
         "label": "Booth",
         "assignedOn": "Assigned on {date}",
         "notYet": "Your booth location will be communicated shortly.",
-        "seeFloorPlan": "See floor plan"
+        "seeFloorPlan": "See floor plan",
+        "planTitle": "📍 My booth on the floor plan",
+        "planHelp": "Your booth {number} is highlighted (pink frame). Identify your neighbors by hovering on other booths."
       },
       "contactInfo": {
         "section": "📞 My contact details",

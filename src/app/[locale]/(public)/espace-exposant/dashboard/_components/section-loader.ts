@@ -12,6 +12,7 @@
 
 import { loadDashboardData } from '@/lib/espace-exposant/session';
 import { getDocumentLinks, getCommunicationKit } from '@/lib/espace-exposant/documents';
+import { listStands } from '@/lib/admin/stands/queries';
 import type { SectionData } from './sections/types';
 
 export async function loadSectionData(locale: 'fr' | 'en'): Promise<SectionData> {
@@ -22,7 +23,16 @@ export async function loadSectionData(locale: 'fr' | 'en'): Promise<SectionData>
   });
   // P5.x.10.bis : differencie la signature email selon la categorie tarifaire.
   const commKit = getCommunicationKit(locale, loaded.company.category);
-  return { ...loaded, documents, commKit };
+  // P6.x.3 — charge les stands Le Notre + match du stand de l'exposant
+  // (lookup par booth_assignment, qui contient le number ex "A1"). Aucun
+  // crash si l'exposant n'a pas de booth assigne -> on rend la section
+  // sans highlight.
+  const allStands = await listStands({ salle: 'le_notre' });
+  const myStand =
+    allStands.find(
+      (s) => loaded.prospect.booth_assignment && s.number === loaded.prospect.booth_assignment,
+    ) ?? null;
+  return { ...loaded, documents, commKit, leNotreStands: allStands, myStand };
 }
 
 export function makeFormatters(locale: 'fr' | 'en') {

@@ -166,6 +166,41 @@ export const LE_NOTRE_PLAN_STANDS: readonly PlanStandSeed[] = [
   buildPlanStand('H', 9, 9, 'VIDEO_CTV'),
 ];
 
+/**
+ * P6.x.3 — Calcule une position approximative (en %) pour un stand
+ * du plan Canva Le Nôtre à partir de son numéro `<lettre><col>`.
+ *
+ * Stratégie : grille 8 rangées × 11 colonnes, marges visuelles pour les
+ * scènes PRS (côté gauche du plan Canva) et la droite. Cohérent avec le
+ * UPDATE de la migration 0050. Sert au seed initial ET au front si on
+ * souhaite re-calculer une position par défaut.
+ */
+export function calculateApproxPosition(
+  letter: PlanStandSeed['letter'],
+  col: number,
+): {
+  position_x: number;
+  position_y: number;
+  position_w: number;
+  position_h: number;
+} {
+  const rowIndex = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].indexOf(letter);
+  const planMarginLeft = 22;
+  const planMarginRight = 3;
+  const planMarginTop = 12;
+  const planMarginBottom = 8;
+  const availableWidth = 100 - planMarginLeft - planMarginRight;
+  const availableHeight = 100 - planMarginTop - planMarginBottom;
+  const cellWidth = availableWidth / 11;
+  const cellHeight = availableHeight / 8;
+  return {
+    position_x: planMarginLeft + (10 - col) * cellWidth,
+    position_y: planMarginTop + rowIndex * cellHeight,
+    position_w: cellWidth * 0.85,
+    position_h: cellHeight * 0.85,
+  };
+}
+
 /** Set de tous les numéros valides du plan, pour lookup rapide UI/tests. */
 export const LE_NOTRE_PLAN_NUMBERS: ReadonlySet<string> = new Set(
   LE_NOTRE_PLAN_STANDS.map((s) => s.number),
