@@ -218,6 +218,65 @@
       "ctaHome": "Retour à l'accueil"
     }
   },
+  "espaceAffilie": {
+    "nav": {
+      "sectionTitle": "Espace Affilié",
+      "openMenu": "Ouvrir le menu",
+      "stats": "Statistiques",
+      "tracking": "Mes liens",
+      "paiements": "Mes paiements",
+      "kitCommunication": "Kit communication",
+      "profil": "Mon profil",
+      "logout": "Se déconnecter"
+    },
+    "dashboard": {
+      "shortTitle": "Mon espace affilié",
+      "welcome": "Suivez vos performances et téléchargez vos liens et assets de communication.",
+      "stats": {
+        "title": "📊 Vos statistiques",
+        "subtitle": "Mesure en temps réel sur 30 derniers jours et cumulé depuis votre activation.",
+        "kpiClicks30d": "Clics tracking (30 j)",
+        "kpiClicksTotal": "Clics tracking (cumul)",
+        "kpiProspects": "Inscriptions captées",
+        "kpiConverted": "Ventes payées",
+        "kpiCommissionDue": "Commission à percevoir",
+        "kpiCommissionPaid": "Commission perçue",
+        "noData": "Pas encore de données. Partagez votre lien tracking pour commencer."
+      },
+      "tracking": {
+        "title": "🔗 Vos liens tracking",
+        "subtitle": "Liens à copier dans vos newsletters, posts sociaux ou signatures email. Chaque clic est attribué à votre code partenaire.",
+        "code": "Code partenaire",
+        "labels": {
+          "landingFr": "Landing FR (page d'accueil)",
+          "landingEn": "Landing EN (homepage)",
+          "signupFr": "Inscription exposant FR (wizard direct)",
+          "signupEn": "Inscription exposant EN (wizard direct)"
+        },
+        "copy": "Copier",
+        "copied": "Lien copié !"
+      },
+      "paiements": {
+        "title": "💰 Historique des commissions",
+        "subtitle": "Détail de chaque commission acquise et payée. Les virements sont émis manuellement par notre équipe sous 30 jours après validation.",
+        "filterAll": "Toutes",
+        "filterDue": "À percevoir",
+        "filterPaid": "Payées",
+        "empty": "Aucune commission pour l'instant. Vos premières conversions apparaîtront ici.",
+        "th": {
+          "convertedAt": "Date conversion",
+          "company": "Société",
+          "devisTtc": "Devis TTC",
+          "commission": "Commission HT",
+          "status": "Statut",
+          "reference": "Référence virement"
+        },
+        "statusDue": "À percevoir",
+        "statusPaid": "Payée",
+        "statusNotApplicable": "—"
+      }
+    }
+  },
   "espaceExposant": {
     "title": "Espace Exposant",
     "subtitle": "Votre portail MediaDays Solutions 2026",

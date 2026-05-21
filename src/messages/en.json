@@ -218,6 +218,65 @@
       "ctaHome": "Back to home"
     }
   },
+  "espaceAffilie": {
+    "nav": {
+      "sectionTitle": "Affiliate area",
+      "openMenu": "Open menu",
+      "stats": "Statistics",
+      "tracking": "My links",
+      "paiements": "My payments",
+      "kitCommunication": "Communication kit",
+      "profil": "My profile",
+      "logout": "Sign out"
+    },
+    "dashboard": {
+      "shortTitle": "My affiliate area",
+      "welcome": "Track your performance and grab your tracking links and communication assets.",
+      "stats": {
+        "title": "📊 Your statistics",
+        "subtitle": "Live metrics over the last 30 days and cumulative since activation.",
+        "kpiClicks30d": "Tracking clicks (30 d)",
+        "kpiClicksTotal": "Tracking clicks (lifetime)",
+        "kpiProspects": "Captured signups",
+        "kpiConverted": "Paid sales",
+        "kpiCommissionDue": "Commission to receive",
+        "kpiCommissionPaid": "Commission received",
+        "noData": "No data yet. Share your tracking link to start."
+      },
+      "tracking": {
+        "title": "🔗 Your tracking links",
+        "subtitle": "Links to copy into your newsletters, social posts or email signatures. Every click is attributed to your partner code.",
+        "code": "Partner code",
+        "labels": {
+          "landingFr": "Landing FR (homepage)",
+          "landingEn": "Landing EN (homepage)",
+          "signupFr": "Exhibitor signup FR (direct wizard)",
+          "signupEn": "Exhibitor signup EN (direct wizard)"
+        },
+        "copy": "Copy",
+        "copied": "Link copied!"
+      },
+      "paiements": {
+        "title": "💰 Commission history",
+        "subtitle": "Details of each commission earned and paid. Transfers are issued manually by our team within 30 days after validation.",
+        "filterAll": "All",
+        "filterDue": "To receive",
+        "filterPaid": "Paid",
+        "empty": "No commission yet. Your first conversions will show up here.",
+        "th": {
+          "convertedAt": "Conversion date",
+          "company": "Company",
+          "devisTtc": "Quote incl. VAT",
+          "commission": "Commission excl. VAT",
+          "status": "Status",
+          "reference": "Transfer reference"
+        },
+        "statusDue": "To receive",
+        "statusPaid": "Paid",
+        "statusNotApplicable": "—"
+      }
+    }
+  },
   "espaceExposant": {
     "title": "Exhibitor Portal",
     "subtitle": "Your MediaDays Solutions 2026 portal",
