@@ -30,6 +30,7 @@ const LOG_PREFIX = '[affilie/request-magic-link]';
 
 const inputSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
+  locale: z.enum(['fr', 'en']).default('fr'),
 });
 
 export async function POST(request: Request) {
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ success: false, error: 'invalid_payload' }, { status: 400 });
   }
-  const { email } = parsed.data;
+  const { email, locale } = parsed.data;
 
   const emailLimit = checkRateLimit({
     key: `affilie-magic:email:${email}`,
@@ -106,8 +107,8 @@ export async function POST(request: Request) {
   try {
     const token = await signAffilieMagicToken(affiliateId);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-    const magicLinkUrl = `${baseUrl}/api/affilie/login?token=${encodeURIComponent(token)}`;
-    const requestPageUrl = `${baseUrl}/affilie`;
+    const magicLinkUrl = `${baseUrl}/api/affilie/login?token=${encodeURIComponent(token)}&locale=${locale}`;
+    const requestPageUrl = `${baseUrl}/${locale}/affilie`;
 
     const tpl = renderAffilieMagicLinkTemplate({
       displayName: displayName || 'cher partenaire',

@@ -28,12 +28,17 @@ export const runtime = 'nodejs';
 
 const LOG_PREFIX = '[affilie/login]';
 
+function pickLocale(input: string | null): 'fr' | 'en' {
+  return input === 'en' ? 'en' : 'fr';
+}
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const token = url.searchParams.get('token')?.trim();
+  const locale = pickLocale(url.searchParams.get('locale'));
 
   const reboundUrl = (errorCode: 'invalid' | 'expired' | 'generic') =>
-    new URL(`/affilie?error=${errorCode}`, req.url);
+    new URL(`/${locale}/affilie?error=${errorCode}`, req.url);
 
   if (!token) {
     console.warn('%s missing-token', LOG_PREFIX);
@@ -80,7 +85,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const dashboardUrl = new URL('/affilie/dashboard', req.url);
+  const dashboardUrl = new URL(`/${locale}/affilie/dashboard`, req.url);
   const response = NextResponse.redirect(dashboardUrl);
   const isSecure = process.env.NODE_ENV === 'production';
   response.cookies.set(AFFILIE_SESSION_COOKIE, sessionToken, {

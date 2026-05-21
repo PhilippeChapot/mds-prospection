@@ -48,7 +48,7 @@ describe('POST /api/affilie/request-magic-link (P7.x.1.A)', () => {
     vi.resetModules();
   });
 
-  it('email match affilie actif -> envoi Resend + 200 success', async () => {
+  it('email match affilie actif -> envoi Resend + 200 success + magic-link FR par defaut', async () => {
     mockEnv();
     foundAffiliate = { id: 'aff-1', display_name: 'Test Media', is_active: true };
     const { POST } = await import('./route');
@@ -66,6 +66,30 @@ describe('POST /api/affilie/request-magic-link (P7.x.1.A)', () => {
     const call = resendMock.mock.calls[0][0];
     expect(call.subject).toMatch(/Espace Affilié/);
     expect(call.html).toMatch(/api\/affilie\/login\?token=/);
+    // P7.x.1.A-bis : le magic-link porte la locale (defaut fr). HTML escape
+    // `&` -> `&amp;` dans le href, on cherche dans le payload .text non
+    // echape pour matcher plus simplement.
+    expect(call.text).toMatch(/&locale=fr/);
+    // requestPageUrl inclut le prefix /fr/
+    expect(call.html).toMatch(/\/fr\/affilie/);
+  });
+
+  it('P7.x.1.A-bis — locale=en propage dans le magic-link', async () => {
+    mockEnv();
+    foundAffiliate = { id: 'aff-2', display_name: 'EN Partner', is_active: true };
+    const { POST } = await import('./route');
+    const res = await POST(
+      new Request('http://localhost/api/affilie/request-magic-link', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: 'en+partner@example.com', locale: 'en' }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(resendMock).toHaveBeenCalledTimes(1);
+    const call = resendMock.mock.calls[0][0];
+    expect(call.text).toMatch(/&locale=en/);
+    expect(call.html).toMatch(/\/en\/affilie/);
   });
 
   it('email sans match -> 200 success generique (anti-enum) + pas d’envoi Resend', async () => {

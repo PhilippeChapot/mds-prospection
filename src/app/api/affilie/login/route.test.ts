@@ -37,28 +37,40 @@ describe('GET /api/affilie/login (P7.x.1.A)', () => {
     vi.resetModules();
   });
 
-  it('token magic valide -> 307 redirect /affilie/dashboard + cookie affilie_session', async () => {
+  it('token magic valide -> 307 redirect /fr/affilie/dashboard + cookie affilie_session (FR par defaut)', async () => {
     const { signAffilieMagicToken } = await import('@/lib/affilie/jwt');
     const token = await signAffilieMagicToken(AFFILIATE_ID);
     const { GET } = await import('./route');
     const req = new NextRequest(new URL(`http://localhost/api/affilie/login?token=${token}`));
     const res = await GET(req);
     expect(res.status).toBe(307);
-    expect(res.headers.get('location')).toMatch(/\/affilie\/dashboard$/);
+    expect(res.headers.get('location')).toMatch(/\/fr\/affilie\/dashboard$/);
     const setCookie = res.headers.get('set-cookie') ?? '';
     expect(setCookie).toMatch(/affilie_session=/);
     expect(setCookie).toMatch(/HttpOnly/i);
   });
 
-  it('token absent -> redirect /affilie?error=invalid', async () => {
+  it('P7.x.1.A-bis — locale=en -> redirect /en/affilie/dashboard (respect i18n)', async () => {
+    const { signAffilieMagicToken } = await import('@/lib/affilie/jwt');
+    const token = await signAffilieMagicToken(AFFILIATE_ID);
+    const { GET } = await import('./route');
+    const req = new NextRequest(
+      new URL(`http://localhost/api/affilie/login?token=${token}&locale=en`),
+    );
+    const res = await GET(req);
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toMatch(/\/en\/affilie\/dashboard$/);
+  });
+
+  it('token absent -> redirect /fr/affilie?error=invalid', async () => {
     const { GET } = await import('./route');
     const req = new NextRequest(new URL('http://localhost/api/affilie/login'));
     const res = await GET(req);
     expect(res.status).toBe(307);
-    expect(res.headers.get('location')).toMatch(/\/affilie\?error=invalid$/);
+    expect(res.headers.get('location')).toMatch(/\/fr\/affilie\?error=invalid$/);
   });
 
-  it('token tampered -> redirect /affilie?error=invalid', async () => {
+  it('token tampered -> redirect /fr/affilie?error=invalid', async () => {
     const { signAffilieMagicToken } = await import('@/lib/affilie/jwt');
     const token = await signAffilieMagicToken(AFFILIATE_ID);
     const tampered = token.slice(0, -2) + 'XX';
@@ -66,7 +78,7 @@ describe('GET /api/affilie/login (P7.x.1.A)', () => {
     const req = new NextRequest(new URL(`http://localhost/api/affilie/login?token=${tampered}`));
     const res = await GET(req);
     expect(res.status).toBe(307);
-    expect(res.headers.get('location')).toMatch(/\/affilie\?error=invalid$/);
+    expect(res.headers.get('location')).toMatch(/\/fr\/affilie\?error=invalid$/);
   });
 
   it('un token session ne peut pas servir de magic (wrong-type)', async () => {
@@ -78,6 +90,6 @@ describe('GET /api/affilie/login (P7.x.1.A)', () => {
     );
     const res = await GET(req);
     expect(res.status).toBe(307);
-    expect(res.headers.get('location')).toMatch(/\/affilie\?error=invalid$/);
+    expect(res.headers.get('location')).toMatch(/\/fr\/affilie\?error=invalid$/);
   });
 });

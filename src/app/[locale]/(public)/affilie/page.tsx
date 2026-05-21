@@ -8,6 +8,8 @@
  */
 
 import { Suspense } from 'react';
+import { setRequestLocale } from 'next-intl/server';
+import type { Locale } from 'next-intl';
 import { Mail } from 'lucide-react';
 import { AffilieRequestMagicLinkForm } from './RequestMagicLinkForm';
 
@@ -15,6 +17,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Espace Affilié · MediaDays Solutions 2026' };
 
 interface PageProps {
+  params: Promise<{ locale: Locale }>;
   searchParams: Promise<{ error?: string; signed_out?: string }>;
 }
 
@@ -26,7 +29,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   generic: 'Une erreur est survenue. Réessayez dans un instant.',
 };
 
-export default async function AffilieLandingPage({ searchParams }: PageProps) {
+export default async function AffilieLandingPage({ params, searchParams }: PageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const sp = await searchParams;
   const errorMsg = sp.error ? (ERROR_MESSAGES[sp.error] ?? ERROR_MESSAGES.generic) : null;
   const signedOut = sp.signed_out === '1';

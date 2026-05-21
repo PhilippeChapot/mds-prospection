@@ -6,6 +6,8 @@
  * livrees en P7.x.1.B.
  */
 
+import { setRequestLocale } from 'next-intl/server';
+import type { Locale } from 'next-intl';
 import { requireAffilieSession } from '@/lib/affilie/session';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { LogOut } from 'lucide-react';
@@ -13,8 +15,14 @@ import { LogOut } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Mon espace · Affilié MDS 2026' };
 
-export default async function AffilieDashboardPage() {
-  const { affiliateId } = await requireAffilieSession();
+export default async function AffilieDashboardPage({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const { affiliateId } = await requireAffilieSession(locale);
 
   const supabase = getSupabaseServiceClient();
   const { data: affiliate } = await supabase

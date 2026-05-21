@@ -9,12 +9,14 @@
  */
 
 import { useState, useTransition } from 'react';
+import { useLocale } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export function AffilieRequestMagicLinkForm() {
+  const locale = useLocale();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export function AffilieRequestMagicLinkForm() {
         const res = await fetch('/api/affilie/request-magic-link', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, locale }),
         });
         if (res.status === 429) {
           setErrorMsg('Trop de demandes. Réessayez dans une heure.');
