@@ -157,16 +157,65 @@ export async function markCommissionPaidAction(
     throw new Error('Aucune commission due sur ce prospect.');
   }
 
+  const paidAt = new Date().toISOString();
+  const reference = paymentReference?.trim() || null;
   const { error } = await supabase
     .from('prospects')
     .update({
       commission_status: 'paid',
-      commission_paid_at: new Date().toISOString(),
-      commission_payment_reference: paymentReference?.trim() || null,
+      commission_paid_at: paidAt,
+      commission_payment_reference: reference,
     })
     .eq('id', prospectId);
 
   if (error) throw new Error(error.message);
+
+  // P7.x.1.C — notifier l'affilie que le virement a ete effectue.
+  // Best-effort : si Resend ou la lecture de l'affilie echoue, on log et
+  // n'echoue pas l'action admin (la commission est deja marquee payee).
+  if (reference && prospect.affiliate_id) {
+    try {
+      const { data: affiliate } = await supabase
+        .from('affiliates')
+        .select('id, display_name, contact_email, iban')
+        .eq('id', prospect.affiliate_id)
+        .maybeSingle();
+      if (affiliate?.contact_email) {
+        const { renderAffilieCommissionPaid } =
+          await import('@/lib/resend/templates/affilie-commission-paid');
+        const { sendTransactionalEmailViaResend } = await import('@/lib/resend/client');
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mediadays.solutions';
+        const tpl = renderAffilieCommissionPaid({
+          affilieName: affiliate.display_name,
+          amountEurHt: Number(prospect.commission_eur_ht ?? 0),
+          paidAt,
+          paymentReference: reference,
+          iban: affiliate.iban,
+          dashboardUrl: `${baseUrl}/fr/affilie`,
+        });
+        await sendTransactionalEmailViaResend({
+          to: affiliate.contact_email,
+          toName: affiliate.display_name,
+          subject: tpl.subject,
+          html: tpl.html,
+          text: tpl.text,
+          tags: [{ name: 'category', value: 'affilie_commission_paid' }],
+        });
+        console.log(
+          '[admin/affiliates] paid-email-sent affiliate=%s amount=%s ref=%s',
+          prospect.affiliate_id,
+          prospect.commission_eur_ht,
+          reference,
+        );
+      }
+    } catch (mailErr) {
+      console.warn(
+        '[admin/affiliates] paid-email-failed affiliate=%s msg=%s',
+        prospect.affiliate_id,
+        mailErr instanceof Error ? mailErr.message : String(mailErr),
+      );
+    }
+  }
 
   revalidatePath(`/admin/affiliates/${prospect.affiliate_id}`);
   revalidatePath('/admin/affiliates');

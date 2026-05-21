@@ -38,7 +38,7 @@ export async function maybeRecordAffiliateCommission(prospectId: string): Promis
       .select(
         `
         id, affiliate_id, sellsy_devis_total_ttc, commission_eur_ht,
-        company:companies!inner(vat_country, vat_verified)
+        company:companies!inner(name, vat_country, vat_verified)
         `,
       )
       .eq('id', prospectId)
@@ -84,7 +84,7 @@ export async function maybeRecordAffiliateCommission(prospectId: string): Promis
 
     const { data: affiliate } = await supabase
       .from('affiliates')
-      .select('id, commission_percent, display_name')
+      .select('id, commission_percent, display_name, contact_email')
       .eq('id', prospect.affiliate_id)
       .maybeSingle();
 
@@ -143,6 +143,53 @@ export async function maybeRecordAffiliateCommission(prospectId: string): Promis
       commissionEurHt,
       isAutoliquidation,
     );
+
+    // P7.x.1.C — notifier l'affilie que sa commission est validee
+    // (status='due' dans notre schema = "validee, virement a venir").
+    // Best-effort : si Resend est down ou contact_email vide, on log et
+    // continue (la commission est deja persistee).
+    if (affiliate.contact_email) {
+      try {
+        const { renderAffilieCommissionValidated } =
+          await import('@/lib/resend/templates/affilie-commission-validated');
+        const { sendTransactionalEmailViaResend } = await import('@/lib/resend/client');
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mediadays.solutions';
+        const dashboardUrl = `${baseUrl}/fr/affilie`;
+        const tpl = renderAffilieCommissionValidated({
+          affilieName: affiliate.display_name,
+          prospectCompany: company?.name ?? '—',
+          amountEurHt: commissionEurHt,
+          dashboardUrl,
+        });
+        await sendTransactionalEmailViaResend({
+          to: affiliate.contact_email,
+          toName: affiliate.display_name,
+          subject: tpl.subject,
+          html: tpl.html,
+          text: tpl.text,
+          tags: [{ name: 'category', value: 'affilie_commission_validated' }],
+        });
+        console.log(
+          '%s validated-email-sent affiliate=%s amount=%d',
+          LOG_PREFIX,
+          prospect.affiliate_id,
+          commissionEurHt,
+        );
+      } catch (mailErr) {
+        console.warn(
+          '%s validated-email-failed affiliate=%s msg=%s',
+          LOG_PREFIX,
+          prospect.affiliate_id,
+          mailErr instanceof Error ? mailErr.message : String(mailErr),
+        );
+      }
+    } else {
+      console.log(
+        '%s validated-email-skipped no-contact-email affiliate=%s',
+        LOG_PREFIX,
+        prospect.affiliate_id,
+      );
+    }
   } catch (err) {
     console.error(
       '%s unexpected-error prospect=%s msg=%s',
