@@ -34,7 +34,7 @@ export const AFFILIE_NAV_ITEMS: readonly AffilieNavItem[] = [
     enabled: false,
     phase: 'P7.x.1.C',
   },
-  { labelKey: 'profil', emoji: '👤', segment: 'profil', enabled: false, phase: 'P7.x.1.C' },
+  { labelKey: 'profil', emoji: '👤', segment: 'profil', enabled: true },
 ] as const;
 
 /** Section affichee par defaut quand on atterrit sur /affilie/dashboard. */

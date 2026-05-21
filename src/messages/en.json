@@ -274,6 +274,30 @@
         "statusDue": "To receive",
         "statusPaid": "Paid",
         "statusNotApplicable": "—"
+      },
+      "profil": {
+        "title": "👤 My profile",
+        "subtitle": "Your affiliate information and bank details for commission payments.",
+        "typeMedia": "Media partner",
+        "typeReferral": "Exhibitor referral",
+        "identity": {
+          "section": "Identity",
+          "displayName": "Name",
+          "email": "Email",
+          "emailLocked": "Locked",
+          "type": "Type",
+          "commissionPercent": "Commission"
+        },
+        "banking": {
+          "section": "Bank details",
+          "help": "This information is strictly confidential. It is only used to pay your commissions by MediaDays Solutions.",
+          "ibanLabel": "IBAN",
+          "bicLabel": "BIC (optional)",
+          "nomTitulaireLabel": "Account holder name",
+          "save": "Save",
+          "saving": "Saving…",
+          "toastSuccess": "Bank details updated."
+        }
       }
     }
   },

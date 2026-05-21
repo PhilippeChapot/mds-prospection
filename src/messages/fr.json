@@ -274,6 +274,30 @@
         "statusDue": "À percevoir",
         "statusPaid": "Payée",
         "statusNotApplicable": "—"
+      },
+      "profil": {
+        "title": "👤 Mon profil",
+        "subtitle": "Vos informations affilié et coordonnées bancaires pour le règlement de vos commissions.",
+        "typeMedia": "Média partenaire",
+        "typeReferral": "Parrainage exposant",
+        "identity": {
+          "section": "Identité",
+          "displayName": "Nom",
+          "email": "Email",
+          "emailLocked": "Verrouillé",
+          "type": "Type",
+          "commissionPercent": "Commission"
+        },
+        "banking": {
+          "section": "Coordonnées bancaires",
+          "help": "Ces informations sont strictement confidentielles. Elles ne servent qu'au virement de vos commissions par MediaDays Solutions.",
+          "ibanLabel": "IBAN",
+          "bicLabel": "BIC (optionnel)",
+          "nomTitulaireLabel": "Nom du titulaire du compte",
+          "save": "Sauvegarder",
+          "saving": "Enregistrement…",
+          "toastSuccess": "Coordonnées bancaires mises à jour."
+        }
       }
     }
   },

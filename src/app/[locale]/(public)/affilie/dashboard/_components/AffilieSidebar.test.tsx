@@ -25,15 +25,17 @@ async function renderSidebar(pathname?: string) {
 }
 
 describe('AffilieSidebar (P7.x.1.B)', () => {
-  it('rend les 5 entries (3 actives + 2 disabled P7.x.1.C)', async () => {
+  it('P7.x.1.C — rend les 5 entries (4 actives + 1 disabled kit-comm)', async () => {
     await renderSidebar();
     expect(screen.getByText('Statistiques')).toBeInTheDocument();
     expect(screen.getByText('Mes liens')).toBeInTheDocument();
     expect(screen.getByText('Mes paiements')).toBeInTheDocument();
     expect(screen.getByText('Kit communication')).toBeInTheDocument();
     expect(screen.getByText('Mon profil')).toBeInTheDocument();
-    // Tags P7.x.1.C visibles sur les disabled
-    expect(screen.getAllByText(/P7\.x\.1\.C/).length).toBe(2);
+    // P7.x.1.C : Profil active, seule "kit-communication" reste disabled
+    expect(screen.getAllByText(/P7\.x\.1\.C/).length).toBe(1);
+    // Mon profil est cliquable (route active)
+    expect(screen.getByText('Mon profil').closest('a')).toBeTruthy();
   });
 
   it("aria-current=page sur l'entree matchee par pathname", async () => {
