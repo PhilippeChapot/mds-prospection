@@ -29,7 +29,14 @@ export function AdminMobileMenu() {
           <Menu className="size-6" aria-hidden />
         </button>
       </SheetTrigger>
-      <SheetContent side="left" className="bg-card w-72 p-0">
+      {/* P6.x.3-bis : flex column + overflow-y-auto pour que la sidebar
+          puisse scroller quand son contenu depasse la viewport mobile
+          (5 sections + 15+ entrees + bouton "Nouveau devis" ne tiennent
+          pas en 667px iPhone SE). */}
+      <SheetContent
+        side="left"
+        className="bg-card flex max-h-dvh w-72 flex-col overflow-y-auto p-0"
+      >
         {/* SheetTitle requis par Radix pour l'a11y. */}
         <SheetTitle className="sr-only">Navigation admin</SheetTitle>
         <AdminSidebar onNavigate={() => setOpen(false)} />

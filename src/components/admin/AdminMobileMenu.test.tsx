@@ -50,4 +50,22 @@ describe('AdminMobileMenu (P6.x-mobile-burger)', () => {
     expect(screen.queryByText('Pipeline')).toBeNull();
     expect(screen.queryByText('Prospects')).toBeNull();
   });
+
+  it('P6.x.3-bis — SheetContent ouvert : overflow-y-auto + max-h-dvh (scroll mobile OK)', () => {
+    render(<AdminMobileMenu />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' }));
+    // Le SheetContent radix expose data-slot="sheet-content" (cf. sheet.tsx).
+    const sheetContent = document.querySelector('[data-slot="sheet-content"]');
+    expect(sheetContent).toBeTruthy();
+    const className = sheetContent?.className ?? '';
+    // Sans overflow-y-auto, le contenu (5 sections + 15+ entrees + bouton
+    // "Nouveau devis") deborde silencieusement sur iPhone SE (667px).
+    expect(className).toMatch(/overflow-y-auto/);
+    // max-h-dvh borne la hauteur a la viewport visible (mieux que screen
+    // qui ignore la barre URL Safari mobile).
+    expect(className).toMatch(/max-h-dvh/);
+    // Layout flex column pour que le bouton "Nouveau devis" reste en haut
+    // et que les sections scrollent en-dessous.
+    expect(className).toMatch(/flex-col/);
+  });
 });

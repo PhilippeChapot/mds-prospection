@@ -44,13 +44,8 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     title: 'Salon',
     items: [
       { href: '/admin/emplacements', label: 'Emplacements', emoji: '🪑', enabled: true },
-      {
-        href: '/admin/booths/plan',
-        label: 'Plan Canva',
-        emoji: '🗺️',
-        enabled: false,
-        phase: 'P2',
-      },
+      // P6.x.3-bis : l'entree "Plan Canva (P2)" retiree -- le toggle Plan
+      // visuel est integre directement dans /admin/emplacements (P6.x.3).
       { href: '/admin/tarifs', label: 'Tarifs', emoji: '💰', enabled: true },
       {
         href: '/admin/sellsy-products',
