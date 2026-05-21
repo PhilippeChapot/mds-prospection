@@ -1,18 +1,22 @@
 /**
  * @vitest-environment node
  *
- * P7.x.1.E — tests pures snippets kit communication (refonte B2B).
+ * P7.x.1.E-bis — tests pures snippets kit comm (B2B + 5 pôles tech).
  *
- * Doctrine : copy + signature pointent vers le wizard EXPOSANT (B2B),
- * pas la landing visiteur. Le pitch parle de "clients pro" et signe avec
- * le nom de l'affilie.
+ * Doctrine :
+ *   - Affiliation = exposants UNIQUEMENT (visiteurs = entree gratuite,
+ *     pas de commission). CTA pointe vers le wizard exposant.
+ *   - Perimetre = 5 poles MDS tech : audio, diffusion, video & CTV,
+ *     outdoor & DOOH, data & adtech. PAS de regies, PAS de retail
+ *     media (porte par Havas sur mediadays.net classique).
+ *   - Wording : "aux MediaDays" (pluriel correct).
  */
 
 import { describe, it, expect } from 'vitest';
 import { buildEmailSignatureHtml, buildEmailCopy } from './snippets';
 
-describe('buildEmailSignatureHtml (P7.x.1.E B2B)', () => {
-  it('rend une table HTML avec nom + tagline MDS 2026 + 3 dates', () => {
+describe('buildEmailSignatureHtml (P7.x.1.E-bis)', () => {
+  it('rend une table HTML avec nom + tagline "Les MediaDays" + 5 poles', () => {
     const html = buildEmailSignatureHtml({
       affilieName: 'Lucas Aubrée',
       trackingUrlExposant: 'https://mediadays.solutions/fr/inscription-exposant?ref=LUCAS',
@@ -20,12 +24,28 @@ describe('buildEmailSignatureHtml (P7.x.1.E B2B)', () => {
     expect(html).toMatch(/<table/);
     expect(html).toMatch(/Lucas Aubrée/);
     expect(html).toMatch(/Partenaire MediaDays Solutions 2026/);
-    // Tagline NOUVEAU
-    expect(html).toMatch(/Le NOUVEAU rendez-vous des médias/);
+    // E-bis : "Les MediaDays" (pluriel correct)
+    expect(html).toMatch(/Les MediaDays Solutions 2026/);
+    // 5 poles tech listes
+    expect(html).toMatch(/Audio/);
+    expect(html).toMatch(/Diffusion/);
+    expect(html).toMatch(/Vidéo/);
+    expect(html).toMatch(/Outdoor/);
+    expect(html).toMatch(/Data/);
     // 3 dates inline
     expect(html).toMatch(/26 nov Bruxelles/);
     expect(html).toMatch(/10 déc Marseille/);
     expect(html).toMatch(/15 déc Paris/);
+  });
+
+  it('ne mentionne PAS regies ni retailers (perimetre Havas, hors MDS)', () => {
+    const html = buildEmailSignatureHtml({
+      affilieName: 'Test',
+      trackingUrlExposant: 'https://example.com',
+    });
+    expect(html).not.toMatch(/régies/i);
+    expect(html).not.toMatch(/retailers/i);
+    expect(html).not.toMatch(/retail media/i);
   });
 
   it('CTA principal pointe vers le wizard EXPOSANT (B2B)', () => {
@@ -65,41 +85,58 @@ describe('buildEmailSignatureHtml (P7.x.1.E B2B)', () => {
   });
 });
 
-describe('buildEmailCopy (P7.x.1.E B2B)', () => {
-  it('FR : tutoiement + pitch B2B (régies/agences UDECAM) + signature affilie', () => {
+describe('buildEmailCopy (P7.x.1.E-bis)', () => {
+  it('FR : tutoiement + 5 poles tech + signature affilie + tracking exposant', () => {
     const text = buildEmailCopy('fr', {
       affilieName: 'Lucas Aubrée',
       trackingUrlExposant: 'https://mediadays.solutions/fr/inscription-exposant?ref=LUCAS',
     });
     expect(text).toMatch(/Bonjour \{prenom\}/);
-    // Pitch B2B : on parle de l'ecosysteme pro, pas du visiteur gratuit
-    expect(text).toMatch(/régies, annonceurs, agences UDECAM/);
-    expect(text).toMatch(/solution tech \(audio, vidéo, adtech/);
+    // Mention des 5 poles tech
+    expect(text).toMatch(/5 pôles tech/);
+    expect(text).toMatch(/audio, diffusion, vidéo & CTV/);
+    expect(text).toMatch(/outdoor & DOOH/);
+    expect(text).toMatch(/data & adtech/);
+    // Audience visee : annonceurs/agences/editeurs/producteurs (PAS regies)
+    expect(text).toMatch(/Annonceurs, agences, éditeurs et producteurs/);
     // 3 dates avec villes
+    expect(text).toMatch(/26\/11 à Bruxelles/);
     expect(text).toMatch(/10\/12 à Marseille/);
     expect(text).toMatch(/15\/12 à Paris/);
-    expect(text).toMatch(/26\/11 à Bruxelles/);
-    // CTA "Réserve ton stand" (tutoiement)
+    // CTA "Réserve ton stand" tutoiement
     expect(text).toMatch(/Réserve ton stand/);
-    // Tracking exposant
     expect(text).toContain('https://mediadays.solutions/fr/inscription-exposant?ref=LUCAS');
-    // Signe avec le nom affilie en bas
     expect(text).toMatch(/À très vite,\nLucas Aubrée$/);
   });
 
-  it('EN : "Book your booth" + pitch B2B + affilieName signature', () => {
+  it('FR : ne mentionne PAS regies ni retailers (perimetre Havas, hors MDS)', () => {
+    const text = buildEmailCopy('fr', {
+      affilieName: 'Test',
+      trackingUrlExposant: 'https://example.com',
+    });
+    expect(text).not.toMatch(/régies/i);
+    expect(text).not.toMatch(/retailers/i);
+    expect(text).not.toMatch(/UDECAM/);
+  });
+
+  it('EN : "Book your booth" + 5 tech areas + affilieName signature', () => {
     const text = buildEmailCopy('en', {
       affilieName: 'Jane Smith',
       trackingUrlExposant: 'https://mediadays.solutions/en/exhibitor-registration?ref=JANE',
     });
     expect(text).toMatch(/Hi \{first_name\}/);
-    expect(text).toMatch(/ad networks, advertisers, UDECAM/);
-    expect(text).toMatch(/tech solution \(audio, video, adtech/);
-    // EN text wraps Nov/Dec mentions across newlines — use [\s\S]*? to span lines.
+    expect(text).toMatch(/5 tech areas/);
+    expect(text).toMatch(/audio, broadcasting, video & CTV/);
+    // Wraps across newlines : outdoor &\nDOOH
+    expect(text).toMatch(/outdoor[\s\S]*?DOOH/);
+    expect(text).toMatch(/data[\s\S]*?adtech/);
+    // EN text wraps Nov/Dec mentions across newlines
     expect(text).toMatch(/November 26[\s\S]*?Brussels/);
     expect(text).toMatch(/December 10[\s\S]*?Marseille/);
     expect(text).toMatch(/December 15[\s\S]*?Paris/);
-    // CTA B2B "Book your booth"
+    // Pas de ad networks (regies) dans la nouvelle version
+    expect(text).not.toMatch(/ad networks/i);
+    expect(text).toMatch(/Advertisers, agencies, publishers and content producers/);
     expect(text).toMatch(/Book your booth/);
     expect(text).toContain('https://mediadays.solutions/en/exhibitor-registration?ref=JANE');
     expect(text).toMatch(/See you there,\nJane Smith$/);

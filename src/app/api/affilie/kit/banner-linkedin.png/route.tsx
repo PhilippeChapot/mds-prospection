@@ -1,18 +1,19 @@
 /**
- * GET /api/affilie/kit/banner-linkedin.png — P7.x.1.E (refonte B2B)
+ * GET /api/affilie/kit/banner-linkedin.png — P7.x.1.E-bis (refonte layout)
  *
  * Banniere LinkedIn 1200x627 (format share image) generee via next/og.
  *
- * Layout B2B (refonte E) :
- *   - Split horizontal 50/50
- *   - Gauche  : 3 photos venues empilees (Marseille / Paris / Bruxelles)
- *               sur fond marine, avec libelle ville + date sous chaque
- *   - Droite  : fond gradient marine -> magenta avec
- *       * Logos MDS + PRS en haut
- *       * Headline "Vos prochains clients pro sont à MediaDays 2026"
- *       * 3 dates inline
- *       * CTA "Réservez votre stand → mediadays.solutions/?ref={token}"
- *       * Footer discret "Recommandé par {affilie}"
+ * Layout E-bis :
+ *   - Gauche 60% (720px) : photo principale brand `affilie-hero.png`
+ *     en full-bleed (cover). Overlay degrade en bas pour rester
+ *     lisible si Phil ajoute du texte.
+ *   - Droite 40% (480px) : fond gradient marine -> magenta avec
+ *       * Header logos MDS + PRS (badge square, rendus a 56x56)
+ *       * Headline B2B "Vos prochains clients pro sont AUX MediaDays 2026"
+ *         (pluriel correct + 5 poles tech mentionnes)
+ *       * 3 dates inline avec mini-thumbs venues (cercles 60x60)
+ *       * CTA "Reservez votre stand → mediadays.solutions/?ref=..."
+ *       * Footer "Recommande par {affilie}"
  *
  * Auth : session affilie via cookie (source de verite, pas de token URL
  * pour eviter les conflits typage Next.js sur segments [param].png).
@@ -33,9 +34,9 @@ export const dynamic = 'force-dynamic';
 const LOG_PREFIX = '[api/affilie/kit/banner-linkedin]';
 
 const VENUES = [
-  { label: 'Bruxelles', date: '26 nov', image: '/landing/etape-bruxelles.png', flag: '🇧🇪' },
-  { label: 'Marseille', date: '10 déc', image: '/landing/etape-marseille.png', flag: '🇫🇷' },
-  { label: 'Paris', date: '15 déc', image: '/landing/etape-paris.png', flag: '🇫🇷' },
+  { label: 'Bruxelles', date: '26 nov', thumb: '/landing/etape-bruxelles.png', flag: '🇧🇪' },
+  { label: 'Marseille', date: '10 déc', thumb: '/landing/etape-marseille.png', flag: '🇫🇷' },
+  { label: 'Paris', date: '15 déc', thumb: '/landing/etape-paris.png', flag: '🇫🇷' },
 ] as const;
 
 export async function GET(): Promise<Response> {
@@ -65,11 +66,13 @@ export async function GET(): Promise<Response> {
     return new Response('Not Found', { status: 404 });
   }
 
-  // Satori (next/og) ne peut pas resoudre les paths /public via les <img/>
-  // sans hostname — on passe par baseUrl absolu pour charger les assets.
+  // Satori (next/og) requiert des URLs absolues pour resoudre les <img/>.
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
+  // E-bis : badge logos en haute resolution (1600x1600) — rendus square
+  // a 56px ils sont nets et non distordus.
   const logoMds = `${baseUrl}/brand/MDS-LogoBlanc-badge.png`;
   const logoPrs = `${baseUrl}/brand/PRS-LogoBlanc-badge.png`;
+  const heroImage = `${baseUrl}/landing/affilie-hero.png`;
   const trackingUrl = `mediadays.solutions/?ref=${encodeURIComponent(affiliate.token)}`;
 
   console.log('%s render affiliate=%s', LOG_PREFIX, affiliateId);
@@ -86,78 +89,86 @@ export async function GET(): Promise<Response> {
         color: 'white',
       }}
     >
-      {/* Colonne gauche 50% : 3 photos venues empilees */}
+      {/* Colonne gauche 60% : photo brand hero */}
       <div
         style={{
+          position: 'relative',
           display: 'flex',
-          flexDirection: 'column',
-          width: 600,
+          width: 720,
           height: 627,
           background: '#0a1f60',
         }}
       >
-        {VENUES.map((venue) => (
-          <div
-            key={venue.label}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={heroImage}
+          alt="MediaDays Solutions 2026"
+          width={720}
+          height={627}
+          style={{
+            width: 720,
+            height: 627,
+            objectFit: 'cover',
+          }}
+        />
+        {/* Overlay degrade bas pour mieux lire le label superpose */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 160,
+            background: 'linear-gradient(180deg, rgba(3,26,86,0) 0%, rgba(3,26,86,0.7) 100%)',
+            display: 'flex',
+            alignItems: 'flex-end',
+            padding: 28,
+          }}
+        >
+          <span
             style={{
-              display: 'flex',
-              flex: 1,
-              position: 'relative',
-              borderBottom: '2px solid rgba(255,255,255,0.08)',
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: 4,
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.85)',
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`${baseUrl}${venue.image}`}
-              alt={venue.label}
-              width={600}
-              height={209}
-              style={{
-                width: 600,
-                height: 209,
-                objectFit: 'cover',
-                opacity: 0.92,
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 12,
-                left: 16,
-                display: 'flex',
-                gap: 10,
-                alignItems: 'center',
-                background: 'rgba(3,26,86,0.85)',
-                padding: '6px 14px',
-                borderRadius: 6,
-              }}
-            >
-              <span style={{ fontSize: 22 }}>{venue.flag}</span>
-              <span style={{ fontSize: 18, fontWeight: 800 }}>{venue.date}</span>
-              <span style={{ fontSize: 18, fontWeight: 600, opacity: 0.9 }}>{venue.label}</span>
-            </div>
-          </div>
-        ))}
+            Édition 2026 · NOUVEAU
+          </span>
+        </div>
       </div>
 
-      {/* Colonne droite 50% : pitch B2B + logos + CTA */}
+      {/* Colonne droite 40% : header logos + pitch B2B + venues + CTA */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
-          width: 600,
+          width: 480,
           height: 627,
           background: 'linear-gradient(135deg, #031A56 0%, #294294 50%, #E6007E 130%)',
-          padding: 48,
+          padding: 36,
         }}
       >
-        {/* Logos MDS + PRS */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+        {/* Header logos badges (carres) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoMds} alt="MediaDays Solutions" width={140} height={48} />
+          <img
+            src={logoMds}
+            alt="MediaDays Solutions"
+            width={56}
+            height={56}
+            style={{ width: 56, height: 56, objectFit: 'contain' }}
+          />
           <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.4)' }} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoPrs} alt="Paris Radio Show" width={140} height={48} />
+          <img
+            src={logoPrs}
+            alt="Paris Radio Show"
+            width={56}
+            height={56}
+            style={{ width: 56, height: 56, objectFit: 'contain' }}
+          />
         </div>
 
         {/* Headline B2B */}
@@ -165,80 +176,116 @@ export async function GET(): Promise<Response> {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 8,
-            marginTop: 32,
+            gap: 4,
+            marginTop: 28,
             flex: 1,
           }}
         >
           <span
             style={{
-              fontSize: 14,
-              fontWeight: 700,
-              letterSpacing: 6,
-              textTransform: 'uppercase',
-              color: '#FFB1D2',
-            }}
-          >
-            Édition 2026 · NOUVEAU
-          </span>
-          <span
-            style={{
-              fontSize: 36,
+              fontSize: 30,
               fontWeight: 900,
               lineHeight: 1.1,
-              marginTop: 10,
             }}
           >
             Vos prochains clients pro
           </span>
           <span
             style={{
-              fontSize: 36,
+              fontSize: 30,
               fontWeight: 900,
               lineHeight: 1.1,
             }}
           >
-            sont à MediaDays 2026
+            sont aux MediaDays 2026
           </span>
           <span
             style={{
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: 500,
               color: 'rgba(255,255,255,0.85)',
-              marginTop: 16,
-              lineHeight: 1.45,
+              marginTop: 14,
+              lineHeight: 1.4,
             }}
           >
-            Régies, annonceurs, agences UDECAM, retailers, éditeurs, producteurs.
+            5 pôles tech : audio · diffusion · vidéo & CTV · outdoor & DOOH · data & adtech.
           </span>
         </div>
 
-        {/* CTA + tracking URL */}
+        {/* 3 dates inline avec mini-thumbs venues (cercles 60x60) */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: 8,
+            marginTop: 16,
+            marginBottom: 18,
+          }}
+        >
+          {VENUES.map((venue) => (
+            <div
+              key={venue.label}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                width: 120,
+              }}
+            >
+              {/* Mini-thumb venue (cercle 60x60) */}
+              <div
+                style={{
+                  display: 'flex',
+                  width: 60,
+                  height: 60,
+                  borderRadius: 30,
+                  overflow: 'hidden',
+                  border: '2px solid rgba(255,255,255,0.6)',
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`${baseUrl}${venue.thumb}`}
+                  alt={venue.label}
+                  width={60}
+                  height={60}
+                  style={{ width: 60, height: 60, objectFit: 'cover' }}
+                />
+              </div>
+              <span style={{ fontSize: 16, marginTop: 4 }}>{venue.flag}</span>
+              <span style={{ fontSize: 13, fontWeight: 800, lineHeight: 1.1 }}>{venue.date}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.85 }}>{venue.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA + footer affilie */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 8,
-            paddingTop: 16,
+            gap: 4,
+            paddingTop: 14,
             borderTop: '2px solid rgba(255,255,255,0.25)',
           }}
         >
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'white' }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>
             👉 Réservez votre stand
           </span>
           <span
             style={{
-              fontSize: 18,
+              fontSize: 14,
               fontWeight: 800,
               color: '#FFB1D2',
-              letterSpacing: 0.5,
+              letterSpacing: 0.3,
             }}
           >
             {trackingUrl}
           </span>
           <span
             style={{
-              fontSize: 11,
+              fontSize: 9,
               fontWeight: 500,
               color: 'rgba(255,255,255,0.55)',
               marginTop: 6,
@@ -255,7 +302,6 @@ export async function GET(): Promise<Response> {
       width: 1200,
       height: 627,
       headers: {
-        // Pas de cache CDN agressif : le nom affilie peut changer.
         'cache-control': 'private, max-age=300',
       },
     },
