@@ -57,13 +57,17 @@ describe('buildEmailSignatureHtml (P7.x.1.E-bis)', () => {
     expect(html).toMatch(/→ Réservez votre stand/);
   });
 
-  it('sous-CTA secondaire vers mediadays.net (visiteur gratuit)', () => {
+  it('sous-CTA secondaire vers mediadays.net : wording elargi (P7.x.1.E-quater)', () => {
     const html = buildEmailSignatureHtml({
       affilieName: 'Test',
       trackingUrlExposant: 'https://example.com',
     });
     expect(html).toMatch(/href="https:\/\/mediadays\.net"/);
-    expect(html).toMatch(/Inscription visiteur gratuite/);
+    // E-quater : "Vous venez visiter ?" (neutre, ne discrimine pas les
+    // 14 familles visiteurs). Plus de "Annonceur ou agence" restrictif.
+    expect(html).toMatch(/Vous venez visiter \?/);
+    expect(html).toMatch(/Inscription gratuite/);
+    expect(html).not.toMatch(/Annonceur ou agence/);
   });
 
   it('brand colors MDS (#294294 marine + #E6007E magenta)', () => {

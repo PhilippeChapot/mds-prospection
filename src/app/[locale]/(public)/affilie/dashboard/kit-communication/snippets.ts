@@ -30,7 +30,8 @@ export interface SignatureParams {
  *   - bande verticale magenta brand
  *   - tagline MDS 2026 + 3 dates avec emojis villes
  *   - CTA principal "Réservez votre stand" (B2B)
- *   - sous-CTA secondaire mediadays.net (annonceur/agence gratuit)
+ *   - sous-CTA secondaire mediadays.net (visiteur gratuit, sans
+ *     restriction de role -- les visiteurs MDS couvrent 14 familles).
  *
  * Pas de logo en image : les clients mail filtrent souvent les remote
  * images (Gmail proxify et bloque par defaut), donc on opte pour du
@@ -51,7 +52,7 @@ export function buildEmailSignatureHtml(params: SignatureParams): string {
     '<span style="color: #5c6b80; font-size: 11px;">Audio &middot; Diffusion &middot; Vidéo &middot; Outdoor &middot; Data &amp; adtech</span><br/>',
     '🇧🇪 26 nov Bruxelles &middot; 🇫🇷 10 déc Marseille &middot; 🇫🇷 15 déc Paris<br/>',
     `<a href="${exposantHref}" style="color: #E6007E; text-decoration: none; font-weight: 600;">→ Réservez votre stand</a><br/>`,
-    '<span style="color: #5c6b80; font-size: 11px;">Annonceur ou agence ? <a href="https://mediadays.net" style="color: #294294;">Inscription visiteur gratuite</a></span>',
+    '<span style="color: #5c6b80; font-size: 11px;">Vous venez visiter ? <a href="https://mediadays.net" style="color: #294294;">Inscription gratuite → mediadays.net</a></span>',
     '</td>',
     '</tr>',
     '</table>',
