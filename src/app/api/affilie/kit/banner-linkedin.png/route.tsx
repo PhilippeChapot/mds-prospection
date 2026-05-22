@@ -1,22 +1,25 @@
 /**
- * GET /api/affilie/kit/banner-linkedin.png — P7.x.1.E-bis (refonte layout)
+ * GET /api/affilie/kit/banner-linkedin.png — P7.x.1.E-ter
  *
  * Banniere LinkedIn 1200x627 (format share image) generee via next/og.
  *
- * Layout E-bis :
- *   - Gauche 60% (720px) : photo principale brand `affilie-hero.png`
- *     en full-bleed (cover). Overlay degrade en bas pour rester
- *     lisible si Phil ajoute du texte.
- *   - Droite 40% (480px) : fond gradient marine -> magenta avec
- *       * Header logos MDS + PRS (badge square, rendus a 56x56)
- *       * Headline B2B "Vos prochains clients pro sont AUX MediaDays 2026"
- *         (pluriel correct + 5 poles tech mentionnes)
- *       * 3 dates inline avec mini-thumbs venues (cercles 60x60)
- *       * CTA "Reservez votre stand → mediadays.solutions/?ref=..."
- *       * Footer "Recommande par {affilie}"
+ * Layout E-ter (refonte) :
+ *   - Gauche 50% (600px) : photo principale `affilie-hero.png` full-bleed
+ *     + badge "EDITION 2026 · NOUVEAU" en bas gauche sur overlay.
+ *   - Droite 50% (600px) : header logos pleine largeur (MDS + PRS, 50/50
+ *     avec divider central) puis stack texte :
+ *       L1 : titre grand bold "Les MediaDays Solutions 2026"
+ *       L2 : tagline subtle "— Le NOUVEAU rendez-vous des medias"
+ *       L3 : poles accentues magenta (Audio · Diffusion · Video ·
+ *            Outdoor · Data & adtech)
+ *       L4 : dates+villes avec drapeaux emoji
+ *     Footer : CTA "Reservez votre stand" + URL tracking en magenta
+ *     visible, et "Recommande par {nom}" en sous-pied discret.
  *
- * Auth : session affilie via cookie (source de verite, pas de token URL
- * pour eviter les conflits typage Next.js sur segments [param].png).
+ * Mini-thumbs venues retires (P7.x.1.E-ter). Les drapeaux 🇧🇪🇫🇷 restent
+ * uniquement en emoji dans la ligne dates.
+ *
+ * Auth : session affilie via cookie (source de verite).
  */
 
 import { ImageResponse } from 'next/og';
@@ -32,12 +35,6 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const LOG_PREFIX = '[api/affilie/kit/banner-linkedin]';
-
-const VENUES = [
-  { label: 'Bruxelles', date: '26 nov', thumb: '/landing/etape-bruxelles.png', flag: '🇧🇪' },
-  { label: 'Marseille', date: '10 déc', thumb: '/landing/etape-marseille.png', flag: '🇫🇷' },
-  { label: 'Paris', date: '15 déc', thumb: '/landing/etape-paris.png', flag: '🇫🇷' },
-] as const;
 
 export async function GET(): Promise<Response> {
   const cookieStore = await cookies();
@@ -66,10 +63,7 @@ export async function GET(): Promise<Response> {
     return new Response('Not Found', { status: 404 });
   }
 
-  // Satori (next/og) requiert des URLs absolues pour resoudre les <img/>.
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
-  // E-bis : badge logos en haute resolution (1600x1600) — rendus square
-  // a 56px ils sont nets et non distordus.
   const logoMds = `${baseUrl}/brand/MDS-LogoBlanc-badge.png`;
   const logoPrs = `${baseUrl}/brand/PRS-LogoBlanc-badge.png`;
   const heroImage = `${baseUrl}/landing/affilie-hero.png`;
@@ -89,12 +83,12 @@ export async function GET(): Promise<Response> {
         color: 'white',
       }}
     >
-      {/* Colonne gauche 60% : photo brand hero */}
+      {/* Colonne gauche 50% : photo brand hero + badge ÉDITION */}
       <div
         style={{
           position: 'relative',
           display: 'flex',
-          width: 720,
+          width: 600,
           height: 627,
           background: '#0a1f60',
         }}
@@ -103,23 +97,23 @@ export async function GET(): Promise<Response> {
         <img
           src={heroImage}
           alt="MediaDays Solutions 2026"
-          width={720}
+          width={600}
           height={627}
           style={{
-            width: 720,
+            width: 600,
             height: 627,
             objectFit: 'cover',
           }}
         />
-        {/* Overlay degrade bas pour mieux lire le label superpose */}
+        {/* Overlay dégradé bas pour lisibilité du badge */}
         <div
           style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
-            height: 160,
-            background: 'linear-gradient(180deg, rgba(3,26,86,0) 0%, rgba(3,26,86,0.7) 100%)',
+            height: 140,
+            background: 'linear-gradient(180deg, rgba(3,26,86,0) 0%, rgba(3,26,86,0.75) 100%)',
             display: 'flex',
             alignItems: 'flex-end',
             padding: 28,
@@ -127,11 +121,11 @@ export async function GET(): Promise<Response> {
         >
           <span
             style={{
-              fontSize: 12,
-              fontWeight: 700,
+              fontSize: 14,
+              fontWeight: 800,
               letterSpacing: 4,
               textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.85)',
+              color: 'rgba(255,255,255,0.92)',
             }}
           >
             Édition 2026 · NOUVEAU
@@ -139,156 +133,153 @@ export async function GET(): Promise<Response> {
         </div>
       </div>
 
-      {/* Colonne droite 40% : header logos + pitch B2B + venues + CTA */}
+      {/* Colonne droite 50% : logos pleine largeur + stack texte + CTA */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
-          width: 480,
+          width: 600,
           height: 627,
           background: 'linear-gradient(135deg, #031A56 0%, #294294 50%, #E6007E 130%)',
-          padding: 36,
+          padding: 40,
         }}
       >
-        {/* Header logos badges (carres) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={logoMds}
-            alt="MediaDays Solutions"
-            width={56}
-            height={56}
-            style={{ width: 56, height: 56, objectFit: 'contain' }}
-          />
-          <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.4)' }} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={logoPrs}
-            alt="Paris Radio Show"
-            width={56}
-            height={56}
-            style={{ width: 56, height: 56, objectFit: 'contain' }}
-          />
+        {/* Header logos PLEINE LARGEUR (50/50) */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 24,
+            height: 96,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              width: 246,
+              height: 96,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logoMds}
+              alt="MediaDays Solutions"
+              width={96}
+              height={96}
+              style={{ width: 96, height: 96, objectFit: 'contain' }}
+            />
+          </div>
+          <div style={{ width: 1, height: 64, background: 'rgba(255,255,255,0.4)' }} />
+          <div
+            style={{
+              display: 'flex',
+              width: 246,
+              height: 96,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logoPrs}
+              alt="Paris Radio Show"
+              width={96}
+              height={96}
+              style={{ width: 96, height: 96, objectFit: 'contain' }}
+            />
+          </div>
         </div>
 
-        {/* Headline B2B */}
+        {/* Stack texte */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 4,
-            marginTop: 28,
+            gap: 12,
+            marginTop: 36,
             flex: 1,
           }}
         >
+          {/* L1 : titre */}
           <span
             style={{
-              fontSize: 30,
+              fontSize: 32,
               fontWeight: 900,
               lineHeight: 1.1,
+              color: 'white',
             }}
           >
-            Vos prochains clients pro
+            Les MediaDays Solutions 2026
           </span>
+          {/* L2 : tagline subtle */}
           <span
             style={{
-              fontSize: 30,
-              fontWeight: 900,
-              lineHeight: 1.1,
-            }}
-          >
-            sont aux MediaDays 2026
-          </span>
-          <span
-            style={{
-              fontSize: 14,
+              fontSize: 18,
               fontWeight: 500,
               color: 'rgba(255,255,255,0.85)',
-              marginTop: 14,
-              lineHeight: 1.4,
+              lineHeight: 1.3,
             }}
           >
-            5 pôles tech : audio · diffusion · vidéo & CTV · outdoor & DOOH · data & adtech.
+            — Le NOUVEAU rendez-vous des médias
+          </span>
+          {/* L3 : pôles accentués magenta */}
+          <span
+            style={{
+              fontSize: 18,
+              fontWeight: 700,
+              color: '#FFB1D2',
+              marginTop: 12,
+              lineHeight: 1.35,
+            }}
+          >
+            Audio · Diffusion · Vidéo · Outdoor · Data & adtech
+          </span>
+          {/* L4 : dates + villes */}
+          <span
+            style={{
+              fontSize: 18,
+              fontWeight: 600,
+              color: 'white',
+              marginTop: 8,
+              lineHeight: 1.35,
+            }}
+          >
+            🇧🇪 26 nov Bruxelles · 🇫🇷 10 déc Marseille · 🇫🇷 15 déc Paris
           </span>
         </div>
 
-        {/* 3 dates inline avec mini-thumbs venues (cercles 60x60) */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: 8,
-            marginTop: 16,
-            marginBottom: 18,
-          }}
-        >
-          {VENUES.map((venue) => (
-            <div
-              key={venue.label}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 4,
-                width: 120,
-              }}
-            >
-              {/* Mini-thumb venue (cercle 60x60) */}
-              <div
-                style={{
-                  display: 'flex',
-                  width: 60,
-                  height: 60,
-                  borderRadius: 30,
-                  overflow: 'hidden',
-                  border: '2px solid rgba(255,255,255,0.6)',
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`${baseUrl}${venue.thumb}`}
-                  alt={venue.label}
-                  width={60}
-                  height={60}
-                  style={{ width: 60, height: 60, objectFit: 'cover' }}
-                />
-              </div>
-              <span style={{ fontSize: 16, marginTop: 4 }}>{venue.flag}</span>
-              <span style={{ fontSize: 13, fontWeight: 800, lineHeight: 1.1 }}>{venue.date}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.85 }}>{venue.label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* CTA + footer affilie */}
+        {/* CTA bas droite très visible + footer affilié */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 4,
-            paddingTop: 14,
-            borderTop: '2px solid rgba(255,255,255,0.25)',
+            gap: 6,
+            paddingTop: 18,
+            borderTop: '2px solid rgba(255,255,255,0.3)',
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>
+          <span style={{ fontSize: 22, fontWeight: 800, color: 'white' }}>
             👉 Réservez votre stand
           </span>
           <span
             style={{
-              fontSize: 14,
-              fontWeight: 800,
+              fontSize: 22,
+              fontWeight: 900,
               color: '#FFB1D2',
-              letterSpacing: 0.3,
+              letterSpacing: 0.5,
             }}
           >
             {trackingUrl}
           </span>
           <span
             style={{
-              fontSize: 9,
-              fontWeight: 500,
+              fontSize: 10,
+              fontWeight: 600,
               color: 'rgba(255,255,255,0.55)',
-              marginTop: 6,
+              marginTop: 8,
               textTransform: 'uppercase',
               letterSpacing: 2,
             }}
