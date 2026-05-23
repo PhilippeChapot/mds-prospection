@@ -25,6 +25,8 @@ export interface AffilieNavItem {
 
 export const AFFILIE_NAV_ITEMS: readonly AffilieNavItem[] = [
   { labelKey: 'stats', emoji: '📊', segment: 'stats', enabled: true },
+  // P7.x.1.F : section "Mes societes" (3 sources d'attribution + declaration).
+  { labelKey: 'societes', emoji: '🏢', segment: 'societes', enabled: true },
   { labelKey: 'tracking', emoji: '🔗', segment: 'tracking', enabled: true },
   { labelKey: 'paiements', emoji: '💰', segment: 'paiements', enabled: true },
   { labelKey: 'kitCommunication', emoji: '🎨', segment: 'kit-communication', enabled: true },

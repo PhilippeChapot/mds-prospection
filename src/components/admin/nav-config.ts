@@ -58,7 +58,8 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   {
     title: 'Croissance',
     items: [
-      { href: '/admin/affiliates', label: 'Affilies', emoji: '🤝', enabled: false, phase: 'P3' },
+      { href: '/admin/affiliates', label: 'Affilies', emoji: '🤝', enabled: true },
+      { href: '/admin/affiliate-claims', label: 'Claims affiliés', emoji: '🔖', enabled: true },
       {
         href: '/admin/exhibitors-profiles',
         label: 'Profils partenaires',

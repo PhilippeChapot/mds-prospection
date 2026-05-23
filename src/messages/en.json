@@ -223,6 +223,7 @@
       "sectionTitle": "Affiliate area",
       "openMenu": "Open menu",
       "stats": "Statistics",
+      "societes": "My companies",
       "tracking": "My links",
       "paiements": "My payments",
       "kitCommunication": "Communication kit",
@@ -242,6 +243,45 @@
         "kpiCommissionDue": "Commission to receive",
         "kpiCommissionPaid": "Commission received",
         "noData": "No data yet. Share your tracking link to start."
+      },
+      "societes": {
+        "title": "🏢 My companies",
+        "subtitle": "Companies attached to your affiliate code (cookie, declared by the company, or declared by you).",
+        "empty": "No companies attached yet. Share your tracking link or declare a company you reached out to.",
+        "commissionDue": "To receive",
+        "commissionPaid": "Paid",
+        "th": {
+          "company": "Company",
+          "source": "Source",
+          "status": "Status",
+          "declaredAt": "Declared on",
+          "commission": "Commission"
+        },
+        "source": {
+          "cookieTracking": "Cookie tracking",
+          "declaredByCompany": "Declared by company",
+          "declaredByAffiliate": "Declared by me"
+        },
+        "status": {
+          "pending": "Admin validation",
+          "active": "Active",
+          "rejected": "Rejected"
+        },
+        "declare": {
+          "cta": "+ Declare a company",
+          "modalTitle": "Declare a company you reached out to",
+          "modalDescription": "Fill in the company you reached out to. An admin will validate within 48h.",
+          "nameLabel": "Company name",
+          "namePlaceholder": "Ex: Acme Media Group",
+          "websiteLabel": "Website (optional)",
+          "notesLabel": "Notes (visible to admin)",
+          "notesPlaceholder": "Ex: reached out at RadioTour Brussels on May 12",
+          "submit": "Submit declaration",
+          "submitting": "Submitting…",
+          "cancel": "Cancel",
+          "toastSuccess": "Declaration awaiting admin validation.",
+          "toastMatched": "Matched company: {company}"
+        }
       },
       "exclusion": {
         "title": "💡 Important:",

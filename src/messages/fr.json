@@ -223,6 +223,7 @@
       "sectionTitle": "Espace Affilié",
       "openMenu": "Ouvrir le menu",
       "stats": "Statistiques",
+      "societes": "Mes sociétés",
       "tracking": "Mes liens",
       "paiements": "Mes paiements",
       "kitCommunication": "Kit communication",
@@ -242,6 +243,45 @@
         "kpiCommissionDue": "Commission à percevoir",
         "kpiCommissionPaid": "Commission perçue",
         "noData": "Pas encore de données. Partagez votre lien tracking pour commencer."
+      },
+      "societes": {
+        "title": "🏢 Mes sociétés",
+        "subtitle": "Sociétés rattachées à votre code affilié (cookie, déclarées par la société, ou déclarées par vous).",
+        "empty": "Aucune société rattachée pour l'instant. Partagez votre lien tracking ou déclarez une société démarchée.",
+        "commissionDue": "À percevoir",
+        "commissionPaid": "Payée",
+        "th": {
+          "company": "Société",
+          "source": "Source",
+          "status": "Statut",
+          "declaredAt": "Déclarée le",
+          "commission": "Commission"
+        },
+        "source": {
+          "cookieTracking": "Cookie tracking",
+          "declaredByCompany": "Déclarée par la société",
+          "declaredByAffiliate": "Déclarée par moi"
+        },
+        "status": {
+          "pending": "Validation admin",
+          "active": "Active",
+          "rejected": "Rejetée"
+        },
+        "declare": {
+          "cta": "+ Déclarer une société",
+          "modalTitle": "Déclarer une société démarchée",
+          "modalDescription": "Renseignez la société que vous avez démarchée. Un admin validera votre déclaration sous 48h.",
+          "nameLabel": "Nom de la société",
+          "namePlaceholder": "Ex : Acme Media Group",
+          "websiteLabel": "Site web (optionnel)",
+          "notesLabel": "Notes (visible admin)",
+          "notesPlaceholder": "Ex : démarchée au RadioTour Bruxelles le 12/05",
+          "submit": "Envoyer la déclaration",
+          "submitting": "Envoi…",
+          "cancel": "Annuler",
+          "toastSuccess": "Déclaration en attente de validation admin.",
+          "toastMatched": "Société matchée : {company}"
+        }
       },
       "exclusion": {
         "title": "💡 Important :",

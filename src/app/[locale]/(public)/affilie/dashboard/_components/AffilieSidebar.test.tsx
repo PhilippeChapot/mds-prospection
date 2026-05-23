@@ -25,17 +25,18 @@ async function renderSidebar(pathname?: string) {
 }
 
 describe('AffilieSidebar (P7.x.1.B)', () => {
-  it('P7.x.1.C final — rend les 5 entries toutes actives (kit + profil enabled)', async () => {
+  it('P7.x.1.F — rend les 6 entries actives (stats/societes/tracking/paiements/kit/profil)', async () => {
     await renderSidebar();
     expect(screen.getByText('Statistiques')).toBeInTheDocument();
+    expect(screen.getByText('Mes sociétés')).toBeInTheDocument();
     expect(screen.getByText('Mes liens')).toBeInTheDocument();
     expect(screen.getByText('Mes paiements')).toBeInTheDocument();
     expect(screen.getByText('Kit communication')).toBeInTheDocument();
     expect(screen.getByText('Mon profil')).toBeInTheDocument();
-    // P7.x.1.C final : aucune entree disabled (plus de tag P7.x.1.C affiche)
+    // Aucune entree disabled
     expect(screen.queryAllByText(/P7\.x\.1\.C/).length).toBe(0);
-    // Toutes les entries sont des <a> Link cliquables
-    expect(screen.getByText('Kit communication').closest('a')).toBeTruthy();
+    // Toutes cliquables (Link)
+    expect(screen.getByText('Mes sociétés').closest('a')).toBeTruthy();
     expect(screen.getByText('Mon profil').closest('a')).toBeTruthy();
   });
 
