@@ -46,7 +46,12 @@ export function EditProspectForm({
 }: {
   prospect: EditableProspect;
   owners: Owner[];
-  currentUser: { id: string; full_name: string | null; email: string; role: 'admin' | 'sales' };
+  currentUser: {
+    id: string;
+    full_name: string | null;
+    email: string;
+    role: 'admin' | 'sales' | 'super_admin';
+  };
 }) {
   const [state, formAction] = useActionState(updateProspectAction, initialState);
   const { errors, clear } = useFieldErrors(state.fieldErrors);

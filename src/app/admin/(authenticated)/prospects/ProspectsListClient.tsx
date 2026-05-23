@@ -87,7 +87,7 @@ export function ProspectsListClient({
 }: {
   rows: ProspectListItem[];
   owners: Owner[];
-  currentRole: 'admin' | 'sales';
+  currentRole: 'admin' | 'sales' | 'super_admin';
   filters: ExportProspectsFilters;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());

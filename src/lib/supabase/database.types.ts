@@ -207,6 +207,85 @@ export type Database = {
           },
         ];
       };
+      affiliate_claims: {
+        Row: {
+          affiliate_id: string;
+          company_id: string | null;
+          created_at: string;
+          declared_at: string;
+          declared_company_name: string | null;
+          declared_company_website: string | null;
+          id: string;
+          notes_admin: string | null;
+          notes_affiliate: string | null;
+          prospect_id: string | null;
+          rejected_reason: string | null;
+          source: string;
+          status: string;
+          updated_at: string;
+          validated_at: string | null;
+          validated_by: string | null;
+        };
+        Insert: {
+          affiliate_id: string;
+          company_id?: string | null;
+          created_at?: string;
+          declared_at?: string;
+          declared_company_name?: string | null;
+          declared_company_website?: string | null;
+          id?: string;
+          notes_admin?: string | null;
+          notes_affiliate?: string | null;
+          prospect_id?: string | null;
+          rejected_reason?: string | null;
+          source: string;
+          status?: string;
+          updated_at?: string;
+          validated_at?: string | null;
+          validated_by?: string | null;
+        };
+        Update: {
+          affiliate_id?: string;
+          company_id?: string | null;
+          created_at?: string;
+          declared_at?: string;
+          declared_company_name?: string | null;
+          declared_company_website?: string | null;
+          id?: string;
+          notes_admin?: string | null;
+          notes_affiliate?: string | null;
+          prospect_id?: string | null;
+          rejected_reason?: string | null;
+          source?: string;
+          status?: string;
+          updated_at?: string;
+          validated_at?: string | null;
+          validated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'affiliate_claims_affiliate_id_fkey';
+            columns: ['affiliate_id'];
+            isOneToOne: false;
+            referencedRelation: 'affiliates';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'affiliate_claims_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'affiliate_claims_prospect_id_fkey';
+            columns: ['prospect_id'];
+            isOneToOne: false;
+            referencedRelation: 'prospects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       affiliate_clicks: {
         Row: {
           affiliate_id: string;
@@ -2347,7 +2426,7 @@ export type Database = {
       sync_op: 'create' | 'update' | 'pull' | 'check';
       sync_status: 'success' | 'pending' | 'error';
       sync_target: 'sellsy' | 'brevo' | 'connectonair';
-      user_role: 'admin' | 'sales';
+      user_role: 'admin' | 'sales' | 'super_admin';
       vat_status: 'unverified' | 'pending' | 'valid' | 'invalid';
     };
     CompositeTypes: {
@@ -2580,7 +2659,7 @@ export const Constants = {
       sync_op: ['create', 'update', 'pull', 'check'],
       sync_status: ['success', 'pending', 'error'],
       sync_target: ['sellsy', 'brevo', 'connectonair'],
-      user_role: ['admin', 'sales'],
+      user_role: ['admin', 'sales', 'super_admin'],
       vat_status: ['unverified', 'pending', 'valid', 'invalid'],
     },
   },

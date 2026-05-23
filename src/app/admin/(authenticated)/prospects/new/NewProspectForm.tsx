@@ -29,7 +29,12 @@ export function NewProspectForm({
   alreadyProspectIds,
 }: {
   owners: Owner[];
-  currentUser: { id: string; full_name: string | null; email: string; role: 'admin' | 'sales' };
+  currentUser: {
+    id: string;
+    full_name: string | null;
+    email: string;
+    role: 'admin' | 'sales' | 'super_admin';
+  };
   prefillContact: PrefillContact | null;
   prefillCompany: PrefillCompany | null;
   alreadyProspectIds: string[];

@@ -9,18 +9,25 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from './server';
 
+export type UserRole = 'admin' | 'sales' | 'super_admin';
+
 export type AdminProfile = {
   id: string;
   email: string;
   full_name: string | null;
-  role: 'admin' | 'sales';
+  role: UserRole;
 };
 
 /**
- * Renvoie le profil admin/sales courant. Redirige vers /admin/login si
- * pas de session ou si role insuffisant. Le layout (authenticated) garantit
- * deja ces conditions, mais on revalide cote action serveur pour pouvoir
- * brancher des controles fins (ex : isAdmin pour DELETE).
+ * Renvoie le profil admin/sales/super_admin courant. Redirige vers
+ * /admin/login si pas de session ou si role insuffisant. Le layout
+ * (authenticated) garantit deja ces conditions, mais on revalide cote
+ * action serveur pour pouvoir brancher des controles fins (ex : isAdmin
+ * pour DELETE).
+ *
+ * Note : `super_admin` est considere comme admin + privilege etendu.
+ * `requireAdminProfile` l'accepte ; pour les actions sensibles utiliser
+ * `requireSuperAdmin` ci-dessous.
  */
 export async function requireAdminProfile(): Promise<AdminProfile> {
   const supabase = await createSupabaseServerClient();
@@ -35,10 +42,29 @@ export async function requireAdminProfile(): Promise<AdminProfile> {
     .select('id, email, full_name, role')
     .eq('id', user.id)
     .maybeSingle();
-  if (!profile || (profile.role !== 'admin' && profile.role !== 'sales')) {
+  if (
+    !profile ||
+    (profile.role !== 'admin' && profile.role !== 'sales' && profile.role !== 'super_admin')
+  ) {
     redirect('/admin/login?error=unauthorized');
   }
   return profile as AdminProfile;
+}
+
+/**
+ * P7.x.1.F — protege les actions destructives sensibles (DELETE d'un
+ * affiliate_claim actif, etc.). Throw un Error si role != 'super_admin'
+ * (les server actions catchent et renvoient un ActionResult ok:false).
+ *
+ * Promotion manuelle d'un user en super_admin via SQL Editor :
+ *   UPDATE public.users SET role='super_admin' WHERE email='...';
+ */
+export async function requireSuperAdmin(): Promise<AdminProfile> {
+  const profile = await requireAdminProfile();
+  if (profile.role !== 'super_admin') {
+    throw new Error('Réservé aux super_admin.');
+  }
+  return profile;
 }
 
 /**
