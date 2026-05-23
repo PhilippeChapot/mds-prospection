@@ -17,7 +17,9 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import type { Locale } from 'next-intl';
 import { requireAffilieSession } from '@/lib/affilie/session';
 import { loadAffilieDashboardData } from '@/lib/affilie/dashboard-data';
+import { listExcludedCompanies } from '@/lib/affiliates/excluded-companies';
 import { Card } from '@/components/ui/card';
+import { CommissionExclusionBanner } from '../_components/CommissionExclusionBanner';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Statistiques · Affilié MDS 2026' };
@@ -32,7 +34,10 @@ export default async function AffilieStatsPage({ params }: PageProps) {
   const { affiliateId } = await requireAffilieSession(locale);
   const t = await getTranslations({ locale, namespace: 'espaceAffilie.dashboard.stats' });
 
-  const { kpis } = await loadAffilieDashboardData(affiliateId);
+  const [{ kpis }, excludedCompanies] = await Promise.all([
+    loadAffilieDashboardData(affiliateId),
+    listExcludedCompanies(),
+  ]);
 
   const fmtEur = new Intl.NumberFormat(locale === 'en' ? 'en-GB' : 'fr-FR', {
     style: 'currency',
@@ -53,6 +58,9 @@ export default async function AffilieStatsPage({ params }: PageProps) {
         <h2 className="text-md-text text-xl font-bold tracking-tight">{t('title')}</h2>
         <p className="text-md-text-muted mt-1 text-sm">{t('subtitle')}</p>
       </header>
+
+      {/* P7.x.1.D — Banner regle d'exclusion commission (PRS exhibitors) */}
+      <CommissionExclusionBanner excludedCompanies={excludedCompanies} />
 
       {!hasAnyData ? (
         <Card className="border-md-border bg-md-bg-soft border-dashed p-5 text-sm shadow-none">

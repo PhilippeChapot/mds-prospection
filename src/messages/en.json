@@ -243,6 +243,22 @@
         "kpiCommissionPaid": "Commission received",
         "noData": "No data yet. Share your tracking link to start."
       },
+      "exclusion": {
+        "title": "💡 Important:",
+        "body": "Commissions don't apply to existing Paris Radio Show 2026 exhibitors. Any other company converted through your affiliation generates commission normally.",
+        "seeListLink": "See the list of excluded exhibitors ({count}) →",
+        "modalTitle": "Paris Radio Show 2026 excluded exhibitors",
+        "modalDescription": "These companies are already PRS 2026 exhibitors and do not generate commission. Any other company converted through your affiliation link remains eligible.",
+        "searchPlaceholder": "Search by name or domain…",
+        "empty": "No excluded exhibitor yet.",
+        "noResults": "No result for this search.",
+        "total": "{count} excluded company/companies in total.",
+        "close": "Close",
+        "th": {
+          "name": "Company",
+          "domain": "Domain"
+        }
+      },
       "tracking": {
         "title": "🔗 Your tracking links",
         "subtitle": "Links to copy into your newsletters, social posts or email signatures. Every click is attributed to your partner code.",
