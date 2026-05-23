@@ -246,6 +246,67 @@ export async function convertSignupToProspect(
     return { success: false, error: `INSERT prospect: ${prospectErr?.message ?? 'unknown'}` };
   }
 
+  // P7.x.1.F — Creation auto du affiliate_claim quand prospect a un
+  // affiliate_id. Source detection :
+  //   * Si signup.affiliate_input_raw fuzzy-matche le display_name de
+  //     l'affilie resolu -> source='declared_by_company'
+  //   * Sinon -> source='cookie_tracking'
+  // Status='active' (validation systematique au moment de la conversion,
+  // car l'admin valide le signup lui-meme avant de creer le prospect).
+  // Best-effort : un echec n'empeche pas la creation du prospect.
+  if (signup.affiliate_id) {
+    try {
+      const { data: affiliate } = await supabase
+        .from('affiliates')
+        .select('id, display_name')
+        .eq('id', signup.affiliate_id)
+        .maybeSingle();
+      let source: 'cookie_tracking' | 'declared_by_company' = 'cookie_tracking';
+      if (signup.affiliate_input_raw && affiliate?.display_name) {
+        const { diceCoefficient, MATCH_EXACT_THRESHOLD } =
+          await import('@/lib/affiliate-claims/fuzzy');
+        if (
+          diceCoefficient(signup.affiliate_input_raw, affiliate.display_name) >=
+          MATCH_EXACT_THRESHOLD
+        ) {
+          source = 'declared_by_company';
+        }
+      }
+      const now = new Date().toISOString();
+      const { error: claimErr } = await supabase.from('affiliate_claims').insert({
+        affiliate_id: signup.affiliate_id,
+        company_id: companyId,
+        prospect_id: newProspect.id,
+        source,
+        status: 'active',
+        validated_at: now,
+        validated_by: profile.id,
+        declared_at: now,
+      });
+      if (claimErr && !claimErr.message?.includes('duplicate')) {
+        console.warn(
+          '[signups/convert] claim-insert-failed prospect=%s affiliate=%s msg=%s',
+          newProspect.id,
+          signup.affiliate_id,
+          claimErr.message,
+        );
+      } else if (!claimErr) {
+        console.log(
+          '[signups/convert] claim-created prospect=%s affiliate=%s source=%s',
+          newProspect.id,
+          signup.affiliate_id,
+          source,
+        );
+      }
+    } catch (err) {
+      console.warn(
+        '[signups/convert] claim-creation-error prospect=%s msg=%s',
+        newProspect.id,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
   // 4.bis (P6.x.5-octies) — Hydrate prospects.quote_items depuis la sélection
   // wizard captée (pack_code + selected_addon_ids). Permet à l'admin
   // d'ouvrir le Devis Builder pré-rempli au lieu d'avoir à tout re-saisir.

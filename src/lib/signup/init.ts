@@ -265,6 +265,9 @@ export async function initSignup(
   // 6.ter P5.x.7 — lookup affiliate par token (cookie). Si match
   // (et affiliate actif), on resout en affiliate_id pour le persister
   // sur le signup ; sinon on retombe sur null sans crasher.
+  // P7.x.1.F : si pas de cookie OU cookie inconnu, on tente un fuzzy
+  // match contre affiliates.display_name a partir de `affiliateInput`
+  // (champ "Qui vous a recommande ?"). Match exact (>= 0.85) auto-resout.
   const supabase = getSupabaseServiceClient();
   let affiliateId: string | null = null;
   if (ctx.affiliateToken) {
@@ -277,6 +280,44 @@ export async function initSignup(
       affiliateId = affiliate.id;
     } else {
       console.log('[signup/init] affiliate-token-unknown-or-inactive token=%s', ctx.affiliateToken);
+    }
+  }
+  // Fuzzy match sur le texte libre si pas de cookie ou cookie KO
+  if (!affiliateId && input.affiliateInput && input.affiliateInput.trim().length >= 2) {
+    try {
+      const { data: actives } = await supabase
+        .from('affiliates')
+        .select('id, display_name')
+        .eq('is_active', true);
+      if (actives && actives.length > 0) {
+        const { fuzzyRank, MATCH_EXACT_THRESHOLD } = await import('@/lib/affiliate-claims/fuzzy');
+        const ranked = fuzzyRank(
+          actives as Array<{ id: string; display_name: string }>,
+          input.affiliateInput,
+          (a) => a.display_name,
+          MATCH_EXACT_THRESHOLD,
+        );
+        if (ranked.length > 0) {
+          affiliateId = ranked[0].item.id;
+          console.log(
+            '[signup/init] affiliate-fuzzy-matched input=%s -> id=%s score=%s',
+            input.affiliateInput,
+            affiliateId,
+            ranked[0].score.toFixed(2),
+          );
+        } else {
+          console.log(
+            '[signup/init] affiliate-fuzzy-no-match input=%s (sera pending validation admin)',
+            input.affiliateInput,
+          );
+        }
+      }
+    } catch (err) {
+      console.warn(
+        '[signup/init] affiliate-fuzzy-failed input=%s msg=%s',
+        input.affiliateInput,
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
