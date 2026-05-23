@@ -25,6 +25,7 @@
 
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { calculateCommission } from './calc-commission';
+import { isCommissionEligibleForCompany, type CompanyCategory } from './eligibility';
 import { isAutoliquidationApplicable } from '@/lib/vies/verify';
 
 const LOG_PREFIX = '[affiliates/commission]';
@@ -38,7 +39,7 @@ export async function maybeRecordAffiliateCommission(prospectId: string): Promis
       .select(
         `
         id, affiliate_id, sellsy_devis_total_ttc, commission_eur_ht,
-        company:companies!inner(name, vat_country, vat_verified)
+        company:companies!inner(name, category, vat_country, vat_verified)
         `,
       )
       .eq('id', prospectId)
@@ -77,6 +78,47 @@ export async function maybeRecordAffiliateCommission(prospectId: string): Promis
     }
 
     const company = pickFirst(prospect.company);
+
+    // P7.x.1.D — Exclusion commission pour les PRS exhibitors (ils ont
+    // leur propre programme tarifaire, hors perimetre MDS commission).
+    // Le prospect reste track comme conversion attribuee (affiliate_id
+    // conserve), mais on UPDATE commission_eur_ht=0 + status='not_applicable'
+    // avec une note explicative pour la tracabilite admin.
+    if (
+      !isCommissionEligibleForCompany({ category: (company?.category as CompanyCategory) ?? null })
+    ) {
+      // On NE touche PAS prospects.notes (peut contenir des notes commerciales
+      // legitimes). La trace de l'exclusion vit dans les logs structures +
+      // dans la valeur commission_status='not_applicable' (lisible cote
+      // admin dans la fiche prospect).
+      const { error: skipErr } = await supabase
+        .from('prospects')
+        .update({
+          commission_eur_ht: 0,
+          commission_status: 'not_applicable',
+        })
+        .eq('id', prospectId);
+      if (skipErr) {
+        console.warn(
+          '%s exclusion-update-failed prospect=%s msg=%s',
+          LOG_PREFIX,
+          prospectId,
+          skipErr.message,
+        );
+      } else {
+        console.log(
+          '%s excluded prospect=%s category=%s reason=prs_exhibitor',
+          LOG_PREFIX,
+          prospectId,
+          company?.category,
+        );
+      }
+      // Pas d'email a l'affilie : ce n'est pas une commission gagnee.
+      // L'affilie verra la conversion dans son tableau Paiements avec
+      // status='not_applicable'.
+      return;
+    }
+
     const isAutoliquidation = isAutoliquidationApplicable(
       company?.vat_country ?? null,
       company?.vat_verified ?? null,
