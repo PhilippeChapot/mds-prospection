@@ -2,6 +2,11 @@ import createMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
 import { routing } from '@/i18n/routing';
 import { updateSession } from '@/lib/supabase/middleware';
+import {
+  AFFILIATE_COOKIE,
+  AFFILIATE_COOKIE_MAX_AGE_SECONDS,
+  isValidAffiliateToken,
+} from '@/lib/affiliates/cookie';
 
 /**
  * Next 16 — equivalent du middleware classique (renomme `proxy.ts`).
@@ -30,6 +35,47 @@ const intlMiddleware = createMiddleware(routing);
 const SCANNER_PATTERNS =
   /^\/(wp-admin|wp-includes|wp-content|wp-login\.php|xmlrpc\.php|administrator|phpmyadmin|setup-config\.php)/i;
 
+/**
+ * P7.x.1.F-bis — pose le cookie tracking affilie sur n'importe quelle
+ * response qui passe par le proxy quand l'URL contient `?ref=<token>`.
+ *
+ * Volontairement pas de query DB ici (proxy Edge runtime, performance).
+ * Validation regex format uniquement (alphanum + _ + - + .). La verif
+ * `affiliates.is_active=true` se fait downstream dans `signup/init.ts`
+ * qui resoud le token en `affiliate_id` (ou null si inconnu/inactif).
+ *
+ * Pas de redirect — on garde `?ref=` dans l'URL pour permettre a
+ * d'autres consommateurs (analytics, debug) de voir la valeur. Le
+ * cookie persiste 90j (cf. AFFILIATE_COOKIE_MAX_AGE_SECONDS).
+ */
+function attachAffiliateCookie(request: NextRequest, response: NextResponse): NextResponse {
+  const ref = request.nextUrl.searchParams.get('ref');
+  if (!ref || !isValidAffiliateToken(ref)) {
+    if (ref) {
+      console.log(
+        '[proxy/affiliate] invalid-ref-format ref=%s path=%s',
+        ref,
+        request.nextUrl.pathname,
+      );
+    }
+    return response;
+  }
+  response.cookies.set(AFFILIATE_COOKIE, ref, {
+    httpOnly: false, // accessible JS pour le wizard SPA (cf. P5.x.7 doctrine)
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: AFFILIATE_COOKIE_MAX_AGE_SECONDS,
+  });
+  console.log(
+    '[proxy/affiliate] cookie-set ref=%s path=%s maxAge=%d',
+    ref,
+    request.nextUrl.pathname,
+    AFFILIATE_COOKIE_MAX_AGE_SECONDS,
+  );
+  return response;
+}
+
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -45,20 +91,21 @@ export default async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = '/admin/login';
       url.searchParams.set('next', pathname);
-      return NextResponse.redirect(url);
+      return attachAffiliateCookie(request, NextResponse.redirect(url));
     }
 
     if (user && isLoginPage) {
       const url = request.nextUrl.clone();
       url.pathname = '/admin';
       url.search = '';
-      return NextResponse.redirect(url);
+      return attachAffiliateCookie(request, NextResponse.redirect(url));
     }
 
-    return supabaseResponse;
+    return attachAffiliateCookie(request, supabaseResponse);
   }
 
-  return intlMiddleware(request);
+  const intlResponse = intlMiddleware(request);
+  return attachAffiliateCookie(request, intlResponse);
 }
 
 export const config = {

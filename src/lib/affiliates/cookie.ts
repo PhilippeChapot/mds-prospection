@@ -9,7 +9,10 @@
  */
 
 export const AFFILIATE_COOKIE = 'mds_affiliate_ref';
-export const AFFILIATE_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+// P7.x.1.F-bis : duree bumpee 30j -> 90j. Cycle event annuel MDS = ~6 mois
+// entre le clic et l'inscription finale ; 30j etaient trop court pour les
+// early-clickers.
+export const AFFILIATE_COOKIE_MAX_AGE_SECONDS = 90 * 24 * 60 * 60;
 
 /**
  * Construit la string Cookie a poser via `Set-Cookie`. On l'utilise
