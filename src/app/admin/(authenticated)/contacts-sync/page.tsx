@@ -14,6 +14,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { countOrphanCompaniesWithDomain } from '@/lib/contacts/brevo-enrich';
 import { SyncControls } from './SyncControls';
 import { EnrichControls } from './EnrichControls';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 export const metadata = { title: 'Sync Brevo — Contacts' };
 
@@ -80,12 +81,12 @@ export default async function ContactsSyncPage() {
         <SyncControls
           mode="push"
           adminOnly={false}
-          canPull={profile.role === 'admin'}
+          canPull={hasAdminAccess(profile.role)}
           unsyncedCount={unsyncedCount}
         />
       </section>
 
-      {profile.role === 'admin' ? (
+      {hasAdminAccess(profile.role) ? (
         <section className="bg-card border-md-border rounded-xl border p-5 shadow-sm">
           <h2 className="text-md-blue-dark mb-3 flex items-center gap-2 text-sm font-bold tracking-wide uppercase">
             <ArrowLeft className="size-4" aria-hidden /> Pull Brevo → DB (one-shot)
@@ -103,7 +104,7 @@ export default async function ContactsSyncPage() {
         </section>
       )}
 
-      {profile.role === 'admin' ? (
+      {hasAdminAccess(profile.role) ? (
         <section className="bg-card border-md-border rounded-xl border p-5 shadow-sm">
           <h2 className="text-md-blue-dark mb-3 flex items-center gap-2 text-sm font-bold tracking-wide uppercase">
             <Search className="size-4" aria-hidden /> Enrichissement par domaine (P5.x.21)

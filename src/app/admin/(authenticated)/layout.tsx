@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminTopbar } from '@/components/admin/AdminTopbar';
 import { SeasonProvider, type Season } from '@/components/admin/SeasonContext';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 /**
  * Garde auth + role pour TOUTES les routes /admin/** SAUF /admin/login.
@@ -34,7 +35,9 @@ export default async function AuthenticatedAdminLayout({
     .eq('id', user.id)
     .maybeSingle();
 
-  if (profileError || !profile || (profile.role !== 'admin' && profile.role !== 'sales')) {
+  // P7.x.1.F-ter : hasAdminAccess accepte admin + super_admin (admin++).
+  // Sinon un user promu super_admin etait sign-out en boucle.
+  if (profileError || !profile || (!hasAdminAccess(profile.role) && profile.role !== 'sales')) {
     await supabase.auth.signOut();
     redirect('/admin/login?error=unauthorized');
   }

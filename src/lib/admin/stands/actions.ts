@@ -20,6 +20,7 @@ import { z } from 'zod';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { standStatusForProspectStatus } from './queries';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/stands]';
 
@@ -45,7 +46,7 @@ export async function assignStandToProspectAction(
   input: z.infer<typeof assignSchema>,
 ): Promise<ActionResult<{ stand_id: string; previous_stand_id: string | null }>> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin' && profile.role !== 'sales') {
+  if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
     return { ok: false, error: 'Forbidden' };
   }
   const parsed = assignSchema.safeParse(input);
@@ -152,7 +153,7 @@ export async function removeStandFromProspectAction(
   input: z.infer<typeof removeSchema>,
 ): Promise<ActionResult<{ stand_id: string }>> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin' && profile.role !== 'sales') {
+  if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
     return { ok: false, error: 'Forbidden' };
   }
   const parsed = removeSchema.safeParse(input);
@@ -210,7 +211,7 @@ export async function updateStandAction(
   input: z.infer<typeof updateSchema>,
 ): Promise<ActionResult<{ stand_id: string }>> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') return { ok: false, error: 'Forbidden' };
+  if (!hasAdminAccess(profile.role)) return { ok: false, error: 'Forbidden' };
   const parsed = updateSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'invalid' };
   const { stand_id, ...patch } = parsed.data;
@@ -267,7 +268,7 @@ export async function updateStandPositionAction(
   input: z.infer<typeof positionSchema>,
 ): Promise<ActionResult<{ stand_id: string }>> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') return { ok: false, error: 'Forbidden' };
+  if (!hasAdminAccess(profile.role)) return { ok: false, error: 'Forbidden' };
   const parsed = positionSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'invalid' };
@@ -310,7 +311,7 @@ export async function createStandAction(
   input: z.infer<typeof createSchema>,
 ): Promise<ActionResult<{ stand_id: string }>> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') return { ok: false, error: 'Forbidden' };
+  if (!hasAdminAccess(profile.role)) return { ok: false, error: 'Forbidden' };
   const parsed = createSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'invalid' };
 
@@ -344,7 +345,7 @@ export async function deleteStandAction(
   input: z.infer<typeof deleteSchema>,
 ): Promise<ActionResult<{ stand_id: string }>> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') return { ok: false, error: 'Forbidden' };
+  if (!hasAdminAccess(profile.role)) return { ok: false, error: 'Forbidden' };
   const parsed = deleteSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: 'invalid' };
 

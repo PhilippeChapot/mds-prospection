@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { parseSmartAddInput } from '@/lib/smart-add/orchestrator';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/smart-add/parse]';
 
@@ -24,7 +25,7 @@ const bodySchema = z.object({
 export async function POST(req: Request): Promise<NextResponse> {
   try {
     const profile = await requireAdminProfile();
-    if (profile.role !== 'admin' && profile.role !== 'sales') {
+    if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
       return new NextResponse('Forbidden', { status: 403 });
     }
 

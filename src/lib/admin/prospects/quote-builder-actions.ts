@@ -24,6 +24,7 @@ import { syncProspectToSellsy } from '@/lib/sellsy/sync-prospect';
 import { endpointForDocumentType } from '@/lib/sellsy/create-document';
 import { SellsyError } from '@/lib/sellsy/client';
 import { calculateQuoteTotals, clampDiscountForItem, type QuoteItem } from './quote-calc';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/quote-builder]';
 const VAT_RATE_DEFAULT = 20;
@@ -54,7 +55,7 @@ export type SaveDraftResult =
 
 export async function saveQuoteDraftAction(input: SaveDraftInput): Promise<SaveDraftResult> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin' && profile.role !== 'sales') {
+  if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
     return { ok: false, error: 'Forbidden' };
   }
   const parsed = saveDraftSchema.safeParse(input);
@@ -134,7 +135,7 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
   prospect_id: string;
 }): Promise<EmitResult> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { ok: false, error: 'Seul un admin peut émettre un devis Sellsy.' };
   }
   const parsed = emitSchema.safeParse(input);

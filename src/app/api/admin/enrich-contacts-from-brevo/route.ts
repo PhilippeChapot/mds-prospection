@@ -19,6 +19,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { enrichOrphanCompaniesFromBrevo } from '@/lib/contacts/brevo-enrich';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/enrich-contacts-from-brevo]';
 
@@ -29,7 +30,7 @@ export const maxDuration = 300;
 export async function POST(req: Request): Promise<NextResponse> {
   try {
     const profile = await requireAdminProfile();
-    if (profile.role !== 'admin') {
+    if (!hasAdminAccess(profile.role)) {
       return new NextResponse('Forbidden — admin only', { status: 403 });
     }
 

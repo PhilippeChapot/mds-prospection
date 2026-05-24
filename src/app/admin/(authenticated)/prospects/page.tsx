@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ProspectsListClient } from './ProspectsListClient';
 import { SavedViewsBar } from '@/components/admin/SavedViewsBar';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import {
   PROSPECT_STATUSES,
   listProspectsPaginated,
@@ -47,7 +48,7 @@ export default async function ProspectsListPage({ searchParams }: { searchParams
   const poleCode =
     params.pole && (POLE_CODES as readonly string[]).includes(params.pole) ? params.pole : null;
 
-  const ownerFilter = profile.role === 'admin' ? (params.owner ?? null) : profile.id;
+  const ownerFilter = hasAdminAccess(profile.role) ? (params.owner ?? null) : profile.id;
   const page = Math.max(1, Number(params.page ?? '1'));
   const q = params.q?.trim() ?? '';
 
@@ -61,7 +62,7 @@ export default async function ProspectsListPage({ searchParams }: { searchParams
   });
 
   let owners: { id: string; label: string }[] = [];
-  if (profile.role === 'admin') {
+  if (hasAdminAccess(profile.role)) {
     const supabase = await createSupabaseServerClient();
     const { data } = await supabase
       .from('users')
@@ -135,7 +136,7 @@ export default async function ProspectsListPage({ searchParams }: { searchParams
           ))}
         </select>
 
-        {profile.role === 'admin' && owners.length > 0 ? (
+        {hasAdminAccess(profile.role) && owners.length > 0 ? (
           <select
             name="owner"
             defaultValue={ownerFilter ?? ''}
@@ -157,7 +158,7 @@ export default async function ProspectsListPage({ searchParams }: { searchParams
           Appliquer
         </button>
 
-        {(q || status || poleCode || (profile.role === 'admin' && params.owner)) && (
+        {(q || status || poleCode || (hasAdminAccess(profile.role) && params.owner)) && (
           <Link
             href="/admin/prospects"
             className="text-md-text-muted hover:text-md-text text-xs underline"

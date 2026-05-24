@@ -15,6 +15,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/contacts/search]';
 
@@ -30,7 +31,7 @@ const querySchema = z.object({
 export async function GET(req: Request): Promise<NextResponse> {
   try {
     const profile = await requireAdminProfile();
-    if (profile.role !== 'admin' && profile.role !== 'sales') {
+    if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
       return new NextResponse('Forbidden', { status: 403 });
     }
 

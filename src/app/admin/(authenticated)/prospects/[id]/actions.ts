@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import type { Database } from '@/lib/supabase/database.types';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 type ProspectStatus = Database['public']['Enums']['prospect_status'];
 
@@ -99,7 +100,7 @@ export async function addProspectActivityAction(prospectId: string, body: string
 
 export async function deleteProspectAction(prospectId: string) {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Seul un admin peut supprimer un prospect.');
   }
   const supabase = await createSupabaseServerClient();
@@ -128,7 +129,7 @@ export async function emitSellsyDocumentAction(
   prospectId: string,
 ): Promise<EmitSellsyDocumentResult> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Seul un admin peut emettre un document Sellsy.');
   }
 
@@ -194,7 +195,7 @@ export async function emitSellsyDocumentAction(
  */
 export async function resyncProspectAction(prospectId: string) {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Seul un admin peut resynchroniser un prospect.');
   }
   // Import dynamique pour eviter d'embarquer les helpers dans le bundle
@@ -265,7 +266,7 @@ export async function createConciergePaymentLinkAction(input: {
   expiresInDays: 1 | 7 | 30;
 }): Promise<{ url: string; expiresAt: string }> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Seul un admin peut generer un Payment Link Stripe.');
   }
   const { createConciergePaymentLink } = await import('@/lib/stripe/payment-link');
@@ -285,7 +286,7 @@ export async function createConciergePaymentLinkAction(input: {
  */
 export async function assignBoothAction(prospectId: string, boothAssignment: string | null) {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Réservé aux admins.');
   }
   const value = boothAssignment?.trim() || null;
@@ -308,7 +309,7 @@ export async function assignBoothAction(prospectId: string, boothAssignment: str
 
 export async function toggleProspectIsTestAction(prospectId: string, isTest: boolean) {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error("Seul un admin peut basculer le mode test d'un prospect.");
   }
   const supabase = await createSupabaseServerClient();

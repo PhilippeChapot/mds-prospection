@@ -9,6 +9,7 @@ import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { Step2PayloadView } from './Step2PayloadView';
 import { AdminActionsBar } from './AdminActionsBar';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import {
   SIGNUP_STATUS_CLASS,
   SIGNUP_STATUS_LABEL,
@@ -26,7 +27,7 @@ export const metadata = { title: 'Inscription' };
 export default async function SignupDetailPage({ params }: PageProps) {
   const { id } = await params;
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     redirect('/admin?error=signups_admin_only');
   }
 

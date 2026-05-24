@@ -14,6 +14,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { syncContactsToBrevo } from '@/lib/contacts/brevo-sync';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/sync-contacts-to-brevo]';
 
@@ -24,7 +25,7 @@ export const maxDuration = 300;
 export async function POST(req: Request): Promise<NextResponse> {
   try {
     const profile = await requireAdminProfile();
-    if (profile.role !== 'admin' && profile.role !== 'sales') {
+    if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
       return new NextResponse('Forbidden', { status: 403 });
     }
 

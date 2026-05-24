@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { EditCompanyForm, type EditableCompany } from './EditCompanyForm';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 export const metadata = { title: 'Editer la societe' };
 
@@ -11,7 +12,7 @@ export default async function EditCompanyPage({ params }: { params: Promise<{ id
 
   // Sales ne peut pas editer une societe (RLS le bloquerait, mais on redirige
   // l'UI pour eviter une page d'erreur).
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     redirect(`/admin/companies/${id}`);
   }
 

@@ -10,6 +10,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/siren-actions]';
 
@@ -25,7 +26,7 @@ type Result = { ok: true } | { ok: false; error: string };
 
 export async function resolveSirenAmbiguousAction(input: unknown): Promise<Result> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { ok: false, error: 'Admin uniquement.' };
   }
   const parsed = schema.safeParse(input);

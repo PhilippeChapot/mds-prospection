@@ -13,13 +13,14 @@ import { redirect } from 'next/navigation';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { listStands, getStandKpis, listProspectsWithoutStand } from '@/lib/admin/stands/queries';
 import { EmplacementsClient } from './_components/EmplacementsClient';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 export const metadata = { title: 'Emplacements' };
 export const dynamic = 'force-dynamic';
 
 export default async function EmplacementsPage() {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin' && profile.role !== 'sales') {
+  if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
     redirect('/admin?error=emplacements_admin_only');
   }
 

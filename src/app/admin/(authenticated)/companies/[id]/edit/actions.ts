@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { cleanDomainList, normalizeDomain } from '@/lib/utils/domain';
 import type { Database } from '@/lib/supabase/database.types';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 type CategoryTarif = Database['public']['Enums']['category_tarif'];
 type PoleCode = Database['public']['Enums']['pole_code'];
@@ -53,7 +54,7 @@ export async function updateCompanyAction(
   formData: FormData,
 ): Promise<UpdateCompanyState> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { error: 'Seul un admin peut editer une societe.' };
   }
   const supabase = await createSupabaseServerClient();

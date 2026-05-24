@@ -7,6 +7,7 @@ import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { AuditLogTable, type AuditLogRow } from '@/components/admin/AuditLogTable';
 import type { Database } from '@/lib/supabase/database.types';
 import { cn } from '@/lib/utils';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 export const metadata = { title: 'Audit log' };
 
@@ -45,7 +46,7 @@ function buildHref(params: Record<string, string | undefined>): string {
 
 export default async function AuditLogPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     redirect('/admin?error=admin_only');
   }
 

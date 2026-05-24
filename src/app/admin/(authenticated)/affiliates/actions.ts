@@ -14,6 +14,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 // ---------------------------------------------------------------------------
 // Helper : token genere a partir du nom
@@ -54,7 +55,7 @@ const createSchema = z.object({
 
 export async function createAffiliateAction(formData: FormData) {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Réservé aux admins.');
   }
 
@@ -104,7 +105,7 @@ export async function createAffiliateAction(formData: FormData) {
 
 export async function archiveAffiliateAction(affiliateId: string) {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Réservé aux admins.');
   }
   const supabase = await createSupabaseServerClient();
@@ -119,7 +120,7 @@ export async function archiveAffiliateAction(affiliateId: string) {
 
 export async function unarchiveAffiliateAction(affiliateId: string) {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Réservé aux admins.');
   }
   const supabase = await createSupabaseServerClient();
@@ -141,7 +142,7 @@ export async function markCommissionPaidAction(
   paymentReference?: string | null,
 ) {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Réservé aux admins.');
   }
   const supabase = await createSupabaseServerClient();

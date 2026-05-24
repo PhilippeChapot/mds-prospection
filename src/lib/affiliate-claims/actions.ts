@@ -38,6 +38,7 @@ import { requireAffilieSession } from '@/lib/affilie/session';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { fuzzyRank, MATCH_EXACT_THRESHOLD } from './fuzzy';
 import { normalizeDomain, extractEmailDomain, isValidDomain } from '@/lib/utils/domain';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[affiliate-claims/actions]';
 
@@ -227,7 +228,7 @@ export async function validateAffiliateClaimAction(
   input: z.infer<typeof validateSchema>,
 ): Promise<ActionResult<{ claimId: string; companyId: string }>> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin' && profile.role !== 'super_admin') {
+  if (!hasAdminAccess(profile.role) && profile.role !== 'super_admin') {
     return { ok: false, error: 'Forbidden' };
   }
   const parsed = validateSchema.safeParse(input);
@@ -366,7 +367,7 @@ export async function rejectAffiliateClaimAction(
   input: z.infer<typeof rejectSchema>,
 ): Promise<ActionResult<{ claimId: string }>> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin' && profile.role !== 'super_admin') {
+  if (!hasAdminAccess(profile.role) && profile.role !== 'super_admin') {
     return { ok: false, error: 'Forbidden' };
   }
   const parsed = rejectSchema.safeParse(input);

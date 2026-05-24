@@ -13,6 +13,7 @@ import { updateCompanyNotesAction } from './actions';
 import { CompanyContactsSection } from './_components/CompanyContactsSection';
 import { listContactsForCompany } from '@/lib/contacts/admin-queries';
 import type { PoleCode } from '@/lib/design-tokens';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 export const metadata = { title: 'Fiche societe' };
 
@@ -151,7 +152,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
               Nouveau prospect
             </Link>
           </Button>
-          {profile.role === 'admin' ? (
+          {hasAdminAccess(profile.role) ? (
             <>
               <Button asChild variant="outline" size="sm">
                 <Link href={`/admin/companies/${id}/edit`}>
@@ -212,7 +213,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
 
       {/* Notes */}
       <Section title="Notes societe">
-        {profile.role === 'admin' ? (
+        {hasAdminAccess(profile.role) ? (
           <NotesEditor
             entityId={id}
             initialNotes={company.notes ?? ''}
@@ -235,7 +236,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         <CompanyContactsSection
           companyId={id}
           contacts={companyContacts}
-          canDelete={profile.role === 'admin'}
+          canDelete={hasAdminAccess(profile.role)}
         />
       </Section>
 

@@ -10,6 +10,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { syncSellsyProducts } from '@/lib/sellsy/sync-products';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/sync-sellsy-products]';
 
@@ -19,7 +20,7 @@ export const runtime = 'nodejs';
 export async function POST(): Promise<NextResponse> {
   try {
     const profile = await requireAdminProfile();
-    if (profile.role !== 'admin') {
+    if (!hasAdminAccess(profile.role)) {
       return new NextResponse('Forbidden', { status: 403 });
     }
 

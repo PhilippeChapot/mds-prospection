@@ -6,6 +6,7 @@ import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { POLE_CODES } from '@/lib/design-tokens';
 import { listSignups } from './queries';
 import { SignupsListClient } from './SignupsListClient';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import {
   SIGNUP_STATUSES,
   SIGNUP_STATUS_LABEL,
@@ -31,7 +32,7 @@ type SearchParams = Promise<{
 export default async function SignupsListPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireAdminProfile();
   // RLS deja restrictive (admin only) — on bloque cote UI pour l'UX.
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     redirect('/admin?error=signups_admin_only');
   }
 

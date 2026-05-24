@@ -25,6 +25,7 @@ import { detectIsPremium, type QuoteItem } from '@/lib/admin/prospects/quote-cal
 import { PACK_LABEL } from '@/lib/supabase/queries';
 import type { PoleCode } from '@/lib/design-tokens';
 import type { Database } from '@/lib/supabase/database.types';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 export const metadata = { title: 'Fiche prospect' };
 
@@ -208,14 +209,16 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {profile.role === 'admin' && <IsTestToggle prospectId={id} isTest={prospect.is_test} />}
+          {hasAdminAccess(profile.role) && (
+            <IsTestToggle prospectId={id} isTest={prospect.is_test} />
+          )}
           <Button asChild variant="outline" size="sm">
             <Link href={`/admin/prospects/${id}/edit`}>
               <Pencil className="size-4" aria-hidden />
               Editer
             </Link>
           </Button>
-          {profile.role === 'admin' ? <DeleteProspectButton prospectId={id} /> : null}
+          {hasAdminAccess(profile.role) ? <DeleteProspectButton prospectId={id} /> : null}
         </div>
       </div>
 
@@ -452,7 +455,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           <CompanyContactsSection
             companyId={company.id}
             contacts={companyContacts}
-            canDelete={profile.role === 'admin'}
+            canDelete={hasAdminAccess(profile.role)}
           />
         </section>
       ) : null}

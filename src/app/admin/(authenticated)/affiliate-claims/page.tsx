@@ -10,13 +10,14 @@ import { redirect } from 'next/navigation';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { listClaimsForAdmin } from '@/lib/affiliate-claims/queries';
 import { AdminClaimsClient } from './AdminClaimsClient';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Claims affiliés' };
 
 export default async function AffiliateClaimsAdminPage() {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin' && profile.role !== 'super_admin') {
+  if (!hasAdminAccess(profile.role) && profile.role !== 'super_admin') {
     redirect('/admin?error=affiliate_claims_admin_only');
   }
 

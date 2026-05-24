@@ -8,6 +8,7 @@ import { csvFileName, serializeCsv } from '@/lib/csv';
 import { listProspectsPaginated, PROSPECT_STATUSES } from '@/lib/supabase/queries';
 import { POLE_CODES } from '@/lib/design-tokens';
 import type { Database } from '@/lib/supabase/database.types';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 type ProspectStatus = Database['public']['Enums']['prospect_status'];
 
@@ -46,7 +47,7 @@ export async function bulkUpdateProspectsOwnerAction(
   ownerId: string,
 ): Promise<{ updated: number }> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Seul un admin peut reassigner un owner.');
   }
   const ids = prospectIds.filter((id) => /^[0-9a-f-]{36}$/i.test(id));

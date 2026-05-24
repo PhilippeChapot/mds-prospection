@@ -10,6 +10,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { confirmSchema, confirmSmartAdd } from '@/lib/smart-add/orchestrator';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/smart-add/confirm]';
 
@@ -20,7 +21,7 @@ export const maxDuration = 60;
 export async function POST(req: Request): Promise<NextResponse> {
   try {
     const profile = await requireAdminProfile();
-    if (profile.role !== 'admin' && profile.role !== 'sales') {
+    if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
       return new NextResponse('Forbidden', { status: 403 });
     }
 

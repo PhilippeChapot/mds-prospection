@@ -4,10 +4,11 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 export async function updateCompanyNotesAction(companyId: string, notes: string) {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Seul un admin peut editer les notes de societe.');
   }
   const trimmed = notes.length > 4000 ? notes.slice(0, 4000) : notes;
@@ -22,7 +23,7 @@ export async function updateCompanyNotesAction(companyId: string, notes: string)
 
 export async function deleteCompanyAction(companyId: string) {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     throw new Error('Seul un admin peut supprimer une societe.');
   }
   const supabase = await createSupabaseServerClient();

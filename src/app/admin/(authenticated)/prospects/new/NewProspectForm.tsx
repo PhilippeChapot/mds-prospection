@@ -13,6 +13,7 @@ import { ContactCombobox, type ContactOption } from '@/components/admin/ContactC
 import { useFieldErrors } from '@/components/admin/use-field-errors';
 import { POLE_CODES } from '@/lib/design-tokens';
 import { createProspectAction, type CreateProspectState } from './actions';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 type Owner = { id: string; label: string };
 
@@ -254,7 +255,7 @@ export function NewProspectForm({
             <Input name="estimated_amount" placeholder="5 975" inputMode="decimal" />
           </Field>
 
-          {currentUser.role === 'admin' ? (
+          {hasAdminAccess(currentUser.role) ? (
             <Field label="Owner" required error={errors.owner_id}>
               <select
                 name="owner_id"

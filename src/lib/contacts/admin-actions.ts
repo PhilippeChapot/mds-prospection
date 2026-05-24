@@ -23,6 +23,7 @@ import { z } from 'zod';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import type { Database } from '@/lib/supabase/database.types';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import {
   upsertContactBrevoSingle,
   updateContactBrevoAttributes,
@@ -360,7 +361,7 @@ const deleteSchema = z.object({ contact_id: z.string().uuid() });
 
 export async function deleteContactAction(input: unknown): Promise<ActionResult> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { ok: false, error: 'Suppression réservée aux admins.' };
   }
   const parsed = deleteSchema.safeParse(input);

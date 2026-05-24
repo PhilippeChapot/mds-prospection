@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useFieldErrors } from '@/components/admin/use-field-errors';
 import { updateProspectAction, type UpdateProspectState } from './actions';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 type Owner = { id: string; label: string };
 
@@ -139,7 +140,7 @@ export function EditProspectForm({
             />
           </Field>
 
-          {currentUser.role === 'admin' ? (
+          {hasAdminAccess(currentUser.role) ? (
             <Field label="Owner" required>
               <select
                 name="owner_id"

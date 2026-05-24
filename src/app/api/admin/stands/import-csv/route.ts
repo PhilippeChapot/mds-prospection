@@ -23,6 +23,7 @@ import Papa from 'papaparse';
 import { z } from 'zod';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/stands/import-csv]';
 
@@ -79,7 +80,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   } catch {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return NextResponse.json({ ok: false, error: 'Forbidden (admin only)' }, { status: 403 });
   }
 

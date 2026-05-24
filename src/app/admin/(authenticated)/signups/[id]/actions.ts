@@ -23,6 +23,7 @@ import { signDoiToken, computeDoiExpiresAt } from '@/lib/doi/jwt';
 import { generateShortToken, computeShortTokenExpiresAt } from '@/lib/doi/short-token';
 import { sendDoiEmail } from '@/lib/signup/init';
 import { runPostConversion } from '@/lib/sellsy/post-conversion';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 export type ActionResult<T = void> =
   | { success: true; data?: T }
@@ -60,7 +61,7 @@ export async function convertSignupToProspect(
   signupId: string,
 ): Promise<ActionResult<ConvertResult>> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { success: false, error: 'Réservé aux admins.' };
   }
 
@@ -419,7 +420,7 @@ export async function convertSignupToProspect(
 
 export async function rejectSignup(signupId: string, reason?: string): Promise<ActionResult> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { success: false, error: 'Réservé aux admins.' };
   }
   const supabase = getSupabaseServiceClient();
@@ -451,7 +452,7 @@ export async function rejectSignup(signupId: string, reason?: string): Promise<A
 
 export async function resendDoi(signupId: string): Promise<ActionResult> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { success: false, error: 'Réservé aux admins.' };
   }
   const supabase = getSupabaseServiceClient();
@@ -513,7 +514,7 @@ export async function resendDoi(signupId: string): Promise<ActionResult> {
 
 export async function reclassifySignup(signupId: string): Promise<ActionResult> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { success: false, error: 'Réservé aux admins.' };
   }
   const supabase = getSupabaseServiceClient();

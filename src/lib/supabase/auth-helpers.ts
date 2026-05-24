@@ -8,6 +8,7 @@
  */
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from './server';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 export type UserRole = 'admin' | 'sales' | 'super_admin';
 
@@ -44,7 +45,7 @@ export async function requireAdminProfile(): Promise<AdminProfile> {
     .maybeSingle();
   if (
     !profile ||
-    (profile.role !== 'admin' && profile.role !== 'sales' && profile.role !== 'super_admin')
+    (!hasAdminAccess(profile.role) && profile.role !== 'sales' && profile.role !== 'super_admin')
   ) {
     redirect('/admin/login?error=unauthorized');
   }

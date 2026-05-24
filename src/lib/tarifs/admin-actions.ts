@@ -4,7 +4,7 @@
  * P6.x.1a — server actions pour le module /admin/tarifs.
  *
  * Toutes les actions :
- *   - exigent profile.role === 'admin' (les sales ne peuvent pas modifier la
+ *   - exigent hasAdminAccess(profile.role) (les sales ne peuvent pas modifier la
  *     couche éditoriale, c'est du contenu marketing géré par Phil)
  *   - utilisent le service-role client (bypass RLS, propre + prévisible)
  *   - revalidatePath('/admin/tarifs') à la fin
@@ -17,6 +17,7 @@ import { revalidatePath } from 'next/cache';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { classifyByReference } from './auto-classify';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import {
   upsertEditorialSchema,
   deleteEditorialSchema,
@@ -30,7 +31,7 @@ const LOG_PREFIX = '[admin/tarifs]';
 
 export async function upsertEditorialAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { ok: false, error: 'Réservé aux admins.' };
   }
   const parsed = upsertEditorialSchema.safeParse(input);
@@ -90,7 +91,7 @@ export async function upsertEditorialAction(input: unknown): Promise<ActionResul
 
 export async function deleteEditorialAction(input: unknown): Promise<ActionResult> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { ok: false, error: 'Réservé aux admins.' };
   }
   const parsed = deleteEditorialSchema.safeParse(input);
@@ -118,7 +119,7 @@ export async function bulkInitOtherAction(): Promise<
   ActionResult<{ inserted: number; total: number }>
 > {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { ok: false, error: 'Réservé aux admins.' };
   }
   const supabase = getSupabaseServiceClient();
@@ -179,7 +180,7 @@ export async function autoClassifyAllAction(
   input: unknown,
 ): Promise<ActionResult<AutoClassifyResult>> {
   const profile = await requireAdminProfile();
-  if (profile.role !== 'admin') {
+  if (!hasAdminAccess(profile.role)) {
     return { ok: false, error: 'Réservé aux admins.' };
   }
   const parsed = autoClassifySchema.safeParse(input);

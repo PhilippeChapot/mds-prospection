@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Download, UserCog, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import {
   Dialog,
   DialogClose,
@@ -188,7 +189,7 @@ export function ProspectsListClient({
               <Tag className="size-4" aria-hidden />
               Changer statut
             </Button>
-            {currentRole === 'admin' && owners.length > 0 ? (
+            {hasAdminAccess(currentRole) && owners.length > 0 ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -370,7 +371,7 @@ export function ProspectsListClient({
       </Dialog>
 
       {/* Dialog : reassigner owner (admin only) */}
-      {currentRole === 'admin' && (
+      {hasAdminAccess(currentRole) && (
         <Dialog open={ownerOpen} onOpenChange={setOwnerOpen}>
           <DialogContent>
             <DialogHeader>
