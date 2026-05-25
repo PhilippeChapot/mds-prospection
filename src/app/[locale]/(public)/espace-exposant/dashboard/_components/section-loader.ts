@@ -13,6 +13,7 @@
 import { loadDashboardData } from '@/lib/espace-exposant/session';
 import { getDocumentLinks, getCommunicationKit } from '@/lib/espace-exposant/documents';
 import { listStands } from '@/lib/admin/stands/queries';
+import { toStandPublicView, toStandPublicViewList } from '@/lib/espace-exposant/stands-public-view';
 import type { SectionData } from './sections/types';
 
 export async function loadSectionData(locale: 'fr' | 'en'): Promise<SectionData> {
@@ -27,12 +28,20 @@ export async function loadSectionData(locale: 'fr' | 'en'): Promise<SectionData>
   // (lookup par booth_assignment, qui contient le number ex "A1"). Aucun
   // crash si l'exposant n'a pas de booth assigne -> on rend la section
   // sans highlight.
+  // P6.x.3-ter — sanitize en StandPublicView AVANT exposition aux Client
+  // Components : strip contact_email (RGPD strict, fuite props SSR sinon).
   const allStands = await listStands({ salle: 'le_notre' });
-  const myStand =
+  const myStandWithPii =
     allStands.find(
       (s) => loaded.prospect.booth_assignment && s.number === loaded.prospect.booth_assignment,
     ) ?? null;
-  return { ...loaded, documents, commKit, leNotreStands: allStands, myStand };
+  return {
+    ...loaded,
+    documents,
+    commKit,
+    leNotreStands: toStandPublicViewList(allStands),
+    myStand: myStandWithPii ? toStandPublicView(myStandWithPii) : null,
+  };
 }
 
 export function makeFormatters(locale: 'fr' | 'en') {

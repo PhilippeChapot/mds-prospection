@@ -20,8 +20,9 @@
  */
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import type { StandWithProspect } from '@/lib/admin/stands/queries';
+import type { StandPublicView } from '@/lib/espace-exposant/stands-public-view';
 
 const CANVA_PLAN_URL = 'https://www.canva.com/design/DAHGZNYdF2Q/3qgDD2_2W3KQJWUe_JpHIg/view?embed';
 
@@ -29,10 +30,12 @@ type Mode = 'admin' | 'exposant';
 
 interface Props {
   mode: Mode;
-  stands: StandWithProspect[];
+  /** P6.x.3-ter : accepte StandPublicView (sanitized) ou super-type
+   *  StandWithProspect côté admin (compat ascendante via structural typing). */
+  stands: StandPublicView[];
   /** Pour exposant : son stand est encadre rose et tooltip "Votre stand". */
   highlightedStandId?: string;
-  onStandClick?: (stand: StandWithProspect) => void;
+  onStandClick?: (stand: StandPublicView) => void;
 }
 
 const STATUS_OVERLAY: Record<string, string> = {
@@ -129,14 +132,28 @@ function StandTooltip({
   mode,
   isHighlighted,
 }: {
-  stand: StandWithProspect;
+  stand: StandPublicView;
   mode: Mode;
   isHighlighted: boolean;
 }) {
-  // RGPD doctrine P6.x.3 : cote exposant on n'affiche le nom de l'entreprise
-  // voisine que si company_public_visibility=true. Cote admin on voit tout.
-  const showCompanyName =
-    !!stand.prospect && (mode === 'admin' || stand.prospect.company_public_visibility !== false);
+  // P6.x.3-ter — i18n + RGPD opt-out précis :
+  //   - libre        -> "Disponible"
+  //   - reserve/paye -> nom company si public_visibility=true (admin: toujours),
+  //                     sinon "Confidentiel" italique
+  //   - bloque       -> "Bloqué", pas de nom
+  const t = useTranslations('ExposantDashboard');
+  const statusLabel = t(`stand_status_${stand.status}` as const);
+
+  let nameLine: { text: string; muted: boolean } | null = null;
+  if (stand.prospect && stand.status !== 'bloque' && stand.status !== 'libre') {
+    const canShow = mode === 'admin' || stand.prospect.company_public_visibility !== false;
+    if (canShow && stand.prospect.company_name) {
+      nameLine = { text: stand.prospect.company_name, muted: false };
+    } else if (!canShow) {
+      nameLine = { text: t('stand_company_hidden'), muted: true };
+    }
+  }
+
   return (
     <div
       role="tooltip"
@@ -145,14 +162,19 @@ function StandTooltip({
     >
       <div className="text-md-blue-dark font-extrabold">
         Stand {stand.number}
-        {isHighlighted ? <span className="ml-2 text-pink-600">★ Votre stand</span> : null}
+        {isHighlighted ? <span className="ml-2 text-pink-600">★ {t('your_booth')}</span> : null}
       </div>
       <div className="text-md-text-muted text-[10px]">
-        {stand.taille_m2} m² · {STATUS_LABEL[stand.status]}
+        {stand.taille_m2} m² · {statusLabel}
       </div>
-      {showCompanyName && stand.prospect?.company_name ? (
-        <div className="text-md-text mt-1 text-[11px] font-semibold">
-          {stand.prospect.company_name}
+      {nameLine ? (
+        <div
+          className={cn(
+            'mt-1 text-[11px] font-semibold',
+            nameLine.muted ? 'text-md-text-muted italic' : 'text-md-text',
+          )}
+        >
+          {nameLine.text}
         </div>
       ) : null}
     </div>

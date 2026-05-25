@@ -16,12 +16,15 @@ import { MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PlanCanvaInteractive } from '@/components/admin/plan/PlanCanvaInteractive';
+import { StandsExplorerView } from '@/components/admin/plan/StandsExplorerView';
 import { Row } from '../Row';
 import { makeFormatters } from '../section-loader';
 import type { SectionProps } from './types';
 
 export async function StandSection({ data, locale }: SectionProps) {
   const t = await getTranslations({ locale, namespace: 'espaceExposant.dashboard' });
+  // P6.x.3-ter : namespace dedie pour la section Explorer le salon.
+  const tExplore = await getTranslations({ locale, namespace: 'ExposantDashboard' });
   const { fmtEur, fmtDate } = makeFormatters(locale);
 
   const eventsInterest = data.prospect.events_interest ?? [];
@@ -114,6 +117,18 @@ export async function StandSection({ data, locale }: SectionProps) {
             stands={data.leNotreStands}
             highlightedStandId={data.myStand.id}
           />
+        </Card>
+      ) : null}
+
+      {/* P6.x.3-ter — Explorer tout le salon (Grid 2D + Plan, read-only).
+          Visible meme si pas de stand assigne (sourcing/curiosite). Les noms
+          d'entreprises affiches respectent companies.public_visibility (RGPD
+          opt-out). Aucune PII expose : voir StandPublicView. */}
+      {data.leNotreStands.length > 0 ? (
+        <Card className="border-md-border space-y-3 p-5 shadow-sm sm:p-6">
+          <h2 className="text-md-text text-base font-semibold">{tExplore('exploreVenueTitle')}</h2>
+          <p className="text-md-text-muted text-sm">{tExplore('exploreVenueHelp')}</p>
+          <StandsExplorerView stands={data.leNotreStands} highlightedStandId={data.myStand?.id} />
         </Card>
       ) : null}
 

@@ -838,5 +838,17 @@
     "empty_state": "Aucune ressource publiée pour le moment.",
     "back_to_list": "Retour aux ressources",
     "updated_at": "Mise à jour {date}"
+  },
+  "ExposantDashboard": {
+    "exploreVenueTitle": "🏢 Explorer tout le salon",
+    "exploreVenueHelp": "Découvrez qui expose à vos côtés. Survolez un stand pour voir l'entreprise.",
+    "exploreVenueGrid": "Grid 2D",
+    "exploreVenuePlan": "Plan visuel",
+    "your_booth": "Votre stand",
+    "stand_company_hidden": "Confidentiel",
+    "stand_status_libre": "Disponible",
+    "stand_status_reserve": "Réservé",
+    "stand_status_paye": "Confirmé ✓",
+    "stand_status_bloque": "Bloqué"
   }
 }

@@ -5,9 +5,35 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render as rtlRender, screen, fireEvent } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import { PlanCanvaInteractive } from './PlanCanvaInteractive';
 import type { StandWithProspect } from '@/lib/admin/stands/queries';
+
+// P6.x.3-ter — wrapper render avec NextIntlClientProvider pour fournir les
+// clés ExposantDashboard.* utilisées par le tooltip (i18n FR/EN).
+const messages = {
+  ExposantDashboard: {
+    exploreVenueTitle: '🏢 Explorer tout le salon',
+    exploreVenueHelp: 'Découvrez qui expose à vos côtés.',
+    exploreVenueGrid: 'Grid 2D',
+    exploreVenuePlan: 'Plan visuel',
+    your_booth: 'Votre stand',
+    stand_company_hidden: 'Confidentiel',
+    stand_status_libre: 'Disponible',
+    stand_status_reserve: 'Réservé',
+    stand_status_paye: 'Confirmé ✓',
+    stand_status_bloque: 'Bloqué',
+  },
+};
+
+function render(ui: React.ReactElement) {
+  return rtlRender(
+    <NextIntlClientProvider locale="fr" messages={messages}>
+      {ui}
+    </NextIntlClientProvider>,
+  );
+}
 
 function makeStand(partial: Partial<StandWithProspect> & { number: string }): StandWithProspect {
   return {
@@ -105,6 +131,7 @@ describe('PlanCanvaInteractive (P6.x.3)', () => {
     const stands = [
       makeStand({
         number: 'A1',
+        status: 'paye',
         prospect: {
           id: 'p1',
           status: 'paye',

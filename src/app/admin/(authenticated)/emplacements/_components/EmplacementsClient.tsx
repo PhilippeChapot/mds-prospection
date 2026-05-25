@@ -226,7 +226,13 @@ export function EmplacementsClient({
             <PlanCanvaInteractive
               mode="admin"
               stands={filteredStands.filter((s) => s.salle === 'le_notre')}
-              onStandClick={(s) => setSelectedStand(s)}
+              onStandClick={(s) => {
+                // P6.x.3-ter : onStandClick reçoit un StandPublicView (sanitized).
+                // On retrouve le StandWithProspect d'origine via id pour conserver
+                // l'accès admin aux infos PII (contact_email) dans le Sheet.
+                const full = filteredStands.find((x) => x.id === s.id) ?? null;
+                setSelectedStand(full);
+              }}
             />
           </TabsContent>
         </Tabs>

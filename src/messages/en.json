@@ -838,5 +838,17 @@
     "empty_state": "No published resources yet.",
     "back_to_list": "Back to resources",
     "updated_at": "Updated {date}"
+  },
+  "ExposantDashboard": {
+    "exploreVenueTitle": "🏢 Explore the venue",
+    "exploreVenueHelp": "Discover who exhibits next to you. Hover a booth to see the company.",
+    "exploreVenueGrid": "2D grid",
+    "exploreVenuePlan": "Floor plan",
+    "your_booth": "Your booth",
+    "stand_company_hidden": "Private",
+    "stand_status_libre": "Available",
+    "stand_status_reserve": "Reserved",
+    "stand_status_paye": "Confirmed ✓",
+    "stand_status_bloque": "Blocked"
   }
 }
