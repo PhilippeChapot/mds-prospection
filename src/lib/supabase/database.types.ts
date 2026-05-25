@@ -1017,6 +1017,7 @@ export type Database = {
         Row: {
           body_en: string | null;
           body_fr: string | null;
+          created_at: string;
           display_order: number;
           id: string;
           is_published: boolean;
@@ -1029,6 +1030,7 @@ export type Database = {
         Insert: {
           body_en?: string | null;
           body_fr?: string | null;
+          created_at?: string;
           display_order?: number;
           id?: string;
           is_published?: boolean;
@@ -1041,6 +1043,7 @@ export type Database = {
         Update: {
           body_en?: string | null;
           body_fr?: string | null;
+          created_at?: string;
           display_order?: number;
           id?: string;
           is_published?: boolean;

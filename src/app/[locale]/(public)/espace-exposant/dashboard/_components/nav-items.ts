@@ -27,6 +27,8 @@ export const EXPOSANT_NAV_ITEMS: readonly ExposantNavItem[] = [
   { labelKey: 'commander', emoji: '🛒', segment: 'commander' },
   // P6.x.1b-β — historique des commandes complémentaires.
   { labelKey: 'commandes', emoji: '🧾', segment: 'commandes' },
+  // P3.1 — ressources markdown bilingues (guide, FAQ, charte graphique...).
+  { labelKey: 'ressources', emoji: '📚', segment: 'ressources' },
 ] as const;
 
 /**

@@ -419,6 +419,7 @@
       "invitations": "My invitations",
       "commander": "Order more",
       "commandes": "My orders",
+      "ressources": "Resources",
       "logout": "Sign out",
       "openMenu": "Open menu"
     },
@@ -830,5 +831,12 @@
         "fonctions": "Managing Partners · Partners · Investment Managers · Principals · Analysts · Scouts"
       }
     }
+  },
+  "ExhibitorResources": {
+    "page_title": "Resources",
+    "page_subtitle": "Everything you need to prepare for your MediaDays participation.",
+    "empty_state": "No published resources yet.",
+    "back_to_list": "Back to resources",
+    "updated_at": "Updated {date}"
   }
 }
