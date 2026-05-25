@@ -482,9 +482,7 @@
         "label": "Stand",
         "assignedOn": "Attribué le {date}",
         "notYet": "Votre emplacement vous sera communiqué prochainement.",
-        "seeFloorPlan": "Voir le plan de salle",
-        "planTitle": "📍 Mon stand sur le plan visuel",
-        "planHelp": "Votre stand {number} est mis en évidence (encadré rose). Identifiez vos voisins en survolant les autres stands."
+        "seeFloorPlan": "Voir le plan de salle"
       },
       "contactInfo": {
         "section": "📞 Mes coordonnées",
@@ -840,8 +838,9 @@
     "updated_at": "Mise à jour {date}"
   },
   "ExposantDashboard": {
-    "exploreVenueTitle": "🏢 Explorer tout le salon",
-    "exploreVenueHelp": "Découvrez qui expose à vos côtés. Survolez un stand pour voir l'entreprise.",
+    "exploreVenueTitle": "📍 Plan du salon — Salle Le Nôtre",
+    "exploreVenueHelp": "Votre stand {number} est mis en évidence (encadré rose). Survolez les autres stands pour découvrir qui expose à vos côtés.",
+    "exploreVenueHelpNoStand": "Survolez les stands pour découvrir qui expose dans la Salle Le Nôtre.",
     "exploreVenueGrid": "Grid 2D",
     "exploreVenuePlan": "Plan visuel",
     "your_booth": "Votre stand",

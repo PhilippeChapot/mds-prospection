@@ -15,7 +15,6 @@ import { getTranslations } from 'next-intl/server';
 import { MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { PlanCanvaInteractive } from '@/components/admin/plan/PlanCanvaInteractive';
 import { StandsExplorerView } from '@/components/admin/plan/StandsExplorerView';
 import { Row } from '../Row';
 import { makeFormatters } from '../section-loader';
@@ -103,31 +102,18 @@ export async function StandSection({ data, locale }: SectionProps) {
         ) : null}
       </Card>
 
-      {/* P6.x.3 — Plan visuel interactif (Le Notre) avec stand de l'exposant
-          mis en evidence (ring rose). Affiche aussi les voisins (tooltip
-          au survol). Cache si pas de stand assigne (rien a "highlight"). */}
-      {data.myStand && data.leNotreStands.length > 0 ? (
-        <Card className="border-md-border space-y-3 p-5 shadow-sm sm:p-6">
-          <h2 className="text-md-text text-base font-semibold">{t('booth.planTitle')}</h2>
-          <p className="text-md-text-muted text-sm">
-            {t('booth.planHelp', { number: data.myStand.number })}
-          </p>
-          <PlanCanvaInteractive
-            mode="exposant"
-            stands={data.leNotreStands}
-            highlightedStandId={data.myStand.id}
-          />
-        </Card>
-      ) : null}
-
-      {/* P6.x.3-ter — Explorer tout le salon (Grid 2D + Plan, read-only).
-          Visible meme si pas de stand assigne (sourcing/curiosite). Les noms
-          d'entreprises affiches respectent companies.public_visibility (RGPD
-          opt-out). Aucune PII expose : voir StandPublicView. */}
+      {/* P6.x.3-quater — Plan du salon unique (fusion des 2 anciennes sections).
+          Toggle Grid 2D / Plan visuel + highlight rose du stand de l'exposant
+          via highlightedStandId. Aucune PII exposée (StandPublicView). Visible
+          même sans stand assigné (sourcing/curiosité). */}
       {data.leNotreStands.length > 0 ? (
         <Card className="border-md-border space-y-3 p-5 shadow-sm sm:p-6">
           <h2 className="text-md-text text-base font-semibold">{tExplore('exploreVenueTitle')}</h2>
-          <p className="text-md-text-muted text-sm">{tExplore('exploreVenueHelp')}</p>
+          <p className="text-md-text-muted text-sm">
+            {data.myStand
+              ? tExplore('exploreVenueHelp', { number: data.myStand.number })
+              : tExplore('exploreVenueHelpNoStand')}
+          </p>
           <StandsExplorerView stands={data.leNotreStands} highlightedStandId={data.myStand?.id} />
         </Card>
       ) : null}

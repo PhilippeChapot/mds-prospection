@@ -14,8 +14,10 @@ import type { StandWithProspect } from '@/lib/admin/stands/queries';
 // clés ExposantDashboard.* utilisées par le tooltip (i18n FR/EN).
 const messages = {
   ExposantDashboard: {
-    exploreVenueTitle: '🏢 Explorer tout le salon',
-    exploreVenueHelp: 'Découvrez qui expose à vos côtés.',
+    exploreVenueTitle: '📍 Plan du salon — Salle Le Nôtre',
+    exploreVenueHelp:
+      'Votre stand {number} est mis en évidence (encadré rose). Survolez les autres stands.',
+    exploreVenueHelpNoStand: 'Survolez les stands.',
     exploreVenueGrid: 'Grid 2D',
     exploreVenuePlan: 'Plan visuel',
     your_booth: 'Votre stand',

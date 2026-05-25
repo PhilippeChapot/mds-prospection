@@ -482,9 +482,7 @@
         "label": "Booth",
         "assignedOn": "Assigned on {date}",
         "notYet": "Your booth location will be communicated shortly.",
-        "seeFloorPlan": "See floor plan",
-        "planTitle": "📍 My booth on the floor plan",
-        "planHelp": "Your booth {number} is highlighted (pink frame). Identify your neighbors by hovering on other booths."
+        "seeFloorPlan": "See floor plan"
       },
       "contactInfo": {
         "section": "📞 My contact details",
@@ -840,8 +838,9 @@
     "updated_at": "Updated {date}"
   },
   "ExposantDashboard": {
-    "exploreVenueTitle": "🏢 Explore the venue",
-    "exploreVenueHelp": "Discover who exhibits next to you. Hover a booth to see the company.",
+    "exploreVenueTitle": "📍 Floor plan — Salle Le Nôtre",
+    "exploreVenueHelp": "Your booth {number} is highlighted (pink frame). Hover other booths to discover who exhibits next to you.",
+    "exploreVenueHelpNoStand": "Hover the booths to discover who exhibits in Salle Le Nôtre.",
     "exploreVenueGrid": "2D grid",
     "exploreVenuePlan": "Floor plan",
     "your_booth": "Your booth",
