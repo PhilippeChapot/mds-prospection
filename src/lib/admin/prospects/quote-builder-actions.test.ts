@@ -525,6 +525,26 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
     expect(body.note).toBeUndefined();
   });
 
+  it('P6.x.6 — succès devis reset last_sync_error_* + stamp last_synced_sellsy_at', async () => {
+    // Régression : avant P6.x.6, l'UPDATE prospects qui posait sellsy_devis_id
+    // n'effaçait PAS last_sync_error_message / _at / _provider. Du coup, après
+    // un échec /individuals suivi d'une émission devis OK, la carte admin
+    // "Synchronisations externes" continuait à afficher l'erreur Sellsy stale.
+    mockEnv();
+    const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
+    const r = await emitSellsyDevisFromQuoteBuilderAction({
+      prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
+    });
+    expect(r.ok).toBe(true);
+    // Le UPDATE qui pose sellsy_devis_id doit aussi reset error + stamper success.
+    const devisUpdate = state.prospectUpdates.find((u) => u.sellsy_devis_id !== undefined);
+    expect(devisUpdate).toBeDefined();
+    expect(devisUpdate?.last_sync_error_at).toBeNull();
+    expect(devisUpdate?.last_sync_error_message).toBeNull();
+    expect(devisUpdate?.last_sync_error_provider).toBeNull();
+    expect(devisUpdate?.last_synced_sellsy_at).toEqual(expect.any(String));
+  });
+
   it('P6.x.5-quinquies — SellsyError 400 → action retourne le body Sellsy dans error (debug admin)', async () => {
     // Pré-charge la réponse "throw SellsyError" pour le POST /estimates
     state.sellsyResponses.set('POST /estimates', {

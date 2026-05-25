@@ -23,6 +23,7 @@ import { sellsyFetch } from '@/lib/sellsy/client';
 import { syncProspectToSellsy } from '@/lib/sellsy/sync-prospect';
 import { endpointForDocumentType } from '@/lib/sellsy/create-document';
 import { SellsyError } from '@/lib/sellsy/client';
+import { logSellsyCall } from '@/lib/sellsy/sync-logger';
 import { calculateQuoteTotals, clampDiscountForItem, type QuoteItem } from './quote-calc';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
@@ -242,8 +243,23 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
         parsed.data.prospect_id,
         payload,
       );
+      await logSellsyCall({
+        entityType: 'prospects',
+        entityId: parsed.data.prospect_id,
+        operation: 'create',
+        status: 'error',
+        errorMessage: 'Sellsy /estimates : pas d’id retourné',
+        payload: { request: payload, response: createdRaw },
+      });
       return { ok: false, error: 'Sellsy n’a pas renvoyé d’id' };
     }
+    await logSellsyCall({
+      entityType: 'prospects',
+      entityId: parsed.data.prospect_id,
+      operation: 'create',
+      status: 'success',
+      payload: { sellsy_devis_id: documentId, rows_count: rows.length },
+    });
   } catch (err) {
     // P6.x.5-quinquies : on extrait le body Sellsy de l'exception pour le
     // surfacer dans le toast admin — sans ça, l'admin ne voit qu'un 400
@@ -265,6 +281,17 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
       msg,
       bodyDetails,
     );
+    await logSellsyCall({
+      entityType: 'prospects',
+      entityId: parsed.data.prospect_id,
+      operation: 'create',
+      status: 'error',
+      errorMessage: msg,
+      payload: {
+        request: payload,
+        response: err instanceof SellsyError ? err.body : null,
+      },
+    });
     return { ok: false, error: `Émission Sellsy échouée : ${msg}${bodyDetails}` };
   }
 
@@ -292,6 +319,10 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
   }
 
   // 7. Update prospect : sellsy_devis_* + status='devis_envoye' (si lead)
+  // P6.x.6 : reset des champs last_sync_error_* car l'émission a réussi
+  // (la sync individual peut avoir échoué en amont via collision email
+  // collaborateur, mais le devis est bien créé → la carte "Synchronisations
+  // externes" doit afficher Sellsy ✅).
   const now = new Date().toISOString();
   const totals = calculateQuoteTotals(items, VAT_RATE_DEFAULT);
 
@@ -304,6 +335,10 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
       sellsy_devis_emitted_at: now,
       sellsy_devis_total_ttc: totalTtc,
       estimated_amount: totals.total_ht,
+      last_synced_sellsy_at: now,
+      last_sync_error_at: null,
+      last_sync_error_message: null,
+      last_sync_error_provider: null,
     })
     .eq('id', parsed.data.prospect_id);
 

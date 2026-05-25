@@ -27,7 +27,8 @@
  * Logs structures (prefix [sellsy/sync-prospect]) pour grep Vercel Logs.
  */
 
-import { sellsyFetch } from '@/lib/sellsy/client';
+import { sellsyFetch, SellsyError } from '@/lib/sellsy/client';
+import { logSellsyCall } from '@/lib/sellsy/sync-logger';
 import { withExponentialRetry } from '@/lib/sync/retry';
 import { assertSyncAllowed, SyncSkippedError } from '@/lib/sync/skip-if-test';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
@@ -236,7 +237,7 @@ async function runSyncSteps(prospect: ProspectForSync): Promise<void> {
   // ----- Step 3 : Company -----
   let companySellsyId = prospect.company.sellsy_id;
   if (!companySellsyId) {
-    companySellsyId = await findOrCreateSellsyCompany(prospect.company);
+    companySellsyId = await findOrCreateSellsyCompany(prospect.company, prospect.company.id);
     await supabase
       .from('companies')
       .update({ sellsy_id: companySellsyId, last_synced_sellsy_at: nowIso })
@@ -253,7 +254,11 @@ async function runSyncSteps(prospect: ProspectForSync): Promise<void> {
   // ----- Step 4 : Individual (contact) -----
   let contactSellsyId: string | null = prospect.contact?.sellsy_contact_id ?? null;
   if (prospect.contact && !contactSellsyId) {
-    contactSellsyId = await findOrCreateSellsyIndividual(prospect.contact, companySellsyId);
+    contactSellsyId = await findOrCreateSellsyIndividual(
+      prospect.contact,
+      companySellsyId,
+      prospect.contact.id,
+    );
     await supabase
       .from('contacts')
       .update({ sellsy_contact_id: contactSellsyId, last_synced_sellsy_at: nowIso })
@@ -297,7 +302,10 @@ async function runSyncSteps(prospect: ProspectForSync): Promise<void> {
  *   - filters wrapper obligatoire ("filters est manquant" sans)
  *   - filters.name avec string simple : OK
  */
-async function findOrCreateSellsyCompany(company: ProspectForSync['company']): Promise<string> {
+async function findOrCreateSellsyCompany(
+  company: ProspectForSync['company'],
+  mdsCompanyId: string,
+): Promise<string> {
   const fullName = company.name.trim();
 
   // ----- 1. Match exact case-insensitive sur nom complet -----
@@ -359,15 +367,33 @@ async function findOrCreateSellsyCompany(company: ProspectForSync['company']): P
   }
 
   // ----- 3. CREATE -----
-  const createdRaw = await sellsyFetch<unknown>('/companies', {
-    method: 'POST',
-    body: JSON.stringify({
-      name: fullName,
-      type: 'client',
-    }),
-  });
-  const newId = extractSellsyId(createdRaw, '/companies');
+  const companyPayload = { name: fullName, type: 'client' };
+  let newId: number;
+  try {
+    const createdRaw = await sellsyFetch<unknown>('/companies', {
+      method: 'POST',
+      body: JSON.stringify(companyPayload),
+    });
+    newId = extractSellsyId(createdRaw, '/companies');
+  } catch (err) {
+    await logSellsyCall({
+      entityType: 'companies',
+      entityId: mdsCompanyId,
+      operation: 'create',
+      status: 'error',
+      errorMessage: err instanceof Error ? err.message : String(err),
+      payload: { request: companyPayload, response: err instanceof SellsyError ? err.body : null },
+    });
+    throw err;
+  }
   console.log('%s company-created mds_name=%s sellsy_id=%d', LOG_PREFIX, fullName, newId);
+  await logSellsyCall({
+    entityType: 'companies',
+    entityId: mdsCompanyId,
+    operation: 'create',
+    status: 'success',
+    payload: { sellsy_id: newId, name: fullName },
+  });
   return String(newId);
 }
 
@@ -393,7 +419,8 @@ async function searchSellsyCompaniesByName(name: string): Promise<SellsyCompany[
 async function findOrCreateSellsyIndividual(
   contact: NonNullable<ProspectForSync['contact']>,
   companySellsyId: string,
-): Promise<string> {
+  mdsContactId: string,
+): Promise<string | null> {
   // Search par email.
   const found = await searchSellsyIndividualByEmail(contact.email);
   if (found) {
@@ -427,13 +454,88 @@ async function findOrCreateSellsyIndividual(
     ],
   };
 
-  const createdRaw = await sellsyFetch<unknown>('/individuals', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-  const newId = extractSellsyId(createdRaw, '/individuals');
-  console.log('%s individual-created sellsy_id=%d', LOG_PREFIX, newId);
-  return String(newId);
+  try {
+    const createdRaw = await sellsyFetch<unknown>('/individuals', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    const newId = extractSellsyId(createdRaw, '/individuals');
+    console.log('%s individual-created sellsy_id=%d', LOG_PREFIX, newId);
+    await logSellsyCall({
+      entityType: 'contacts',
+      entityId: mdsContactId,
+      operation: 'create',
+      status: 'success',
+      payload: { sellsy_id: newId, email: contact.email },
+    });
+    return String(newId);
+  } catch (err) {
+    // P6.x.6 — Sellsy V2 quirk : l'email d'un individual doit être unique
+    // sur TOUT le compte, y compris les collaborateurs (staff users). Si un
+    // collaborateur Sellsy a déjà cet email (typique : Phil teste avec son
+    // propre email perso), POST /individuals renvoie 400 avec
+    //   details.email = "Cette adresse email est déjà utilisée sur l'un de
+    //   vos collaborateurs"
+    // Dans ce cas, on n'a aucun moyen de rattacher un individual côté Sellsy
+    // (le search ne renvoie pas les staff). Skip gracieusement : le devis
+    // peut être émis sans contact_id (la related company suffit). Le contact
+    // reste tracé côté MDS, l'admin a le téléphone/email dans /admin/contacts.
+    if (isCollaboratorEmailCollision(err)) {
+      console.warn(
+        '%s individual-skip-collaborator-email email=%s — Sellsy staff conflict, devis sera émis sans contact_id',
+        LOG_PREFIX,
+        contact.email,
+      );
+      // Log en 'success' avec note explicite (l'opération de sync est OK,
+      // simplement aucun individual côté Sellsy n'est créé — non-bloquant).
+      await logSellsyCall({
+        entityType: 'contacts',
+        entityId: mdsContactId,
+        operation: 'create',
+        status: 'success',
+        payload: {
+          skipped: 'collaborator_email_collision',
+          email: contact.email,
+          sellsy_error: err instanceof SellsyError ? err.body : null,
+        },
+      });
+      return null;
+    }
+    await logSellsyCall({
+      entityType: 'contacts',
+      entityId: mdsContactId,
+      operation: 'create',
+      status: 'error',
+      errorMessage: err instanceof Error ? err.message : String(err),
+      payload: {
+        request: { email: contact.email, last_name: payload.last_name },
+        response: err instanceof SellsyError ? err.body : null,
+      },
+    });
+    throw err;
+  }
+}
+
+/**
+ * P6.x.6 — détecte le 400 "email collision avec collaborateur Sellsy".
+ *
+ * Shape de l'erreur Sellsy :
+ * ```
+ * { error: { code: 400, message: "Validations errors",
+ *            details: { email: "Cette adresse email est déjà utilisée sur l'un de vos collaborateurs" } } }
+ * ```
+ *
+ * On match sur le mot-clé `collaborateurs` (FR uniquement — Sellsy ne semble
+ * pas localiser le message en EN à ce jour).
+ */
+function isCollaboratorEmailCollision(err: unknown): boolean {
+  if (!(err instanceof SellsyError) || err.status !== 400) return false;
+  const body = err.body as { error?: { details?: { email?: string } | unknown } } | undefined;
+  const details = body?.error?.details;
+  if (typeof details !== 'object' || details === null) return false;
+  const emailMsg = (details as { email?: string }).email;
+  if (typeof emailMsg !== 'string') return false;
+  return /collaborateur/i.test(emailMsg);
 }
 
 async function searchSellsyIndividualByEmail(email: string): Promise<SellsyIndividual | null> {

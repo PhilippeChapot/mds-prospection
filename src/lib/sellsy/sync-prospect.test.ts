@@ -33,9 +33,37 @@ vi.mock('@/lib/supabase/service', () => ({
 
 // Mock sellsyFetch (le helper qui parle a l'API Sellsy).
 const mockSellsyFetch = vi.fn();
-vi.mock('@/lib/sellsy/client', () => ({
-  sellsyFetch: (path: string, options?: unknown) => mockSellsyFetch(path, options),
-}));
+vi.mock('@/lib/sellsy/client', () => {
+  class SellsyErrorMock extends Error {
+    status: number;
+    body: unknown;
+    path: string;
+    constructor(message: string, status: number, path: string, body: unknown) {
+      super(message);
+      this.name = 'SellsyError';
+      this.status = status;
+      this.path = path;
+      this.body = body;
+    }
+  }
+  return {
+    sellsyFetch: (path: string, options?: unknown) => mockSellsyFetch(path, options),
+    SellsyError: SellsyErrorMock,
+  };
+});
+
+// Helper local pour construire l'erreur Sellsy (réutilise la classe du mock).
+async function makeSellsyError(
+  message: string,
+  status: number,
+  path: string,
+  body: unknown,
+): Promise<Error> {
+  const mod = (await import('@/lib/sellsy/client')) as unknown as {
+    SellsyError: new (m: string, s: number, p: string, b: unknown) => Error;
+  };
+  return new mod.SellsyError(message, status, path, body);
+}
 
 // L'import doit venir APRES les mocks.
 import { syncProspectToSellsy, _resetSellsyPipelineCacheForTests } from './sync-prospect';
@@ -227,6 +255,56 @@ describe('syncProspectToSellsy', () => {
         path === '/companies' && (options as { method?: string })?.method === 'POST',
     );
     expect(createCompanyCall).toBeDefined();
+  });
+
+  it('P6.x.6 — gère collision email collaborateur Sellsy : individual skip + sync OK', async () => {
+    // Cas réel observé sur prospect Editions HF : POST /individuals renvoie
+    // 400 avec details.email = "...déjà utilisée sur l'un de vos collaborateurs"
+    // car l'email du contact existe déjà comme staff Sellsy. La sync doit
+    // continuer sans contact_id et marquer la sync comme OK (reset error fields).
+    mockSupabaseClient.prospect = makeProspect();
+    mockSellsyFetch
+      // 1. company search exact -> found
+      .mockResolvedValueOnce({ data: [{ id: 5001, name: 'NRJ Group' }] })
+      // 2. individual search by email -> empty (les staff n'y figurent pas)
+      .mockResolvedValueOnce({ data: [] })
+      // 3. POST /individuals -> 400 collaborator collision
+      .mockRejectedValueOnce(
+        await makeSellsyError('Sellsy fetch /individuals failed (400)', 400, '/individuals', {
+          error: {
+            code: 400,
+            message: 'Validations errors',
+            details: {
+              email: "Cette adresse email est déjà utilisée sur l'un de vos collaborateurs",
+            },
+          },
+        }),
+      )
+      // 4. pipeline steps fetch
+      .mockResolvedValueOnce(mockStepsFetch())
+      // 5. opportunity create
+      .mockResolvedValueOnce({ data: { id: 9001 } });
+
+    await syncProspectToSellsy('prospect-uuid-1');
+
+    // Sync OK final : pas de last_sync_error_provider posé sur prospects.
+    const errorUpdate = mockSupabaseClient.updates.find(
+      (u) =>
+        u.table === 'prospects' &&
+        (u.values.last_sync_error_provider as string | undefined) === 'sellsy',
+    );
+    expect(errorUpdate).toBeUndefined();
+
+    // Reset des error fields en fin de flow (last_synced_sellsy_at bumped).
+    const successUpdate = mockSupabaseClient.updates.find(
+      (u) => u.table === 'prospects' && u.values.last_synced_sellsy_at !== undefined,
+    );
+    expect(successUpdate).toBeDefined();
+    expect(successUpdate?.values.last_sync_error_message).toBeNull();
+
+    // contact.sellsy_contact_id reste null (pas d'individual Sellsy attaché).
+    const contactUpdate = mockSupabaseClient.updates.find((u) => u.table === 'contacts');
+    expect(contactUpdate?.values.sellsy_contact_id).toBeNull();
   });
 
   it('records error in DB after final retry exhaustion (5xx)', async () => {
