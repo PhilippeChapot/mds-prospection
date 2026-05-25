@@ -105,5 +105,6 @@ function relativeTime(iso: string): string {
   if (diffSec < 3600) return `il y a ${Math.round(diffSec / 60)}min`;
   if (diffSec < 86400) return `il y a ${Math.round(diffSec / 3600)}h`;
   if (diffSec < 86400 * 30) return `il y a ${Math.round(diffSec / 86400)}j`;
-  return new Date(iso).toLocaleDateString('fr-FR');
+  // P6.x.8 — timeZone explicite (Vercel SSR=UTC vs client=Europe/Paris).
+  return new Date(iso).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
 }

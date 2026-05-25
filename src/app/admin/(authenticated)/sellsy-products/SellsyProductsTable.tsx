@@ -3,6 +3,9 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+// P6.x.8 — formatDate délégué au helper partagé qui force `timeZone: 'Europe/Paris'`
+// (hydration mismatch React #418 si non-forcé).
+import { formatDateTimeShortFr as formatDate } from '@/lib/format/dates';
 
 interface MirrorRow {
   sellsy_item_id: number;
@@ -131,13 +134,4 @@ function formatEur(amount: number): string {
     currency: 'EUR',
     minimumFractionDigits: 2,
   }).format(amount);
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }

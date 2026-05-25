@@ -79,7 +79,8 @@ export function SirenSection({
         </div>
         {sirenVerifiedAt ? (
           <p className="text-md-text-muted mt-1 text-xs">
-            Vérifié le {new Date(sirenVerifiedAt).toLocaleDateString('fr-FR')}
+            Vérifié le{' '}
+            {new Date(sirenVerifiedAt).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })}
           </p>
         ) : null}
       </div>

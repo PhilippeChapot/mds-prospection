@@ -147,13 +147,19 @@ function Td({ children, className }: { children: React.ReactNode; className?: st
 }
 
 function formatDate(iso: string): string {
+  // P6.x.8 — timeZone explicite (SSR/client TZ mismatch -> React #418).
   return new Date(iso).toLocaleDateString('fr-FR', {
     day: '2-digit',
     month: '2-digit',
     year: '2-digit',
+    timeZone: 'Europe/Paris',
   });
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Paris',
+  });
 }

@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { resyncProspectAction, emitSellsyDocumentAction } from './actions';
 import { cn } from '@/lib/utils';
+import { formatDateTimeShortFr } from '@/lib/format/dates';
 
 type SyncStatus = 'pending' | 'synced' | 'error' | 'skipped' | 'not-applicable' | 'not-implemented';
 
@@ -341,11 +342,7 @@ function computeStatus({
   return 'pending';
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+// formatDate — P6.x.8 : utilise le helper partagé `formatDateTimeShortFr`
+// qui force `timeZone: 'Europe/Paris'`. Cf. src/lib/format/dates.ts pour le
+// contexte (hydration mismatch React #418).
+const formatDate = formatDateTimeShortFr;
