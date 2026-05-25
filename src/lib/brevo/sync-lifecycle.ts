@@ -23,6 +23,7 @@
 
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { upsertContactBrevo, type ProspectPole, type ProspectCategory } from './lifecycle';
+import { logBrevoCall } from './sync-logger';
 
 const LOG_PREFIX = '[brevo/sync-lifecycle]';
 
@@ -128,6 +129,19 @@ export async function syncBrevoLifecycle(prospectId: string): Promise<SyncBrevoL
       .update({ last_synced_brevo_at: new Date().toISOString() })
       .eq('id', prospectId);
 
+    // P4.x.1 — sync_logs (audit Brevo).
+    await logBrevoCall({
+      entityType: 'prospects',
+      entityId: prospectId,
+      operation: 'update',
+      status: 'success',
+      payload: {
+        flow: 'lifecycle',
+        flags: { isQuoted, isAcomptePaid, isSigned, isLost },
+        email: contact.email,
+      },
+    });
+
     console.log(
       '%s success prospect=%s flags={quoted=%s,acompte_paid=%s,signed=%s,lost=%s}',
       LOG_PREFIX,
@@ -150,6 +164,15 @@ export async function syncBrevoLifecycle(prospectId: string): Promise<SyncBrevoL
         last_sync_error_at: new Date().toISOString(),
       })
       .eq('id', prospectId);
+    // P4.x.1 — log error pour debug admin via /admin/sync-logs.
+    await logBrevoCall({
+      entityType: 'prospects',
+      entityId: prospectId,
+      operation: 'update',
+      status: 'error',
+      errorMessage: msg,
+      payload: { flow: 'lifecycle', email: contact.email },
+    });
     return { ok: false, error: msg };
   }
 }

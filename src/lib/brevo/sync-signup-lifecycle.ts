@@ -25,6 +25,7 @@
 
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { upsertContactBrevo } from './lifecycle';
+import { logBrevoCall } from './sync-logger';
 
 const LOG_PREFIX = '[brevo/sync-signup-lifecycle]';
 
@@ -110,10 +111,31 @@ export async function syncSignupLifecycle(signupId: string): Promise<SyncSignupL
       isVerifiedNotConverted,
     );
 
+    // P4.x.1 — sync_logs (audit Brevo signup-side).
+    await logBrevoCall({
+      entityType: 'public_signup_attempts',
+      entityId: signupId,
+      operation: 'update',
+      status: 'success',
+      payload: {
+        flow: 'signup_lifecycle',
+        isVerifiedNotConverted,
+        email: signup.email,
+      },
+    });
+
     return { ok: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('%s failed signup=%s msg=%s', LOG_PREFIX, signupId, msg);
+    await logBrevoCall({
+      entityType: 'public_signup_attempts',
+      entityId: signupId,
+      operation: 'update',
+      status: 'error',
+      errorMessage: msg,
+      payload: { flow: 'signup_lifecycle', email: signup.email },
+    });
     return { ok: false, error: msg };
   }
 }
