@@ -2428,7 +2428,7 @@ export type Database = {
         | 'step2_completed';
       sync_op: 'create' | 'update' | 'pull' | 'check';
       sync_status: 'success' | 'pending' | 'error';
-      sync_target: 'sellsy' | 'brevo' | 'connectonair';
+      sync_target: 'sellsy' | 'brevo' | 'connectonair' | 'stripe';
       user_role: 'admin' | 'sales' | 'super_admin';
       vat_status: 'unverified' | 'pending' | 'valid' | 'invalid';
     };
@@ -2661,7 +2661,7 @@ export const Constants = {
       ],
       sync_op: ['create', 'update', 'pull', 'check'],
       sync_status: ['success', 'pending', 'error'],
-      sync_target: ['sellsy', 'brevo', 'connectonair'],
+      sync_target: ['sellsy', 'brevo', 'connectonair', 'stripe'],
       user_role: ['admin', 'sales', 'super_admin'],
       vat_status: ['unverified', 'pending', 'valid', 'invalid'],
     },

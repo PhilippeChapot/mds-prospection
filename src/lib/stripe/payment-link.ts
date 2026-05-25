@@ -15,6 +15,7 @@
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { getStripe } from './client';
 import { STRIPE_BUSINESS_TAG } from './constants';
+import { logStripeCall } from './sync-logger';
 
 const LOG_PREFIX = '[stripe/payment-link]';
 
@@ -72,40 +73,56 @@ export async function createConciergePaymentLink(
   const successUrl = `${baseUrl}/fr/merci?stripe_link=${input.prospectId}`;
 
   const stripe = getStripe();
-  const link = await stripe.paymentLinks.create({
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: 'eur',
-          product_data: { name: input.description.slice(0, 250) },
-          unit_amount: amountCents,
+  let link: { id: string; url: string };
+  try {
+    link = await stripe.paymentLinks.create({
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'eur',
+            product_data: { name: input.description.slice(0, 250) },
+            unit_amount: amountCents,
+          },
         },
-      },
-    ],
-    metadata: {
-      prospect_id: input.prospectId,
-      sellsy_document_id: prospect.sellsy_devis_id ?? '',
-      source: 'admin_concierge',
-      // P4.x.1 Bug B : flow=concierge -> webhook route le template
-      // admin_concierge_paye au lieu de admin_acompte_paye.
-      flow: 'concierge',
-      // P4.x.5 : tag pour filtrer MDS dans le compte Stripe partage.
-      business: STRIPE_BUSINESS_TAG,
-    },
-    payment_intent_data: {
+      ],
       metadata: {
         prospect_id: input.prospectId,
         sellsy_document_id: prospect.sellsy_devis_id ?? '',
         source: 'admin_concierge',
+        // P4.x.1 Bug B : flow=concierge -> webhook route le template
+        // admin_concierge_paye au lieu de admin_acompte_paye.
         flow: 'concierge',
+        // P4.x.5 : tag pour filtrer MDS dans le compte Stripe partage.
         business: STRIPE_BUSINESS_TAG,
       },
-    },
-    after_completion: { type: 'redirect', redirect: { url: successUrl } },
-    restrictions: { completed_sessions: { limit: 1 } },
-    inactive_message: 'Ce lien a expiré. Merci de nous contacter pour un nouveau lien de paiement.',
-  });
+      payment_intent_data: {
+        metadata: {
+          prospect_id: input.prospectId,
+          sellsy_document_id: prospect.sellsy_devis_id ?? '',
+          source: 'admin_concierge',
+          flow: 'concierge',
+          business: STRIPE_BUSINESS_TAG,
+        },
+      },
+      after_completion: { type: 'redirect', redirect: { url: successUrl } },
+      restrictions: { completed_sessions: { limit: 1 } },
+      inactive_message:
+        'Ce lien a expiré. Merci de nous contacter pour un nouveau lien de paiement.',
+    });
+  } catch (err) {
+    // P6.x.8-bis : log error dans sync_logs avant de rethrow (debug en
+    // cas de STRIPE_SECRET_KEY manquante / quota / etc.).
+    await logStripeCall({
+      entityType: 'prospects',
+      entityId: input.prospectId,
+      operation: 'create',
+      status: 'error',
+      errorMessage: err instanceof Error ? err.message : String(err),
+      payload: { flow: 'concierge', amountCents, description: input.description.slice(0, 250) },
+    });
+    throw err;
+  }
 
   // Stripe ne supporte pas un expires_at natif. On le stocke en DB pour
   // le cron M5 qui desactivera les liens via paymentLinks.update active=false.
@@ -114,7 +131,30 @@ export async function createConciergePaymentLink(
   // Append l'URL aux notes du prospect (audit trail visible cote admin).
   const noteLine = `[${new Date().toISOString().slice(0, 10)}] Payment Link Stripe (expire ${expiresAt.slice(0, 10)}) : ${link.url}`;
   const newNotes = prospect.notes ? `${prospect.notes}\n${noteLine}` : noteLine;
-  await supabase.from('prospects').update({ notes: newNotes }).eq('id', input.prospectId);
+  // P6.x.8-bis : bump last_synced_stripe_at pour que la card Sync passe de
+  // "À venir (P4 M4)" à "Synchronisé le X" (la création de Payment Link
+  // est notre première activité Stripe trackée pour ce prospect).
+  await supabase
+    .from('prospects')
+    .update({
+      notes: newNotes,
+      last_synced_stripe_at: new Date().toISOString(),
+    })
+    .eq('id', input.prospectId);
+
+  // P6.x.8-bis : log success dans sync_logs (audit trail).
+  await logStripeCall({
+    entityType: 'prospects',
+    entityId: input.prospectId,
+    operation: 'create',
+    status: 'success',
+    payload: {
+      flow: 'concierge',
+      payment_link_id: link.id,
+      amount_cents: amountCents,
+      expires_at: expiresAt,
+    },
+  });
 
   console.log(
     '%s success prospect_id=%s link_id=%s url=%s amount_cents=%d',
@@ -248,8 +288,25 @@ export async function createAcomptePaymentLink(
       acompte_payment_link_url: link.url,
       acompte_payment_link_id: link.id,
       acompte_payment_link_expires_at: expiresAt,
+      // P6.x.8-bis : bump last_synced_stripe_at (cohérent avec le flow concierge).
+      last_synced_stripe_at: new Date().toISOString(),
     })
     .eq('id', input.prospectId);
+
+  // P6.x.8-bis : sync_logs (audit Stripe).
+  await logStripeCall({
+    entityType: 'prospects',
+    entityId: input.prospectId,
+    operation: 'create',
+    status: 'success',
+    payload: {
+      flow: 'acompte',
+      payment_link_id: link.id,
+      amount_cents: amountCents,
+      devis_number: input.devisNumber,
+      expires_at: expiresAt,
+    },
+  });
 
   console.log(
     '%s acompte-success prospect_id=%s link_id=%s url=%s amount_cents=%d',

@@ -323,17 +323,43 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
         brevo={{ lastSyncedAt: prospect.last_synced_brevo_at }}
         extraActions={
           <>
-            {company?.sellsy_id ? (
-              <a
-                href={`https://go.sellsy.com/companies/${company.sellsy_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="border-md-border bg-card text-md-text hover:bg-muted inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium"
-                title="Ouvrir la fiche société sur Sellsy"
-              >
-                Voir dans Sellsy ↗
-              </a>
-            ) : null}
+            {(() => {
+              // P6.x.8-bis : la fiche `/companies/{id}` Sellsy V2 renvoie 404
+              // pour un client externe (slug interne uniquement). On préfère
+              // pointer vers le devis si on en a un — sinon vers la facture
+              // ou proforma — sinon vers la société (cas où aucun document
+              // n'a encore été émis). Le devis Sellsy V2 vit sur le path
+              // `/estimates/{id}` côté dashboard interne — c'est l'URL
+              // partagée par Sellsy dans `public_link`. On utilise donc
+              // `sellsy_devis_public_url` directement quand on l'a.
+              const sellsyHref =
+                prospect.sellsy_devis_public_url ||
+                prospect.sellsy_proforma_public_url ||
+                prospect.sellsy_invoice_public_url ||
+                (company?.sellsy_id
+                  ? `https://go.sellsy.com/companies/${company.sellsy_id}`
+                  : null);
+              if (!sellsyHref) return null;
+              return (
+                <a
+                  href={sellsyHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border-md-border bg-card text-md-text hover:bg-muted inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium"
+                  title={
+                    prospect.sellsy_devis_public_url
+                      ? 'Ouvrir le devis Sellsy'
+                      : prospect.sellsy_invoice_public_url
+                        ? 'Ouvrir la facture Sellsy'
+                        : prospect.sellsy_proforma_public_url
+                          ? 'Ouvrir la proforma Sellsy'
+                          : 'Ouvrir la fiche société sur Sellsy'
+                  }
+                >
+                  Voir dans Sellsy ↗
+                </a>
+              );
+            })()}
             <ConciergePaymentLinkDialog
               prospectId={id}
               isTest={prospect.is_test}
