@@ -25,54 +25,32 @@ import {
   isLikelyDomain,
   ApolloError,
   type ApolloOrganization,
-  type ApolloCreditUsage,
 } from '@/lib/apollo/client';
 import { logApolloCall } from '@/lib/apollo/sync-logger';
 import { normalizeDomain } from '@/lib/utils/domain';
+// P5.x.Apollo fix : types et helper sync `mapApolloToCompany` déplacés
+// dans `apollo-mapping.ts` car ce fichier est `'use server'` (Next.js
+// interdit les exports non-async). On ré-exporte les types ici pour la
+// compat ascendante des call sites — les `export type` sont strippés au
+// compile et restent donc autorisés dans un fichier 'use server'.
+import {
+  mapApolloToCompany,
+  type CompanyMappedFromApollo,
+  type ExistingCompanyHit,
+  type EnrichApolloResult,
+  type GetCreditsResult,
+  type CreateProspectResult,
+} from './apollo-mapping';
+
+export type {
+  CompanyMappedFromApollo,
+  ExistingCompanyHit,
+  EnrichApolloResult,
+  GetCreditsResult,
+  CreateProspectResult,
+};
 
 const LOG_PREFIX = '[admin/smart-add/apollo]';
-
-// ---------------------------------------------------------------------------
-// Types partagés
-// ---------------------------------------------------------------------------
-
-export interface CompanyMappedFromApollo {
-  name: string;
-  primary_domain: string | null;
-  website: string | null;
-  linkedin_url: string | null;
-  industry: string | null;
-  employee_count: number | null;
-  estimated_revenue_eur: number | null;
-  parent_company: string | null;
-  founded_year: number | null;
-  description: string | null;
-  keywords: string[];
-  phone: string | null;
-  raw_address: string | null;
-  city: string | null;
-  postal_code: string | null;
-  country: string | null;
-  apollo_organization_id: string;
-  apollo_enriched_at: string;
-  apollo_raw_data: ApolloOrganization;
-}
-
-export interface ExistingCompanyHit {
-  id: string;
-  name: string;
-  primary_domain: string | null;
-  apollo_organization_id: string | null;
-}
-
-export type EnrichApolloResult =
-  | {
-      ok: true;
-      apolloOrg: ApolloOrganization;
-      mapped: CompanyMappedFromApollo;
-      existing: ExistingCompanyHit | null;
-    }
-  | { ok: false; error: string; code?: 'disabled' | 'not_domain' | 'not_found' | 'api_error' };
 
 // ---------------------------------------------------------------------------
 // enrichApolloAction
@@ -192,10 +170,6 @@ export async function enrichApolloAction(
 // getApolloCreditUsageAction — pour le badge UI compteur
 // ---------------------------------------------------------------------------
 
-export type GetCreditsResult =
-  | { ok: true; usage: ApolloCreditUsage | null }
-  | { ok: false; error: string };
-
 export async function getApolloCreditUsageAction(): Promise<GetCreditsResult> {
   const profile = await requireAdminProfile();
   if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
@@ -244,10 +218,6 @@ const createSchema = z.object({
   pole_code: z.string().nullable().optional(),
   category: z.enum(['standard', 'prs_exhibitor', 'non_eligible']).default('standard'),
 });
-
-export type CreateProspectResult =
-  | { ok: true; prospect_id: string; company_id: string; contact_id: string | null }
-  | { ok: false; error: string };
 
 export async function createProspectFromApolloAction(
   input: z.input<typeof createSchema>,
@@ -407,38 +377,5 @@ export async function createProspectFromApolloAction(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Mapper Apollo -> structure interne MDS
-// ---------------------------------------------------------------------------
-
-export function mapApolloToCompany(
-  org: ApolloOrganization,
-  fallbackDomain: string,
-): CompanyMappedFromApollo {
-  const websiteDomain = org.website_url
-    ? normalizeDomain(org.website_url.replace(/^https?:\/\//, ''))
-    : null;
-  return {
-    name: org.name?.trim() || fallbackDomain,
-    primary_domain: websiteDomain || fallbackDomain,
-    website: org.website_url ?? null,
-    linkedin_url: org.linkedin_url ?? null,
-    industry: org.industry ?? null,
-    employee_count:
-      typeof org.estimated_num_employees === 'number' ? org.estimated_num_employees : null,
-    estimated_revenue_eur:
-      typeof org.organization_revenue === 'number' ? Math.round(org.organization_revenue) : null,
-    parent_company: org.owned_by_organization?.name ?? null,
-    founded_year: typeof org.founded_year === 'number' ? org.founded_year : null,
-    description: org.short_description ?? null,
-    keywords: Array.isArray(org.keywords) ? org.keywords.slice(0, 30) : [],
-    phone: org.primary_phone?.sanitized_number ?? org.primary_phone?.number ?? null,
-    raw_address: org.raw_address ?? null,
-    city: org.city ?? null,
-    postal_code: org.postal_code ?? null,
-    country: org.country ?? null,
-    apollo_organization_id: org.id,
-    apollo_enriched_at: new Date().toISOString(),
-    apollo_raw_data: org,
-  };
-}
+// `mapApolloToCompany` est désormais dans `./apollo-mapping.ts` (helper sync
+// non-async, interdit dans un fichier 'use server' depuis Next.js 16).
