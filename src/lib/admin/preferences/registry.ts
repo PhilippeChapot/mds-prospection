@@ -108,6 +108,25 @@ export const SETTINGS_REGISTRY: SettingFieldDef[] = [
     schema: z.number().int().positive(),
     type: 'number',
   },
+  {
+    key: 'apollo_api_key',
+    category: 'integrations',
+    label: 'Clé API Apollo.io',
+    description:
+      "Clé d'API Apollo.io (récupérable sur app.apollo.io > Settings > Integrations > API). Vide = feature désactivée.",
+    schema: z.string().min(20).max(120).or(z.literal('')),
+    type: 'string',
+    placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  },
+  {
+    key: 'apollo_enabled',
+    category: 'integrations',
+    label: 'Activer Apollo dans Smart Add',
+    description:
+      'Active la section « Enrichir avec Apollo » dans le Smart Add Wizard. Nécessite apollo_api_key remplie.',
+    schema: z.boolean(),
+    type: 'boolean',
+  },
 
   // ═══════ RGPD ═══════
   {

@@ -1,11 +1,15 @@
 import { Sparkles } from 'lucide-react';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
+import { isApolloEnabled } from '@/lib/apollo/client';
 import { QuickAddWizard } from './QuickAddWizard';
+import { ApolloEnrichSection } from './ApolloEnrichSection';
 
 export const metadata = { title: 'Smart Add — Contacts' };
+export const dynamic = 'force-dynamic';
 
 export default async function QuickAddPage() {
   await requireAdminProfile();
+  const apolloEnabled = await isApolloEnabled();
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -19,6 +23,9 @@ export default async function QuickAddPage() {
           SIREN INSEE pour les sociétés FR. Tu valides et synchronise Brevo en un clic.
         </p>
       </header>
+
+      {/* P5.x.Apollo — section "Enrichir avec Apollo" (visible si configuré). */}
+      {apolloEnabled ? <ApolloEnrichSection /> : null}
 
       <QuickAddWizard />
     </div>

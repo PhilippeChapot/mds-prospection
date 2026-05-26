@@ -665,12 +665,18 @@ export type Database = {
       companies: {
         Row: {
           alternate_domains: string[];
+          apollo_enriched_at: string | null;
+          apollo_organization_id: string | null;
+          apollo_raw_data: Json | null;
           brevo_company_id: string | null;
           category: Database['public']['Enums']['category_tarif'];
           connectonair_id: string | null;
           country: string | null;
           created_at: string;
           description: string | null;
+          employee_count: number | null;
+          estimated_revenue_eur: number | null;
+          founded_year: number | null;
           id: string;
           last_synced_brevo_at: string | null;
           last_synced_sellsy_at: string | null;
@@ -681,6 +687,7 @@ export type Database = {
           name: string;
           name_normalized: string;
           notes: string | null;
+          parent_company: string | null;
           pole_classified_at: string | null;
           pole_classified_by: Database['public']['Enums']['classification_source'] | null;
           pole_confidence: number | null;
@@ -704,12 +711,18 @@ export type Database = {
         };
         Insert: {
           alternate_domains?: string[];
+          apollo_enriched_at?: string | null;
+          apollo_organization_id?: string | null;
+          apollo_raw_data?: Json | null;
           brevo_company_id?: string | null;
           category?: Database['public']['Enums']['category_tarif'];
           connectonair_id?: string | null;
           country?: string | null;
           created_at?: string;
           description?: string | null;
+          employee_count?: number | null;
+          estimated_revenue_eur?: number | null;
+          founded_year?: number | null;
           id?: string;
           last_synced_brevo_at?: string | null;
           last_synced_sellsy_at?: string | null;
@@ -720,6 +733,7 @@ export type Database = {
           name: string;
           name_normalized: string;
           notes?: string | null;
+          parent_company?: string | null;
           pole_classified_at?: string | null;
           pole_classified_by?: Database['public']['Enums']['classification_source'] | null;
           pole_confidence?: number | null;
@@ -743,12 +757,18 @@ export type Database = {
         };
         Update: {
           alternate_domains?: string[];
+          apollo_enriched_at?: string | null;
+          apollo_organization_id?: string | null;
+          apollo_raw_data?: Json | null;
           brevo_company_id?: string | null;
           category?: Database['public']['Enums']['category_tarif'];
           connectonair_id?: string | null;
           country?: string | null;
           created_at?: string;
           description?: string | null;
+          employee_count?: number | null;
+          estimated_revenue_eur?: number | null;
+          founded_year?: number | null;
           id?: string;
           last_synced_brevo_at?: string | null;
           last_synced_sellsy_at?: string | null;
@@ -759,6 +779,7 @@ export type Database = {
           name?: string;
           name_normalized?: string;
           notes?: string | null;
+          parent_company?: string | null;
           pole_classified_at?: string | null;
           pole_classified_by?: Database['public']['Enums']['classification_source'] | null;
           pole_confidence?: number | null;
@@ -2437,7 +2458,7 @@ export type Database = {
         | 'step2_completed';
       sync_op: 'create' | 'update' | 'pull' | 'check';
       sync_status: 'success' | 'pending' | 'error';
-      sync_target: 'sellsy' | 'brevo' | 'connectonair' | 'stripe';
+      sync_target: 'sellsy' | 'brevo' | 'connectonair' | 'stripe' | 'apollo';
       user_role: 'admin' | 'sales' | 'super_admin';
       vat_status: 'unverified' | 'pending' | 'valid' | 'invalid';
     };
@@ -2670,7 +2691,7 @@ export const Constants = {
       ],
       sync_op: ['create', 'update', 'pull', 'check'],
       sync_status: ['success', 'pending', 'error'],
-      sync_target: ['sellsy', 'brevo', 'connectonair', 'stripe'],
+      sync_target: ['sellsy', 'brevo', 'connectonair', 'stripe', 'apollo'],
       user_role: ['admin', 'sales', 'super_admin'],
       vat_status: ['unverified', 'pending', 'valid', 'invalid'],
     },
