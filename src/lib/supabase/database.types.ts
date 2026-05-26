@@ -2226,26 +2226,32 @@ export type Database = {
       };
       users: {
         Row: {
+          archived_at: string | null;
           created_at: string;
           email: string;
           full_name: string | null;
           id: string;
+          last_login_at: string | null;
           role: Database['public']['Enums']['user_role'];
           totp_enabled: boolean;
         };
         Insert: {
+          archived_at?: string | null;
           created_at?: string;
           email: string;
           full_name?: string | null;
           id: string;
+          last_login_at?: string | null;
           role?: Database['public']['Enums']['user_role'];
           totp_enabled?: boolean;
         };
         Update: {
+          archived_at?: string | null;
           created_at?: string;
           email?: string;
           full_name?: string | null;
           id?: string;
+          last_login_at?: string | null;
           role?: Database['public']['Enums']['user_role'];
           totp_enabled?: boolean;
         };
