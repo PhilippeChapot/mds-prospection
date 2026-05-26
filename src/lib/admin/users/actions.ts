@@ -84,15 +84,18 @@ export async function inviteUserAction(
   // 2. Generate Supabase invite link SANS envoi automatique d'email
   //    (P5.x.1-bis : on remplace le template Supabase par notre template
   //    Resend custom FR/EN avec branding MDS — cf. brief).
-  //    `redirectTo` pointe vers /admin?invited=1 pour la bannière welcome.
+  //    P5.x.1-ter : `redirectTo` pointe désormais vers /auth/setup-password
+  //    (page qui set la session puis demande un mot de passe). Après set,
+  //    cette page redirige vers /admin?invited=1 pour la bannière welcome.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
   const adminHomeUrl = `${appUrl}/admin`;
+  const setupPasswordUrl = `${appUrl}/auth/setup-password`;
   const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
     type: 'invite',
     email: data.email,
     options: {
       data: { full_name: data.full_name, role: data.role, language: data.language },
-      redirectTo: `${adminHomeUrl}?invited=1`,
+      redirectTo: setupPasswordUrl,
     },
   });
   if (linkErr || !linkData?.user?.id || !linkData.properties?.action_link) {
@@ -466,13 +469,15 @@ export async function resendInviteAction(
 
   // P5.x.1-bis : même pattern que inviteUserAction — generateLink (sans
   // envoi auto Supabase) + email Resend custom dans la langue du user.
+  // P5.x.1-ter : `redirectTo` pointe vers /auth/setup-password (cohérent).
   const supabase = getSupabaseServiceClient();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
   const adminHomeUrl = `${appUrl}/admin`;
+  const setupPasswordUrl = `${appUrl}/auth/setup-password`;
   const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
     type: 'invite',
     email: before.email,
-    options: { redirectTo: `${adminHomeUrl}?invited=1` },
+    options: { redirectTo: setupPasswordUrl },
   });
   if (linkErr || !linkData.properties?.action_link) {
     console.error(
@@ -534,4 +539,123 @@ export async function resendInviteAction(
 
   console.log('%s invite-resent email=%s by=%s', LOG_PREFIX, before.email, actorId);
   return { ok: true, magic_link_sent: true };
+}
+
+// ---------------------------------------------------------------------------
+// hardDeleteUserAction (P5.x.1-ter)
+// ---------------------------------------------------------------------------
+
+const hardDeleteSchema = z.object({
+  user_id: z.string().uuid(),
+  reason: z.string().trim().min(10).max(500),
+  confirmation: z.literal('SUPPRIMER'),
+});
+
+export type HardDeleteUserResult = { ok: true; deleted: true } | { ok: false; error: string };
+
+/**
+ * Hard delete d'un utilisateur (auth.users + CASCADE sur public.users).
+ *
+ * Garde-fous (defense in depth) :
+ *   - super_admin uniquement
+ *   - confirmation textuelle "SUPPRIMER"
+ *   - reason >= 10 chars
+ *   - interdit de se supprimer soi-même
+ *   - interdit de supprimer le dernier super_admin actif
+ *   - audit log AVANT delete (capture before complet pour traçabilité)
+ *
+ * CASCADE : la FK `public.users.id REFERENCES auth.users(id) ON DELETE CASCADE`
+ * (cf. migration 0003) garantit que `supabase.auth.admin.deleteUser(id)`
+ * supprime aussi la ligne public.users. L'audit log conserve la trace
+ * via before.email/role/full_name même après suppression.
+ */
+export async function hardDeleteUserAction(
+  input: z.infer<typeof hardDeleteSchema>,
+): Promise<HardDeleteUserResult> {
+  let actorId: string;
+  let actorRole: string;
+  try {
+    const profile = await requireSuperAdmin();
+    actorId = profile.id;
+    actorRole = profile.role;
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Forbidden' };
+  }
+  const parsed = hardDeleteSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation échouée.' };
+  }
+
+  if (parsed.data.user_id === actorId) {
+    return { ok: false, error: 'Impossible de supprimer votre propre compte.' };
+  }
+
+  const before = await getUserById(parsed.data.user_id);
+  if (!before) return { ok: false, error: 'Utilisateur introuvable.' };
+
+  // Garde-fou côté code : last super_admin (le trigger DB n'intervient pas
+  // sur DELETE, seulement sur UPDATE — donc on doit checker ici).
+  if (before.role === 'super_admin') {
+    const otherSupers = await countActiveSuperAdmins(before.id);
+    if (otherSupers === 0) {
+      return {
+        ok: false,
+        error: 'Impossible de supprimer le dernier super_admin actif du système.',
+      };
+    }
+  }
+
+  const supabase = getSupabaseServiceClient();
+
+  // Audit log AVANT delete : on capture l'état complet pour traçabilité
+  // permanente, même si la ligne public.users sera supprimée par CASCADE.
+  // Best-effort : si l'insert audit_log rate, on continue le delete (le
+  // log Vercel reste la trace de fallback).
+  try {
+    await supabase.from('audit_log').insert({
+      user_id: actorId,
+      action: 'delete',
+      entity_type: 'users',
+      entity_id: parsed.data.user_id,
+      before: {
+        kind: 'hard_deleted',
+        email: before.email,
+        full_name: before.full_name,
+        role: before.role,
+        language: before.language,
+        created_at: before.created_at,
+        archived_at: before.archived_at,
+      } as never,
+      after: {
+        kind: 'hard_deleted',
+        reason: parsed.data.reason,
+        actor_role: actorRole,
+        deleted_at: new Date().toISOString(),
+      } as never,
+    });
+  } catch (auditErr) {
+    console.warn('%s audit-log-failed msg=%s', LOG_PREFIX, String(auditErr));
+  }
+
+  // DELETE auth.users → CASCADE delete public.users via FK.
+  const { error: authErr } = await supabase.auth.admin.deleteUser(parsed.data.user_id);
+  if (authErr) {
+    console.error(
+      '%s hard-delete-failed id=%s msg=%s',
+      LOG_PREFIX,
+      parsed.data.user_id,
+      authErr.message,
+    );
+    return { ok: false, error: authErr.message };
+  }
+
+  console.log(
+    '%s hard-deleted id=%s email=%s by=%s',
+    LOG_PREFIX,
+    parsed.data.user_id,
+    before.email,
+    actorId,
+  );
+  revalidatePath('/admin/users');
+  return { ok: true, deleted: true };
 }

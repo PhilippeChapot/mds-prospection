@@ -35,6 +35,11 @@ const state = {
   authInviteUserId: 'invited-user-uuid',
   resendCalls: [] as Array<{ to: string; subject: string }>,
   resendShouldFail: false,
+  lastGenerateLinkOpts: undefined as
+    | { data?: Record<string, unknown>; redirectTo?: string }
+    | undefined,
+  authDeletes: [] as string[],
+  authDeleteShouldFail: false,
 };
 
 const SUPER_1 = '11111111-1111-4111-8111-111111111111';
@@ -47,7 +52,12 @@ function mockEnv() {
       if (state.adminRole !== 'super_admin') {
         throw new Error('Réservé aux super_admin.');
       }
-      return { id: 'actor-super', email: 's@b', full_name: null, role: 'super_admin' as const };
+      return {
+        id: 'a0000000-0000-4000-8000-000000000001',
+        email: 's@b',
+        full_name: null,
+        role: 'super_admin' as const,
+      };
     }),
   }));
   vi.doMock('next/cache', () => ({ revalidatePath: vi.fn() }));
@@ -84,6 +94,7 @@ function makeClient() {
           if (state.authInviteShouldFail) {
             return { data: null, error: { message: 'Email already registered' } };
           }
+          state.lastGenerateLinkOpts = params.options;
           return {
             data: {
               user: { id: state.authInviteUserId },
@@ -95,6 +106,16 @@ function makeClient() {
             },
             error: null,
           };
+        },
+        // P5.x.1-ter — hard delete : supprime auth.users (CASCADE simule public.users).
+        deleteUser: async (userId: string) => {
+          state.authDeletes.push(userId);
+          if (state.authDeleteShouldFail) {
+            return { data: null, error: { message: 'Auth delete failed' } };
+          }
+          // Simule la CASCADE FK : supprime aussi la ligne public.users.
+          state.rows = state.rows.filter((r) => r.id !== userId);
+          return { data: null, error: null };
         },
       },
     },
@@ -604,5 +625,195 @@ describe('resendInviteAction (P5.x.1)', () => {
     const r = await resendInviteAction({ user_id: ADMIN_1 });
     expect(r.ok).toBe(false);
     expect(state.authInvites).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P5.x.1-ter — redirectTo setup-password (sanity check sur generateLink opts)
+// ---------------------------------------------------------------------------
+
+describe('inviteUserAction redirectTo (P5.x.1-ter)', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    state.adminRole = 'super_admin';
+    state.rows = [];
+    state.audit = [];
+    state.authInvites = [];
+    state.resendCalls = [];
+    state.lastGenerateLinkOpts = undefined;
+    state.authInviteUserId = 'new-redir-uuid';
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('P5.x.1-ter : redirectTo pointe vers /auth/setup-password (pas /admin direct)', async () => {
+    mockEnv();
+    const { inviteUserAction } = await import('./actions');
+    await inviteUserAction({
+      email: 'redir@example.com',
+      full_name: 'Redir User',
+      role: 'admin',
+      language: 'fr',
+    });
+    expect(state.lastGenerateLinkOpts?.redirectTo).toMatch(/\/auth\/setup-password$/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P5.x.1-ter — hardDeleteUserAction
+// ---------------------------------------------------------------------------
+
+describe('hardDeleteUserAction (P5.x.1-ter)', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    state.adminRole = 'super_admin';
+    state.rows = [];
+    state.audit = [];
+    state.authDeletes = [];
+    state.authDeleteShouldFail = false;
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('admin standard -> 403 (super_admin only)', async () => {
+    mockEnv();
+    state.adminRole = 'admin';
+    state.rows = [makeUser({ id: ADMIN_1, email: 'a@b.fr', role: 'admin' })];
+    const { hardDeleteUserAction } = await import('./actions');
+    const r = await hardDeleteUserAction({
+      user_id: ADMIN_1,
+      reason: 'compte de test à nettoyer',
+      confirmation: 'SUPPRIMER',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/super_admin/);
+    expect(state.authDeletes).toHaveLength(0);
+  });
+
+  it("confirmation != 'SUPPRIMER' -> ok:false validation", async () => {
+    mockEnv();
+    state.rows = [makeUser({ id: ADMIN_1, email: 'a@b.fr', role: 'admin' })];
+    const { hardDeleteUserAction } = await import('./actions');
+    const r = await hardDeleteUserAction({
+      user_id: ADMIN_1,
+      reason: 'compte de test',
+      // @ts-expect-error : Zod refuse, on teste exactement cette erreur.
+      confirmation: 'DELETE',
+    });
+    expect(r.ok).toBe(false);
+    expect(state.authDeletes).toHaveLength(0);
+  });
+
+  it('reason < 10 chars -> ok:false validation', async () => {
+    mockEnv();
+    state.rows = [makeUser({ id: ADMIN_1 })];
+    const { hardDeleteUserAction } = await import('./actions');
+    const r = await hardDeleteUserAction({
+      user_id: ADMIN_1,
+      reason: 'court',
+      confirmation: 'SUPPRIMER',
+    });
+    expect(r.ok).toBe(false);
+    expect(state.authDeletes).toHaveLength(0);
+  });
+
+  it('self-delete bloqué', async () => {
+    mockEnv();
+    // L'actor super_admin a id='a0000000-0000-4000-8000-000000000001' (cf. mock requireSuperAdmin).
+    state.rows = [makeUser({ id: 'a0000000-0000-4000-8000-000000000001', role: 'super_admin' })];
+    const { hardDeleteUserAction } = await import('./actions');
+    const r = await hardDeleteUserAction({
+      user_id: 'a0000000-0000-4000-8000-000000000001',
+      reason: 'tentative self-destruction',
+      confirmation: 'SUPPRIMER',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/propre compte/);
+  });
+
+  it('dernier super_admin -> ok:false (garde-fou)', async () => {
+    mockEnv();
+    state.rows = [makeUser({ id: SUPER_1, role: 'super_admin' })];
+    const { hardDeleteUserAction } = await import('./actions');
+    const r = await hardDeleteUserAction({
+      user_id: SUPER_1,
+      reason: 'tentative suppression dernier super',
+      confirmation: 'SUPPRIMER',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/dernier super_admin/);
+  });
+
+  it('happy path : audit log AVANT delete + CASCADE supprime public.users', async () => {
+    mockEnv();
+    state.rows = [
+      makeUser({ id: ADMIN_1, email: 'tobedel@example.com', role: 'admin' }),
+      makeUser({ id: SUPER_1, role: 'super_admin' }),
+    ];
+    const { hardDeleteUserAction } = await import('./actions');
+    const r = await hardDeleteUserAction({
+      user_id: ADMIN_1,
+      reason: 'compte de test à nettoyer',
+      confirmation: 'SUPPRIMER',
+    });
+    expect(r.ok).toBe(true);
+    expect(state.authDeletes).toEqual([ADMIN_1]);
+    // CASCADE simulée : la row public.users est retirée.
+    expect(state.rows.find((r) => r.id === ADMIN_1)).toBeUndefined();
+    // Audit log capture before complet (email + role).
+    expect(state.audit[0].row.action).toBe('delete');
+    expect((state.audit[0].row.before as { email: string }).email).toBe('tobedel@example.com');
+    expect((state.audit[0].row.before as { role: string }).role).toBe('admin');
+    expect((state.audit[0].row.after as { reason: string }).reason).toBe(
+      'compte de test à nettoyer',
+    );
+  });
+
+  it("super_admin OK s'il en reste un autre actif", async () => {
+    mockEnv();
+    state.rows = [
+      makeUser({ id: SUPER_1, role: 'super_admin' }),
+      makeUser({ id: SUPER_2, role: 'super_admin' }),
+    ];
+    const { hardDeleteUserAction } = await import('./actions');
+    const r = await hardDeleteUserAction({
+      user_id: SUPER_1,
+      reason: 'reorganisation équipe top',
+      confirmation: 'SUPPRIMER',
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it('Auth deleteUser KO -> ok:false avec message Supabase', async () => {
+    mockEnv();
+    state.authDeleteShouldFail = true;
+    state.rows = [
+      makeUser({ id: ADMIN_1, role: 'admin' }),
+      makeUser({ id: SUPER_1, role: 'super_admin' }),
+    ];
+    const { hardDeleteUserAction } = await import('./actions');
+    const r = await hardDeleteUserAction({
+      user_id: ADMIN_1,
+      reason: 'compte de test à nettoyer',
+      confirmation: 'SUPPRIMER',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/Auth delete failed/);
+  });
+
+  it('user_id introuvable -> ok:false', async () => {
+    mockEnv();
+    const { hardDeleteUserAction } = await import('./actions');
+    const r = await hardDeleteUserAction({
+      user_id: ADMIN_1,
+      reason: 'compte introuvable test',
+      confirmation: 'SUPPRIMER',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/introuvable/);
   });
 });

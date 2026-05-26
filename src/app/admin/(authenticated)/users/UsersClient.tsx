@@ -11,7 +11,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Plus, Pencil, Archive, ArchiveRestore, MailPlus } from 'lucide-react';
+import { Plus, Pencil, Archive, ArchiveRestore, MailPlus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,7 @@ import {
   archiveUserAction,
   unarchiveUserAction,
   resendInviteAction,
+  hardDeleteUserAction,
 } from '@/lib/admin/users/actions';
 import {
   USER_ROLES,
@@ -79,6 +80,7 @@ export function UsersClient({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<UserRow | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<UserRow | null>(null);
+  const [hardDeleteTarget, setHardDeleteTarget] = useState<UserRow | null>(null);
   const [unarchivePending, startUnarchive] = useTransition();
   const [resendPending, startResend] = useTransition();
 
@@ -314,6 +316,24 @@ export function UsersClient({
                             <Archive className="size-3.5" aria-hidden />
                           </Button>
                         )}
+                        {/* P5.x.1-ter — Hard delete (super_admin only, ne se montre pas pour soi-même). */}
+                        {row.id !== currentUserId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setHardDeleteTarget(row)}
+                            disabled={!isSuperAdmin}
+                            title={
+                              isSuperAdmin
+                                ? 'Supprimer définitivement (irréversible)'
+                                : 'Réservé super_admin'
+                            }
+                            className="disabled:text-md-text-muted text-red-700 hover:bg-red-100"
+                            aria-label={`Supprimer définitivement ${row.email}`}
+                          >
+                            <Trash2 className="size-3.5" aria-hidden />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -377,6 +397,16 @@ export function UsersClient({
         onClose={() => setArchiveTarget(null)}
         onArchived={() => {
           setArchiveTarget(null);
+          router.refresh();
+        }}
+        activeSuperAdminCount={initialResult.active_super_admin_count}
+      />
+
+      <HardDeleteUserDialog
+        target={hardDeleteTarget}
+        onClose={() => setHardDeleteTarget(null)}
+        onDeleted={() => {
+          setHardDeleteTarget(null);
           router.refresh();
         }}
         activeSuperAdminCount={initialResult.active_super_admin_count}
@@ -703,6 +733,119 @@ function ArchiveUserDialog({
             disabled={pending || reason.trim().length < 3 || isLastSuperAdmin}
           >
             {pending ? 'Archivage…' : 'Archiver'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// P5.x.1-ter — HardDeleteUserDialog (super_admin only, double confirmation)
+// ---------------------------------------------------------------------------
+
+function HardDeleteUserDialog({
+  target,
+  onClose,
+  onDeleted,
+  activeSuperAdminCount,
+}: {
+  target: UserRow | null;
+  onClose: () => void;
+  onDeleted: () => void;
+  activeSuperAdminCount: number;
+}) {
+  const [confirmation, setConfirmation] = useState('');
+  const [reason, setReason] = useState('');
+  const [pending, startTx] = useTransition();
+
+  if (!target) return null;
+  const isLastSuperAdmin = target.role === 'super_admin' && activeSuperAdminCount <= 1;
+
+  function handleSubmit() {
+    if (!target) return;
+    startTx(async () => {
+      const r = await hardDeleteUserAction({
+        user_id: target.id,
+        reason: reason.trim(),
+        confirmation: 'SUPPRIMER',
+      });
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      toast.success(`${target.email} supprimé définitivement.`);
+      setReason('');
+      setConfirmation('');
+      onDeleted();
+    });
+  }
+
+  const canSubmit =
+    !pending && confirmation === 'SUPPRIMER' && reason.trim().length >= 10 && !isLastSuperAdmin;
+
+  return (
+    <Dialog
+      key={target.id}
+      open={!!target}
+      onOpenChange={(o) => {
+        if (!o) {
+          setReason('');
+          setConfirmation('');
+          onClose();
+        }
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="text-red-700">
+            ⚠️ Supprimer définitivement {target.email} ?
+          </DialogTitle>
+          <DialogDescription>
+            <strong>Cette action est IRRÉVERSIBLE.</strong> Toutes les données du compte seront
+            effacées (auth.users + public.users via CASCADE). L&apos;audit log conservera une trace
+            permanente (email, rôle, raison).
+          </DialogDescription>
+        </DialogHeader>
+        {isLastSuperAdmin ? (
+          <div className="border-md-danger/40 bg-md-danger/10 text-md-danger rounded-md border px-3 py-2 text-xs">
+            ⚠️ Impossible : c&apos;est le dernier super_admin actif du système.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="hard-delete-confirm">
+                Tapez <code className="bg-md-bg-soft rounded px-1 py-0.5">SUPPRIMER</code> pour
+                confirmer
+              </Label>
+              <Input
+                id="hard-delete-confirm"
+                value={confirmation}
+                onChange={(e) => setConfirmation(e.target.value)}
+                placeholder="SUPPRIMER"
+                autoComplete="off"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="hard-delete-reason">
+                Raison (≥ 10 caractères, ex : «&nbsp;compte de test à nettoyer&nbsp;»)
+              </Label>
+              <Textarea
+                id="hard-delete-reason"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Pourquoi cette suppression définitive ?"
+                rows={3}
+              />
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose} disabled={pending}>
+            Annuler
+          </Button>
+          <Button variant="destructive" onClick={handleSubmit} disabled={!canSubmit}>
+            {pending ? 'Suppression…' : 'Supprimer définitivement'}
           </Button>
         </DialogFooter>
       </DialogContent>
