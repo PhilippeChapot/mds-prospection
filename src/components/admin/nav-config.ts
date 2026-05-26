@@ -78,13 +78,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   {
     title: 'Reglages',
     items: [
-      {
-        href: '/admin/preferences',
-        label: 'Preferences',
-        emoji: '⚙️',
-        enabled: false,
-        phase: 'P2',
-      },
+      { href: '/admin/preferences', label: 'Préférences', emoji: '⚙️', enabled: true },
       { href: '/admin/seasons', label: 'Saisons', emoji: '🗓️', enabled: false, phase: 'P5' },
       { href: '/admin/users', label: 'Utilisateurs', emoji: '👤', enabled: false, phase: 'P5' },
       { href: '/admin/sync-logs', label: 'Logs sync', emoji: '🔄', enabled: true },
