@@ -16,6 +16,7 @@ export interface UserRow {
   full_name: string | null;
   role: UserRole;
   totp_enabled: boolean;
+  language: 'fr' | 'en';
   last_login_at: string | null;
   archived_at: string | null;
   created_at: string;
@@ -44,9 +45,12 @@ export async function listUsers(filters: ListUsersFilters): Promise<ListUsersRes
 
   let query = supabase
     .from('users')
-    .select('id, email, full_name, role, totp_enabled, last_login_at, archived_at, created_at', {
-      count: 'exact',
-    })
+    .select(
+      'id, email, full_name, role, totp_enabled, language, last_login_at, archived_at, created_at',
+      {
+        count: 'exact',
+      },
+    )
     .order('last_login_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
     .range(offset, offset + filters.page_size - 1);
@@ -93,7 +97,9 @@ export async function getUserById(id: string): Promise<UserRow | null> {
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from('users')
-    .select('id, email, full_name, role, totp_enabled, last_login_at, archived_at, created_at')
+    .select(
+      'id, email, full_name, role, totp_enabled, language, last_login_at, archived_at, created_at',
+    )
     .eq('id', id)
     .maybeSingle();
   if (error || !data) return null;

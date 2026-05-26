@@ -401,17 +401,24 @@ function InviteUserDialog({
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<UserRole>('admin');
+  const [language, setLanguage] = useState<'fr' | 'en'>('fr');
   const [pending, startTx] = useTransition();
 
   function reset() {
     setEmail('');
     setFullName('');
     setRole('admin');
+    setLanguage('fr');
   }
 
   function handleSubmit() {
     startTx(async () => {
-      const r = await inviteUserAction({ email: email.trim(), full_name: fullName.trim(), role });
+      const r = await inviteUserAction({
+        email: email.trim(),
+        full_name: fullName.trim(),
+        role,
+        language,
+      });
       if (!r.ok) {
         toast.error(r.error);
         return;
@@ -460,20 +467,34 @@ function InviteUserDialog({
               placeholder="Jean Dupont"
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="invite-role">Rôle</Label>
-            <select
-              id="invite-role"
-              value={role}
-              onChange={(e) => setRole(e.target.value as UserRole)}
-              className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
-            >
-              {USER_ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {ROLE_LABEL[r]}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="invite-role">Rôle</Label>
+              <select
+                id="invite-role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as UserRole)}
+                className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
+              >
+                {USER_ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {ROLE_LABEL[r]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="invite-language">Langue de l&apos;email</Label>
+              <select
+                id="invite-language"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as 'fr' | 'en')}
+                className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
+              >
+                <option value="fr">🇫🇷 Français</option>
+                <option value="en">🇬🇧 English</option>
+              </select>
+            </div>
           </div>
         </div>
         <DialogFooter>

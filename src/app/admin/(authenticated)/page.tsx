@@ -8,7 +8,9 @@ import { ChartSignupsPerDay } from '@/components/admin/charts/ChartSignupsPerDay
 import { ChartConversionFunnel } from '@/components/admin/charts/ChartConversionFunnel';
 import { ChartPoleDistribution } from '@/components/admin/charts/ChartPoleDistribution';
 import { ChartRevenueArea } from '@/components/admin/charts/ChartRevenueArea';
-import { getActiveSeasonId } from '@/lib/supabase/auth-helpers';
+import { WelcomeInvitedBanner } from '@/components/admin/WelcomeInvitedBanner';
+import { getActiveSeasonId, requireAdminProfile } from '@/lib/supabase/auth-helpers';
+import { getUserById } from '@/lib/admin/users/queries';
 import {
   getDashboardKpis,
   getFunnelByStatus,
@@ -31,7 +33,19 @@ const fmtEur = (eur: number) =>
     maximumFractionDigits: 0,
   }).format(eur);
 
-export default async function AdminDashboardPage() {
+interface AdminDashboardPageProps {
+  searchParams: Promise<{ invited?: string }>;
+}
+
+export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
+  const params = await searchParams;
+  const justInvited = params.invited === '1';
+
+  // P5.x.1-bis : banner welcome après activation magic link invite.
+  // On lit le user courant pour personnaliser la langue + nom + rôle.
+  const profile = justInvited ? await requireAdminProfile() : null;
+  const fullProfile = profile ? await getUserById(profile.id) : null;
+
   const seasonId = await getActiveSeasonId();
 
   // P5.x.6 + P5.x.11 : queries en parallele pour minimiser TTFB.
@@ -52,6 +66,8 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
+      {justInvited && fullProfile ? <WelcomeInvitedBanner profile={fullProfile} /> : null}
+
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-md-blue-dark font-[family-name:var(--font-montserrat)] text-2xl font-extrabold tracking-tight">

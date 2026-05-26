@@ -20,6 +20,8 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireSuperAdmin } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
+import { renderAdminUserInviteTemplate } from '@/lib/resend/templates/admin-user-invite';
 import { countActiveSuperAdmins, getUserById, type UserRole } from './queries';
 
 const LOG_PREFIX = '[admin/users]';
@@ -34,6 +36,7 @@ const inviteSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   full_name: z.string().trim().min(2).max(100),
   role: ROLE_ENUM,
+  language: z.enum(['fr', 'en']).default('fr'),
 });
 
 export type InviteUserResult =
@@ -41,7 +44,9 @@ export type InviteUserResult =
   | { ok: false; error: string };
 
 export async function inviteUserAction(
-  input: z.infer<typeof inviteSchema>,
+  // P5.x.1-bis : `z.input` (pas `z.infer`) pour que `language` soit optionnel
+  // au point d'appel (Zod default('fr') le remplit côté serveur).
+  input: z.input<typeof inviteSchema>,
 ): Promise<InviteUserResult> {
   let actorId: string;
   let actorRole: string;
@@ -76,33 +81,90 @@ export async function inviteUserAction(
     };
   }
 
-  // 2. Invitation Supabase Auth (envoie l'email magic link automatiquement).
-  const { data: invited, error: inviteErr } = await supabase.auth.admin.inviteUserByEmail(
-    data.email,
-    {
-      data: { full_name: data.full_name, role: data.role },
+  // 2. Generate Supabase invite link SANS envoi automatique d'email
+  //    (P5.x.1-bis : on remplace le template Supabase par notre template
+  //    Resend custom FR/EN avec branding MDS — cf. brief).
+  //    `redirectTo` pointe vers /admin?invited=1 pour la bannière welcome.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
+  const adminHomeUrl = `${appUrl}/admin`;
+  const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
+    type: 'invite',
+    email: data.email,
+    options: {
+      data: { full_name: data.full_name, role: data.role, language: data.language },
+      redirectTo: `${adminHomeUrl}?invited=1`,
     },
+  });
+  if (linkErr || !linkData?.user?.id || !linkData.properties?.action_link) {
+    console.error(
+      '%s generate-link-failed email=%s msg=%s',
+      LOG_PREFIX,
+      data.email,
+      linkErr?.message,
+    );
+    return {
+      ok: false,
+      error: linkErr?.message ?? "Échec de la génération du lien d'invitation Supabase.",
+    };
+  }
+  const inviteUrl = linkData.properties.action_link;
+  const userId = linkData.user.id;
+
+  // 3. UPSERT public.users (le trigger `on_auth_user_created` peut déjà
+  //    avoir créé la ligne avec role='sales' par défaut — on override
+  //    avec les valeurs choisies par l'admin invitant).
+  const { error: upsertErr } = await supabase.from('users').upsert(
+    {
+      id: userId,
+      email: data.email,
+      full_name: data.full_name,
+      role: data.role,
+      language: data.language,
+    },
+    { onConflict: 'id' },
   );
-  if (inviteErr || !invited?.user?.id) {
-    console.error('%s invite-failed email=%s msg=%s', LOG_PREFIX, data.email, inviteErr?.message);
-    return { ok: false, error: inviteErr?.message ?? "Échec de l'invitation Supabase Auth." };
+  if (upsertErr) {
+    console.error('%s upsert-public-failed id=%s msg=%s', LOG_PREFIX, userId, upsertErr.message);
+    return {
+      ok: false,
+      error: `Compte Supabase créé mais public.users KO : ${upsertErr.message}`,
+    };
   }
 
-  // 3. Insert public.users (id = auth.users.id).
-  const { error: insertErr } = await supabase.from('users').insert({
-    id: invited.user.id,
-    email: data.email,
-    full_name: data.full_name,
-    role: data.role,
-  });
-  if (insertErr) {
+  // 4. Envoi de l'email Resend custom (FR ou EN selon language).
+  //    Best-effort : si l'envoi rate, le user existe quand même, on log
+  //    et on retourne ok:false pour que l'admin le sache.
+  try {
+    const tpl = renderAdminUserInviteTemplate(data.language, {
+      fullName: data.full_name,
+      role: data.role,
+      inviteUrl,
+      adminHomeUrl,
+    });
+    await sendTransactionalEmailViaResend({
+      to: data.email,
+      toName: data.full_name,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      tags: [
+        { name: 'category', value: 'admin_user_invite' },
+        { name: 'locale', value: data.language },
+      ],
+    });
+  } catch (mailErr) {
     console.error(
-      '%s insert-public-failed id=%s msg=%s',
+      '%s resend-failed email=%s msg=%s',
       LOG_PREFIX,
-      invited.user.id,
-      insertErr.message,
+      data.email,
+      mailErr instanceof Error ? mailErr.message : String(mailErr),
     );
-    return { ok: false, error: `Compte Supabase créé mais public.users KO : ${insertErr.message}` };
+    return {
+      ok: false,
+      error: `Compte créé mais email d'invitation non envoyé : ${
+        mailErr instanceof Error ? mailErr.message : String(mailErr)
+      }. Utilisez "Renvoyer invite".`,
+    };
   }
 
   // Audit log.
@@ -111,12 +173,13 @@ export async function inviteUserAction(
       user_id: actorId,
       action: 'create',
       entity_type: 'users',
-      entity_id: invited.user.id,
+      entity_id: userId,
       after: {
         kind: 'invited',
         email: data.email,
         full_name: data.full_name,
         role: data.role,
+        language: data.language,
         actor_role: actorRole,
       } as never,
     });
@@ -124,9 +187,16 @@ export async function inviteUserAction(
     console.warn('%s audit-log-failed msg=%s', LOG_PREFIX, String(auditErr));
   }
 
-  console.log('%s invited email=%s role=%s by=%s', LOG_PREFIX, data.email, data.role, actorId);
+  console.log(
+    '%s invited email=%s role=%s lang=%s by=%s',
+    LOG_PREFIX,
+    data.email,
+    data.role,
+    data.language,
+    actorId,
+  );
   revalidatePath('/admin/users');
-  return { ok: true, user_id: invited.user.id, magic_link_sent: true };
+  return { ok: true, user_id: userId, magic_link_sent: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -394,11 +464,56 @@ export async function resendInviteAction(
     };
   }
 
+  // P5.x.1-bis : même pattern que inviteUserAction — generateLink (sans
+  // envoi auto Supabase) + email Resend custom dans la langue du user.
   const supabase = getSupabaseServiceClient();
-  const { error } = await supabase.auth.admin.inviteUserByEmail(before.email);
-  if (error) {
-    console.error('%s resend-failed email=%s msg=%s', LOG_PREFIX, before.email, error.message);
-    return { ok: false, error: error.message };
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
+  const adminHomeUrl = `${appUrl}/admin`;
+  const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
+    type: 'invite',
+    email: before.email,
+    options: { redirectTo: `${adminHomeUrl}?invited=1` },
+  });
+  if (linkErr || !linkData.properties?.action_link) {
+    console.error(
+      '%s resend-link-failed email=%s msg=%s',
+      LOG_PREFIX,
+      before.email,
+      linkErr?.message,
+    );
+    return { ok: false, error: linkErr?.message ?? 'Échec de la génération du lien.' };
+  }
+
+  const userLang: 'fr' | 'en' = before.language === 'en' ? 'en' : 'fr';
+  try {
+    const tpl = renderAdminUserInviteTemplate(userLang, {
+      fullName: before.full_name ?? before.email,
+      role: before.role,
+      inviteUrl: linkData.properties.action_link,
+      adminHomeUrl,
+    });
+    await sendTransactionalEmailViaResend({
+      to: before.email,
+      toName: before.full_name ?? undefined,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      tags: [
+        { name: 'category', value: 'admin_user_invite_resent' },
+        { name: 'locale', value: userLang },
+      ],
+    });
+  } catch (mailErr) {
+    console.error(
+      '%s resend-email-failed email=%s msg=%s',
+      LOG_PREFIX,
+      before.email,
+      mailErr instanceof Error ? mailErr.message : String(mailErr),
+    );
+    return {
+      ok: false,
+      error: mailErr instanceof Error ? mailErr.message : "Échec de l'envoi de l'email.",
+    };
   }
 
   try {

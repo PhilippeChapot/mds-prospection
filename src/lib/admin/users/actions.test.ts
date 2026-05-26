@@ -20,6 +20,7 @@ interface UserStub {
   full_name: string | null;
   role: 'admin' | 'sales' | 'super_admin';
   totp_enabled: boolean;
+  language: 'fr' | 'en';
   last_login_at: string | null;
   archived_at: string | null;
   created_at: string;
@@ -32,6 +33,8 @@ const state = {
   authInvites: [] as Array<{ email: string; data?: Record<string, unknown> }>,
   authInviteShouldFail: false,
   authInviteUserId: 'invited-user-uuid',
+  resendCalls: [] as Array<{ to: string; subject: string }>,
+  resendShouldFail: false,
 };
 
 const SUPER_1 = '11111111-1111-4111-8111-111111111111';
@@ -51,6 +54,14 @@ function mockEnv() {
   vi.doMock('@/lib/supabase/service', () => ({
     getSupabaseServiceClient: () => makeClient(),
   }));
+  // P5.x.1-bis : mock Resend pour ne pas appeler l'API réelle.
+  vi.doMock('@/lib/resend/client', () => ({
+    sendTransactionalEmailViaResend: vi.fn(async (params: { to: string; subject: string }) => {
+      if (state.resendShouldFail) throw new Error('Resend down');
+      state.resendCalls.push({ to: params.to, subject: params.subject });
+      return { id: 'resend-stub-id' };
+    }),
+  }));
 }
 
 function makeClient() {
@@ -62,12 +73,28 @@ function makeClient() {
     },
     auth: {
       admin: {
-        inviteUserByEmail: async (email: string, opts?: { data?: Record<string, unknown> }) => {
-          state.authInvites.push({ email, data: opts?.data });
+        // P5.x.1-bis : remplace inviteUserByEmail par generateLink
+        // (pattern correct : pas d'envoi auto, on envoie via Resend après).
+        generateLink: async (params: {
+          type: string;
+          email: string;
+          options?: { data?: Record<string, unknown>; redirectTo?: string };
+        }) => {
+          state.authInvites.push({ email: params.email, data: params.options?.data });
           if (state.authInviteShouldFail) {
             return { data: null, error: { message: 'Email already registered' } };
           }
-          return { data: { user: { id: state.authInviteUserId } }, error: null };
+          return {
+            data: {
+              user: { id: state.authInviteUserId },
+              properties: {
+                action_link: `https://stub.supabase.co/auth/v1/verify?token=stub&redirect_to=${
+                  params.options?.redirectTo ?? ''
+                }`,
+              },
+            },
+            error: null,
+          };
         },
       },
     },
@@ -124,12 +151,35 @@ function makeUsersChain() {
           full_name: (pendingInsert!.full_name as string) ?? null,
           role: (pendingInsert!.role as 'admin' | 'sales' | 'super_admin') ?? 'sales',
           totp_enabled: false,
+          language: ((pendingInsert!.language as 'fr' | 'en') ?? 'fr') as 'fr' | 'en',
           last_login_at: null,
           archived_at: null,
           created_at: new Date().toISOString(),
         });
         return { error: null };
       });
+    },
+    upsert: (row: Record<string, unknown>) => {
+      // P5.x.1-bis : pattern UPSERT (le trigger on_auth_user_created peut
+      // déjà avoir créé la ligne avec role par défaut 'sales').
+      const id = row.id as string;
+      const idx = state.rows.findIndex((r) => r.id === id);
+      if (idx >= 0) {
+        state.rows[idx] = { ...state.rows[idx], ...(row as object) } as UserStub;
+      } else {
+        state.rows.push({
+          id,
+          email: row.email as string,
+          full_name: (row.full_name as string) ?? null,
+          role: (row.role as 'admin' | 'sales' | 'super_admin') ?? 'sales',
+          totp_enabled: false,
+          language: ((row.language as 'fr' | 'en') ?? 'fr') as 'fr' | 'en',
+          last_login_at: null,
+          archived_at: null,
+          created_at: new Date().toISOString(),
+        });
+      }
+      return Promise.resolve({ error: null });
     },
     maybeSingle: () => {
       const rows = applyFilters();
@@ -178,6 +228,7 @@ function makeUser(p: Partial<UserStub> & { id: string }): UserStub {
     full_name: p.full_name ?? null,
     role: p.role ?? 'sales',
     totp_enabled: false,
+    language: p.language ?? 'fr',
     last_login_at: p.last_login_at ?? null,
     archived_at: p.archived_at ?? null,
     created_at: p.created_at ?? '2026-05-20T00:00:00Z',
@@ -193,6 +244,8 @@ describe('inviteUserAction (P5.x.1)', () => {
     state.authInvites = [];
     state.authInviteShouldFail = false;
     state.authInviteUserId = 'new-uuid';
+    state.resendCalls = [];
+    state.resendShouldFail = false;
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -253,6 +306,85 @@ describe('inviteUserAction (P5.x.1)', () => {
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/super_admin/);
+  });
+
+  // ── P5.x.1-bis : nouveaux tests ──
+  it('P5.x.1-bis : envoie un email Resend (pas Brevo) après generateLink', async () => {
+    mockEnv();
+    const { inviteUserAction } = await import('./actions');
+    const r = await inviteUserAction({
+      email: 'new@example.com',
+      full_name: 'Jane Doe',
+      role: 'admin',
+      language: 'fr',
+    });
+    expect(r.ok).toBe(true);
+    expect(state.resendCalls).toHaveLength(1);
+    expect(state.resendCalls[0].to).toBe('new@example.com');
+    expect(state.resendCalls[0].subject).toMatch(/invité sur MediaDays/);
+  });
+
+  it("P5.x.1-bis : language='en' utilise le subject EN", async () => {
+    mockEnv();
+    const { inviteUserAction } = await import('./actions');
+    const r = await inviteUserAction({
+      email: 'newen@example.com',
+      full_name: 'John Smith',
+      role: 'sales',
+      language: 'en',
+    });
+    expect(r.ok).toBe(true);
+    expect(state.resendCalls[0].subject).toMatch(/You're invited/);
+  });
+
+  it('P5.x.1-bis : language est stockée dans public.users + audit log', async () => {
+    mockEnv();
+    const { inviteUserAction } = await import('./actions');
+    await inviteUserAction({
+      email: 'lang@example.com',
+      full_name: 'Lang User',
+      role: 'sales',
+      language: 'en',
+    });
+    expect(state.rows[0].language).toBe('en');
+    expect((state.audit[0].row.after as { language: string }).language).toBe('en');
+  });
+
+  it('P5.x.1-bis : Resend KO -> ok:false (le user existe mais email pas envoyé)', async () => {
+    mockEnv();
+    state.resendShouldFail = true;
+    const { inviteUserAction } = await import('./actions');
+    const r = await inviteUserAction({
+      email: 'mail-fail@example.com',
+      full_name: 'Fail',
+      role: 'sales',
+      language: 'fr',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/email d'invitation non envoyé/);
+  });
+
+  it("P5.x.1-bis : UPSERT n'erreur pas si la ligne existe déjà (trigger on_auth_user_created)", async () => {
+    mockEnv();
+    // Simule la pré-existence d'une row créée par le trigger DB avec role par défaut.
+    const preExisting = makeUser({
+      id: 'new-uuid',
+      email: 'pre@example.com',
+      role: 'sales',
+      language: 'fr',
+    });
+    state.rows = [preExisting];
+    state.authInviteUserId = 'new-uuid';
+    const { inviteUserAction } = await import('./actions');
+    const r = await inviteUserAction({
+      email: 'fresh-pre@example.com',
+      full_name: 'Pre Existing Override',
+      role: 'admin',
+      language: 'fr',
+    });
+    expect(r.ok).toBe(true);
+    // Le upsert override le role par défaut 'sales' vers 'admin' choisi par l'admin invitant.
+    expect(state.rows.find((r) => r.id === 'new-uuid')?.role).toBe('admin');
   });
 });
 
@@ -443,6 +575,9 @@ describe('resendInviteAction (P5.x.1)', () => {
     state.rows = [];
     state.audit = [];
     state.authInvites = [];
+    state.authInviteShouldFail = false;
+    state.resendCalls = [];
+    state.resendShouldFail = false;
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);

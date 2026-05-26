@@ -2231,6 +2231,7 @@ export type Database = {
           email: string;
           full_name: string | null;
           id: string;
+          language: string;
           last_login_at: string | null;
           role: Database['public']['Enums']['user_role'];
           totp_enabled: boolean;
@@ -2241,6 +2242,7 @@ export type Database = {
           email: string;
           full_name?: string | null;
           id: string;
+          language?: string;
           last_login_at?: string | null;
           role?: Database['public']['Enums']['user_role'];
           totp_enabled?: boolean;
@@ -2251,6 +2253,7 @@ export type Database = {
           email?: string;
           full_name?: string | null;
           id?: string;
+          language?: string;
           last_login_at?: string | null;
           role?: Database['public']['Enums']['user_role'];
           totp_enabled?: boolean;
