@@ -28,27 +28,19 @@ import {
 } from '@/lib/apollo/client';
 import { logApolloCall } from '@/lib/apollo/sync-logger';
 import { normalizeDomain } from '@/lib/utils/domain';
-// P5.x.Apollo fix : types et helper sync `mapApolloToCompany` déplacés
-// dans `apollo-mapping.ts` car ce fichier est `'use server'` (Next.js
-// interdit les exports non-async). On ré-exporte les types ici pour la
-// compat ascendante des call sites — les `export type` sont strippés au
-// compile et restent donc autorisés dans un fichier 'use server'.
+// P5.x.Apollo fix : tous les types + le helper sync `mapApolloToCompany`
+// vivent dans `apollo-mapping.ts`. Ce fichier 'use server' ne fait QUE des
+// imports internes — AUCUN ré-export de type/constante. Next.js 16 traite
+// chaque export d'un fichier 'use server' comme une server action runtime,
+// même les `export type` (cause de la ReferenceError 500 en prod).
+// Les call sites client doivent importer les types depuis ./apollo-mapping.
 import {
   mapApolloToCompany,
-  type CompanyMappedFromApollo,
-  type ExistingCompanyHit,
   type EnrichApolloResult,
+  type ExistingCompanyHit,
   type GetCreditsResult,
   type CreateProspectResult,
 } from './apollo-mapping';
-
-export type {
-  CompanyMappedFromApollo,
-  ExistingCompanyHit,
-  EnrichApolloResult,
-  GetCreditsResult,
-  CreateProspectResult,
-};
 
 const LOG_PREFIX = '[admin/smart-add/apollo]';
 

@@ -28,9 +28,10 @@ import {
   enrichApolloAction,
   getApolloCreditUsageAction,
   createProspectFromApolloAction,
-  type EnrichApolloResult,
-  type CompanyMappedFromApollo,
 } from '@/lib/admin/smart-add/apollo-actions';
+// P5.x.Apollo fix : types importés depuis apollo-mapping (pas apollo-actions
+// qui est 'use server' et ne doit ré-exporter QUE des async functions).
+import type { EnrichApolloResult } from '@/lib/admin/smart-add/apollo-mapping';
 
 const POLE_OPTIONS = [
   'AUDIO_RADIO',
