@@ -30,9 +30,13 @@ export interface CompanyMappedFromApollo {
   raw_address: string | null;
   city: string | null;
   postal_code: string | null;
+  /** P5.x.Apollo-bis — état/région (US states + provinces, vide pour FR). */
+  state: string | null;
   country: string | null;
   apollo_organization_id: string;
   apollo_enriched_at: string;
+  /** Payload Apollo COMPLET (jsonb) — source de vérité pour les champs
+   *  qu'on n'a pas (encore) mappés en colonnes structurées. */
   apollo_raw_data: ApolloOrganization;
 }
 
@@ -90,9 +94,12 @@ export function mapApolloToCompany(
     raw_address: org.raw_address ?? null,
     city: org.city ?? null,
     postal_code: org.postal_code ?? null,
+    state: org.state ?? null,
     country: org.country ?? null,
     apollo_organization_id: org.id,
     apollo_enriched_at: new Date().toISOString(),
+    // P5.x.Apollo-bis : on conserve le payload Apollo COMPLET (tous les
+    // champs non mappés en colonnes restent accessibles via jsonb).
     apollo_raw_data: org,
   };
 }

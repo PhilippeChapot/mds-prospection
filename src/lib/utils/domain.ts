@@ -16,6 +16,7 @@ const SIMPLE_DOMAIN_REGEX = /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}$/i;
  *   - strip www. en tête
  *   - strip tout ce qui suit le premier / (path/query)
  *   - strip port :NNNN
+ *   - strip fragment #fragment (P5.x.Apollo-bis)
  */
 export function normalizeDomain(input: string): string {
   return input
@@ -25,6 +26,7 @@ export function normalizeDomain(input: string): string {
     .replace(/^www\./, '')
     .split('/')[0]
     .split('?')[0]
+    .split('#')[0]
     .split(':')[0]
     .trim();
 }

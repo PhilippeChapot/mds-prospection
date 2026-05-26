@@ -23,6 +23,20 @@ describe('normalizeDomain', () => {
     expect(normalizeDomain('')).toBe('');
     expect(normalizeDomain('   ')).toBe('');
   });
+  // P5.x.Apollo-bis — strip fragment + cas FreeWheel canonique de la spec.
+  it('strips fragment (#...) — P5.x.Apollo-bis', () => {
+    expect(normalizeDomain('https://acme.com/page#anchor')).toBe('acme.com');
+    expect(normalizeDomain('acme.com#section')).toBe('acme.com');
+    expect(normalizeDomain('https://www.foo.fr/?x=1#y')).toBe('foo.fr');
+  });
+  it('FreeWheel canonical case — www.freewheel.com/ → freewheel.com', () => {
+    expect(normalizeDomain('www.freewheel.com/')).toBe('freewheel.com');
+    expect(normalizeDomain('https://www.freewheel.com/products')).toBe('freewheel.com');
+    expect(normalizeDomain('FreeWheel.COM')).toBe('freewheel.com');
+  });
+  it('combine protocole + www + path + query + fragment + port', () => {
+    expect(normalizeDomain('HTTPS://www.ACME.com:8443/path/sub?q=1&z=2#frag ')).toBe('acme.com');
+  });
 });
 
 describe('isValidDomain', () => {

@@ -290,6 +290,7 @@ describe('createProspectFromApolloAction (P5.x.Apollo)', () => {
     raw_address: '1 Quai du Point du Jour',
     city: 'Boulogne',
     postal_code: '92100',
+    state: null,
     country: 'France',
     apollo_organization_id: 'apollo-tf1',
     apollo_enriched_at: '2026-05-27T10:00:00.000Z',

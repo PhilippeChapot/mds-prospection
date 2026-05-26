@@ -193,6 +193,7 @@ const createSchema = z.object({
     raw_address: z.string().nullable(),
     city: z.string().nullable(),
     postal_code: z.string().nullable(),
+    state: z.string().nullable(),
     country: z.string().nullable(),
     apollo_organization_id: z.string(),
     apollo_enriched_at: z.string(),
@@ -228,18 +229,32 @@ export async function createProspectFromApolloAction(
 
   // 1. UPSERT company.
   let companyId: string;
+  // P5.x.Apollo-bis : on persiste TOUS les champs structurés Apollo
+  // (industry, linkedin_url, phone, keywords, raw_address, city, postal_code,
+  // state) + le payload complet en apollo_raw_data (jsonb). Cf. migration 0061.
+  const apolloFields = {
+    apollo_organization_id: mapped.apollo_organization_id,
+    apollo_enriched_at: mapped.apollo_enriched_at,
+    apollo_raw_data: mapped.apollo_raw_data as never,
+    employee_count: mapped.employee_count,
+    estimated_revenue_eur: mapped.estimated_revenue_eur,
+    parent_company: mapped.parent_company,
+    founded_year: mapped.founded_year,
+    industry: mapped.industry,
+    linkedin_url: mapped.linkedin_url,
+    phone: mapped.phone,
+    keywords: mapped.keywords,
+    raw_address: mapped.raw_address,
+    city: mapped.city,
+    postal_code: mapped.postal_code,
+    state: mapped.state,
+    description: mapped.description,
+  };
+
   if (existing_company_id) {
     const { error } = await supabase
       .from('companies')
-      .update({
-        apollo_organization_id: mapped.apollo_organization_id,
-        apollo_enriched_at: mapped.apollo_enriched_at,
-        apollo_raw_data: mapped.apollo_raw_data as never,
-        employee_count: mapped.employee_count,
-        estimated_revenue_eur: mapped.estimated_revenue_eur,
-        parent_company: mapped.parent_company,
-        founded_year: mapped.founded_year,
-      })
+      .update(apolloFields)
       .eq('id', existing_company_id);
     if (error) {
       console.error('%s company-update-failed msg=%s', LOG_PREFIX, error.message);
@@ -264,13 +279,7 @@ export async function createProspectFromApolloAction(
         primary_domain: mapped.primary_domain,
         country: mapped.country ?? 'FR',
         category,
-        apollo_organization_id: mapped.apollo_organization_id,
-        apollo_enriched_at: mapped.apollo_enriched_at,
-        apollo_raw_data: mapped.apollo_raw_data as never,
-        employee_count: mapped.employee_count,
-        estimated_revenue_eur: mapped.estimated_revenue_eur,
-        parent_company: mapped.parent_company,
-        founded_year: mapped.founded_year,
+        ...apolloFields,
       })
       .select('id')
       .single();
