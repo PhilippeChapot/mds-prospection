@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ExposantSidebar } from './ExposantSidebar';
 
 /**
@@ -28,10 +28,17 @@ export function ExposantMobileMenu() {
           <Menu className="size-5" aria-hidden />
         </button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 p-0">
+      <SheetContent side="left" className="relative w-72 p-0">
         {/* SheetTitle requis par Radix pour l'a11y -- on le rend visuellement
             invisible (le titre est deja dans la sidebar) avec sr-only. */}
         <SheetTitle className="sr-only">{t('sectionTitle')}</SheetTitle>
+        {/* P9.1-natif-mobile : croix de fermeture top-right (tap-target ≥ 44px). */}
+        <SheetClose
+          aria-label={t('closeMenu')}
+          className="text-md-text-muted hover:bg-muted hover:text-md-text focus-visible:ring-md-magenta absolute top-2 right-2 z-10 inline-flex size-11 items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:outline-none"
+        >
+          <X className="size-5" aria-hidden />
+        </SheetClose>
         <ExposantSidebar onNavigate={() => setOpen(false)} />
       </SheetContent>
     </Sheet>

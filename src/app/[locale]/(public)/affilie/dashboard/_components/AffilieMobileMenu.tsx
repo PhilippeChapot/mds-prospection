@@ -10,9 +10,9 @@
  */
 
 import { useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AffilieSidebar } from './AffilieSidebar';
 
 export function AffilieMobileMenu() {
@@ -32,9 +32,16 @@ export function AffilieMobileMenu() {
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="bg-card flex max-h-dvh w-72 flex-col overflow-y-auto p-0"
+        className="bg-card relative flex max-h-dvh w-72 flex-col overflow-y-auto p-0"
       >
         <SheetTitle className="sr-only">{t('sectionTitle')}</SheetTitle>
+        {/* P9.1-natif-mobile : croix de fermeture top-right (tap-target ≥ 44px). */}
+        <SheetClose
+          aria-label={t('closeMenu')}
+          className="text-md-text-muted hover:bg-muted hover:text-md-text focus-visible:ring-md-magenta absolute top-2 right-2 z-10 inline-flex size-11 items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:outline-none"
+        >
+          <X className="size-5" aria-hidden />
+        </SheetClose>
         <AffilieSidebar onNavigate={() => setOpen(false)} />
       </SheetContent>
     </Sheet>

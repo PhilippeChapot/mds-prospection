@@ -222,6 +222,7 @@
     "nav": {
       "sectionTitle": "Espace Affilié",
       "openMenu": "Ouvrir le menu",
+      "closeMenu": "Fermer le menu",
       "stats": "Statistiques",
       "societes": "Mes sociétés",
       "tracking": "Mes liens",
@@ -422,7 +423,8 @@
       "ressources": "Ressources",
       "messages": "Messages",
       "logout": "Se déconnecter",
-      "openMenu": "Ouvrir le menu"
+      "openMenu": "Ouvrir le menu",
+      "closeMenu": "Fermer le menu"
     },
     "dashboard": {
       "greeting": "Bonjour {firstName}",

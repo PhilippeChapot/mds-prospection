@@ -4,7 +4,13 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { MessagesSquare, Loader2, Send, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -99,11 +105,19 @@ export function NewExposantConversationButton({ locale }: { locale: 'fr' | 'en' 
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="bg-card w-full overflow-y-auto p-0 sm:max-w-md">
-          <div className="bg-md-blue-deep px-6 py-5 text-white">
+          <div className="bg-md-blue-deep relative px-6 py-5 pr-14 text-white">
             <SheetTitle className="text-lg font-extrabold text-white">{t.title}</SheetTitle>
             <SheetDescription className="mt-1 text-sm text-white/80">
               {t.description}
             </SheetDescription>
+            {/* P9.1-natif-mobile : croix de fermeture toujours visible
+                (top-right), tap-target ≥ 44px. */}
+            <SheetClose
+              aria-label={t.cancel}
+              className="absolute top-3 right-3 inline-flex size-11 items-center justify-center rounded-md text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+            >
+              <X className="size-5" aria-hidden />
+            </SheetClose>
           </div>
           <form onSubmit={handleSubmit} className="space-y-3 px-6 py-5">
             <div className="space-y-1.5">

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Menu } from 'lucide-react';
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Menu, X } from 'lucide-react';
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AdminSidebar } from './AdminSidebar';
 import type { UserRole } from '@/lib/supabase/auth-helpers';
 
@@ -39,10 +39,18 @@ export function AdminMobileMenu({ currentUserRole }: { currentUserRole: UserRole
           pas en 667px iPhone SE). */}
       <SheetContent
         side="left"
-        className="bg-card flex max-h-dvh w-72 flex-col overflow-y-auto p-0"
+        className="bg-card relative flex max-h-dvh w-72 flex-col overflow-y-auto p-0"
       >
         {/* SheetTitle requis par Radix pour l'a11y. */}
         <SheetTitle className="sr-only">Navigation admin</SheetTitle>
+        {/* P9.1-natif-mobile : croix de fermeture top-right (tap-target ≥ 44px).
+            Sans elle, l'utilisateur n'a que l'overlay-click (peu intuitif). */}
+        <SheetClose
+          aria-label="Fermer le menu"
+          className="text-md-text-muted hover:bg-muted hover:text-md-text focus-visible:ring-md-magenta absolute top-2 right-2 z-10 inline-flex size-11 items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:outline-none"
+        >
+          <X className="size-5" aria-hidden />
+        </SheetClose>
         <AdminSidebar onNavigate={() => setOpen(false)} currentUserRole={currentUserRole} />
       </SheetContent>
     </Sheet>

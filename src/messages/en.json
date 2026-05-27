@@ -222,6 +222,7 @@
     "nav": {
       "sectionTitle": "Affiliate area",
       "openMenu": "Open menu",
+      "closeMenu": "Close menu",
       "stats": "Statistics",
       "societes": "My companies",
       "tracking": "My links",
@@ -422,7 +423,8 @@
       "ressources": "Resources",
       "messages": "Messages",
       "logout": "Sign out",
-      "openMenu": "Open menu"
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu"
     },
     "dashboard": {
       "greeting": "Hi {firstName}",
