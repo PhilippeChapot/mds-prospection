@@ -984,6 +984,41 @@ export type Database = {
           },
         ];
       };
+      conversation_participants: {
+        Row: {
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          last_read_at: string | null;
+          participant_id: string | null;
+          participant_type: string;
+        };
+        Insert: {
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          last_read_at?: string | null;
+          participant_id?: string | null;
+          participant_type: string;
+        };
+        Update: {
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          last_read_at?: string | null;
+          participant_id?: string | null;
+          participant_type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'conversation_participants_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'internal_conversations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       email_campaigns: {
         Row: {
           attachments_urls: string[];
@@ -1151,6 +1186,74 @@ export type Database = {
             columns: ['contact_id'];
             isOneToOne: false;
             referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      internal_conversations: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by_id: string;
+          created_by_type: string;
+          id: string;
+          last_message_at: string;
+          subject: string | null;
+          type: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by_id: string;
+          created_by_type: string;
+          id?: string;
+          last_message_at?: string;
+          subject?: string | null;
+          type: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by_id?: string;
+          created_by_type?: string;
+          id?: string;
+          last_message_at?: string;
+          subject?: string | null;
+          type?: string;
+        };
+        Relationships: [];
+      };
+      internal_messages: {
+        Row: {
+          body: string;
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          sender_id: string;
+          sender_type: string;
+        };
+        Insert: {
+          body: string;
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          sender_id: string;
+          sender_type: string;
+        };
+        Update: {
+          body?: string;
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          sender_id?: string;
+          sender_type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'internal_messages_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'internal_conversations';
             referencedColumns: ['id'];
           },
         ];

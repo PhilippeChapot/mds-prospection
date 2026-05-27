@@ -29,6 +29,8 @@ export const EXPOSANT_NAV_ITEMS: readonly ExposantNavItem[] = [
   { labelKey: 'commandes', emoji: '🧾', segment: 'commandes' },
   // P3.1 — ressources markdown bilingues (guide, FAQ, charte graphique...).
   { labelKey: 'ressources', emoji: '📚', segment: 'ressources' },
+  // P9.2 — messagerie asynchrone avec l'equipe MDS.
+  { labelKey: 'messages', emoji: '💬', segment: 'messages' },
 ] as const;
 
 /**

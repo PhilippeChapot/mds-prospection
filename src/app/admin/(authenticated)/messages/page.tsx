@@ -1,12 +1,14 @@
 import Link from 'next/link';
-import { Search, Inbox } from 'lucide-react';
+import { Search, Inbox, MessagesSquare, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { listVisitorMessagesAction } from '@/lib/visitor-messages/actions';
 import type { VisitorMessageStatus } from '@/lib/visitor-messages/types';
+import { listMyConversationsAction } from '@/lib/internal-messaging/actions';
 import { cn } from '@/lib/utils';
+import { MessagesTabs } from './_components/MessagesTabs';
 
-export const metadata = { title: 'Messages visiteurs' };
+export const metadata = { title: 'Messages' };
 export const dynamic = 'force-dynamic';
 
 const STATUS_OPTIONS: Array<{ value: VisitorMessageStatus | 'all'; label: string }> = [
@@ -31,11 +33,17 @@ const STATUS_LABEL: Record<VisitorMessageStatus, string> = {
   archived: '🗄️ Archivé',
 };
 
-type SearchParams = Promise<{ status?: string; q?: string; page?: string }>;
+type SearchParams = Promise<{ status?: string; q?: string; page?: string; tab?: string }>;
 
 export default async function MessagesListPage({ searchParams }: { searchParams: SearchParams }) {
   await requireAdminProfile();
   const params = await searchParams;
+  const tab = params.tab === 'interne' ? 'interne' : 'visiteurs';
+
+  if (tab === 'interne') {
+    return <InternalConversationsView />;
+  }
+
   const status =
     params.status && STATUS_OPTIONS.some((o) => o.value === params.status)
       ? (params.status as VisitorMessageStatus | 'all')
@@ -64,6 +72,8 @@ export default async function MessagesListPage({ searchParams }: { searchParams:
           )}
         </p>
       </header>
+
+      <MessagesTabs current="visiteurs" />
 
       <form className="border-md-border bg-card flex flex-wrap items-end gap-3 rounded-xl border p-4 shadow-sm">
         <div className="flex flex-wrap gap-1.5">
@@ -175,6 +185,109 @@ export default async function MessagesListPage({ searchParams }: { searchParams:
           {total} messages au total — pagination à venir si besoin.
         </p>
       ) : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// View "Interne" : conversations staff/exposants (P9.2)
+// ---------------------------------------------------------------------------
+
+async function InternalConversationsView() {
+  const conversations = await listMyConversationsAction();
+  const unread = conversations.reduce((n, c) => n + (c.unread_count > 0 ? 1 : 0), 0);
+
+  return (
+    <div className="space-y-5">
+      <header className="space-y-1">
+        <h1 className="text-md-blue-dark font-[family-name:var(--font-montserrat)] text-2xl font-extrabold tracking-tight">
+          💬 Messagerie interne
+          <span className="text-md-text-muted ml-2 text-base font-medium">
+            · {conversations.length}
+          </span>
+        </h1>
+        <p className="text-md-text-muted text-sm">
+          {unread > 0 ? (
+            <span className="text-md-magenta font-semibold">
+              {unread} conversation(s) avec messages non-lus
+            </span>
+          ) : (
+            'Tous les échanges sont à jour.'
+          )}
+        </p>
+      </header>
+
+      <MessagesTabs current="interne" />
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-md-text-muted text-xs">
+          Conversations avec vos collègues (DM) + conversations support exposants (inbox partagée).
+        </p>
+        <Link
+          href="/admin/messages/conversations/new"
+          className="bg-md-magenta hover:bg-md-magenta-soft inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-bold text-white shadow-sm transition"
+        >
+          <MessagesSquare className="size-4" aria-hidden />+ Nouvelle conversation
+        </Link>
+      </div>
+
+      {conversations.length === 0 ? (
+        <div className="border-md-border bg-card flex flex-col items-center gap-2 rounded-xl border p-10 text-center shadow-sm">
+          <Inbox className="text-md-text-muted size-8" aria-hidden />
+          <p className="text-md-text-muted text-sm">Aucune conversation pour l&apos;instant.</p>
+        </div>
+      ) : (
+        <ul className="border-md-border bg-card divide-md-border divide-y rounded-xl border shadow-sm">
+          {conversations.map((c) => (
+            <li key={c.id}>
+              <Link
+                href={`/admin/messages/conversations/${c.id}`}
+                className="hover:bg-muted/40 flex flex-wrap items-start gap-3 px-4 py-3 transition"
+              >
+                <div className="flex shrink-0 items-center gap-2">
+                  {c.type === 'staff_dm' ? (
+                    <Users className="text-md-blue size-4" aria-hidden />
+                  ) : (
+                    <MessagesSquare className="text-md-magenta size-4" aria-hidden />
+                  )}
+                  <span
+                    className={cn(
+                      'rounded-full px-2 py-0.5 text-[10px] font-bold uppercase',
+                      c.type === 'staff_dm'
+                        ? 'bg-md-blue/10 text-md-blue'
+                        : 'bg-md-magenta/10 text-md-magenta',
+                    )}
+                  >
+                    {c.type === 'staff_dm' ? 'DM' : 'Support'}
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <strong className="text-md-text truncate">{c.display_title}</strong>
+                    {c.unread_count > 0 ? (
+                      <span className="bg-md-magenta rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        {c.unread_count}
+                      </span>
+                    ) : null}
+                  </div>
+                  {c.subject ? (
+                    <p className="text-md-text-muted truncate text-xs">{c.subject}</p>
+                  ) : null}
+                  {c.last_message_preview ? (
+                    <p className="text-md-text-muted truncate text-xs">
+                      <strong>{c.last_message_sender_name ?? '—'} :</strong>{' '}
+                      {c.last_message_preview}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="text-md-text-muted shrink-0 text-xs">
+                  {new Date(c.last_message_at).toLocaleString('fr-FR')}
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
