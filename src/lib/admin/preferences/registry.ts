@@ -32,6 +32,7 @@ export type SettingFieldType =
   | 'number'
   | 'percent'
   | 'string'
+  | 'secret'
   | 'email'
   | 'email_list'
   | 'url'
@@ -126,6 +127,47 @@ export const SETTINGS_REGISTRY: SettingFieldDef[] = [
       'Active la section « Enrichir avec Apollo » dans le Smart Add Wizard. Nécessite apollo_api_key remplie.',
     schema: z.boolean(),
     type: 'boolean',
+  },
+
+  // ═══════ INTEGRATIONS — Chat visiteur Tawk.to (P9.1) ═══════
+  {
+    key: 'chat_widget_enabled',
+    category: 'integrations',
+    label: 'Activer le chat visiteur',
+    description:
+      'Affiche le widget Tawk.to sur toutes les pages publiques (mediadays.solutions). Désactivé = widget masqué partout. Nécessite property_id + widget_id remplis.',
+    schema: z.boolean(),
+    type: 'boolean',
+  },
+  {
+    key: 'tawk_property_id',
+    category: 'integrations',
+    label: 'Tawk.to Property ID',
+    description:
+      'Identifiant de la "Property" Tawk.to (Admin > Channels > Chat Widget > snippet). Format : 24 chars hex.',
+    schema: z.string().min(10).max(64).or(z.literal('')),
+    type: 'string',
+    placeholder: '64f5b9c1xxxxxxxxxxxxxxxx',
+  },
+  {
+    key: 'tawk_widget_id',
+    category: 'integrations',
+    label: 'Tawk.to Widget ID',
+    description:
+      "Identifiant du widget Tawk.to (suffixe après le slash dans l'URL embed). Format : ~10 chars alphanum.",
+    schema: z.string().min(5).max(40).or(z.literal('')),
+    type: 'string',
+    placeholder: '1hxxxxxxx',
+  },
+  {
+    key: 'tawk_webhook_secret',
+    category: 'integrations',
+    label: 'Tawk.to Webhook Secret',
+    description:
+      'Secret HMAC-SHA1 utilisé pour valider la signature des webhooks (header X-Tawk-Signature). Configuré dans Tawk.to Admin > Settings > Webhooks. Super_admin only.',
+    schema: z.string().min(8).max(120).or(z.literal('')),
+    type: 'secret',
+    placeholder: 'xxxxxxxxxxxxxxxx',
   },
 
   // ═══════ RGPD ═══════

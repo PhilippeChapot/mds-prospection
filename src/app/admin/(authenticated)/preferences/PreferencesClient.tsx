@@ -51,6 +51,7 @@ const TYPE_BADGE: Record<string, string> = {
   percent: 'bg-amber-100 text-amber-800',
   number: 'bg-amber-100 text-amber-800',
   string: 'bg-slate-100 text-slate-800',
+  secret: 'bg-rose-100 text-rose-800',
   email: 'bg-sky-100 text-sky-800',
   email_list: 'bg-sky-100 text-sky-800',
   url: 'bg-indigo-100 text-indigo-800',
@@ -407,6 +408,7 @@ function defaultValueForType(def: SettingFieldDef): unknown {
     case 'email_list':
       return [];
     case 'string':
+    case 'secret':
     case 'email':
     case 'url':
     case 'uuid':

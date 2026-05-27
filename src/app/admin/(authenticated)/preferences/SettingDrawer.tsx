@@ -283,6 +283,19 @@ function FieldEditor({
           placeholder={def.placeholder}
         />
       );
+    case 'secret':
+      // P9.1 : secrets (webhook secrets, API keys super-sensibles). Input
+      // type=password pour eviter le shoulder-surfing en demo. La valeur
+      // reste editable en clair via JSON brut si besoin (admin only).
+      return (
+        <Input
+          type="password"
+          autoComplete="new-password"
+          value={typeof value === 'string' ? value : ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={def.placeholder}
+        />
+      );
     case 'boolean':
       return (
         <label className="flex items-center gap-2 text-sm">

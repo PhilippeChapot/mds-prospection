@@ -2453,7 +2453,8 @@ export type Database = {
         | 'salon'
         | 'reference'
         | 'campagne'
-        | 'landing_form';
+        | 'landing_form'
+        | 'chat_visiteur';
       prospect_status:
         | 'lead'
         | 'contact'
@@ -2482,7 +2483,7 @@ export type Database = {
         | 'step2_completed';
       sync_op: 'create' | 'update' | 'pull' | 'check';
       sync_status: 'success' | 'pending' | 'error';
-      sync_target: 'sellsy' | 'brevo' | 'connectonair' | 'stripe' | 'apollo';
+      sync_target: 'sellsy' | 'brevo' | 'connectonair' | 'stripe' | 'apollo' | 'tawk';
       user_role: 'admin' | 'sales' | 'super_admin';
       vat_status: 'unverified' | 'pending' | 'valid' | 'invalid';
     };
@@ -2690,6 +2691,7 @@ export const Constants = {
         'reference',
         'campagne',
         'landing_form',
+        'chat_visiteur',
       ],
       prospect_status: [
         'lead',
@@ -2715,7 +2717,7 @@ export const Constants = {
       ],
       sync_op: ['create', 'update', 'pull', 'check'],
       sync_status: ['success', 'pending', 'error'],
-      sync_target: ['sellsy', 'brevo', 'connectonair', 'stripe', 'apollo'],
+      sync_target: ['sellsy', 'brevo', 'connectonair', 'stripe', 'apollo', 'tawk'],
       user_role: ['admin', 'sales', 'super_admin'],
       vat_status: ['unverified', 'pending', 'valid', 'invalid'],
     },
