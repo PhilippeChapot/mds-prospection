@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { PoleBadge } from '@/components/admin/PoleBadge';
 import { StatusEditor } from '@/components/admin/StatusEditor';
@@ -25,8 +26,9 @@ import { detectIsPremium, type QuoteItem } from '@/lib/admin/prospects/quote-cal
 import { PACK_LABEL } from '@/lib/supabase/queries';
 import type { PoleCode } from '@/lib/design-tokens';
 import type { Database } from '@/lib/supabase/database.types';
-import { hasAdminAccess, isSalesOnly } from '@/lib/auth/role-helpers';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import { ProspectForbiddenPage } from '@/components/admin/prospects/ProspectForbiddenPage';
+import { canViewProspectDetail } from '@/lib/prospects/access';
 
 export const metadata = { title: 'Fiche prospect' };
 
@@ -42,12 +44,21 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
   const profile = await requireAdminProfile();
   const supabase = await createSupabaseServerClient();
 
+  // P5.x.1-quater-bis (bug #3) — la lecture initiale du prospect passe par
+  // le service-role client pour BYPASSER RLS : sinon, un Sales non-owner
+  // recoit `null` (RLS masque la row) et on tombe sur notFound() avant
+  // d'avoir pu afficher <ProspectForbiddenPage>. Le check d'ownership
+  // (owner_id !== profile.id) est ensuite fait MANUELLEMENT ci-dessous,
+  // qui est la seule maniere de distinguer "prospect inexistant" de
+  // "prospect d'un autre Sales" pour un user role=sales.
+  const adminClient = getSupabaseServiceClient();
+
   // P6.x.5-quater : on retire le `!inner` sur companies pour ne pas masquer
   // un prospect dont le company_id pointerait sur une row supprimée (édge
   // case rare, mais → 404 silencieux et incompréhensible côté admin sinon).
   // En cas d'erreur supabase, on rend une page d'erreur explicite au lieu
   // du notFound() générique (gain de diagnosticabilité en prod).
-  const { data: prospect, error } = await supabase
+  const { data: prospect, error } = await adminClient
     .from('prospects')
     .select(
       `
@@ -105,10 +116,18 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
   const owner = pickFirst(prospect.owner);
   const pole = pickFirst(company?.pole ?? null);
 
-  // P5.x.1-quater (bug #3) — un Sales qui ouvre une fiche d'un prospect
-  // qu'il ne possede pas voit une page d'explication (pas un 404 brutal).
-  // Les admin/super_admin voient tout (gestion + supervision).
-  if (isSalesOnly(profile.role) && prospect.owner_id && prospect.owner_id !== profile.id) {
+  // P5.x.1-quater-bis (bug #3) — la lecture passe par le service-role
+  // (bypass RLS) ; ici on decide manuellement si l'utilisateur peut voir
+  // la fiche complete ou s'il voit <ProspectForbiddenPage>. Pour Sales,
+  // strict : owner_id doit etre lui-meme. Pour admin/super_admin, tout
+  // est visible (regression critique a ne PAS casser).
+  if (
+    !canViewProspectDetail({
+      userRole: profile.role,
+      userId: profile.id,
+      prospectOwnerId: prospect.owner_id,
+    })
+  ) {
     return (
       <ProspectForbiddenPage
         companyName={company?.name ?? 'Société inconnue'}
