@@ -2,7 +2,18 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import { Loader2, Plus, Star, Mail, Pencil, Trash2, ArrowRight } from 'lucide-react';
+import {
+  Loader2,
+  Plus,
+  Star,
+  Mail,
+  Pencil,
+  Trash2,
+  ArrowRight,
+  Settings2,
+  Lock,
+  AlertTriangle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -15,6 +26,9 @@ import {
   deleteContactAction,
 } from '@/lib/contacts/admin-actions';
 import type { CompanyContactRow } from '@/lib/contacts/admin-queries';
+import { listContactPreferencesByCompanyAction } from '@/lib/admin/contact-preferences/actions';
+import type { ContactPreferencesRow } from '@/lib/admin/contact-preferences/types';
+import { ContactPreferencesDrawer } from './ContactPreferencesDrawer';
 
 interface Props {
   companyId: string;
@@ -27,9 +41,28 @@ export function CompanyContactsSection({ companyId, contacts, canDelete }: Props
   const [pending, start] = useTransition();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<CompanyContactRow | null>(null);
+  // P8.1 — drawer Préférences pour 1 contact a la fois.
+  const [prefsContact, setPrefsContact] = useState<CompanyContactRow | null>(null);
+  const [prefsLoading, setPrefsLoading] = useState(false);
+  const [prefsRow, setPrefsRow] = useState<ContactPreferencesRow | null>(null);
 
   function refresh() {
     router.refresh();
+  }
+
+  async function openPrefsDrawer(c: CompanyContactRow) {
+    setPrefsContact(c);
+    setPrefsLoading(true);
+    setPrefsRow(null);
+    try {
+      const list = await listContactPreferencesByCompanyAction({ company_id: companyId });
+      const me = list.find((x) => x.contact_id === c.id);
+      setPrefsRow(me?.preferences ?? null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Chargement des préférences impossible.');
+    } finally {
+      setPrefsLoading(false);
+    }
   }
 
   function handleMarkPrimary(contactId: string) {
@@ -96,6 +129,7 @@ export function CompanyContactsSection({ companyId, contacts, canDelete }: Props
                   <th className="px-3 py-2">Primary</th>
                   <th className="px-3 py-2">Lifecycle</th>
                   <th className="px-3 py-2">Brevo</th>
+                  <th className="px-3 py-2">Préférences</th>
                   <th className="px-3 py-2" />
                 </tr>
               </thead>
@@ -156,6 +190,31 @@ export function CompanyContactsSection({ companyId, contacts, canDelete }: Props
                       ) : (
                         <span className="text-amber-600">— not sync</span>
                       )}
+                    </td>
+                    <td className="px-3 py-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => openPrefsDrawer(c)}
+                        disabled={pending}
+                        className="text-md-blue hover:text-md-blue-dark inline-flex items-center gap-1 font-semibold hover:underline disabled:opacity-50"
+                        title="Gérer les 7 préférences de communication"
+                      >
+                        <Settings2 className="size-3" aria-hidden />
+                        Gérer ({c.prefs_active_count}/7)
+                        {c.prefs_locked_count > 0 ? (
+                          <span
+                            title={`${c.prefs_locked_count} verrouillage(s) admin`}
+                            className="text-md-warning"
+                          >
+                            <Lock className="size-3" aria-hidden />
+                          </span>
+                        ) : null}
+                        {c.prefs_unsubscribed ? (
+                          <span title="Désinscrit (RGPD)" className="text-md-danger">
+                            <AlertTriangle className="size-3" aria-hidden />
+                          </span>
+                        ) : null}
+                      </button>
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
@@ -228,6 +287,24 @@ export function CompanyContactsSection({ companyId, contacts, canDelete }: Props
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
+            refresh();
+          }}
+        />
+      ) : null}
+
+      {prefsContact ? (
+        <ContactPreferencesDrawer
+          open={Boolean(prefsContact)}
+          onOpenChange={(o) => {
+            if (!o) setPrefsContact(null);
+          }}
+          contactId={prefsContact.id}
+          contactName={
+            [prefsContact.first_name, prefsContact.last_name].filter(Boolean).join(' ') || ''
+          }
+          contactEmail={prefsContact.email}
+          initialPreferences={prefsLoading ? null : prefsRow}
+          onSaved={() => {
             refresh();
           }}
         />

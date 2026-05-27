@@ -180,6 +180,10 @@ export type CompanyContactRow = {
   brevo_contact_id: string | null;
   last_synced_brevo_at: string | null;
   created_at: string;
+  /** P8.1 — counts pour la colonne "Préférences" (calcules cote query). */
+  prefs_active_count: number;
+  prefs_locked_count: number;
+  prefs_unsubscribed: boolean;
 };
 
 export async function listContactsForCompany(companyId: string): Promise<CompanyContactRow[]> {
@@ -189,7 +193,15 @@ export async function listContactsForCompany(companyId: string): Promise<Company
     .select(
       `id, company_id, email, first_name, last_name, phone, role, is_primary, language,
        marketing_consent, lifecycle_emails_enabled, email_deliverability_status,
-       brevo_contact_id, last_synced_brevo_at, created_at`,
+       brevo_contact_id, last_synced_brevo_at, created_at,
+       preferences:contact_preferences(
+         pref_general, pref_exposant, pref_facturation, pref_kit_media,
+         pref_administration, pref_partenariat, pref_post_event,
+         general_locked_by_admin, exposant_locked_by_admin, facturation_locked_by_admin,
+         kit_media_locked_by_admin, administration_locked_by_admin,
+         partenariat_locked_by_admin, post_event_locked_by_admin,
+         unsubscribed_all_at
+       )`,
     )
     .eq('company_id', companyId)
     .order('is_primary', { ascending: false })
@@ -199,7 +211,62 @@ export async function listContactsForCompany(companyId: string): Promise<Company
     console.error('[admin-queries.listContactsForCompany]', error);
     return [];
   }
-  return (data ?? []) as CompanyContactRow[];
+
+  type RawPrefs = {
+    pref_general: boolean;
+    pref_exposant: boolean;
+    pref_facturation: boolean;
+    pref_kit_media: boolean;
+    pref_administration: boolean;
+    pref_partenariat: boolean;
+    pref_post_event: boolean;
+    general_locked_by_admin: boolean;
+    exposant_locked_by_admin: boolean;
+    facturation_locked_by_admin: boolean;
+    kit_media_locked_by_admin: boolean;
+    administration_locked_by_admin: boolean;
+    partenariat_locked_by_admin: boolean;
+    post_event_locked_by_admin: boolean;
+    unsubscribed_all_at: string | null;
+  };
+
+  return (data ?? []).map((r) => {
+    const prefs = (
+      Array.isArray(r.preferences) ? r.preferences[0] : r.preferences
+    ) as RawPrefs | null;
+    let activeCount = 0;
+    let lockedCount = 0;
+    if (prefs) {
+      const prefKeys: Array<keyof RawPrefs> = [
+        'pref_general',
+        'pref_exposant',
+        'pref_facturation',
+        'pref_kit_media',
+        'pref_administration',
+        'pref_partenariat',
+        'pref_post_event',
+      ];
+      const lockKeys: Array<keyof RawPrefs> = [
+        'general_locked_by_admin',
+        'exposant_locked_by_admin',
+        'facturation_locked_by_admin',
+        'kit_media_locked_by_admin',
+        'administration_locked_by_admin',
+        'partenariat_locked_by_admin',
+        'post_event_locked_by_admin',
+      ];
+      activeCount = prefKeys.filter((k) => prefs[k] === true).length;
+      lockedCount = lockKeys.filter((k) => prefs[k] === true).length;
+    }
+    const { preferences: _omit, ...rest } = r as typeof r & { preferences: unknown };
+    void _omit;
+    return {
+      ...rest,
+      prefs_active_count: activeCount,
+      prefs_locked_count: lockedCount,
+      prefs_unsubscribed: Boolean(prefs?.unsubscribed_all_at),
+    } as CompanyContactRow;
+  });
 }
 
 type MaybeArray<T> = T | T[] | null | undefined;

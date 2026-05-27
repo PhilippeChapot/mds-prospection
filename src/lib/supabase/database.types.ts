@@ -907,6 +907,93 @@ export type Database = {
           },
         ];
       };
+      contact_preferences: {
+        Row: {
+          administration_locked_by_admin: boolean;
+          contact_id: string;
+          created_at: string;
+          exposant_locked_by_admin: boolean;
+          facturation_locked_by_admin: boolean;
+          general_locked_by_admin: boolean;
+          id: string;
+          kit_media_locked_by_admin: boolean;
+          partenariat_locked_by_admin: boolean;
+          post_event_locked_by_admin: boolean;
+          pref_administration: boolean;
+          pref_exposant: boolean;
+          pref_facturation: boolean;
+          pref_general: boolean;
+          pref_kit_media: boolean;
+          pref_partenariat: boolean;
+          pref_post_event: boolean;
+          unsubscribed_all_at: string | null;
+          unsubscribed_reason: string | null;
+          updated_at: string;
+          updated_by_user_id: string | null;
+        };
+        Insert: {
+          administration_locked_by_admin?: boolean;
+          contact_id: string;
+          created_at?: string;
+          exposant_locked_by_admin?: boolean;
+          facturation_locked_by_admin?: boolean;
+          general_locked_by_admin?: boolean;
+          id?: string;
+          kit_media_locked_by_admin?: boolean;
+          partenariat_locked_by_admin?: boolean;
+          post_event_locked_by_admin?: boolean;
+          pref_administration?: boolean;
+          pref_exposant?: boolean;
+          pref_facturation?: boolean;
+          pref_general?: boolean;
+          pref_kit_media?: boolean;
+          pref_partenariat?: boolean;
+          pref_post_event?: boolean;
+          unsubscribed_all_at?: string | null;
+          unsubscribed_reason?: string | null;
+          updated_at?: string;
+          updated_by_user_id?: string | null;
+        };
+        Update: {
+          administration_locked_by_admin?: boolean;
+          contact_id?: string;
+          created_at?: string;
+          exposant_locked_by_admin?: boolean;
+          facturation_locked_by_admin?: boolean;
+          general_locked_by_admin?: boolean;
+          id?: string;
+          kit_media_locked_by_admin?: boolean;
+          partenariat_locked_by_admin?: boolean;
+          post_event_locked_by_admin?: boolean;
+          pref_administration?: boolean;
+          pref_exposant?: boolean;
+          pref_facturation?: boolean;
+          pref_general?: boolean;
+          pref_kit_media?: boolean;
+          pref_partenariat?: boolean;
+          pref_post_event?: boolean;
+          unsubscribed_all_at?: string | null;
+          unsubscribed_reason?: string | null;
+          updated_at?: string;
+          updated_by_user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'contact_preferences_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: true;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'contact_preferences_updated_by_user_id_fkey';
+            columns: ['updated_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       contacts: {
         Row: {
           brevo_contact_id: string | null;

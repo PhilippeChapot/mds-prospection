@@ -176,7 +176,8 @@ async function handleDocslogStep(event: SellsyWebhookEvent): Promise<void> {
     .from('prospects')
     .select(
       `
-      id, sellsy_devis_id, sellsy_proforma_id, sellsy_invoice_id,
+      id, company_id, signed_at,
+      sellsy_devis_id, sellsy_proforma_id, sellsy_invoice_id,
       sellsy_devis_number, sellsy_devis_public_url,
       contact:contacts(brevo_contact_id),
       company:companies!inner(name)
@@ -214,6 +215,35 @@ async function handleDocslogStep(event: SellsyWebhookEvent): Promise<void> {
   }
 
   await supabase.from('prospects').update(update).eq('id', prospect.id);
+
+  // P8.1 — auto-enable preferences communication des contacts a la signature.
+  // Idempotent : on ne re-coche que si l'evenement a effectivement marque
+  // une transition (signed_at passe de null a non-null). Si le webhook
+  // est rejoue, prospect.signed_at est deja non-null et on skip.
+  if (isAccepted && !prospect.signed_at && prospect.company_id) {
+    try {
+      const { autoEnableExpoPreferencesOnSignature } =
+        await import('@/lib/admin/contact-preferences/auto-enable');
+      const result = await autoEnableExpoPreferencesOnSignature({
+        prospectId: prospect.id,
+        companyId: prospect.company_id,
+      });
+      console.log(
+        '%s auto-enable-prefs prospect=%s updated=%d skipped=%d',
+        LOG_PREFIX,
+        prospect.id,
+        result.contacts_updated,
+        result.contacts_skipped_locked,
+      );
+    } catch (err) {
+      console.warn(
+        '%s auto-enable-prefs-failed prospect=%s msg=%s',
+        LOG_PREFIX,
+        prospect.id,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
 
   // P5.x.4 Phase C : sync Brevo complet (upsert attributs + listes
   // lifecycle avec exit conditions). Remplace le simple addContactToList
