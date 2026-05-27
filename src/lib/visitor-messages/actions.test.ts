@@ -208,8 +208,12 @@ function makeChain(table: string) {
 }
 
 const VALID_SUBMIT = {
-  visitor_name: 'Alice Martin',
+  visitor_first_name: 'Alice',
+  visitor_last_name: 'Martin',
   visitor_email: 'alice@acme.com',
+  visitor_company: 'Acme SAS',
+  visitor_company_url: 'https://acme.com',
+  visitor_phone: '+33 6 12 34 56 78',
   message: 'Bonjour, je voudrais un tarif stand pour MDS 2026.',
   page_url: 'https://mediadays.solutions/fr/',
   locale: 'fr' as const,
@@ -245,7 +249,12 @@ describe('submitVisitorMessageAction (P9.1-natif)', () => {
     if (r.ok) expect(r.message_id).toBe(state.fixedMessageId);
     expect(state.inserts.visitor_messages).toHaveLength(1);
     expect(state.inserts.visitor_messages[0]).toMatchObject({
+      visitor_first_name: 'Alice',
+      visitor_last_name: 'Martin',
       visitor_email: 'alice@acme.com',
+      visitor_company: 'Acme SAS',
+      visitor_company_url: 'https://acme.com',
+      visitor_phone: '+33 6 12 34 56 78',
       message: VALID_SUBMIT.message,
       locale: 'fr',
       status: 'new',
@@ -281,6 +290,106 @@ describe('submitVisitorMessageAction (P9.1-natif)', () => {
     const r = await submitVisitorMessageAction({ ...VALID_SUBMIT, message: 'hi' });
     expect(r.ok).toBe(false);
   });
+
+  // P9.1-natif-bis : nouveaux champs requis.
+  it('telephone manquant (< 6 chars) -> ok:false code=invalid', async () => {
+    mockEnv();
+    const { submitVisitorMessageAction } = await import('./actions');
+    const r = await submitVisitorMessageAction({ ...VALID_SUBMIT, visitor_phone: '12' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.code).toBe('invalid');
+    expect(state.inserts.visitor_messages).toHaveLength(0);
+  });
+
+  it('societe manquante (< 2 chars) -> ok:false code=invalid', async () => {
+    mockEnv();
+    const { submitVisitorMessageAction } = await import('./actions');
+    const r = await submitVisitorMessageAction({ ...VALID_SUBMIT, visitor_company: 'X' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.code).toBe('invalid');
+  });
+
+  it('company_url vide accepte (champ optionnel)', async () => {
+    mockEnv();
+    const { submitVisitorMessageAction } = await import('./actions');
+    const r = await submitVisitorMessageAction({ ...VALID_SUBMIT, visitor_company_url: '' });
+    expect(r.ok).toBe(true);
+    expect(state.inserts.visitor_messages[0]).toMatchObject({ visitor_company_url: null });
+  });
+
+  it('company_url invalide (pas une URL) -> ok:false code=invalid', async () => {
+    mockEnv();
+    const { submitVisitorMessageAction } = await import('./actions');
+    const r = await submitVisitorMessageAction({
+      ...VALID_SUBMIT,
+      visitor_company_url: 'not-a-url',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.code).toBe('invalid');
+  });
+
+  it('capture lead enrichi : company.name = visitor_company, website = visitor_company_url, contact = first/last/phone', async () => {
+    // Spies sur les helpers landing pour verifier les args.
+    const companyCalls: Array<{ name: string; website: string | null }> = [];
+    const contactCalls: Array<{ firstName: string; lastName: string; phone: string | null }> = [];
+    vi.doMock('next/headers', () => ({
+      headers: vi.fn(async () => ({
+        get: (k: string) => (k === 'x-forwarded-for' ? '127.0.0.1' : null),
+      })),
+    }));
+    vi.doMock('next/cache', () => ({ revalidatePath: vi.fn() }));
+    vi.doMock('@/lib/supabase/auth-helpers', () => ({
+      requireAdminProfile: vi.fn(async () => state.adminProfile),
+    }));
+    vi.doMock('@/lib/landing/lead-actions', () => ({
+      findOrCreateCompanyForLanding: vi.fn(async (p: { name: string; website: string | null }) => {
+        companyCalls.push({ name: p.name, website: p.website });
+        return {
+          id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+          name: p.name,
+          primary_domain: 'acme.com',
+          alternate_domains: [],
+        };
+      }),
+      findOrCreateContactForLanding: vi.fn(
+        async (p: { firstName: string; lastName: string; phone: string | null }) => {
+          contactCalls.push({ firstName: p.firstName, lastName: p.lastName, phone: p.phone });
+          return {
+            id: 'ddddddddd-dddd-4ddd-8ddd-dddddddddddd',
+            email: 'visitor@acme.com',
+            company_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+            first_name: p.firstName,
+            last_name: p.lastName,
+            phone: p.phone,
+            language: 'FR' as const,
+          };
+        },
+      ),
+    }));
+    vi.doMock('@/lib/resend/admin-notifier', () => ({
+      sendAdminNotification: vi.fn(async () => ({ recipients: [], delivered: 0, failed: 0 })),
+    }));
+    vi.doMock('@/lib/resend/client', () => ({
+      sendTransactionalEmailViaResend: vi.fn(async () => ({ id: 'r' })),
+    }));
+    vi.doMock('@/lib/supabase/service', () => ({
+      getSupabaseServiceClient: () => makeClient(),
+    }));
+    const { submitVisitorMessageAction } = await import('./actions');
+    await submitVisitorMessageAction(VALID_SUBMIT);
+
+    expect(companyCalls).toHaveLength(1);
+    expect(companyCalls[0]).toMatchObject({
+      name: 'Acme SAS',
+      website: 'https://acme.com',
+    });
+    expect(contactCalls).toHaveLength(1);
+    expect(contactCalls[0]).toMatchObject({
+      firstName: 'Alice',
+      lastName: 'Martin',
+      phone: '+33 6 12 34 56 78',
+    });
+  });
 });
 
 describe('listVisitorMessagesAction (P9.1-natif)', () => {
@@ -291,8 +400,11 @@ describe('listVisitorMessagesAction (P9.1-natif)', () => {
       {
         id: 'm1',
         status: 'new',
-        visitor_name: 'A',
+        visitor_first_name: 'Alice',
+        visitor_last_name: 'A',
         visitor_email: 'a@x.fr',
+        visitor_company: 'CompA',
+        visitor_company_url: null,
         message: 'm1',
         created_at: '2026-05-27',
         locale: 'fr',
@@ -301,15 +413,18 @@ describe('listVisitorMessagesAction (P9.1-natif)', () => {
         read_at: null,
         replied_at: null,
         page_url: null,
-        visitor_phone: null,
+        visitor_phone: '+33 1',
         prospect: null,
         assignee: null,
       },
       {
         id: 'm2',
         status: 'replied',
-        visitor_name: 'B',
+        visitor_first_name: 'Bob',
+        visitor_last_name: 'B',
         visitor_email: 'b@x.fr',
+        visitor_company: 'CompB',
+        visitor_company_url: null,
         message: 'm2',
         created_at: '2026-05-26',
         locale: 'fr',
@@ -318,7 +433,7 @@ describe('listVisitorMessagesAction (P9.1-natif)', () => {
         read_at: null,
         replied_at: null,
         page_url: null,
-        visitor_phone: null,
+        visitor_phone: '+33 2',
         prospect: null,
         assignee: null,
       },
@@ -352,9 +467,12 @@ describe('getVisitorMessageAction (P9.1-natif)', () => {
       {
         id: state.fixedMessageId,
         status: 'new',
-        visitor_name: 'Alice',
+        visitor_first_name: 'Alice',
+        visitor_last_name: 'Martin',
         visitor_email: 'alice@acme.com',
-        visitor_phone: null,
+        visitor_phone: '+33 1',
+        visitor_company: 'Acme',
+        visitor_company_url: null,
         message: 'plop',
         page_url: null,
         locale: 'fr',
@@ -392,7 +510,8 @@ describe('replyToVisitorMessageAction (P9.1-natif)', () => {
       {
         id: state.fixedMessageId,
         status: 'read',
-        visitor_name: 'Alice',
+        visitor_first_name: 'Alice',
+        visitor_last_name: 'Martin',
         visitor_email: 'alice@acme.com',
         message: 'Bonjour',
         locale: 'fr',

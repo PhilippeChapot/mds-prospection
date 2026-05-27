@@ -14,15 +14,13 @@ import { submitVisitorMessageAction } from '@/lib/visitor-messages/actions';
 /**
  * P9.1-natif — widget de messagerie visiteur native.
  *
- * Bouton flottant bas-droite sur les pages publiques. Clic -> Sheet
- * lateral avec mini-formulaire (nom + email + tel optionnel + message).
- * Submit -> server action submitVisitorMessageAction -> message stocke
- * en DB + lead prospect cree + notif email admin.
+ * P9.1-natif-bis : formulaire enrichi pour capturer des leads
+ * qualifies. Champs : Prénom + Nom (colonnes), Email, Société, URL
+ * société (optionnel), Téléphone (OBLIGATOIRE), Message.
  *
- * Pas de dependance externe (100% React + Tailwind + shadcn). Locale
- * lue via useLocale() (next-intl). Le widget est rendu uniquement si
- * `visitor_chat_enabled=true` (filtre cote serveur, cf.
- * <VisitorMessageWidgetLoader>).
+ * Submit -> server action submitVisitorMessageAction -> message stocke
+ * en DB + lead prospect cree (company name + website + contact
+ * first/last + phone) + notif email admin.
  */
 
 const COPY = {
@@ -30,13 +28,19 @@ const COPY = {
     triggerLabel: 'Une question ?',
     title: 'Écrivez-nous, on vous répond vite 👋',
     description: 'Laissez-nous un message, nous reviendrons par email rapidement.',
-    nameLabel: 'Nom',
-    namePlaceholder: 'Votre nom',
+    firstNameLabel: 'Prénom',
+    firstNamePlaceholder: 'Marie',
+    lastNameLabel: 'Nom',
+    lastNamePlaceholder: 'Dupont',
     emailLabel: 'Email',
     emailPlaceholder: 'vous@exemple.fr',
-    phoneLabel: 'Téléphone (optionnel)',
-    phonePlaceholder: '+33 ...',
-    messageLabel: 'Message',
+    companyLabel: 'Société',
+    companyPlaceholder: 'MediaCorp SAS',
+    companyUrlLabel: 'Site web de la société',
+    companyUrlPlaceholder: 'https://votresite.com (optionnel)',
+    phoneLabel: 'Téléphone',
+    phonePlaceholder: '+33 6 12 34 56 78',
+    messageLabel: 'Votre message',
     messagePlaceholder: "Bonjour, j'aimerais savoir...",
     submit: 'Envoyer',
     submitting: 'Envoi en cours...',
@@ -44,18 +48,26 @@ const COPY = {
     successBody: 'Merci ! Nous vous répondrons par email dans la journée.',
     closeAria: 'Fermer',
     minMessage: 'Votre message doit faire au moins 5 caractères.',
+    requiredFields: 'Tous les champs marqués * sont requis.',
+    invalidUrl: 'URL de site web invalide.',
   },
   en: {
     triggerLabel: 'Need help?',
     title: 'Write to us, quick reply guaranteed 👋',
     description: 'Leave us a message and we will reply by email shortly.',
-    nameLabel: 'Name',
-    namePlaceholder: 'Your name',
+    firstNameLabel: 'First name',
+    firstNamePlaceholder: 'Mary',
+    lastNameLabel: 'Last name',
+    lastNamePlaceholder: 'Smith',
     emailLabel: 'Email',
     emailPlaceholder: 'you@example.com',
-    phoneLabel: 'Phone (optional)',
-    phonePlaceholder: '+1 ...',
-    messageLabel: 'Message',
+    companyLabel: 'Company',
+    companyPlaceholder: 'MediaCorp Inc.',
+    companyUrlLabel: 'Company website',
+    companyUrlPlaceholder: 'https://yoursite.com (optional)',
+    phoneLabel: 'Phone',
+    phonePlaceholder: '+1 555 123 4567',
+    messageLabel: 'Your message',
     messagePlaceholder: "Hello, I'd like to know...",
     submit: 'Send',
     submitting: 'Sending...',
@@ -63,8 +75,20 @@ const COPY = {
     successBody: "Thanks! We'll reply by email within the day.",
     closeAria: 'Close',
     minMessage: 'Your message must be at least 5 characters.',
+    requiredFields: 'All fields marked with * are required.',
+    invalidUrl: 'Invalid company website URL.',
   },
 } as const;
+
+const INITIAL_FORM = {
+  first_name: '',
+  last_name: '',
+  email: '',
+  company: '',
+  company_url: '',
+  phone: '',
+  message: '',
+};
 
 export function ContactMessageWidget() {
   const locale = useLocale();
@@ -72,11 +96,11 @@ export function ContactMessageWidget() {
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(false);
   const [pending, startTransition] = useTransition();
-  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
+  const [form, setForm] = useState(INITIAL_FORM);
   const [error, setError] = useState<string | null>(null);
 
   function reset() {
-    setForm({ name: '', email: '', phone: '', message: '' });
+    setForm(INITIAL_FORM);
     setError(null);
     setDone(false);
   }
@@ -84,16 +108,40 @@ export function ContactMessageWidget() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (form.message.trim().length < 5) {
+
+    const firstName = form.first_name.trim();
+    const lastName = form.last_name.trim();
+    const email = form.email.trim();
+    const company = form.company.trim();
+    const phone = form.phone.trim();
+    const message = form.message.trim();
+    const companyUrl = form.company_url.trim();
+
+    if (
+      firstName.length < 2 ||
+      lastName.length < 2 ||
+      email.length === 0 ||
+      company.length < 2 ||
+      phone.length < 6
+    ) {
+      setError(t.requiredFields);
+      return;
+    }
+    if (message.length < 5) {
       setError(t.minMessage);
       return;
     }
+    // URL societe : vide accepte, sinon validation cote Zod (server).
+
     startTransition(async () => {
       const r = await submitVisitorMessageAction({
-        visitor_name: form.name.trim(),
-        visitor_email: form.email.trim(),
-        visitor_phone: form.phone.trim() || undefined,
-        message: form.message.trim(),
+        visitor_first_name: firstName,
+        visitor_last_name: lastName,
+        visitor_email: email,
+        visitor_company: company,
+        visitor_company_url: companyUrl || undefined,
+        visitor_phone: phone,
+        message,
         page_url: typeof window !== 'undefined' ? window.location.href.slice(0, 500) : undefined,
         locale: locale === 'en' ? 'en' : 'fr',
       });
@@ -123,11 +171,10 @@ export function ContactMessageWidget() {
         open={open}
         onOpenChange={(v) => {
           setOpen(v);
-          // Reset si on rouvre apres un envoi reussi.
           if (!v && done) setTimeout(reset, 300);
         }}
       >
-        <SheetContent side="right" className="bg-card w-full p-0 sm:max-w-md">
+        <SheetContent side="right" className="bg-card w-full overflow-y-auto p-0 sm:max-w-md">
           <div className="flex h-full flex-col">
             <div className="bg-md-blue-deep px-6 py-5 text-white">
               <SheetTitle className="font-[family-name:var(--font-montserrat)] text-lg font-extrabold tracking-tight text-white">
@@ -156,22 +203,37 @@ export function ContactMessageWidget() {
                 </Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-4 px-6 py-5">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cmw-name">{t.nameLabel}</Label>
-                  <Input
-                    id="cmw-name"
-                    required
-                    minLength={2}
-                    maxLength={120}
-                    autoComplete="name"
-                    placeholder={t.namePlaceholder}
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  />
+              <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-3 px-6 py-5">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cmw-first-name">{t.firstNameLabel} *</Label>
+                    <Input
+                      id="cmw-first-name"
+                      required
+                      minLength={2}
+                      maxLength={60}
+                      autoComplete="given-name"
+                      placeholder={t.firstNamePlaceholder}
+                      value={form.first_name}
+                      onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cmw-last-name">{t.lastNameLabel} *</Label>
+                    <Input
+                      id="cmw-last-name"
+                      required
+                      minLength={2}
+                      maxLength={60}
+                      autoComplete="family-name"
+                      placeholder={t.lastNamePlaceholder}
+                      value={form.last_name}
+                      onChange={(e) => setForm((f) => ({ ...f, last_name: e.target.value }))}
+                    />
+                  </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cmw-email">{t.emailLabel}</Label>
+                  <Label htmlFor="cmw-email">{t.emailLabel} *</Label>
                   <Input
                     id="cmw-email"
                     type="email"
@@ -184,10 +246,37 @@ export function ContactMessageWidget() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cmw-phone">{t.phoneLabel}</Label>
+                  <Label htmlFor="cmw-company">{t.companyLabel} *</Label>
+                  <Input
+                    id="cmw-company"
+                    required
+                    minLength={2}
+                    maxLength={120}
+                    autoComplete="organization"
+                    placeholder={t.companyPlaceholder}
+                    value={form.company}
+                    onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cmw-company-url">{t.companyUrlLabel}</Label>
+                  <Input
+                    id="cmw-company-url"
+                    type="url"
+                    maxLength={300}
+                    autoComplete="url"
+                    placeholder={t.companyUrlPlaceholder}
+                    value={form.company_url}
+                    onChange={(e) => setForm((f) => ({ ...f, company_url: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cmw-phone">{t.phoneLabel} *</Label>
                   <Input
                     id="cmw-phone"
                     type="tel"
+                    required
+                    minLength={6}
                     maxLength={30}
                     autoComplete="tel"
                     placeholder={t.phonePlaceholder}
@@ -196,13 +285,13 @@ export function ContactMessageWidget() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cmw-message">{t.messageLabel}</Label>
+                  <Label htmlFor="cmw-message">{t.messageLabel} *</Label>
                   <Textarea
                     id="cmw-message"
                     required
                     minLength={5}
                     maxLength={2000}
-                    rows={5}
+                    rows={4}
                     placeholder={t.messagePlaceholder}
                     value={form.message}
                     onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
@@ -216,7 +305,7 @@ export function ContactMessageWidget() {
                     {error}
                   </p>
                 ) : null}
-                <Button type="submit" size="lg" className="mt-2 w-full" disabled={pending}>
+                <Button type="submit" size="lg" className="mt-1 w-full" disabled={pending}>
                   {pending ? (
                     <>
                       <Loader2 className="size-4 animate-spin" aria-hidden />

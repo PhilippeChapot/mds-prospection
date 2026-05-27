@@ -9,9 +9,17 @@ export type VisitorMessageLocale = 'fr' | 'en';
 
 export interface VisitorMessageRow {
   id: string;
-  visitor_name: string;
+  /** P9.1-natif-bis : prenom (separe de last_name). Null pour les rows
+   *  pre-pivot (rares). */
+  visitor_first_name: string | null;
+  /** P9.1-natif-bis : nom de famille (ex `visitor_name`). */
+  visitor_last_name: string;
   visitor_email: string;
   visitor_phone: string | null;
+  /** P9.1-natif-bis : societe (requis cote widget). */
+  visitor_company: string | null;
+  /** P9.1-natif-bis : URL site societe (optionnel). */
+  visitor_company_url: string | null;
   message: string;
   page_url: string | null;
   locale: VisitorMessageLocale;

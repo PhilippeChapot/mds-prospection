@@ -31,9 +31,13 @@ function escapeHtml(s: string): string {
 // ---------------------------------------------------------------------------
 
 export interface AdminVisitorMessageParams {
-  visitorName: string;
+  /** P9.1-natif-bis : nom complet recompose first + last. */
+  visitorFirstName: string;
+  visitorLastName: string;
   visitorEmail: string;
-  visitorPhone: string | null;
+  visitorPhone: string;
+  visitorCompany: string;
+  visitorCompanyUrl: string | null;
   message: string;
   pageUrl: string | null;
   inboxUrl: string;
@@ -43,12 +47,16 @@ export interface AdminVisitorMessageParams {
 export function renderAdminVisitorMessageNotification(
   params: AdminVisitorMessageParams,
 ): VisitorEmailTemplate {
-  const subject = `[MDS] Nouveau message visiteur : ${params.visitorName}`;
+  const fullName = `${params.visitorFirstName} ${params.visitorLastName}`.trim();
+  const subject = `[MDS] Nouveau message visiteur : ${fullName}`;
   const fields: Array<[string, string]> = [
-    ['Nom', params.visitorName],
+    ['Prénom', params.visitorFirstName],
+    ['Nom', params.visitorLastName],
     ['Email', params.visitorEmail],
+    ['Téléphone', params.visitorPhone],
+    ['Société', params.visitorCompany],
   ];
-  if (params.visitorPhone) fields.push(['Téléphone', params.visitorPhone]);
+  if (params.visitorCompanyUrl) fields.push(['Site société', params.visitorCompanyUrl]);
   if (params.pageUrl) fields.push(['Page', params.pageUrl]);
   fields.push(['Reçu le', params.createdAt]);
 
@@ -64,7 +72,7 @@ export function renderAdminVisitorMessageNotification(
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
     <tr><td style="background:#031A56;padding:24px 28px;color:white">
       <h1 style="margin:0;font-size:20px">💬 Nouveau message visiteur</h1>
-      <p style="margin:6px 0 0;color:#bcc4dd;font-size:14px">${escapeHtml(params.visitorName)} · ${escapeHtml(params.createdAt)}</p>
+      <p style="margin:6px 0 0;color:#bcc4dd;font-size:14px">${escapeHtml(fullName)} · ${escapeHtml(params.visitorCompany)} · ${escapeHtml(params.createdAt)}</p>
     </td></tr>
     <tr><td style="padding:24px 28px">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px">

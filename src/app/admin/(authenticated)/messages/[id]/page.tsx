@@ -30,15 +30,42 @@ export default async function VisitorMessageDetailPage({
         Retour à l&apos;inbox
       </Link>
 
-      <header className="space-y-1">
+      <header className="space-y-2">
         <h1 className="text-md-blue-dark font-[family-name:var(--font-montserrat)] text-2xl font-extrabold tracking-tight">
-          Message de {message.visitor_name}
+          Message de{' '}
+          {[message.visitor_first_name, message.visitor_last_name].filter(Boolean).join(' ') ||
+            message.visitor_last_name}
         </h1>
+        {message.visitor_company ? (
+          <p className="text-md-text text-sm">
+            <strong>{message.visitor_company}</strong>
+            {message.visitor_company_url ? (
+              <>
+                {' · '}
+                <a
+                  className="text-md-blue hover:underline"
+                  href={message.visitor_company_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {message.visitor_company_url}
+                </a>
+              </>
+            ) : null}
+          </p>
+        ) : null}
         <p className="text-md-text-muted text-sm">
           <a className="text-md-blue hover:underline" href={`mailto:${message.visitor_email}`}>
             {message.visitor_email}
           </a>
-          {message.visitor_phone ? <> · {message.visitor_phone}</> : null}
+          {message.visitor_phone ? (
+            <>
+              {' · '}
+              <a className="text-md-blue hover:underline" href={`tel:${message.visitor_phone}`}>
+                {message.visitor_phone}
+              </a>
+            </>
+          ) : null}
           {' · '}
           <span className="font-mono">{new Date(message.created_at).toLocaleString('fr-FR')}</span>
         </p>

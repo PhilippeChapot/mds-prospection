@@ -107,6 +107,7 @@ export default async function MessagesListPage({ searchParams }: { searchParams:
               <tr>
                 <th className="px-3 py-2 text-left">Statut</th>
                 <th className="px-3 py-2 text-left">Visiteur</th>
+                <th className="px-3 py-2 text-left">Société</th>
                 <th className="px-3 py-2 text-left">Email</th>
                 <th className="px-3 py-2 text-left">Message</th>
                 <th className="px-3 py-2 text-left">Reçu le</th>
@@ -127,7 +128,13 @@ export default async function MessagesListPage({ searchParams }: { searchParams:
                       {STATUS_LABEL[m.status]}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 font-medium">{m.visitor_name}</td>
+                  <td className="px-3 py-2.5 font-medium">
+                    {[m.visitor_first_name, m.visitor_last_name].filter(Boolean).join(' ') ||
+                      m.visitor_last_name}
+                  </td>
+                  <td className="text-md-text px-3 py-2.5 text-xs">
+                    {m.visitor_company ?? <span className="text-md-text-muted">—</span>}
+                  </td>
                   <td className="px-3 py-2.5 font-mono text-xs">{m.visitor_email}</td>
                   <td className="text-md-text-muted max-w-md truncate px-3 py-2.5">
                     {m.message.slice(0, 80)}

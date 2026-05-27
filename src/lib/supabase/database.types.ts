@@ -2426,8 +2426,11 @@ export type Database = {
           replied_at: string | null;
           status: string;
           user_agent: string | null;
+          visitor_company: string | null;
+          visitor_company_url: string | null;
           visitor_email: string;
-          visitor_name: string;
+          visitor_first_name: string | null;
+          visitor_last_name: string;
           visitor_phone: string | null;
         };
         Insert: {
@@ -2443,8 +2446,11 @@ export type Database = {
           replied_at?: string | null;
           status?: string;
           user_agent?: string | null;
+          visitor_company?: string | null;
+          visitor_company_url?: string | null;
           visitor_email: string;
-          visitor_name: string;
+          visitor_first_name?: string | null;
+          visitor_last_name: string;
           visitor_phone?: string | null;
         };
         Update: {
@@ -2460,8 +2466,11 @@ export type Database = {
           replied_at?: string | null;
           status?: string;
           user_agent?: string | null;
+          visitor_company?: string | null;
+          visitor_company_url?: string | null;
           visitor_email?: string;
-          visitor_name?: string;
+          visitor_first_name?: string | null;
+          visitor_last_name?: string;
           visitor_phone?: string | null;
         };
         Relationships: [

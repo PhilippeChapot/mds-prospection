@@ -74,10 +74,18 @@ async function checkRateLimit(ip: string | null): Promise<boolean> {
 // submitVisitorMessageAction (PUBLIC)
 // ---------------------------------------------------------------------------
 
+// P9.1-natif-bis : schema enrichi.
+//   - first_name + last_name separes (vs visitor_name unifie)
+//   - company REQUIS (CRM-friendly)
+//   - company_url optionnel, validee si fournie (URL avec ou sans protocole)
+//   - phone OBLIGATOIRE (min 6 chars)
 const submitSchema = z.object({
-  visitor_name: z.string().trim().min(2).max(120),
+  visitor_first_name: z.string().trim().min(2).max(60),
+  visitor_last_name: z.string().trim().min(2).max(60),
   visitor_email: z.string().trim().toLowerCase().email().max(180),
-  visitor_phone: z.string().trim().max(30).optional(),
+  visitor_company: z.string().trim().min(2).max(120),
+  visitor_company_url: z.string().trim().max(300).url().optional().or(z.literal('')),
+  visitor_phone: z.string().trim().min(6).max(30),
   message: z.string().trim().min(5).max(2000),
   page_url: z.string().trim().max(500).optional(),
   locale: z.enum(['fr', 'en']).default('fr'),
@@ -118,14 +126,20 @@ export async function submitVisitorMessageAction(
 
   const supabase = getSupabaseServiceClient();
 
+  const companyUrl =
+    data.visitor_company_url && data.visitor_company_url !== '' ? data.visitor_company_url : null;
+
   try {
     // 1. Insert visitor_message (status=new).
     const { data: row, error: insErr } = await supabase
       .from('visitor_messages')
       .insert({
-        visitor_name: data.visitor_name,
+        visitor_first_name: data.visitor_first_name,
+        visitor_last_name: data.visitor_last_name,
         visitor_email: data.visitor_email,
-        visitor_phone: data.visitor_phone ?? null,
+        visitor_phone: data.visitor_phone,
+        visitor_company: data.visitor_company,
+        visitor_company_url: companyUrl,
         message: data.message,
         page_url: data.page_url ?? null,
         locale: data.locale,
@@ -141,24 +155,22 @@ export async function submitVisitorMessageAction(
     }
     const messageId = row.id;
 
-    // 2. Lead prospect : dedup company + contact via les helpers landing
-    //    (recycle 100% de la logique P6.x.4-a). Le name de company =
-    //    domaine email (mieux que "Visiteur chat" pour le crm).
+    // 2. Lead prospect : dedup company + contact via les helpers landing.
+    //    P9.1-natif-bis : on a maintenant un vrai nom de societe + URL,
+    //    on les utilise pour creer un lead bien qualifie (dedup company
+    //    par domaine URL si fourni, sinon par domaine email).
     let prospectId: string | null = null;
     try {
-      const emailDomain = data.visitor_email.split('@')[1]?.toLowerCase() ?? '';
       const company = await findOrCreateCompanyForLanding({
-        name: emailDomain || data.visitor_name,
-        website: null,
+        name: data.visitor_company,
+        website: companyUrl,
         contactEmail: data.visitor_email,
       });
-      const [firstName, ...rest] = (data.visitor_name || 'Visiteur').split(/\s+/);
-      const lastName = rest.join(' ') || '—';
       const contact = await findOrCreateContactForLanding({
         email: data.visitor_email,
-        firstName,
-        lastName,
-        phone: data.visitor_phone ?? null,
+        firstName: data.visitor_first_name,
+        lastName: data.visitor_last_name,
+        phone: data.visitor_phone,
         companyId: company.id,
         language: data.locale === 'en' ? 'EN' : 'FR',
       });
@@ -212,9 +224,12 @@ export async function submitVisitorMessageAction(
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mediadays.solutions';
       const inboxUrl = `${appUrl}/admin/messages/${messageId}`;
       const tpl = renderAdminVisitorMessageNotification({
-        visitorName: data.visitor_name,
+        visitorFirstName: data.visitor_first_name,
+        visitorLastName: data.visitor_last_name,
         visitorEmail: data.visitor_email,
-        visitorPhone: data.visitor_phone ?? null,
+        visitorPhone: data.visitor_phone,
+        visitorCompany: data.visitor_company,
+        visitorCompanyUrl: companyUrl,
         message: data.message,
         pageUrl: data.page_url ?? null,
         inboxUrl,
@@ -263,7 +278,8 @@ export async function listVisitorMessagesAction(
   let query = supabase
     .from('visitor_messages')
     .select(
-      `id, visitor_name, visitor_email, visitor_phone, message, page_url, locale,
+      `id, visitor_first_name, visitor_last_name, visitor_email, visitor_phone,
+       visitor_company, visitor_company_url, message, page_url, locale,
        prospect_id, status, assigned_to_user_id, created_at, read_at, replied_at,
        prospect:prospects(company:companies(name)),
        assignee:users!visitor_messages_assigned_to_user_id_fkey(full_name)`,
@@ -277,8 +293,9 @@ export async function listVisitorMessagesAction(
   }
   if (input?.search && input.search.trim().length > 0) {
     const term = `%${input.search.trim()}%`;
+    // P9.1-natif-bis : search etendu first/last name + company.
     query = query.or(
-      `visitor_name.ilike.${term},visitor_email.ilike.${term},message.ilike.${term}`,
+      `visitor_first_name.ilike.${term},visitor_last_name.ilike.${term},visitor_email.ilike.${term},visitor_company.ilike.${term},message.ilike.${term}`,
     );
   }
 
@@ -293,9 +310,12 @@ export async function listVisitorMessagesAction(
     const assignee = pickFirst(r.assignee as unknown);
     return {
       id: r.id,
-      visitor_name: r.visitor_name,
+      visitor_first_name: r.visitor_first_name ?? null,
+      visitor_last_name: r.visitor_last_name,
       visitor_email: r.visitor_email,
       visitor_phone: r.visitor_phone,
+      visitor_company: r.visitor_company ?? null,
+      visitor_company_url: r.visitor_company_url ?? null,
       message: r.message,
       page_url: r.page_url,
       locale: (r.locale as 'fr' | 'en') ?? 'fr',
@@ -343,7 +363,8 @@ export async function getVisitorMessageAction({ id }: { id: string }): Promise<{
   const { data: row, error } = await supabase
     .from('visitor_messages')
     .select(
-      `id, visitor_name, visitor_email, visitor_phone, message, page_url, locale,
+      `id, visitor_first_name, visitor_last_name, visitor_email, visitor_phone,
+       visitor_company, visitor_company_url, message, page_url, locale,
        prospect_id, status, assigned_to_user_id, created_at, read_at, replied_at,
        prospect:prospects(company:companies(name)),
        assignee:users!visitor_messages_assigned_to_user_id_fkey(full_name)`,
@@ -395,9 +416,12 @@ export async function getVisitorMessageAction({ id }: { id: string }): Promise<{
 
   const message: VisitorMessageWithMeta = {
     id: row.id,
-    visitor_name: row.visitor_name,
+    visitor_first_name: row.visitor_first_name ?? null,
+    visitor_last_name: row.visitor_last_name,
     visitor_email: row.visitor_email,
     visitor_phone: row.visitor_phone,
+    visitor_company: row.visitor_company ?? null,
+    visitor_company_url: row.visitor_company_url ?? null,
     message: row.message,
     page_url: row.page_url,
     locale: (row.locale as 'fr' | 'en') ?? 'fr',
@@ -436,7 +460,7 @@ export async function replyToVisitorMessageAction(
   // Charger le message original (pour la citation dans l'email).
   const { data: original, error: origErr } = await supabase
     .from('visitor_messages')
-    .select('id, visitor_email, visitor_name, message, locale')
+    .select('id, visitor_email, visitor_first_name, visitor_last_name, message, locale')
     .eq('id', parsed.data.message_id)
     .maybeSingle();
   if (origErr || !original) {
@@ -457,13 +481,20 @@ export async function replyToVisitorMessageAction(
     return { ok: false, error: `Insert reply failed: ${replyErr?.message ?? 'unknown'}` };
   }
 
+  // P9.1-natif-bis : composition du nom (prefer first+last si dispo, sinon last seul).
+  const visitorDisplayName =
+    [original.visitor_first_name, original.visitor_last_name]
+      .filter((p): p is string => typeof p === 'string' && p.length > 0)
+      .join(' ')
+      .trim() || 'visiteur';
+
   // Envoyer l'email (best-effort : si Resend down, on garde la reply
   // cote DB pour pouvoir reessayer manuellement).
   let emailSent = false;
   let emailId: string | null = null;
   try {
     const tpl = renderVisitorReplyEmail({
-      visitorName: original.visitor_name,
+      visitorName: visitorDisplayName,
       replyText: parsed.data.reply_text,
       originalMessage: original.message,
       locale: (original.locale === 'en' ? 'en' : 'fr') as 'fr' | 'en',
@@ -471,7 +502,7 @@ export async function replyToVisitorMessageAction(
     });
     const result = await sendTransactionalEmailViaResend({
       to: original.visitor_email,
-      toName: original.visitor_name,
+      toName: visitorDisplayName,
       subject: tpl.subject,
       html: tpl.html,
       text: tpl.text,
