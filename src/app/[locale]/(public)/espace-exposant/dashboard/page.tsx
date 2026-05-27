@@ -1,16 +1,23 @@
 import { redirect } from 'next/navigation';
 import type { Locale } from 'next-intl';
+import { requireContactSession } from '@/lib/espace-exposant/session';
+import { detectUserProfile } from '@/lib/espace-exposant/detect-profile';
 import { DEFAULT_EXPOSANT_SECTION } from './_components/nav-items';
 
 /**
- * P5.x.17 — racine /espace-exposant/dashboard.
+ * P5.x.17 / P8.2 — racine /espace-exposant/dashboard.
  *
- * Redirige vers la section par defaut (Mon stand) qui sert de page
- * d'accueil avec la synthese inscription + booth + devis + payment.
+ * Dispatch intelligent selon profil contact :
+ *   - exposant / lead : redirect vers la section legacy (stand) — c'est
+ *     l'accueil historique avec synthese booth + devis + payment.
+ *   - contact simple  : redirect vers /profil (always-on, sinon le menu
+ *     est vide et l'utilisateur est perdu).
  *
- * V1.4 (futur) : une page recap "overview" pourrait remplacer ce
- * redirect avec des KPIs perso (stand attribue ?, devis signe ?,
- * X invites cliques ?).
+ * IMPORTANT (fix P8.2-redirect-loop) : ce fichier utilise
+ * `requireContactSession` (sans fallback redirect vers /dashboard) et
+ * surtout PAS `requireEspaceExposantSession` qui, lui, redirige vers
+ * /dashboard/profil quand il n'y a pas de prospect — ce qui ferait
+ * une boucle si on l'utilisait ici.
  */
 
 interface PageProps {
@@ -19,5 +26,11 @@ interface PageProps {
 
 export default async function EspaceExposantDashboardRootPage({ params }: PageProps) {
   const { locale } = await params;
-  redirect(`/${locale}/espace-exposant/dashboard/${DEFAULT_EXPOSANT_SECTION}`);
+
+  const session = await requireContactSession(locale);
+  const profile = await detectUserProfile(session.contactId);
+
+  const targetSection =
+    profile?.is_exposant || profile?.is_lead ? DEFAULT_EXPOSANT_SECTION : 'profil';
+  redirect(`/${locale}/espace-exposant/dashboard/${targetSection}`);
 }

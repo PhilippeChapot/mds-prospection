@@ -4,7 +4,8 @@ import { ArrowLeft, MessagesSquare } from 'lucide-react';
 import { setRequestLocale } from 'next-intl/server';
 import type { Locale } from 'next-intl';
 import { getConversationAction } from '@/lib/internal-messaging/actions';
-import { loadDashboardData } from '@/lib/espace-exposant/session';
+import { requireContactSession } from '@/lib/espace-exposant/session';
+import { detectUserProfile } from '@/lib/espace-exposant/detect-profile';
 import { ExposantConversationReplyForm } from './ExposantConversationReplyForm';
 import { cn } from '@/lib/utils';
 
@@ -20,13 +21,14 @@ export default async function EspaceExposantConversationPage({ params }: PagePro
   setRequestLocale(locale);
   const localeSafe = locale === 'en' ? 'en' : 'fr';
 
-  // Charge la session pour avoir le contact courant (auto-mark read se
-  // fait cote getConversationAction).
-  const dashboard = await loadDashboardData(localeSafe);
-  const myFullName = [dashboard.contact.first_name, dashboard.contact.last_name]
-    .filter(Boolean)
-    .join(' ')
-    .trim();
+  // P8.2-redirect-loop : on utilise requireContactSession + detectUserProfile
+  // (qui marche pour tout contact, exposant ou non) au lieu de
+  // loadDashboardData qui exigeait un prospect actif.
+  const session = await requireContactSession(localeSafe);
+  const profile = await detectUserProfile(session.contactId);
+  const myFullName = profile
+    ? [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim()
+    : '';
 
   const result = await getConversationAction({
     conversation_id: id,

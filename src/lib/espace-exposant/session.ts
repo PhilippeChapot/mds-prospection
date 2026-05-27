@@ -103,16 +103,20 @@ export async function requireEspaceExposantSession(
 ): Promise<{ prospectId: string }> {
   const session = await requireContactSession(locale);
   if (!session.prospectId) {
-    // P8.2 : contact simple sans prospect -> ne peut pas acceder aux
-    // pages exposant-only. Redirect vers dashboard (qui montrera juste
-    // profil + prefs + ressources + messages selon le menu dynamique).
+    // P8.2-redirect-loop : contact simple sans prospect -> redirect vers
+    // /dashboard/profil (page always-on, safe) au lieu de /dashboard racine.
+    // La racine /dashboard fait elle-meme un dispatch intelligent vers
+    // /dashboard/stand ou /dashboard/profil selon profil ; rediriger ici
+    // vers /dashboard creerait une boucle root->stand->root->stand pour
+    // un contact simple (stand utilise loadDashboardData qui appelle ce
+    // helper, qui re-rediriger vers root, qui redirige vers stand...).
     console.warn(
-      '%s no-prospect-for-contact contact=%s locale=%s — redirect to /espace-exposant/dashboard',
+      '%s no-prospect-for-contact contact=%s locale=%s — redirect to /dashboard/profil',
       LOG_PREFIX,
       session.contactId,
       locale,
     );
-    redirect(`/${locale}/espace-exposant/dashboard`);
+    redirect(`/${locale}/espace-exposant/dashboard/profil`);
   }
   return { prospectId: session.prospectId };
 }

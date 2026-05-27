@@ -61,7 +61,11 @@ function mockEnv() {
   }));
 
   vi.doMock('@/lib/espace-exposant/session', () => ({
-    requireEspaceExposantSession: vi.fn(async () => ({ prospectId: state.prospectId })),
+    // P8.2-redirect-loop : les actions utilisent maintenant requireContactSession.
+    requireContactSession: vi.fn(async () => ({
+      contactId: state.contactId,
+      prospectId: state.prospectId,
+    })),
   }));
 
   vi.doMock('@/lib/resend/client', () => ({

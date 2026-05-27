@@ -25,7 +25,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { requireAdminProfile, requireSuperAdmin } from '@/lib/supabase/auth-helpers';
-import { requireEspaceExposantSession } from '@/lib/espace-exposant/session';
+import { requireContactSession } from '@/lib/espace-exposant/session';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { LOCK_KEYS, PREF_KEYS, type ContactPreferencesRow } from './types';
 
@@ -449,17 +449,14 @@ export async function updateMyPreferencesAction(
 // ---------------------------------------------------------------------------
 
 async function resolveContactIdFromSession(locale: string): Promise<string> {
-  const { prospectId } = await requireEspaceExposantSession(locale);
-  const supabase = getSupabaseServiceClient();
-  const { data, error } = await supabase
-    .from('prospects')
-    .select('primary_contact_id')
-    .eq('id', prospectId)
-    .maybeSingle();
-  if (error || !data?.primary_contact_id) {
+  // P8.2-redirect-loop : on utilise requireContactSession (qui marche pour
+  // tout contact, exposant ou simple) au lieu de requireEspaceExposantSession
+  // qui aurait redirige vers /dashboard pour un contact simple sans prospect.
+  const session = await requireContactSession(locale);
+  if (!session.contactId) {
     throw new Error('Contact introuvable pour cette session.');
   }
-  return data.primary_contact_id;
+  return session.contactId;
 }
 
 async function assertContactOwnsRow(locale: string, contactId: string): Promise<boolean> {

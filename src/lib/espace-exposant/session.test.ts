@@ -39,6 +39,7 @@ vi.mock('next/navigation', () => ({
 
 // Mock JWT verify pour controller le resultat (valide/expired/invalid).
 let jwtBehavior: 'valid' | 'expired' | 'invalid' = 'valid';
+let jwtKind: 'prospect' | 'contact' = 'prospect';
 
 vi.mock('./jwt', async (orig) => {
   const actual = (await orig()) as typeof import('./jwt');
@@ -52,30 +53,42 @@ vi.mock('./jwt', async (orig) => {
         throw new actual.EspaceExposantTokenError('invalid');
       }
       return {
-        prospectId: 'prospect-uuid-1',
+        prospectId: jwtKind === 'contact' ? 'contact-uuid-1' : 'prospect-uuid-1',
         type: 'session' as const,
         jti: 'jti-1',
         expiresAt: new Date(Date.now() + 1_000_000),
-        kind: 'prospect' as const,
+        kind: jwtKind,
       };
     }),
   };
 });
 
-// P8.2 : requireContactSession fait maintenant un lookup DB pour resoudre
-// primary_contact_id (kind=prospect) ou prospect actif (kind=contact).
-// On mocke supabase service pour eviter de requerir env vars en test.
+// P8.2 : requireContactSession fait un lookup DB pour resoudre prospect
+// (kind=prospect) ou contact (kind=contact). Mock contextualise par table.
+let prospectLookupResult: { id: string; primary_contact_id: string | null } | null = {
+  id: 'prospect-uuid-1',
+  primary_contact_id: 'contact-uuid-1',
+};
+let contactLookupResult: { id: string; prospects: Array<{ id: string; status: string }> } | null = {
+  id: 'contact-uuid-1',
+  prospects: [],
+};
+
 vi.mock('@/lib/supabase/service', () => ({
   getSupabaseServiceClient: () => ({
-    from: (_table: string) => {
+    from: (table: string) => {
       const chain: Record<string, unknown> = {
         select: () => chain,
         eq: () => chain,
-        maybeSingle: () =>
-          Promise.resolve({
-            data: { id: 'prospect-uuid-1', primary_contact_id: 'contact-uuid-1' },
-            error: null,
-          }),
+        maybeSingle: () => {
+          if (table === 'prospects') {
+            return Promise.resolve({ data: prospectLookupResult, error: null });
+          }
+          if (table === 'contacts') {
+            return Promise.resolve({ data: contactLookupResult, error: null });
+          }
+          return Promise.resolve({ data: null, error: null });
+        },
       };
       return chain;
     },
@@ -85,6 +98,9 @@ vi.mock('@/lib/supabase/service', () => ({
 beforeEach(() => {
   cookieValue = 'fake-token';
   jwtBehavior = 'valid';
+  jwtKind = 'prospect';
+  prospectLookupResult = { id: 'prospect-uuid-1', primary_contact_id: 'contact-uuid-1' };
+  contactLookupResult = { id: 'contact-uuid-1', prospects: [] };
   redirectSpy.mockClear();
 });
 
@@ -122,5 +138,43 @@ describe('requireEspaceExposantSession (P5.x.17-bis)', () => {
     const { requireEspaceExposantSession } = await import('./session');
     await expect(requireEspaceExposantSession('en')).rejects.toThrow('NEXT_REDIRECT');
     expect(redirectSpy).toHaveBeenCalledWith('/en/espace-exposant?error=expired');
+  });
+});
+
+// P8.2-redirect-loop : tests dedies anti-boucle.
+describe('requireContactSession (P8.2-redirect-loop)', () => {
+  it('JWT kind=prospect valide + primary_contact resolu -> ne redirige pas', async () => {
+    // Le mock supabase ci-dessus retourne primary_contact_id='contact-uuid-1'.
+    const { requireContactSession } = await import('./session');
+    const result = await requireContactSession('fr');
+    expect(result.contactId).toBe('contact-uuid-1');
+    expect(result.prospectId).toBe('prospect-uuid-1');
+    expect(redirectSpy).not.toHaveBeenCalled();
+  });
+
+  it('requireEspaceExposantSession sans prospect -> redirect vers /dashboard/profil (PAS /dashboard, anti-boucle)', async () => {
+    // Scenario contact simple P8.2 : JWT kind='contact' (sub=contactId),
+    // aucun prospect actif lie -> session.prospectId est null cote helper
+    // -> requireEspaceExposantSession doit rediriger vers /dashboard/profil
+    // (safe), PAS /dashboard (qui creerait une boucle root->stand->root->
+    // stand via loadDashboardData).
+    jwtKind = 'contact';
+    contactLookupResult = { id: 'contact-uuid-1', prospects: [] }; // contact simple
+    const { requireEspaceExposantSession } = await import('./session');
+    await expect(requireEspaceExposantSession('fr')).rejects.toThrow('NEXT_REDIRECT');
+    expect(redirectSpy).toHaveBeenCalledWith('/fr/espace-exposant/dashboard/profil');
+    expect(redirectSpy).not.toHaveBeenCalledWith('/fr/espace-exposant/dashboard');
+  });
+
+  it('requireContactSession kind=contact + sans prospect -> ne redirige pas (always-on)', async () => {
+    // Contact simple : il doit pouvoir charger /dashboard et /dashboard/profil
+    // sans aucun redirect. C'est la garantie anti-boucle.
+    jwtKind = 'contact';
+    contactLookupResult = { id: 'contact-uuid-1', prospects: [] };
+    const { requireContactSession } = await import('./session');
+    const result = await requireContactSession('fr');
+    expect(result.contactId).toBe('contact-uuid-1');
+    expect(result.prospectId).toBeNull();
+    expect(redirectSpy).not.toHaveBeenCalled();
   });
 });

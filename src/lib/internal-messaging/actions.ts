@@ -22,7 +22,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
-import { requireEspaceExposantSession } from '@/lib/espace-exposant/session';
+import { requireContactSession } from '@/lib/espace-exposant/session';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
 import { renderInternalMessageNotification } from '@/lib/resend/templates/internal-message-notification';
@@ -59,34 +59,27 @@ async function resolveStaffViewer(): Promise<Viewer> {
 }
 
 async function resolveContactViewer(locale: string): Promise<Viewer> {
-  const { prospectId } = await requireEspaceExposantSession(locale);
-  const supabase = getSupabaseServiceClient();
-  const { data: prospect, error } = await supabase
-    .from('prospects')
-    .select(
-      'primary_contact_id, contact:contacts!primary_contact_id(id, email, first_name, last_name)',
-    )
-    .eq('id', prospectId)
-    .maybeSingle();
-  if (error || !prospect?.primary_contact_id) {
+  // P8.2-redirect-loop : on utilise requireContactSession (universel,
+  // marche pour tout contact) au lieu de requireEspaceExposantSession
+  // qui exigeait un prospect actif.
+  const session = await requireContactSession(locale);
+  if (!session.contactId) {
     throw new Error(
       'Impossible de retrouver votre contact dans la base. Reconnectez-vous depuis votre lien magique.',
     );
   }
-  type ContactRel = {
-    id: string;
-    email: string;
-    first_name: string | null;
-    last_name: string | null;
-  };
-  const c: ContactRel | null = Array.isArray(prospect.contact)
-    ? ((prospect.contact[0] as ContactRel | undefined) ?? null)
-    : (prospect.contact as unknown as ContactRel | null);
-  if (!c) {
+  const supabase = getSupabaseServiceClient();
+  const { data: contact } = await supabase
+    .from('contacts')
+    .select('id, email, first_name, last_name')
+    .eq('id', session.contactId)
+    .maybeSingle();
+  if (!contact) {
     throw new Error('Contact non trouve.');
   }
-  const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ').trim() || c.email;
-  return { kind: 'contact', id: c.id, full_name: fullName, email: c.email };
+  const fullName =
+    [contact.first_name, contact.last_name].filter(Boolean).join(' ').trim() || contact.email;
+  return { kind: 'contact', id: contact.id, full_name: fullName, email: contact.email };
 }
 
 // ---------------------------------------------------------------------------
