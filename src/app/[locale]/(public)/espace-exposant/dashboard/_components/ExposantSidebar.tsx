@@ -6,7 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { EXPOSANT_NAV_ITEMS, filterNavItemsForProfile } from './nav-items';
 import { LogoutButton } from './LogoutButton';
-import type { ContactProfile } from '@/lib/espace-exposant/detect-profile';
+import { getSpaceTitle, type ContactProfile } from '@/lib/espace-exposant/detect-profile';
 
 /**
  * P5.x.17 — Sidebar de l'Espace Exposant V1.3.
@@ -36,6 +36,9 @@ export function ExposantSidebar({ onNavigate, profile }: Props) {
 
   const baseHref = `/${locale}/espace-exposant/dashboard`;
   const visibleItems = filterNavItemsForProfile(EXPOSANT_NAV_ITEMS, profile);
+  // P8.2-label-fix : label adaptatif centralise (coherent avec le titre
+  // central du dashboard et le SheetTitle mobile a11y).
+  const spaceTitle = getSpaceTitle(profile, locale === 'en' ? 'en' : 'fr');
 
   return (
     <div className="flex h-full flex-col gap-4 p-3">
@@ -43,7 +46,7 @@ export function ExposantSidebar({ onNavigate, profile }: Props) {
         <p className="text-md-magenta text-[10px] font-bold tracking-widest uppercase">
           MediaDays Solutions 2026
         </p>
-        <h2 className="text-md-text mt-0.5 text-base font-semibold">{t('sectionTitle')}</h2>
+        <h2 className="text-md-text mt-0.5 text-base font-semibold">{spaceTitle}</h2>
       </div>
 
       <nav className="flex-1">

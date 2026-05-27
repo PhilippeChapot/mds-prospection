@@ -1,7 +1,7 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import type { Locale } from 'next-intl';
 import { requireContactSession } from '@/lib/espace-exposant/session';
-import { detectUserProfile } from '@/lib/espace-exposant/detect-profile';
+import { detectUserProfile, getSpaceTitle } from '@/lib/espace-exposant/detect-profile';
 import { ExposantSidebar } from './_components/ExposantSidebar';
 import { ExposantMobileMenu } from './_components/ExposantMobileMenu';
 
@@ -39,18 +39,10 @@ export default async function EspaceExposantDashboardLayout({ children, params }
 
   const t = await getTranslations({ locale, namespace: 'espaceExposant.dashboard' });
 
-  // Titre adaptatif selon profil.
-  const spaceTitle = profile?.is_exposant
-    ? locale === 'en'
-      ? 'Exhibitor area'
-      : 'Espace exposant'
-    : profile?.is_affiliate
-      ? locale === 'en'
-        ? 'Affiliate area'
-        : 'Espace affilié'
-      : locale === 'en'
-        ? 'My MediaDays space'
-        : 'Mon espace MediaDays';
+  // P8.2-label-fix : titre adaptatif centralise dans getSpaceTitle pour
+  // etre coherent avec ExposantSidebar h2 + SheetTitle sr-only mobile.
+  const localeSafe = locale === 'en' ? 'en' : 'fr';
+  const spaceTitle = getSpaceTitle(profile, localeSafe);
 
   return (
     <div className="bg-md-bg flex min-h-svh flex-col">

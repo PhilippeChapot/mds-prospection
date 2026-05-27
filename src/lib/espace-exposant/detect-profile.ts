@@ -1,5 +1,5 @@
 /**
- * P8.2 — helper detectUserProfile.
+ * P8.2 — helper detectUserProfile + getSpaceTitle.
  *
  * Pour un contactId donne, calcule les flags qui pilotent le menu
  * dynamique du dashboard espace contact. Resultat consomme par le
@@ -18,9 +18,34 @@
  *
  * Best-effort : si une query echoue, le flag est false. Le contact peut
  * toujours acceder a profil + prefs.
+ *
+ * P8.2-label-fix : `getSpaceTitle(profile, locale)` retourne le label
+ * adaptatif (FR/EN) consomme par 3 endroits :
+ *   1. Titre central layout dashboard (h1).
+ *   2. Header sidebar desktop (ExposantSidebar h2).
+ *   3. SheetTitle sr-only mobile drawer (a11y).
+ * Centraliser garantit la coherence — auparavant le titre central etait
+ * adaptatif mais la sidebar restait figee a 'Espace Exposant'.
  */
 
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+
+/**
+ * Label adaptatif de l'espace contact. Logique cohérente avec le titre
+ * central du dashboard (P8.2 layout.tsx).
+ */
+export function getSpaceTitle(
+  profile: { is_exposant: boolean; is_affiliate: boolean } | null,
+  locale: 'fr' | 'en',
+): string {
+  if (profile?.is_exposant) {
+    return locale === 'en' ? 'Exhibitor area' : 'Espace exposant';
+  }
+  if (profile?.is_affiliate) {
+    return locale === 'en' ? 'Affiliate area' : 'Espace affilié';
+  }
+  return locale === 'en' ? 'My MediaDays space' : 'Mon espace MediaDays';
+}
 
 export interface ContactProfile {
   contact_id: string;

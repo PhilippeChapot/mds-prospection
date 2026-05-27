@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ExposantSidebar } from './ExposantSidebar';
-import type { ContactProfile } from '@/lib/espace-exposant/detect-profile';
+import { getSpaceTitle, type ContactProfile } from '@/lib/espace-exposant/detect-profile';
 
 /**
  * P5.x.17 — burger menu mobile pour l'Espace Exposant V1.3.
@@ -17,6 +17,9 @@ import type { ContactProfile } from '@/lib/espace-exposant/detect-profile';
 export function ExposantMobileMenu({ profile }: { profile: ContactProfile | null }) {
   const [open, setOpen] = useState(false);
   const t = useTranslations('espaceExposant.nav');
+  const locale = useLocale();
+  // P8.2-label-fix : meme label adaptatif que la sidebar/h1 dashboard.
+  const spaceTitle = getSpaceTitle(profile, locale === 'en' ? 'en' : 'fr');
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -32,7 +35,7 @@ export function ExposantMobileMenu({ profile }: { profile: ContactProfile | null
       <SheetContent side="left" className="relative w-72 p-0">
         {/* SheetTitle requis par Radix pour l'a11y -- on le rend visuellement
             invisible (le titre est deja dans la sidebar) avec sr-only. */}
-        <SheetTitle className="sr-only">{t('sectionTitle')}</SheetTitle>
+        <SheetTitle className="sr-only">{spaceTitle}</SheetTitle>
         {/* P9.1-natif-mobile : croix de fermeture top-right (tap-target ≥ 44px). */}
         <SheetClose
           aria-label={t('closeMenu')}

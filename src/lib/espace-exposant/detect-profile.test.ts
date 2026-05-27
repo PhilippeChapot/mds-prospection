@@ -215,3 +215,44 @@ describe('detectUserProfile (P8.2)', () => {
     expect(r).toBeNull();
   });
 });
+
+describe('getSpaceTitle (P8.2-label-fix)', () => {
+  it('exposant FR -> "Espace exposant"', async () => {
+    const { getSpaceTitle } = await import('./detect-profile');
+    expect(getSpaceTitle({ is_exposant: true, is_affiliate: false }, 'fr')).toBe('Espace exposant');
+  });
+
+  it('exposant EN -> "Exhibitor area"', async () => {
+    const { getSpaceTitle } = await import('./detect-profile');
+    expect(getSpaceTitle({ is_exposant: true, is_affiliate: false }, 'en')).toBe('Exhibitor area');
+  });
+
+  it('affilie (et pas exposant) FR -> "Espace affilié"', async () => {
+    const { getSpaceTitle } = await import('./detect-profile');
+    expect(getSpaceTitle({ is_exposant: false, is_affiliate: true }, 'fr')).toBe('Espace affilié');
+  });
+
+  it('exposant + affilie : exposant prioritaire', async () => {
+    const { getSpaceTitle } = await import('./detect-profile');
+    expect(getSpaceTitle({ is_exposant: true, is_affiliate: true }, 'fr')).toBe('Espace exposant');
+  });
+
+  it('contact simple FR -> "Mon espace MediaDays"', async () => {
+    const { getSpaceTitle } = await import('./detect-profile');
+    expect(getSpaceTitle({ is_exposant: false, is_affiliate: false }, 'fr')).toBe(
+      'Mon espace MediaDays',
+    );
+  });
+
+  it('contact simple EN -> "My MediaDays space"', async () => {
+    const { getSpaceTitle } = await import('./detect-profile');
+    expect(getSpaceTitle({ is_exposant: false, is_affiliate: false }, 'en')).toBe(
+      'My MediaDays space',
+    );
+  });
+
+  it('profile null (cas edge) -> contact simple label', async () => {
+    const { getSpaceTitle } = await import('./detect-profile');
+    expect(getSpaceTitle(null, 'fr')).toBe('Mon espace MediaDays');
+  });
+});
