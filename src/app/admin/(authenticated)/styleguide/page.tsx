@@ -1,5 +1,8 @@
+import { redirect } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -45,7 +48,12 @@ const LOGO_FILES = [
   { src: '/brand/PRS-LogoBleu2026.svg', label: 'PRS-LogoBleu2026.svg', dark: false },
 ];
 
-export default function StyleguidePage() {
+export default async function StyleguidePage() {
+  // P5.x.1-quater (bug #2) — defense in depth : admin+ only.
+  const profile = await requireAdminProfile();
+  if (!hasAdminAccess(profile.role)) {
+    redirect('/admin?error=admin_only');
+  }
   return (
     <div className="mx-auto max-w-6xl space-y-12">
       <header className="space-y-3">

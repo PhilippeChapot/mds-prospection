@@ -1,7 +1,10 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { listAffiliatesWithStats } from '@/lib/affiliates/queries';
+import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 export const metadata = { title: 'Affilies' };
 export const dynamic = 'force-dynamic';
@@ -14,6 +17,11 @@ const fmtEur = (eur: number) =>
   }).format(eur);
 
 export default async function AffiliatesPage() {
+  // P5.x.1-quater (bug #2) — defense in depth : affilies = admin+ only.
+  const profile = await requireAdminProfile();
+  if (!hasAdminAccess(profile.role)) {
+    redirect('/admin?error=admin_only');
+  }
   const affiliates = await listAffiliatesWithStats();
   const active = affiliates.filter((a) => a.isActive);
   const archived = affiliates.filter((a) => !a.isActive);

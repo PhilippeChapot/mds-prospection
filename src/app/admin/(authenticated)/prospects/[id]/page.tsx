@@ -25,7 +25,8 @@ import { detectIsPremium, type QuoteItem } from '@/lib/admin/prospects/quote-cal
 import { PACK_LABEL } from '@/lib/supabase/queries';
 import type { PoleCode } from '@/lib/design-tokens';
 import type { Database } from '@/lib/supabase/database.types';
-import { hasAdminAccess } from '@/lib/auth/role-helpers';
+import { hasAdminAccess, isSalesOnly } from '@/lib/auth/role-helpers';
+import { ProspectForbiddenPage } from '@/components/admin/prospects/ProspectForbiddenPage';
 
 export const metadata = { title: 'Fiche prospect' };
 
@@ -103,6 +104,19 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
   const contact = pickFirst(prospect.contact);
   const owner = pickFirst(prospect.owner);
   const pole = pickFirst(company?.pole ?? null);
+
+  // P5.x.1-quater (bug #3) — un Sales qui ouvre une fiche d'un prospect
+  // qu'il ne possede pas voit une page d'explication (pas un 404 brutal).
+  // Les admin/super_admin voient tout (gestion + supervision).
+  if (isSalesOnly(profile.role) && prospect.owner_id && prospect.owner_id !== profile.id) {
+    return (
+      <ProspectForbiddenPage
+        companyName={company?.name ?? 'Société inconnue'}
+        ownerFullName={owner?.full_name ?? null}
+        ownerEmail={owner?.email ?? null}
+      />
+    );
+  }
 
   // Activites
   const { data: activitiesData } = await supabase

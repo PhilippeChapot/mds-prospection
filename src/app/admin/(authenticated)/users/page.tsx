@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
-import { hasAdminAccess } from '@/lib/auth/role-helpers';
+import { isSuperAdmin } from '@/lib/auth/role-helpers';
 import { listUsers, USER_ROLES, type UserRole } from '@/lib/admin/users/queries';
 import { UsersClient } from './UsersClient';
 
@@ -18,8 +18,10 @@ type SearchParams = Promise<{
 
 export default async function UsersPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireAdminProfile();
-  if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
-    redirect('/admin?error=admin_only');
+  // P5.x.1-quater (bug #2) — gestion users reservee aux super_admin
+  // (sales + admin tapant l'URL en direct = redirect avec message).
+  if (!isSuperAdmin(profile.role)) {
+    redirect('/admin?error=super_admin_only');
   }
 
   const params = await searchParams;

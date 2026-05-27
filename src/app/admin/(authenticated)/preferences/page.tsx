@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function PreferencesPage() {
   const profile = await requireAdminProfile();
-  if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
+  // P5.x.1-quater (bug #2) — reglages globaux : admin+ uniquement, sales redirige.
+  if (!hasAdminAccess(profile.role)) {
     redirect('/admin?error=admin_only');
   }
 

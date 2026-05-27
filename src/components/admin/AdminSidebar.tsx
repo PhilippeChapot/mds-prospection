@@ -4,21 +4,28 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ADMIN_NAV_SECTIONS, type AdminNavItem } from './nav-config';
+import { ADMIN_NAV_SECTIONS, filterNavSectionsForRole, type AdminNavItem } from './nav-config';
+import type { UserRole } from '@/lib/supabase/auth-helpers';
 
 /**
  * P6.x-mobile-burger : `AdminSidebar` rend uniquement le contenu interne
  * (sans `<aside>` ni `hidden md:flex`). Le wrapper desktop est applique par
  * `(authenticated)/layout.tsx` ; le drawer mobile (`AdminMobileMenu`) reutilise
  * le meme contenu et passe `onNavigate` pour fermer le Sheet apres un clic.
+ *
+ * P5.x.1-quater (bug #2) : `currentUserRole` permet de filtrer les items
+ * sidebar selon le role (Sales voit 8 items, admin/super_admin voient tout).
  */
 interface Props {
   /** Callback optionnel apres un clic sur un item (ferme le drawer mobile). */
   onNavigate?: () => void;
+  /** Role du user courant pour filtrer les items (P5.x.1-quater). */
+  currentUserRole: UserRole;
 }
 
-export function AdminSidebar({ onNavigate }: Props = {}) {
+export function AdminSidebar({ onNavigate, currentUserRole }: Props) {
   const pathname = usePathname();
+  const sections = filterNavSectionsForRole(ADMIN_NAV_SECTIONS, currentUserRole);
 
   return (
     <div className="flex h-full flex-col gap-4 p-3">
@@ -35,7 +42,7 @@ export function AdminSidebar({ onNavigate }: Props = {}) {
       </Link>
 
       <nav className="space-y-4">
-        {ADMIN_NAV_SECTIONS.map((section) => (
+        {sections.map((section) => (
           <div key={section.title}>
             <div className="text-md-text-muted px-2 pb-1.5 text-[10px] font-bold tracking-widest uppercase">
               {section.title}

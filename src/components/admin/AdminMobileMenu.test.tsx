@@ -20,7 +20,7 @@ vi.mock('next/navigation', () => ({
 
 describe('AdminMobileMenu (P6.x-mobile-burger)', () => {
   it("rend un bouton burger 'Ouvrir le menu' (md:hidden = seulement < 768px)", () => {
-    render(<AdminMobileMenu />);
+    render(<AdminMobileMenu currentUserRole="super_admin" />);
     const burger = screen.getByRole('button', { name: 'Ouvrir le menu' });
     expect(burger).toBeInTheDocument();
     // Le burger doit etre invisible >= md (utilitaire Tailwind md:hidden)
@@ -28,7 +28,7 @@ describe('AdminMobileMenu (P6.x-mobile-burger)', () => {
   });
 
   it('click burger ouvre le Sheet avec les sections de navigation admin', () => {
-    render(<AdminMobileMenu />);
+    render(<AdminMobileMenu currentUserRole="super_admin" />);
     // Avant clic : pas de Sheet contenu rendu (les sections ne sont pas visibles)
     expect(screen.queryByText('Prospects')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' }));
@@ -40,7 +40,7 @@ describe('AdminMobileMenu (P6.x-mobile-burger)', () => {
   });
 
   it('click sur un item du drawer ferme le Sheet (onNavigate -> setOpen false)', () => {
-    render(<AdminMobileMenu />);
+    render(<AdminMobileMenu currentUserRole="super_admin" />);
     fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' }));
     // Le Sheet est ouvert (items visibles)
     expect(screen.getByText('Prospects')).toBeInTheDocument();
@@ -52,7 +52,7 @@ describe('AdminMobileMenu (P6.x-mobile-burger)', () => {
   });
 
   it('P6.x.3-bis — SheetContent ouvert : overflow-y-auto + max-h-dvh (scroll mobile OK)', () => {
-    render(<AdminMobileMenu />);
+    render(<AdminMobileMenu currentUserRole="super_admin" />);
     fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' }));
     // Le SheetContent radix expose data-slot="sheet-content" (cf. sheet.tsx).
     const sheetContent = document.querySelector('[data-slot="sheet-content"]');

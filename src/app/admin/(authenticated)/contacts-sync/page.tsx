@@ -8,6 +8,7 @@
  * Logs structurés côté server actions, retour toast côté client.
  */
 
+import { redirect } from 'next/navigation';
 import { Mail, ArrowRight, ArrowLeft, Search } from 'lucide-react';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -20,6 +21,10 @@ export const metadata = { title: 'Sync Brevo — Contacts' };
 
 export default async function ContactsSyncPage() {
   const profile = await requireAdminProfile();
+  // P5.x.1-quater (bug #2) — sync Brevo : admin+ uniquement.
+  if (!hasAdminAccess(profile.role)) {
+    redirect('/admin?error=admin_only');
+  }
   const supabase = await createSupabaseServerClient();
 
   const [{ count: total }, { count: synced }, { count: unsynced }, orphansWithDomain] =

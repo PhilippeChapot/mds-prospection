@@ -1,7 +1,17 @@
 /**
  * Configuration de la navigation admin (sidebar) — SPEC §5.1.
  * `enabled: false` = item visible mais grise (route a venir en P2-P5).
+ *
+ * P5.x.1-quater (bug #2) — ajout de `roles_allowed?: UserRole[]` :
+ *   - absent  => visible pour tous les roles admin (super_admin, admin, sales)
+ *   - present => visible UNIQUEMENT pour les roles listes
+ *
+ * Le filtre est applique cote client par `AdminSidebar` (cf. helper
+ * `filterNavSectionsForRole` ci-dessous). La defense-in-depth cote serveur
+ * vit dans chaque page (requireSuperAdmin / hasAdminAccess + redirect).
  */
+
+import type { UserRole } from '@/lib/supabase/auth-helpers';
 
 export type AdminNavItem = {
   href: string;
@@ -10,12 +20,18 @@ export type AdminNavItem = {
   enabled: boolean;
   phase?: 'P2' | 'P3' | 'P4' | 'P5';
   badge?: string;
+  /** Si present, item visible uniquement pour ces roles. */
+  roles_allowed?: readonly UserRole[];
 };
 
 export type AdminNavSection = {
   title: string;
   items: AdminNavItem[];
 };
+
+// Roles helpers — references symboliques pour eviter les typos.
+const ADMIN_PLUS: readonly UserRole[] = ['super_admin', 'admin'] as const;
+const SUPER_ONLY: readonly UserRole[] = ['super_admin'] as const;
 
 export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   {
@@ -37,6 +53,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         label: 'Sync Brevo',
         emoji: '📬',
         enabled: true,
+        roles_allowed: ADMIN_PLUS,
       },
     ],
   },
@@ -46,7 +63,13 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: '/admin/emplacements', label: 'Emplacements', emoji: '🪑', enabled: true },
       // P6.x.3-bis : l'entree "Plan Canva (P2)" retiree -- le toggle Plan
       // visuel est integre directement dans /admin/emplacements (P6.x.3).
-      { href: '/admin/tarifs', label: 'Tarifs', emoji: '💰', enabled: true },
+      {
+        href: '/admin/tarifs',
+        label: 'Tarifs',
+        emoji: '💰',
+        enabled: true,
+        roles_allowed: ADMIN_PLUS,
+      },
       {
         href: '/admin/sellsy-products',
         label: 'Catalogue Sellsy',
@@ -58,39 +81,119 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   {
     title: 'Croissance',
     items: [
-      { href: '/admin/affiliates', label: 'Affilies', emoji: '🤝', enabled: true },
-      { href: '/admin/affiliate-claims', label: 'Claims affiliés', emoji: '🔖', enabled: true },
+      {
+        href: '/admin/affiliates',
+        label: 'Affilies',
+        emoji: '🤝',
+        enabled: true,
+        roles_allowed: ADMIN_PLUS,
+      },
+      {
+        href: '/admin/affiliate-claims',
+        label: 'Claims affiliés',
+        emoji: '🔖',
+        enabled: true,
+        roles_allowed: ADMIN_PLUS,
+      },
       {
         href: '/admin/exhibitors-profiles',
         label: 'Profils partenaires',
         emoji: '📋',
         enabled: false,
         phase: 'P5',
+        roles_allowed: ADMIN_PLUS,
       },
       {
         href: '/admin/exhibitor-resources',
         label: 'Ressources',
         emoji: '📚',
         enabled: true,
+        roles_allowed: ADMIN_PLUS,
       },
     ],
   },
   {
     title: 'Reglages',
     items: [
-      { href: '/admin/preferences', label: 'Préférences', emoji: '⚙️', enabled: true },
-      { href: '/admin/seasons', label: 'Saisons', emoji: '🗓️', enabled: false, phase: 'P5' },
-      { href: '/admin/users', label: 'Utilisateurs', emoji: '👤', enabled: true },
-      { href: '/admin/sync-logs', label: 'Logs sync', emoji: '🔄', enabled: true },
-      { href: '/admin/audit-log', label: 'Audit log', emoji: '📜', enabled: true },
-      { href: '/admin/mcp-tokens', label: 'Tokens MCP', emoji: '🔌', enabled: false, phase: 'P5' },
+      {
+        href: '/admin/preferences',
+        label: 'Préférences',
+        emoji: '⚙️',
+        enabled: true,
+        roles_allowed: ADMIN_PLUS,
+      },
+      {
+        href: '/admin/seasons',
+        label: 'Saisons',
+        emoji: '🗓️',
+        enabled: false,
+        phase: 'P5',
+        roles_allowed: ADMIN_PLUS,
+      },
+      {
+        href: '/admin/users',
+        label: 'Utilisateurs',
+        emoji: '👤',
+        enabled: true,
+        roles_allowed: SUPER_ONLY,
+      },
+      {
+        href: '/admin/sync-logs',
+        label: 'Logs sync',
+        emoji: '🔄',
+        enabled: true,
+        roles_allowed: ADMIN_PLUS,
+      },
+      {
+        href: '/admin/audit-log',
+        label: 'Audit log',
+        emoji: '📜',
+        enabled: true,
+        roles_allowed: ADMIN_PLUS,
+      },
+      {
+        href: '/admin/mcp-tokens',
+        label: 'Tokens MCP',
+        emoji: '🔌',
+        enabled: false,
+        phase: 'P5',
+        roles_allowed: SUPER_ONLY,
+      },
     ],
   },
   {
     title: 'Dev',
-    items: [{ href: '/admin/styleguide', label: 'Styleguide', emoji: '🎨', enabled: true }],
+    items: [
+      {
+        href: '/admin/styleguide',
+        label: 'Styleguide',
+        emoji: '🎨',
+        enabled: true,
+        roles_allowed: ADMIN_PLUS,
+      },
+    ],
   },
 ];
+
+/**
+ * P5.x.1-quater (bug #2) — filtre les sections + items selon le role courant.
+ *
+ * Comportement :
+ *   - item sans `roles_allowed` => visible pour tous les roles admin.
+ *   - item avec `roles_allowed` => visible UNIQUEMENT si role ∈ roles_allowed.
+ *   - section dont tous les items sont filtres => section retiree.
+ */
+export function filterNavSectionsForRole(
+  sections: AdminNavSection[],
+  role: UserRole,
+): AdminNavSection[] {
+  return sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((it) => !it.roles_allowed || it.roles_allowed.includes(role)),
+    }))
+    .filter((section) => section.items.length > 0);
+}
 
 /**
  * Lookup label par href (pour le breadcrumb).

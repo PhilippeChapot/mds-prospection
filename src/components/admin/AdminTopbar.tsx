@@ -4,6 +4,7 @@ import { AdminMobileMenu } from './AdminMobileMenu';
 import { Breadcrumb } from './Breadcrumb';
 import { SeasonSwitcher } from './SeasonSwitcher';
 import { UserMenu } from './UserMenu';
+import type { UserRole } from '@/lib/supabase/auth-helpers';
 
 export function AdminTopbar({
   fullName,
@@ -12,13 +13,13 @@ export function AdminTopbar({
 }: {
   fullName: string | null;
   email: string;
-  role: string;
+  role: UserRole;
 }) {
   return (
     <header className="bg-md-blue-deep flex h-14 items-center justify-between gap-4 px-4 shadow-md sm:px-6">
       <div className="flex items-center gap-2 sm:gap-4">
         {/* P6.x-mobile-burger : burger trigger (visible < md uniquement). */}
-        <AdminMobileMenu />
+        <AdminMobileMenu currentUserRole={role} />
         <Link href="/admin" className="flex items-center" aria-label="Retour au dashboard">
           <HeaderLogo category="admin" theme="dark" size={26} />
         </Link>

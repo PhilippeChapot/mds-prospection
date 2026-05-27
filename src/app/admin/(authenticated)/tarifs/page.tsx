@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { Banknote, ExternalLink, Pencil, Search, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import {
   listProductsWithEditorial,
   getTarifsCounters,
@@ -42,7 +44,11 @@ function buildHref(base: string, params: Record<string, string | undefined>): st
 }
 
 export default async function TarifsPage({ searchParams }: { searchParams: SearchParams }) {
-  await requireAdminProfile();
+  // P5.x.1-quater (bug #2) — defense in depth : tarifs = admin+ only.
+  const profile = await requireAdminProfile();
+  if (!hasAdminAccess(profile.role)) {
+    redirect('/admin?error=admin_only');
+  }
   const params = await searchParams;
 
   const q = params.q?.trim() ?? '';

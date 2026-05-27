@@ -1,10 +1,18 @@
+import { redirect } from 'next/navigation';
 import { listResourcesAction } from '@/lib/exhibitor-resources/actions';
+import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
+import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import { ExhibitorResourcesClient } from './ExhibitorResourcesClient';
 
 export const metadata = { title: 'Ressources exposant' };
 export const dynamic = 'force-dynamic';
 
 export default async function ExhibitorResourcesPage() {
+  // P5.x.1-quater (bug #2) — defense in depth : admin+ only.
+  const profile = await requireAdminProfile();
+  if (!hasAdminAccess(profile.role)) {
+    redirect('/admin?error=admin_only');
+  }
   const result = await listResourcesAction();
   const resources = result.ok ? result.data : [];
   const errorMessage = result.ok ? null : result.error;

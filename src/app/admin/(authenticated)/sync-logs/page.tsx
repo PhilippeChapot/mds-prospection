@@ -43,7 +43,8 @@ function buildHref(params: Record<string, string | undefined>): string {
 
 export default async function SyncLogsPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireAdminProfile();
-  if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
+  // P5.x.1-quater (bug #2) — logs sync : admin+ uniquement.
+  if (!hasAdminAccess(profile.role)) {
     redirect('/admin?error=admin_only');
   }
 

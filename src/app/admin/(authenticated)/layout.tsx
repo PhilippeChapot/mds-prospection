@@ -56,14 +56,18 @@ export default async function AuthenticatedAdminLayout({
     );
   }
 
+  // P5.x.1-quater (bug #2) : on caste le role en UserRole verifie pour
+  // pouvoir passer le typage strict a AdminSidebar/AdminTopbar (filtre RBAC).
+  const userRole = profile.role as 'admin' | 'sales' | 'super_admin';
+
   return (
     <SeasonProvider initialSeasons={allSeasons} initialActiveId={activeSeason.id}>
       <div className="flex min-h-svh flex-col">
-        <AdminTopbar fullName={profile.full_name} email={profile.email} role={profile.role} />
+        <AdminTopbar fullName={profile.full_name} email={profile.email} role={userRole} />
         <div className="flex flex-1">
           {/* P6.x-mobile-burger : aside desktop, burger Sheet mobile (cf. AdminMobileMenu dans Topbar). */}
           <aside className="border-md-border bg-card hidden w-60 shrink-0 border-r md:flex">
-            <AdminSidebar />
+            <AdminSidebar currentUserRole={userRole} />
           </aside>
           <main className="bg-md-bg flex-1 overflow-x-auto px-4 py-6 sm:px-6 lg:px-8">
             {children}
