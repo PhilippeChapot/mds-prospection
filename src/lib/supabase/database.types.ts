@@ -582,6 +582,60 @@ export type Database = {
           },
         ];
       };
+      campaign_recipients: {
+        Row: {
+          brevo_message_id: string | null;
+          campaign_id: string;
+          contact_id: string | null;
+          created_at: string;
+          email: string;
+          error_message: string | null;
+          id: string;
+          sent_at: string | null;
+          skip_reason: string | null;
+          status: string;
+        };
+        Insert: {
+          brevo_message_id?: string | null;
+          campaign_id: string;
+          contact_id?: string | null;
+          created_at?: string;
+          email: string;
+          error_message?: string | null;
+          id?: string;
+          sent_at?: string | null;
+          skip_reason?: string | null;
+          status?: string;
+        };
+        Update: {
+          brevo_message_id?: string | null;
+          campaign_id?: string;
+          contact_id?: string | null;
+          created_at?: string;
+          email?: string;
+          error_message?: string | null;
+          id?: string;
+          sent_at?: string | null;
+          skip_reason?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'campaign_recipients_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'email_campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'campaign_recipients_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       chat_conversations: {
         Row: {
           archived: boolean;
@@ -1109,71 +1163,105 @@ export type Database = {
       email_campaigns: {
         Row: {
           attachments_urls: string[];
+          audience_filters: Json;
+          audience_key: string | null;
           body_en: string | null;
           body_fr: string | null;
           bounce_count: number;
           brevo_campaign_id: string | null;
+          brevo_template_id: number | null;
+          category: string | null;
           click_count: number;
+          content_mode: string | null;
           created_at: string;
           created_by_user_id: string;
+          error_count: number;
           id: string;
           name: string;
           open_count: number;
           recipient_count: number;
           scheduled_at: string | null;
           sent_at: string | null;
+          sent_by_user_id: string | null;
+          sent_count: number;
           status: Database['public']['Enums']['campaign_status'];
           subject_en: string | null;
           subject_fr: string | null;
           target_filter: Json;
+          test_email_sent_at: string | null;
           unsubscribe_count: number;
         };
         Insert: {
           attachments_urls?: string[];
+          audience_filters?: Json;
+          audience_key?: string | null;
           body_en?: string | null;
           body_fr?: string | null;
           bounce_count?: number;
           brevo_campaign_id?: string | null;
+          brevo_template_id?: number | null;
+          category?: string | null;
           click_count?: number;
+          content_mode?: string | null;
           created_at?: string;
           created_by_user_id: string;
+          error_count?: number;
           id?: string;
           name: string;
           open_count?: number;
           recipient_count?: number;
           scheduled_at?: string | null;
           sent_at?: string | null;
+          sent_by_user_id?: string | null;
+          sent_count?: number;
           status?: Database['public']['Enums']['campaign_status'];
           subject_en?: string | null;
           subject_fr?: string | null;
           target_filter?: Json;
+          test_email_sent_at?: string | null;
           unsubscribe_count?: number;
         };
         Update: {
           attachments_urls?: string[];
+          audience_filters?: Json;
+          audience_key?: string | null;
           body_en?: string | null;
           body_fr?: string | null;
           bounce_count?: number;
           brevo_campaign_id?: string | null;
+          brevo_template_id?: number | null;
+          category?: string | null;
           click_count?: number;
+          content_mode?: string | null;
           created_at?: string;
           created_by_user_id?: string;
+          error_count?: number;
           id?: string;
           name?: string;
           open_count?: number;
           recipient_count?: number;
           scheduled_at?: string | null;
           sent_at?: string | null;
+          sent_by_user_id?: string | null;
+          sent_count?: number;
           status?: Database['public']['Enums']['campaign_status'];
           subject_en?: string | null;
           subject_fr?: string | null;
           target_filter?: Json;
+          test_email_sent_at?: string | null;
           unsubscribe_count?: number;
         };
         Relationships: [
           {
             foreignKeyName: 'email_campaigns_created_by_user_id_fkey';
             columns: ['created_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'email_campaigns_sent_by_user_id_fkey';
+            columns: ['sent_by_user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
@@ -2734,7 +2822,14 @@ export type Database = {
         | 'sync_manual';
       booth_event: 'paris' | 'marseille' | 'bruxelles';
       booth_status: 'available' | 'option' | 'reserved' | 'signed';
-      campaign_status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'archived' | 'cancelled';
+      campaign_status:
+        | 'draft'
+        | 'scheduled'
+        | 'sending'
+        | 'sent'
+        | 'archived'
+        | 'cancelled'
+        | 'error';
       category_tarif: 'prs_exhibitor' | 'standard' | 'non_eligible';
       chat_role: 'user' | 'assistant' | 'tool_use' | 'tool_result';
       chat_user_type: 'admin' | 'sales' | 'partner';
@@ -2974,7 +3069,7 @@ export const Constants = {
       ],
       booth_event: ['paris', 'marseille', 'bruxelles'],
       booth_status: ['available', 'option', 'reserved', 'signed'],
-      campaign_status: ['draft', 'scheduled', 'sending', 'sent', 'archived', 'cancelled'],
+      campaign_status: ['draft', 'scheduled', 'sending', 'sent', 'archived', 'cancelled', 'error'],
       category_tarif: ['prs_exhibitor', 'standard', 'non_eligible'],
       chat_role: ['user', 'assistant', 'tool_use', 'tool_result'],
       chat_user_type: ['admin', 'sales', 'partner'],

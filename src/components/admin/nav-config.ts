@@ -88,6 +88,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     title: 'Croissance',
     items: [
       {
+        href: '/admin/campaigns',
+        label: 'Campagnes',
+        emoji: '💌',
+        enabled: true,
+      },
+      {
         href: '/admin/affiliates',
         label: 'Affilies',
         emoji: '🤝',

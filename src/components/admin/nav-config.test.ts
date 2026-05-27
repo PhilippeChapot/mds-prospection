@@ -42,10 +42,10 @@ describe('filterNavSectionsForRole (P5.x.1-quater bug #2)', () => {
     expect(allHrefs).toContain('/admin/audit-log');
   });
 
-  it('sales voit EXACTEMENT 9 items (Dashboard, Prospects, Societes, Contacts, Smart Add, Messages, Inscriptions, Emplacements, Catalogue Sellsy)', () => {
+  it('sales voit EXACTEMENT 10 items (P8.3 + Campagnes)', () => {
     // P9.1-natif : +Messages (visitor messages) accessibles a tous les
-    // admin/sales/super_admin (RBAC large car Sales doit pouvoir
-    // repondre aux leads visiteurs entrants).
+    // admin/sales/super_admin.
+    // P8.3 : +Campagnes (sales peut creer un brouillon, pas envoyer).
     const filtered = filterNavSectionsForRole(ADMIN_NAV_SECTIONS, 'sales');
     const hrefs = filtered.flatMap((s) => s.items.map((i) => i.href));
     expect(hrefs).toEqual([
@@ -58,8 +58,9 @@ describe('filterNavSectionsForRole (P5.x.1-quater bug #2)', () => {
       '/admin/signups',
       '/admin/emplacements',
       '/admin/sellsy-products',
+      '/admin/campaigns',
     ]);
-    expect(hrefs).toHaveLength(9);
+    expect(hrefs).toHaveLength(10);
   });
 
   it('sales NE voit AUCUN item masque (Sync Brevo, Tarifs, Affilies, Preferences, Users, Logs sync, Audit, MCP, Styleguide, Saisons, Profils, Ressources, Claims)', () => {
@@ -85,13 +86,18 @@ describe('filterNavSectionsForRole (P5.x.1-quater bug #2)', () => {
     }
   });
 
-  it('sales : sections totalement masquees sont retirees (Croissance, Reglages, Dev)', () => {
+  it('sales : sections Reglages + Dev sont retirees (Croissance partielle avec Campagnes P8.3)', () => {
+    // P8.3 : Campagnes est dans Croissance et ouvert a tous -> la
+    // section Croissance reste visible avec UNIQUEMENT Campagnes pour
+    // sales (autres items sont admin+).
     const filtered = filterNavSectionsForRole(ADMIN_NAV_SECTIONS, 'sales');
     const titles = filtered.map((s) => s.title);
-    expect(titles).not.toContain('Croissance');
     expect(titles).not.toContain('Reglages');
     expect(titles).not.toContain('Dev');
     expect(titles).toContain('Pipeline');
     expect(titles).toContain('Salon');
+    // Croissance visible UNIQUEMENT pour Campagnes.
+    const croissance = filtered.find((s) => s.title === 'Croissance');
+    expect(croissance?.items.map((i) => i.href)).toEqual(['/admin/campaigns']);
   });
 });
