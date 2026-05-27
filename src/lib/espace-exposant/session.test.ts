@@ -56,10 +56,31 @@ vi.mock('./jwt', async (orig) => {
         type: 'session' as const,
         jti: 'jti-1',
         expiresAt: new Date(Date.now() + 1_000_000),
+        kind: 'prospect' as const,
       };
     }),
   };
 });
+
+// P8.2 : requireContactSession fait maintenant un lookup DB pour resoudre
+// primary_contact_id (kind=prospect) ou prospect actif (kind=contact).
+// On mocke supabase service pour eviter de requerir env vars en test.
+vi.mock('@/lib/supabase/service', () => ({
+  getSupabaseServiceClient: () => ({
+    from: (_table: string) => {
+      const chain: Record<string, unknown> = {
+        select: () => chain,
+        eq: () => chain,
+        maybeSingle: () =>
+          Promise.resolve({
+            data: { id: 'prospect-uuid-1', primary_contact_id: 'contact-uuid-1' },
+            error: null,
+          }),
+      };
+      return chain;
+    },
+  }),
+}));
 
 beforeEach(() => {
   cookieValue = 'fake-token';

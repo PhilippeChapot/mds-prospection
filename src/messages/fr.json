@@ -422,6 +422,8 @@
       "commandes": "Mes commandes",
       "ressources": "Ressources",
       "messages": "Messages",
+      "profil": "Mon profil",
+      "preferencesEmail": "Préférences email",
       "logout": "Se déconnecter",
       "openMenu": "Ouvrir le menu",
       "closeMenu": "Fermer le menu"

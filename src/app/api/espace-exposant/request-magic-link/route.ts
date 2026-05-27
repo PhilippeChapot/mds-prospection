@@ -26,7 +26,7 @@ import { z } from 'zod';
 import { checkRateLimit } from '@/lib/rate-limit/in-memory';
 import { getClientIp } from '@/lib/rate-limit/ip';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
-import { signMagicToken } from '@/lib/espace-exposant/jwt';
+import { signContactMagicToken } from '@/lib/espace-exposant/jwt';
 import { renderEspaceExposantMagicLinkTemplate } from '@/lib/resend/templates/espace-exposant-magic-link';
 import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
 import { capitalizeName } from '@/lib/format/name';
@@ -87,29 +87,23 @@ export async function POST(request: Request) {
     );
   }
 
-  // Lookup prospect via contact.email -> prospect actif (status != lost).
-  // RLS bypass via service-role : on est dans une route publique mais
-  // on accede aux donnees via JOIN cible (pas d'enumeration possible).
-  let prospectId: string | null = null;
+  // P8.2 : lookup direct contacts par email — magic link universel.
+  // Tout contact en base recoit un magic-link, peu importe s'il a un
+  // prospect actif ou pas. L'anti-enumeration reste assuree (success
+  // generique meme sans match).
+  let contactId: string | null = null;
   let firstName = '';
   try {
     const supabase = getSupabaseServiceClient();
-    const { data: contacts } = await supabase
+    const { data: contact } = await supabase
       .from('contacts')
-      .select('id, first_name, prospects:prospects!primary_contact_id(id, status)')
+      .select('id, first_name')
       .ilike('email', email)
-      .limit(5);
-
-    if (contacts) {
-      for (const contact of contacts) {
-        const prospects = contact.prospects as Array<{ id: string; status: string }> | null;
-        const active = prospects?.find((p) => p.status !== 'lost');
-        if (active) {
-          prospectId = active.id;
-          firstName = contact.first_name ?? '';
-          break;
-        }
-      }
+      .limit(1)
+      .maybeSingle();
+    if (contact) {
+      contactId = contact.id;
+      firstName = contact.first_name ?? '';
     }
   } catch (err) {
     console.error(
@@ -121,14 +115,14 @@ export async function POST(request: Request) {
     // Continue : on retourne success generique meme si lookup KO.
   }
 
-  if (!prospectId) {
+  if (!contactId) {
     console.log('%s no-match email=%s — return generic success', LOG_PREFIX, email);
     return NextResponse.json({ success: true });
   }
 
-  // Genere le magic-link + envoie email via Resend.
+  // Genere le magic-link contact-based + envoie email via Resend.
   try {
-    const token = await signMagicToken(prospectId);
+    const token = await signContactMagicToken(contactId);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
     // P5.x.2.bis : pointe vers le Route Handler `/api/espace-exposant/login`
     // (et plus le Server Component `/[locale]/.../login/page.tsx`) car
@@ -159,17 +153,17 @@ export async function POST(request: Request) {
     });
 
     console.log(
-      '%s magic-link-sent prospect_id=%s email=%s locale=%s',
+      '%s magic-link-sent contact_id=%s email=%s locale=%s',
       LOG_PREFIX,
-      prospectId,
+      contactId,
       email,
       locale,
     );
   } catch (err) {
     console.error(
-      '%s magic-link-send-failed prospect_id=%s msg=%s',
+      '%s magic-link-send-failed contact_id=%s msg=%s',
       LOG_PREFIX,
-      prospectId,
+      contactId,
       err instanceof Error ? err.message : String(err),
     );
     // Toujours success generique pour ne pas leaker un fail interne.

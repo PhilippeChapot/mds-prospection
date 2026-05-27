@@ -1,11 +1,17 @@
 /**
- * P5.x.17 — config navigation Espace Exposant V1.3 (5 sections).
+ * P5.x.17 — config navigation Espace Contact V1.3.
+ * P9.2     — ajout 'messages' (messagerie interne).
+ * P8.2     — menu dynamique selon profil contact (visibleFor).
  *
  * Source unique partagee entre sidebar desktop et drawer mobile.
- * Le `match` est un sous-chemin teste contre `pathname` (sans locale)
- * pour determiner l'item actif. Cleaner que `endsWith(href)` car evite
- * les faux positifs si on ajoute des sous-routes futures.
+ * Le `match` est un sous-chemin teste contre `pathname` (sans locale).
+ *
+ * `visibleFor(profile)` decide si l'item s'affiche pour le contact
+ * connecte. Un contact simple (presse, etc.) ne voit que les sections
+ * always-on (profil, preferences, messages, ressources).
  */
+
+import type { ContactProfile } from '@/lib/espace-exposant/detect-profile';
 
 export interface ExposantNavItem {
   /** Cle pour t('espaceExposant.nav.<key>'). */
@@ -14,27 +20,48 @@ export interface ExposantNavItem {
   emoji: string;
   /** Sous-chemin (sans /[locale]/espace-exposant/dashboard/). */
   segment: string;
+  /** P8.2 : predicat de visibilite. Null = toujours visible. */
+  visibleFor?: (profile: ContactProfile | null) => boolean;
 }
 
+const isExpoOrLead = (p: ContactProfile | null) => Boolean(p?.is_exposant || p?.is_lead);
+const isExpoOnly = (p: ContactProfile | null) => Boolean(p?.is_exposant);
+
 export const EXPOSANT_NAV_ITEMS: readonly ExposantNavItem[] = [
-  { labelKey: 'stand', emoji: '📍', segment: 'stand' },
-  { labelKey: 'coordonnees', emoji: '📞', segment: 'coordonnees' },
-  { labelKey: 'documents', emoji: '📄', segment: 'documents' },
-  { labelKey: 'kitCommunication', emoji: '🎨', segment: 'kit-communication' },
-  { labelKey: 'invitations', emoji: '📨', segment: 'invitations' },
-  // P6.x.1b — commande complémentaire. La page filtre par éligibilité
-  // (signed_at non-null) et redirige avec banner explicative si non éligible.
-  { labelKey: 'commander', emoji: '🛒', segment: 'commander' },
-  // P6.x.1b-β — historique des commandes complémentaires.
-  { labelKey: 'commandes', emoji: '🧾', segment: 'commandes' },
-  // P3.1 — ressources markdown bilingues (guide, FAQ, charte graphique...).
+  // P8.2 — sections always-on pour tout contact connecte.
+  { labelKey: 'profil', emoji: '👤', segment: 'profil' },
+  { labelKey: 'preferencesEmail', emoji: '📧', segment: 'preferences-email' },
+  // Sections exposant/lead.
+  { labelKey: 'stand', emoji: '📍', segment: 'stand', visibleFor: isExpoOnly },
+  { labelKey: 'coordonnees', emoji: '📞', segment: 'coordonnees', visibleFor: isExpoOrLead },
+  { labelKey: 'documents', emoji: '📄', segment: 'documents', visibleFor: isExpoOnly },
+  {
+    labelKey: 'kitCommunication',
+    emoji: '🎨',
+    segment: 'kit-communication',
+    visibleFor: isExpoOnly,
+  },
+  { labelKey: 'invitations', emoji: '📨', segment: 'invitations', visibleFor: isExpoOnly },
+  // P6.x.1b — commande complémentaire (signed_at requis cote page).
+  { labelKey: 'commander', emoji: '🛒', segment: 'commander', visibleFor: isExpoOnly },
+  // P6.x.1b-β — historique commandes complémentaires.
+  { labelKey: 'commandes', emoji: '🧾', segment: 'commandes', visibleFor: isExpoOnly },
+  // P3.1 — ressources markdown bilingues (toujours visible).
   { labelKey: 'ressources', emoji: '📚', segment: 'ressources' },
-  // P9.2 — messagerie asynchrone avec l'equipe MDS.
+  // P9.2 — messagerie interne (toujours visible).
   { labelKey: 'messages', emoji: '💬', segment: 'messages' },
 ] as const;
 
 /**
  * Slug par defaut quand l'utilisateur atterrit sur /espace-exposant/dashboard.
- * Doit etre identique au segment d'un item de EXPOSANT_NAV_ITEMS.
+ * - Exposants : 'stand' (comportement legacy).
+ * - Contacts simples : 'profil'.
  */
 export const DEFAULT_EXPOSANT_SECTION = 'stand';
+
+export function filterNavItemsForProfile(
+  items: readonly ExposantNavItem[],
+  profile: ContactProfile | null,
+): ExposantNavItem[] {
+  return items.filter((it) => !it.visibleFor || it.visibleFor(profile));
+}

@@ -5,6 +5,7 @@ import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ExposantSidebar } from './ExposantSidebar';
+import type { ContactProfile } from '@/lib/espace-exposant/detect-profile';
 
 /**
  * P5.x.17 — burger menu mobile pour l'Espace Exposant V1.3.
@@ -13,7 +14,7 @@ import { ExposantSidebar } from './ExposantSidebar';
  * contenant la meme sidebar que sur desktop. Se ferme automatiquement
  * apres clic sur un item (via le callback onNavigate -> setOpen(false)).
  */
-export function ExposantMobileMenu() {
+export function ExposantMobileMenu({ profile }: { profile: ContactProfile | null }) {
   const [open, setOpen] = useState(false);
   const t = useTranslations('espaceExposant.nav');
 
@@ -39,7 +40,7 @@ export function ExposantMobileMenu() {
         >
           <X className="size-5" aria-hidden />
         </SheetClose>
-        <ExposantSidebar onNavigate={() => setOpen(false)} />
+        <ExposantSidebar onNavigate={() => setOpen(false)} profile={profile} />
       </SheetContent>
     </Sheet>
   );

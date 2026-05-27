@@ -26,6 +26,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import {
   verifyMagicToken,
   signSessionToken,
+  signContactSessionToken,
   EspaceExposantTokenError,
   ESPACE_EXPOSANT_SESSION_COOKIE,
   ESPACE_EXPOSANT_SESSION_MAX_AGE,
@@ -53,10 +54,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(reboundUrl('invalid'));
   }
 
-  let prospectId: string;
+  let subjectId: string;
+  let kind: 'prospect' | 'contact';
   try {
     const claims = await verifyMagicToken(token);
-    prospectId = claims.prospectId;
+    subjectId = claims.prospectId; // sub = contact_id si kind='contact', sinon prospect_id
+    kind = claims.kind;
   } catch (err) {
     const code =
       err instanceof EspaceExposantTokenError && err.code === 'expired' ? 'expired' : 'invalid';
@@ -66,12 +69,17 @@ export async function GET(req: NextRequest) {
 
   let sessionToken: string;
   try {
-    sessionToken = await signSessionToken(prospectId);
+    // P8.2 : on regenere un session token du meme kind que le magic.
+    sessionToken =
+      kind === 'contact'
+        ? await signContactSessionToken(subjectId)
+        : await signSessionToken(subjectId);
   } catch (err) {
     console.error(
-      '%s session-sign-failed prospect=%s msg=%s',
+      '%s session-sign-failed subject=%s kind=%s msg=%s',
       LOG_PREFIX,
-      prospectId,
+      subjectId,
+      kind,
       err instanceof Error ? err.message : String(err),
     );
     return NextResponse.redirect(reboundUrl('generic'));
@@ -92,9 +100,10 @@ export async function GET(req: NextRequest) {
   // cookie est bien pose sur la response. Si Phil rapporte "no cookie
   // dans DevTools", on peut comparer ce log a ce que le browser recoit.
   console.log(
-    '%s success prospect=%s locale=%s cookieName=%s secure=%s maxAge=%d redirectTo=%s',
+    '%s success subject=%s kind=%s locale=%s cookieName=%s secure=%s maxAge=%d redirectTo=%s',
     LOG_PREFIX,
-    prospectId,
+    subjectId,
+    kind,
     locale,
     ESPACE_EXPOSANT_SESSION_COOKIE,
     isSecure,

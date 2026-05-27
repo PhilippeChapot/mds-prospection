@@ -29,7 +29,18 @@ const SESSION_TTL_SECONDS = 8 * 60 * 60;
 
 export type EspaceExposantTokenType = 'magic' | 'session';
 
+/**
+ * P8.2 : un token peut maintenant cibler soit un prospect (exposant),
+ * soit un contact tout court (contact simple, presse, etc.).
+ *   - kind='prospect' (defaut/legacy) : sub = prospect_id.
+ *   - kind='contact'  (P8.2)          : sub = contact_id.
+ * Les tokens emis avant P8.2 n'ont PAS de claim 'kind' -> default
+ * 'prospect' pour retro-compat (cf. verifyToken).
+ */
+export type EspaceExposantSubjectKind = 'prospect' | 'contact';
+
 export interface EspaceExposantTokenClaims {
+  /** prospect_id si kind='prospect', contact_id si kind='contact'. */
   prospectId: string;
   type: EspaceExposantTokenType;
 }
@@ -37,6 +48,8 @@ export interface EspaceExposantTokenClaims {
 export interface VerifiedEspaceExposantClaims extends EspaceExposantTokenClaims {
   jti: string;
   expiresAt: Date;
+  /** P8.2 : sub kind (default 'prospect' pour legacy tokens). */
+  kind: EspaceExposantSubjectKind;
 }
 
 export class EspaceExposantTokenError extends Error {
@@ -60,14 +73,15 @@ function getSecret(): Uint8Array {
 }
 
 async function signToken(
-  prospectId: string,
+  subjectId: string,
   type: EspaceExposantTokenType,
   ttlSeconds: number,
+  kind: EspaceExposantSubjectKind = 'prospect',
 ): Promise<string> {
   const secret = getSecret();
-  return await new SignJWT({ type })
+  return await new SignJWT({ type, kind })
     .setProtectedHeader({ alg: ALG })
-    .setSubject(prospectId)
+    .setSubject(subjectId)
     .setJti(crypto.randomUUID())
     .setIssuedAt()
     .setExpirationTime(`${ttlSeconds}s`)
@@ -75,11 +89,21 @@ async function signToken(
 }
 
 export async function signMagicToken(prospectId: string): Promise<string> {
-  return signToken(prospectId, 'magic', MAGIC_TTL_SECONDS);
+  return signToken(prospectId, 'magic', MAGIC_TTL_SECONDS, 'prospect');
 }
 
 export async function signSessionToken(prospectId: string): Promise<string> {
-  return signToken(prospectId, 'session', SESSION_TTL_SECONDS);
+  return signToken(prospectId, 'session', SESSION_TTL_SECONDS, 'prospect');
+}
+
+/** P8.2 — magic-link pour un contact (qu'il soit exposant ou non). */
+export async function signContactMagicToken(contactId: string): Promise<string> {
+  return signToken(contactId, 'magic', MAGIC_TTL_SECONDS, 'contact');
+}
+
+/** P8.2 — session token pour un contact. */
+export async function signContactSessionToken(contactId: string): Promise<string> {
+  return signToken(contactId, 'session', SESSION_TTL_SECONDS, 'contact');
 }
 
 async function verifyToken(
@@ -100,11 +124,15 @@ async function verifyToken(
       throw new EspaceExposantTokenError('wrong-type');
     }
 
+    // P8.2 : kind defaut 'prospect' pour les tokens legacy (sans claim).
+    const kind: EspaceExposantSubjectKind = payload.kind === 'contact' ? 'contact' : 'prospect';
+
     return {
       prospectId: payload.sub,
       type: expectedType,
       jti: payload.jti,
       expiresAt: new Date(payload.exp * 1000),
+      kind,
     };
   } catch (err) {
     if (err instanceof EspaceExposantTokenError) throw err;

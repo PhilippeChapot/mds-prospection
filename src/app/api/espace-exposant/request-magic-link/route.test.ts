@@ -37,26 +37,27 @@ describe('POST /api/espace-exposant/request-magic-link (P5.x.2)', () => {
     vi.resetModules();
   });
 
+  // P8.2 : le route handler appelle desormais select.ilike.limit(1).maybeSingle()
+  // pour le lookup direct contacts par email (magic-link universel).
   function mockSupabaseWithProspect(args: {
     firstName: string;
     prospectId: string;
     status: string;
   }) {
+    void args.prospectId; // P8.2 : prospectId plus utilise (token = contact_id)
+    void args.status;
     vi.doMock('@/lib/supabase/service', () => ({
       getSupabaseServiceClient: () => ({
         from: () => ({
           select: () => ({
             ilike: () => ({
-              limit: () =>
-                Promise.resolve({
-                  data: [
-                    {
-                      id: 'c1',
-                      first_name: args.firstName,
-                      prospects: [{ id: args.prospectId, status: args.status }],
-                    },
-                  ],
-                }),
+              limit: () => ({
+                maybeSingle: () =>
+                  Promise.resolve({
+                    data: { id: 'c1', first_name: args.firstName },
+                    error: null,
+                  }),
+              }),
             }),
           }),
         }),
@@ -70,7 +71,9 @@ describe('POST /api/espace-exposant/request-magic-link (P5.x.2)', () => {
         from: () => ({
           select: () => ({
             ilike: () => ({
-              limit: () => Promise.resolve({ data: [] }),
+              limit: () => ({
+                maybeSingle: () => Promise.resolve({ data: null, error: null }),
+              }),
             }),
           }),
         }),
@@ -133,10 +136,14 @@ describe('POST /api/espace-exposant/request-magic-link (P5.x.2)', () => {
     expect(sendMock).not.toHaveBeenCalled();
   });
 
-  it('prospect status=lost -> 200 success sans envoi (filtre actifs)', async () => {
+  // P8.2 : le filtre status=lost est SUPPRIME — tout contact en base recoit
+  // un magic-link (universal login). L'ancien test attendait l'inverse, on
+  // l'adapte : meme un contact dont le prospect serait 'lost' recoit un
+  // magic-link tant qu'il existe en base.
+  it('P8.2 universal : contact en base -> envoi Resend meme si prospect lost', async () => {
     setupMocks();
     mockSupabaseWithProspect({ firstName: 'Old', prospectId: 'pid-x', status: 'lost' });
-    const sendMock = vi.fn();
+    const sendMock = vi.fn().mockResolvedValue({ id: 'resend-id' });
     vi.doMock('@/lib/resend/client', () => ({
       sendTransactionalEmailViaResend: sendMock,
     }));
@@ -149,7 +156,8 @@ describe('POST /api/espace-exposant/request-magic-link (P5.x.2)', () => {
       }),
     );
     expect(res.status).toBe(200);
-    expect(sendMock).not.toHaveBeenCalled();
+    // Magic-link envoye (universal P8.2).
+    expect(sendMock).toHaveBeenCalledOnce();
   });
 
   it('payload invalide (email malforme) -> 400 invalid_payload', async () => {

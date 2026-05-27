@@ -13,6 +13,23 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { ExposantSidebar } from './ExposantSidebar';
+import type { ContactProfile } from '@/lib/espace-exposant/detect-profile';
+
+const FULL_EXPO_PROFILE: ContactProfile = {
+  contact_id: 'c1',
+  email: 'x@y.fr',
+  first_name: null,
+  last_name: null,
+  language: 'FR',
+  company_id: 'co',
+  company_name: 'Acme',
+  is_exposant: true,
+  is_lead: false,
+  is_affiliate: false,
+  is_partner: false,
+  has_stand: true,
+  active_prospect_id: 'p1',
+};
 
 let mockedPathname = '/fr/espace-exposant/dashboard/stand';
 vi.mock('next/navigation', () => ({
@@ -28,17 +45,28 @@ const messages = {
       documents: 'Mes documents',
       kitCommunication: 'Kit communication',
       invitations: 'Mes invitations',
+      commander: 'Commander',
+      commandes: 'Mes commandes',
+      ressources: 'Ressources',
+      messages: 'Messages',
+      profil: 'Mon profil',
+      preferencesEmail: 'Préférences email',
       logout: 'Se deconnecter',
       openMenu: 'Ouvrir le menu',
     },
   },
 };
 
-function renderSidebar(opts: { pathname?: string; onNavigate?: () => void } = {}) {
+function renderSidebar(
+  opts: { pathname?: string; onNavigate?: () => void; profile?: ContactProfile | null } = {},
+) {
   mockedPathname = opts.pathname ?? '/fr/espace-exposant/dashboard/stand';
   return render(
     <NextIntlClientProvider locale="fr" messages={messages}>
-      <ExposantSidebar onNavigate={opts.onNavigate} />
+      <ExposantSidebar
+        onNavigate={opts.onNavigate}
+        profile={opts.profile === undefined ? FULL_EXPO_PROFILE : opts.profile}
+      />
     </NextIntlClientProvider>,
   );
 }

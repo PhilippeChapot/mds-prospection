@@ -101,6 +101,37 @@ export interface EspaceExposantDashboardData {
 export async function requireEspaceExposantSession(
   locale: string,
 ): Promise<{ prospectId: string }> {
+  const session = await requireContactSession(locale);
+  if (!session.prospectId) {
+    // P8.2 : contact simple sans prospect -> ne peut pas acceder aux
+    // pages exposant-only. Redirect vers dashboard (qui montrera juste
+    // profil + prefs + ressources + messages selon le menu dynamique).
+    console.warn(
+      '%s no-prospect-for-contact contact=%s locale=%s — redirect to /espace-exposant/dashboard',
+      LOG_PREFIX,
+      session.contactId,
+      locale,
+    );
+    redirect(`/${locale}/espace-exposant/dashboard`);
+  }
+  return { prospectId: session.prospectId };
+}
+
+/**
+ * P8.2 — helper unifie pour la session espace contact (incluant les
+ * contacts simples sans prospect). Retourne :
+ *   - contactId : toujours present.
+ *   - prospectId : present si le contact est lie a un prospect actif
+ *                  (via primary_contact_id) ; null pour contact simple.
+ *
+ * Resolution selon le kind du JWT :
+ *   - kind='contact' (P8.2)        : sub = contact_id direct.
+ *   - kind='prospect' (legacy)     : sub = prospect_id -> resolve
+ *     primary_contact_id pour contactId.
+ */
+export async function requireContactSession(
+  locale: string,
+): Promise<{ contactId: string; prospectId: string | null }> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(ESPACE_EXPOSANT_SESSION_COOKIE);
   if (!sessionCookie?.value) {
@@ -113,9 +144,9 @@ export async function requireEspaceExposantSession(
     redirect(`/${locale}/espace-exposant?error=expired`);
   }
 
+  let claims;
   try {
-    const claims = await verifySessionToken(sessionCookie.value);
-    return { prospectId: claims.prospectId };
+    claims = await verifySessionToken(sessionCookie.value);
   } catch (err) {
     const code =
       err instanceof EspaceExposantTokenError && err.code === 'expired' ? 'expired' : 'invalid';
@@ -127,6 +158,49 @@ export async function requireEspaceExposantSession(
     );
     redirect(`/${locale}/espace-exposant?error=${code}`);
   }
+
+  const supabase = getSupabaseServiceClient();
+
+  if (claims.kind === 'contact') {
+    // P8.2 : sub = contact_id. Resolve prospect actif eventuel
+    // (le contact peut etre primary_contact_id d'un prospect — ou non).
+    const { data: contact } = await supabase
+      .from('contacts')
+      .select('id, prospects:prospects!primary_contact_id(id, status)')
+      .eq('id', claims.prospectId) // sub stocke contact_id pour kind=contact
+      .maybeSingle();
+    if (!contact) {
+      console.warn('%s contact-not-found id=%s', LOG_PREFIX, claims.prospectId);
+      redirect(`/${locale}/espace-exposant?error=invalid`);
+    }
+    type ProspectRel = { id: string; status: string };
+    const prospects = (contact?.prospects ?? []) as ProspectRel[];
+    const active = Array.isArray(prospects)
+      ? (prospects.find((p) => p.status !== 'lost') ?? null)
+      : null;
+    return {
+      contactId: claims.prospectId,
+      prospectId: active?.id ?? null,
+    };
+  }
+
+  // Legacy : sub = prospect_id. Resolve primary_contact_id pour contactId.
+  const { data: prospect } = await supabase
+    .from('prospects')
+    .select('id, primary_contact_id')
+    .eq('id', claims.prospectId)
+    .maybeSingle();
+  if (!prospect?.primary_contact_id) {
+    // Prospect sans primary contact -> peut arriver historiquement.
+    // On garde le prospectId mais le contactId est inconnu — l'appelant
+    // (loadDashboardData) gere ce cas via les anciens helpers.
+    console.warn('%s legacy-prospect-no-primary-contact id=%s', LOG_PREFIX, claims.prospectId);
+    return { contactId: '', prospectId: claims.prospectId };
+  }
+  return {
+    contactId: prospect.primary_contact_id,
+    prospectId: prospect.id,
+  };
 }
 
 /**

@@ -1,33 +1,24 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import type { Locale } from 'next-intl';
-import { requireEspaceExposantSession } from '@/lib/espace-exposant/session';
+import { requireContactSession } from '@/lib/espace-exposant/session';
+import { detectUserProfile } from '@/lib/espace-exposant/detect-profile';
 import { ExposantSidebar } from './_components/ExposantSidebar';
 import { ExposantMobileMenu } from './_components/ExposantMobileMenu';
 
 /**
- * P5.x.17 / P5.x.17-bis — Layout shell de l'Espace Exposant V1.3.
+ * P5.x.17 / P5.x.17-bis / P8.2 — Layout shell de l'Espace Contact V2.
  *
  * Pattern :
- *   - `requireEspaceExposantSession(locale)` : check rapide cookie+JWT,
- *     redirect vers /espace-exposant?error=... si KO. ZERO query DB.
- *     -> protege toute la branche /dashboard/** sans dupliquer le fetch
- *     des donnees prospect/contact/company (que chaque page recharge
- *     elle-meme via loadDashboardData).
- *
- *   - Shell : sidebar desktop fixe 240px a gauche + header mobile burger.
- *     Sidebar dupliquee a l'identique dans le drawer mobile via
- *     ExposantMobileMenu.
- *
- *   - Le greeting personnalise ("Bonjour {firstName}") n'est pas affiche
- *     ici -- chaque page peut l'afficher si elle veut, mais le layout
- *     reste neutre pour eviter de devoir fetch les donnees deux fois.
- *
- * P5.x.17-bis (bugfix) : on enleve la double-load DB en layout. Symptome
- * detecte par Phil = la nav sidebar redirigeait vers /login, comme si la
- * session etait perdue. Le wrap React.cache initial faisait potentiellement
- * du double-fetch a chaque sous-route, augmentant les chances de timeout
- * silencieux ou d'inconsistance. Maintenant : layout = check cookie/JWT
- * uniquement, pages = fetch donnees.
+ *   - `requireContactSession(locale)` : check cookie+JWT + resolve
+ *     contactId (et prospectId si dispo). Redirect vers /espace-exposant
+ *     ?error=expired si KO. P8.2 : accepte aussi les contacts simples
+ *     sans prospect (kind='contact').
+ *   - `detectUserProfile(contactId)` : 1 query pour calculer les flags
+ *     qui pilotent le menu dynamique (is_exposant, is_lead, is_affiliate,
+ *     has_stand).
+ *   - Shell : sidebar desktop fixe 240px + header mobile burger.
+ *   - Titre adaptatif selon profil : "Espace exposant" / "Espace affilié"
+ *     / "Mon espace MediaDays".
  */
 
 interface LayoutProps {
@@ -41,29 +32,43 @@ export default async function EspaceExposantDashboardLayout({ children, params }
   const { locale } = await params;
   setRequestLocale(locale);
 
-  // Side-effect d'auth : redirect vers /espace-exposant?error=expired|
-  // invalid si cookie absent ou JWT pas bon. Aucun fetch DB.
-  await requireEspaceExposantSession(locale);
+  // P8.2 : check session (accepte contacts simples sans prospect).
+  const session = await requireContactSession(locale);
+  // P8.2 : flags pour menu dynamique + titre.
+  const profile = await detectUserProfile(session.contactId);
 
   const t = await getTranslations({ locale, namespace: 'espaceExposant.dashboard' });
 
+  // Titre adaptatif selon profil.
+  const spaceTitle = profile?.is_exposant
+    ? locale === 'en'
+      ? 'Exhibitor area'
+      : 'Espace exposant'
+    : profile?.is_affiliate
+      ? locale === 'en'
+        ? 'Affiliate area'
+        : 'Espace affilié'
+      : locale === 'en'
+        ? 'My MediaDays space'
+        : 'Mon espace MediaDays';
+
   return (
     <div className="bg-md-bg flex min-h-svh flex-col">
-      {/* Header mobile (burger + titre) -- masque sur md+ */}
+      {/* Header mobile (burger + titre) — masque sur md+ */}
       <header className="border-md-border bg-card sticky top-0 z-30 flex items-center gap-3 border-b px-4 py-2 md:hidden">
-        <ExposantMobileMenu />
+        <ExposantMobileMenu profile={profile} />
         <div className="flex-1">
           <p className="text-md-magenta text-[9px] font-bold tracking-widest uppercase">
             MediaDays Solutions 2026
           </p>
-          <h1 className="text-md-text text-sm font-semibold">{t('shortGreeting')}</h1>
+          <h1 className="text-md-text text-sm font-semibold">{spaceTitle}</h1>
         </div>
       </header>
 
       <div className="flex flex-1">
         {/* Sidebar desktop fixe */}
         <aside className="border-md-border bg-card hidden w-60 shrink-0 border-r md:block">
-          <ExposantSidebar />
+          <ExposantSidebar profile={profile} />
         </aside>
 
         {/* Zone principale */}
@@ -74,7 +79,7 @@ export default async function EspaceExposantDashboardLayout({ children, params }
                 MediaDays Solutions 2026
               </p>
               <h1 className="text-md-text text-2xl font-extrabold tracking-tight md:text-3xl">
-                {t('shortGreeting')}
+                {spaceTitle}
               </h1>
               <p className="text-md-text-muted mt-1 text-sm">{t('welcome')}</p>
             </header>

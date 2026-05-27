@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
-import { EXPOSANT_NAV_ITEMS } from './nav-items';
+import { EXPOSANT_NAV_ITEMS, filterNavItemsForProfile } from './nav-items';
 import { LogoutButton } from './LogoutButton';
+import type { ContactProfile } from '@/lib/espace-exposant/detect-profile';
 
 /**
  * P5.x.17 — Sidebar de l'Espace Exposant V1.3.
@@ -24,14 +25,17 @@ import { LogoutButton } from './LogoutButton';
 interface Props {
   /** Callback optionnel apres un clic sur un item (fermeture du drawer mobile). */
   onNavigate?: () => void;
+  /** P8.2 : profile contact pour filtrer les items dynamiquement. */
+  profile: ContactProfile | null;
 }
 
-export function ExposantSidebar({ onNavigate }: Props) {
+export function ExposantSidebar({ onNavigate, profile }: Props) {
   const pathname = usePathname() ?? '';
   const locale = useLocale();
   const t = useTranslations('espaceExposant.nav');
 
   const baseHref = `/${locale}/espace-exposant/dashboard`;
+  const visibleItems = filterNavItemsForProfile(EXPOSANT_NAV_ITEMS, profile);
 
   return (
     <div className="flex h-full flex-col gap-4 p-3">
@@ -44,7 +48,7 @@ export function ExposantSidebar({ onNavigate }: Props) {
 
       <nav className="flex-1">
         <ul className="space-y-0.5">
-          {EXPOSANT_NAV_ITEMS.map((item) => {
+          {visibleItems.map((item) => {
             const href = `${baseHref}/${item.segment}`;
             const isActive = pathname === href || pathname.startsWith(`${href}/`);
             return (
