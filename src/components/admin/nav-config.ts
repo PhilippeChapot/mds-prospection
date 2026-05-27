@@ -43,6 +43,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: '/admin/contacts', label: 'Contacts', emoji: '📞', enabled: true },
       { href: '/admin/contacts/quick-add', label: 'Smart Add', emoji: '✨', enabled: true },
       {
+        href: '/admin/messages',
+        label: 'Messages',
+        emoji: '💬',
+        enabled: true,
+      },
+      {
         href: '/admin/signups',
         label: 'Inscriptions web',
         emoji: '📨',

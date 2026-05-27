@@ -2367,6 +2367,120 @@ export type Database = {
           },
         ];
       };
+      visitor_message_replies: {
+        Row: {
+          created_at: string;
+          email_resend_id: string | null;
+          email_sent_at: string | null;
+          id: string;
+          reply_text: string;
+          sender_user_id: string;
+          visitor_message_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          email_resend_id?: string | null;
+          email_sent_at?: string | null;
+          id?: string;
+          reply_text: string;
+          sender_user_id: string;
+          visitor_message_id: string;
+        };
+        Update: {
+          created_at?: string;
+          email_resend_id?: string | null;
+          email_sent_at?: string | null;
+          id?: string;
+          reply_text?: string;
+          sender_user_id?: string;
+          visitor_message_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'visitor_message_replies_sender_user_id_fkey';
+            columns: ['sender_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'visitor_message_replies_visitor_message_id_fkey';
+            columns: ['visitor_message_id'];
+            isOneToOne: false;
+            referencedRelation: 'visitor_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      visitor_messages: {
+        Row: {
+          assigned_to_user_id: string | null;
+          created_at: string;
+          id: string;
+          ip_address: unknown;
+          locale: string;
+          message: string;
+          page_url: string | null;
+          prospect_id: string | null;
+          read_at: string | null;
+          replied_at: string | null;
+          status: string;
+          user_agent: string | null;
+          visitor_email: string;
+          visitor_name: string;
+          visitor_phone: string | null;
+        };
+        Insert: {
+          assigned_to_user_id?: string | null;
+          created_at?: string;
+          id?: string;
+          ip_address?: unknown;
+          locale?: string;
+          message: string;
+          page_url?: string | null;
+          prospect_id?: string | null;
+          read_at?: string | null;
+          replied_at?: string | null;
+          status?: string;
+          user_agent?: string | null;
+          visitor_email: string;
+          visitor_name: string;
+          visitor_phone?: string | null;
+        };
+        Update: {
+          assigned_to_user_id?: string | null;
+          created_at?: string;
+          id?: string;
+          ip_address?: unknown;
+          locale?: string;
+          message?: string;
+          page_url?: string | null;
+          prospect_id?: string | null;
+          read_at?: string | null;
+          replied_at?: string | null;
+          status?: string;
+          user_agent?: string | null;
+          visitor_email?: string;
+          visitor_name?: string;
+          visitor_phone?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'visitor_messages_assigned_to_user_id_fkey';
+            columns: ['assigned_to_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'visitor_messages_prospect_id_fkey';
+            columns: ['prospect_id'];
+            isOneToOne: false;
+            referencedRelation: 'prospects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

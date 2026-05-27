@@ -129,45 +129,19 @@ export const SETTINGS_REGISTRY: SettingFieldDef[] = [
     type: 'boolean',
   },
 
-  // ═══════ INTEGRATIONS — Chat visiteur Tawk.to (P9.1) ═══════
+  // ═══════ INTEGRATIONS — Messagerie visiteur native (P9.1-natif) ═══════
+  // NB : on a retire les 4 settings Tawk.to (chat_widget_enabled,
+  // tawk_property_id, tawk_widget_id, tawk_webhook_secret) au pivot
+  // P9.1-natif. Si les rows existent encore en DB, elles apparaissent
+  // comme "custom keys" dans l'UI ; la migration 0063 les supprime.
   {
-    key: 'chat_widget_enabled',
+    key: 'visitor_chat_enabled',
     category: 'integrations',
-    label: 'Activer le chat visiteur',
+    label: 'Activer la messagerie visiteur',
     description:
-      'Affiche le widget Tawk.to sur toutes les pages publiques (mediadays.solutions). Désactivé = widget masqué partout. Nécessite property_id + widget_id remplis.',
+      'Affiche le widget de messagerie native sur les pages publiques (mediadays.solutions). Désactivé = bouton flottant masqué partout.',
     schema: z.boolean(),
     type: 'boolean',
-  },
-  {
-    key: 'tawk_property_id',
-    category: 'integrations',
-    label: 'Tawk.to Property ID',
-    description:
-      'Identifiant de la "Property" Tawk.to (Admin > Channels > Chat Widget > snippet). Format : 24 chars hex.',
-    schema: z.string().min(10).max(64).or(z.literal('')),
-    type: 'string',
-    placeholder: '64f5b9c1xxxxxxxxxxxxxxxx',
-  },
-  {
-    key: 'tawk_widget_id',
-    category: 'integrations',
-    label: 'Tawk.to Widget ID',
-    description:
-      "Identifiant du widget Tawk.to (suffixe après le slash dans l'URL embed). Format : ~10 chars alphanum.",
-    schema: z.string().min(5).max(40).or(z.literal('')),
-    type: 'string',
-    placeholder: '1hxxxxxxx',
-  },
-  {
-    key: 'tawk_webhook_secret',
-    category: 'integrations',
-    label: 'Tawk.to Webhook Secret',
-    description:
-      'Secret HMAC-SHA1 utilisé pour valider la signature des webhooks (header X-Tawk-Signature). Configuré dans Tawk.to Admin > Settings > Webhooks. Super_admin only.',
-    schema: z.string().min(8).max(120).or(z.literal('')),
-    type: 'secret',
-    placeholder: 'xxxxxxxxxxxxxxxx',
   },
 
   // ═══════ RGPD ═══════

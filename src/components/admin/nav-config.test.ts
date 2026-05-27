@@ -42,7 +42,10 @@ describe('filterNavSectionsForRole (P5.x.1-quater bug #2)', () => {
     expect(allHrefs).toContain('/admin/audit-log');
   });
 
-  it('sales voit EXACTEMENT 8 items (Dashboard, Prospects, Societes, Contacts, Smart Add, Inscriptions, Emplacements, Catalogue Sellsy)', () => {
+  it('sales voit EXACTEMENT 9 items (Dashboard, Prospects, Societes, Contacts, Smart Add, Messages, Inscriptions, Emplacements, Catalogue Sellsy)', () => {
+    // P9.1-natif : +Messages (visitor messages) accessibles a tous les
+    // admin/sales/super_admin (RBAC large car Sales doit pouvoir
+    // repondre aux leads visiteurs entrants).
     const filtered = filterNavSectionsForRole(ADMIN_NAV_SECTIONS, 'sales');
     const hrefs = filtered.flatMap((s) => s.items.map((i) => i.href));
     expect(hrefs).toEqual([
@@ -51,11 +54,12 @@ describe('filterNavSectionsForRole (P5.x.1-quater bug #2)', () => {
       '/admin/companies',
       '/admin/contacts',
       '/admin/contacts/quick-add',
+      '/admin/messages',
       '/admin/signups',
       '/admin/emplacements',
       '/admin/sellsy-products',
     ]);
-    expect(hrefs).toHaveLength(8);
+    expect(hrefs).toHaveLength(9);
   });
 
   it('sales NE voit AUCUN item masque (Sync Brevo, Tarifs, Affilies, Preferences, Users, Logs sync, Audit, MCP, Styleguide, Saisons, Profils, Ressources, Claims)', () => {
