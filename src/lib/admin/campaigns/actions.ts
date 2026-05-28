@@ -22,12 +22,8 @@ import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
 import { resolveAudience } from './audiences';
-import {
-  sendCampaignBatch,
-  buildUnsubscribeFooter,
-  personalize,
-  type CampaignRecipient,
-} from '@/lib/brevo/send-campaign';
+import { sendCampaignBatch, personalize, type CampaignRecipient } from '@/lib/brevo/send-campaign';
+import { renderMdsEmailHtml } from '@/lib/email/templates/mds-wrapper';
 import {
   CAMPAIGN_CATEGORIES,
   type AudiencePreviewResult,
@@ -74,6 +70,20 @@ const sendTestSchema = z.object({
 const sendCampaignSchema = z.object({
   campaign_id: z.string().uuid(),
   confirmation_count: z.number().int().min(0),
+});
+
+// P8.3-bis Fix #1 : edition draft.
+const editSchema = z.object({
+  campaign_id: z.string().uuid(),
+  name: z.string().trim().min(3).max(200).optional(),
+  category: z.enum(CAMPAIGN_CATEGORIES).optional(),
+  audience_key: z.string().min(1).optional(),
+  audience_filters: z.record(z.string(), z.unknown()).optional(),
+  content_mode: z.enum(['inline', 'template']).optional(),
+  subject: z.string().trim().min(2).max(200).optional(),
+  body_html: z.string().optional(),
+  brevo_template_id: z.number().int().positive().nullable().optional(),
+  scheduled_at: z.string().datetime().nullable().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -238,6 +248,97 @@ export async function createCampaignAction(
 }
 
 // ---------------------------------------------------------------------------
+// editCampaignAction (P8.3-bis Fix #1 — edition draft uniquement)
+// ---------------------------------------------------------------------------
+
+export async function editCampaignAction(
+  input: z.input<typeof editSchema>,
+): Promise<CampaignActionResult> {
+  const profile = await requireAdminProfile();
+  const parsed = editSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Données invalides' };
+  }
+  const supabase = getSupabaseServiceClient();
+
+  const { data: campaign } = await supabase
+    .from('email_campaigns')
+    .select('id, status, content_mode')
+    .eq('id', parsed.data.campaign_id)
+    .maybeSingle();
+  if (!campaign) return { ok: false, error: 'Campagne introuvable.' };
+  if (campaign.status !== 'draft' && campaign.status !== 'scheduled') {
+    return {
+      ok: false,
+      error: `Impossible d'éditer une campagne ${campaign.status} (seuls les brouillons/programmées le sont).`,
+    };
+  }
+
+  const patch: Record<string, unknown> = {};
+  if (parsed.data.name !== undefined) patch.name = parsed.data.name;
+  if (parsed.data.category !== undefined) patch.category = parsed.data.category;
+  if (parsed.data.audience_key !== undefined) patch.audience_key = parsed.data.audience_key;
+  if (parsed.data.audience_filters !== undefined)
+    patch.audience_filters = parsed.data.audience_filters;
+  if (parsed.data.content_mode !== undefined) patch.content_mode = parsed.data.content_mode;
+  if (parsed.data.subject !== undefined) patch.subject_fr = parsed.data.subject;
+  if (parsed.data.body_html !== undefined) patch.body_fr = parsed.data.body_html;
+  if (parsed.data.brevo_template_id !== undefined)
+    patch.brevo_template_id = parsed.data.brevo_template_id;
+  if (parsed.data.scheduled_at !== undefined) {
+    patch.scheduled_at = parsed.data.scheduled_at;
+    // Si scheduled_at est posé / null, le status doit etre coherent.
+    patch.status = parsed.data.scheduled_at ? 'scheduled' : 'draft';
+  }
+
+  // Garde-fou content_mode coherence.
+  const finalMode =
+    parsed.data.content_mode ?? (campaign.content_mode as 'inline' | 'template' | null);
+  if (finalMode === 'inline' && parsed.data.body_html !== undefined && !parsed.data.body_html) {
+    return { ok: false, error: 'body_html requis pour mode inline.' };
+  }
+  if (finalMode === 'template' && parsed.data.brevo_template_id === null) {
+    return { ok: false, error: 'brevo_template_id requis pour mode template.' };
+  }
+
+  // P8.3-bis Fix #1 : toute edition reset le test_email_sent_at -> force
+  // un nouveau test obligatoire avant envoi (le contenu a change).
+  patch.test_email_sent_at = null;
+
+  if (Object.keys(patch).length === 0) return { ok: true };
+
+  const { error } = await supabase
+    .from('email_campaigns')
+    .update(patch as never)
+    .eq('id', parsed.data.campaign_id);
+  if (error) return { ok: false, error: error.message };
+
+  try {
+    await supabase.from('audit_log').insert({
+      user_id: profile.id,
+      entity_type: 'email_campaigns',
+      entity_id: parsed.data.campaign_id,
+      action: 'update',
+      after: {
+        kind: 'campaign_edited',
+        actor_role: profile.role,
+        fields: Object.keys(patch),
+      } as never,
+    });
+  } catch (err) {
+    console.warn(
+      '%s audit-log-failed msg=%s',
+      LOG_PREFIX,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  revalidatePath('/admin/campaigns');
+  revalidatePath(`/admin/campaigns/${parsed.data.campaign_id}`);
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
 // sendTestEmailAction
 // ---------------------------------------------------------------------------
 
@@ -258,10 +359,8 @@ export async function sendTestEmailAction(
     .maybeSingle();
   if (!campaign) return { ok: false, error: 'Campagne introuvable.' };
 
-  const subject = `[TEST] ${campaign.subject_fr ?? campaign.name}`;
-  // En V1 le test est envoye via Resend (rapide + fiable, pas besoin de
-  // configurer Brevo pour ce test). Le vrai envoi de masse passe par
-  // Brevo (sendCampaignAction).
+  // P8.3-bis : le sample recipient sert AUSSI a la perso du subject
+  // (avant : seul le body etait personalize -> "{prenom}" apparaissait brut).
   const sampleRecipient: CampaignRecipient = {
     contact_id: 'test',
     email: parsed.data.test_email,
@@ -270,14 +369,23 @@ export async function sendTestEmailAction(
     company_name: 'Test SAS',
     language: 'FR',
   };
+  const rawSubject = campaign.subject_fr ?? campaign.name;
+  // Fix #3 : personalize aussi le subject ({prenom}/{societe}/{etape}).
+  const subjectPersonalized = personalize(rawSubject, sampleRecipient);
+  const subject = `[TEST] ${subjectPersonalized}`;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mediadays.solutions';
 
   let html: string;
   if ((campaign.content_mode as ContentMode) === 'inline') {
     if (!campaign.body_fr) return { ok: false, error: 'Body manquant.' };
     const personalized = personalize(campaign.body_fr, sampleRecipient);
-    const footer = buildUnsubscribeFooter({ locale: 'fr', appUrl });
-    html = `${personalized}\n${footer}`;
+    // P8.3-bis Fix #2 : wrapper MDS branded (header + footer + RGPD).
+    html = renderMdsEmailHtml({
+      subject: subjectPersonalized,
+      bodyHtml: personalized,
+      locale: 'fr',
+      appUrl,
+    });
   } else {
     html = `<p>Cette campagne utilise un template Brevo (id=${campaign.brevo_template_id}).
       Le test reel doit passer par l'envoi de campagne (le rendu template

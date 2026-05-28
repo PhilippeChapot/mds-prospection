@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Loader2, Send, Mail, Ban } from 'lucide-react';
+import { Loader2, Send, Mail, Ban, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -231,10 +232,19 @@ export function CampaignDetailClient({ campaign, previewCount, canSend }: Props)
             </p>
           )}
 
-          <Button variant="outline" onClick={handleCancel} disabled={pending}>
-            <Ban className="size-4" aria-hidden />
-            Annuler le brouillon
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {/* P8.3-bis Fix #1 : edition du brouillon. */}
+            <Button variant="outline" asChild>
+              <Link href={`/admin/campaigns/${campaign.id}/edit`}>
+                <Pencil className="size-4" aria-hidden />
+                Modifier le brouillon
+              </Link>
+            </Button>
+            <Button variant="outline" onClick={handleCancel} disabled={pending}>
+              <Ban className="size-4" aria-hidden />
+              Annuler le brouillon
+            </Button>
+          </div>
         </section>
       ) : null}
 

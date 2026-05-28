@@ -276,3 +276,87 @@ describe('sendCampaignAction (P8.3 RBAC + garde-fous)', () => {
     expect(r.ok).toBe(false);
   });
 });
+
+// P8.3-bis Fix #1 : tests editCampaignAction.
+describe('editCampaignAction (P8.3-bis Fix #1)', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resetState();
+    state.campaigns = [
+      {
+        id: '22222222-2222-4222-8222-222222222222',
+        name: 'Old',
+        status: 'draft',
+        content_mode: 'inline',
+        subject_fr: 'Old',
+        body_fr: '<p>old</p>',
+        test_email_sent_at: '2026-05-27T10:00:00Z',
+      },
+    ];
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('draft : modifie name/subject/body + RESET test_email_sent_at', async () => {
+    mockEnv();
+    const { editCampaignAction } = await import('./actions');
+    const r = await editCampaignAction({
+      campaign_id: '22222222-2222-4222-8222-222222222222',
+      name: 'New',
+      subject: 'Hello {prenom}',
+      body_html: '<p>new body</p>',
+    });
+    expect(r.ok).toBe(true);
+    const cmp = state.campaigns.find((c) => c.id === '22222222-2222-4222-8222-222222222222');
+    expect(cmp?.name).toBe('New');
+    expect(cmp?.subject_fr).toBe('Hello {prenom}');
+    expect(cmp?.body_fr).toBe('<p>new body</p>');
+    // RESET du flag test obligatoire.
+    expect(cmp?.test_email_sent_at).toBeNull();
+  });
+
+  it("campagne 'sent' -> ok:false (interdit d editer)", async () => {
+    state.campaigns[0].status = 'sent';
+    mockEnv();
+    const { editCampaignAction } = await import('./actions');
+    const r = await editCampaignAction({
+      campaign_id: '22222222-2222-4222-8222-222222222222',
+      name: 'New',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error.toLowerCase()).toContain('sent');
+  });
+
+  it("campagne 'error' -> ok:false (interdit d editer)", async () => {
+    state.campaigns[0].status = 'error';
+    mockEnv();
+    const { editCampaignAction } = await import('./actions');
+    const r = await editCampaignAction({
+      campaign_id: '22222222-2222-4222-8222-222222222222',
+      name: 'New',
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it('scheduled : modifiable (status reste scheduled si scheduled_at set)', async () => {
+    state.campaigns[0].status = 'scheduled';
+    mockEnv();
+    const { editCampaignAction } = await import('./actions');
+    const r = await editCampaignAction({
+      campaign_id: '22222222-2222-4222-8222-222222222222',
+      name: 'Updated',
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it('campagne inexistante -> ok:false', async () => {
+    mockEnv();
+    const { editCampaignAction } = await import('./actions');
+    const r = await editCampaignAction({
+      campaign_id: '00000000-0000-4000-8000-000000000000',
+      name: 'X',
+    });
+    expect(r.ok).toBe(false);
+  });
+});

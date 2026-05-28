@@ -8,7 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { createCampaignAction, previewAudienceAction } from '@/lib/admin/campaigns/actions';
+import {
+  createCampaignAction,
+  editCampaignAction,
+  previewAudienceAction,
+} from '@/lib/admin/campaigns/actions';
 import type {
   AudienceDef,
   AudiencePreviewResult,
@@ -28,33 +32,65 @@ import { cn } from '@/lib/utils';
  * en serveur. Ce wizard cree juste la campagne en draft puis redirige.
  */
 
+/** P8.3-bis Fix #1 : valeurs initiales pour le mode edition. */
+export interface CampaignInitial {
+  campaign_id: string;
+  name: string;
+  audience_key: string;
+  category: CampaignCategory;
+  audience_filters: {
+    poles?: string[];
+    etapes?: string[];
+    langue?: 'FR' | 'EN';
+  } | null;
+  content_mode: 'inline' | 'template';
+  subject: string;
+  body_html: string | null;
+  brevo_template_id: number | null;
+  scheduled_at: string | null;
+}
+
 interface Props {
   audiences: AudienceDef[];
   categories: CampaignCategory[];
   canSend: boolean;
+  /** Si fourni : mode edition (update au lieu de create). */
+  initial?: CampaignInitial;
 }
 
-export function NewCampaignWizard({ audiences, categories }: Props) {
+export function NewCampaignWizard({ audiences, categories, initial }: Props) {
   const router = useRouter();
+  const isEdit = Boolean(initial);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [pending, startTransition] = useTransition();
   const [previewing, startPreview] = useTransition();
 
-  // State campaign
-  const [name, setName] = useState('');
-  const [audienceKey, setAudienceKey] = useState<string>('newsletter_subscribers');
-  const [category, setCategory] = useState<CampaignCategory>('general');
-  const [poles, setPoles] = useState<string>(''); // CSV pole codes
-  const [etapes, setEtapes] = useState<string>(''); // CSV
-  const [langue, setLangue] = useState<'' | 'FR' | 'EN'>('');
-  const [contentMode, setContentMode] = useState<'inline' | 'template'>('inline');
-  const [subject, setSubject] = useState('');
-  const [bodyHtml, setBodyHtml] = useState(
-    "<p>Bonjour {prenom},</p>\n<p>Votre message ici...</p>\n<p>L'équipe MediaDays Solutions</p>",
+  // State campaign — pre-fill si initial est fourni (mode edition).
+  const [name, setName] = useState(initial?.name ?? '');
+  const [audienceKey, setAudienceKey] = useState<string>(
+    initial?.audience_key ?? 'newsletter_subscribers',
   );
-  const [brevoTemplateId, setBrevoTemplateId] = useState('');
-  const [scheduleMode, setScheduleMode] = useState<'now' | 'later'>('now');
-  const [scheduledAt, setScheduledAt] = useState('');
+  const [category, setCategory] = useState<CampaignCategory>(initial?.category ?? 'general');
+  const [poles, setPoles] = useState<string>(initial?.audience_filters?.poles?.join(',') ?? '');
+  const [etapes, setEtapes] = useState<string>(initial?.audience_filters?.etapes?.join(',') ?? '');
+  const [langue, setLangue] = useState<'' | 'FR' | 'EN'>(initial?.audience_filters?.langue ?? '');
+  const [contentMode, setContentMode] = useState<'inline' | 'template'>(
+    initial?.content_mode ?? 'inline',
+  );
+  const [subject, setSubject] = useState(initial?.subject ?? '');
+  const [bodyHtml, setBodyHtml] = useState(
+    initial?.body_html ??
+      "<p>Bonjour {prenom},</p>\n<p>Votre message ici...</p>\n<p>L'équipe MediaDays Solutions</p>",
+  );
+  const [brevoTemplateId, setBrevoTemplateId] = useState(
+    initial?.brevo_template_id ? String(initial.brevo_template_id) : '',
+  );
+  const [scheduleMode, setScheduleMode] = useState<'now' | 'later'>(
+    initial?.scheduled_at ? 'later' : 'now',
+  );
+  const [scheduledAt, setScheduledAt] = useState(
+    initial?.scheduled_at ? new Date(initial.scheduled_at).toISOString().slice(0, 16) : '',
+  );
 
   // Preview state
   const [preview, setPreview] = useState<AudiencePreviewResult | null>(null);
@@ -122,6 +158,29 @@ export function NewCampaignWizard({ audiences, categories }: Props) {
           .filter(Boolean);
       if (langue) filters.langue = langue;
 
+      if (isEdit && initial) {
+        // P8.3-bis Fix #1 : edition draft (reset test_email_sent_at cote action).
+        const r = await editCampaignAction({
+          campaign_id: initial.campaign_id,
+          name: name.trim(),
+          category,
+          audience_key: audienceKey,
+          audience_filters: filters,
+          content_mode: contentMode,
+          subject: subject.trim(),
+          body_html: contentMode === 'inline' ? bodyHtml : undefined,
+          brevo_template_id: contentMode === 'template' ? Number(brevoTemplateId) : null,
+          scheduled_at:
+            scheduleMode === 'later' && scheduledAt ? new Date(scheduledAt).toISOString() : null,
+        });
+        if (!r.ok) {
+          toast.error(r.error);
+          return;
+        }
+        toast.success("Brouillon mis à jour — envoyez un nouveau test avant l'envoi.");
+        router.push(`/admin/campaigns/${initial.campaign_id}`);
+        return;
+      }
       const r = await createCampaignAction({
         name: name.trim(),
         category,
@@ -440,7 +499,7 @@ export function NewCampaignWizard({ audiences, categories }: Props) {
               ) : (
                 <Send className="size-4" aria-hidden />
               )}
-              Créer la campagne (brouillon)
+              {isEdit ? 'Mettre à jour le brouillon' : 'Créer la campagne (brouillon)'}
             </Button>
           </div>
         </section>

@@ -48,6 +48,21 @@ describe('personalize (P8.3)', () => {
     });
     expect(r).toBe('Bob X');
   });
+
+  // P8.3-bis Fix #3 : la meme fonction est utilisee sur le SUBJECT
+  // (avant : "[TEST] Bonjour {prenom}" arrivait brut a Phil).
+  it('Fix #3 : substitue {prenom} dans un subject', () => {
+    const r = personalize('Bonjour {prenom}, votre devis est prêt', {
+      contact_id: 'c1',
+      email: 'a@x.fr',
+      first_name: 'Alice',
+      last_name: null,
+      company_name: null,
+      language: 'FR',
+    });
+    expect(r).toBe('Bonjour Alice, votre devis est prêt');
+    expect(r).not.toContain('{prenom}');
+  });
 });
 
 describe('buildUnsubscribeFooter (P8.3)', () => {
@@ -119,6 +134,9 @@ describe('sendCampaignBatch (P8.3)', () => {
     expect(body0.subject).toBe('Bonjour A');
     expect(body0.htmlContent).toContain('Hello A de Acme');
     expect(body0.htmlContent).toContain('Gérer mes préférences'); // footer FR
+    // P8.3-bis Fix #2 : wrapper MDS applique (header brande).
+    expect(body0.htmlContent).toContain('MediaDays Solutions 2026');
+    expect(body0.htmlContent).toContain('Éditions HF');
     const body1 = fetchCalls[1].body as { subject: string; htmlContent: string };
     expect(body1.htmlContent).toContain('Hello B de Other');
     expect(body1.htmlContent).toContain('Manage my preferences'); // footer EN

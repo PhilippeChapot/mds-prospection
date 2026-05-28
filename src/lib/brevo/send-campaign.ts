@@ -17,9 +17,7 @@
  * Brevo (doctrine V1 : pas de stats open/click — V2).
  */
 
-import { sendTransactionalEmailViaResend as _unused } from '@/lib/resend/client';
-
-void _unused;
+import { renderMdsEmailHtml } from '@/lib/email/templates/mds-wrapper';
 
 export interface CampaignRecipient {
   contact_id: string;
@@ -214,13 +212,16 @@ export async function sendCampaignBatch(opts: {
               senderName: opts.senderName,
             });
           } else if (opts.htmlContent) {
-            // Mode inline : personnalisation + footer cote MDS.
+            // P8.3-bis : mode inline = body perso + wrapper MDS branded
+            // (header logo + couleurs + footer Editions HF + RGPD).
+            // L'ancien buildUnsubscribeFooter() est integre dans le wrapper.
             const personalized = personalize(opts.htmlContent, r, { etape: opts.etape });
-            const footer = buildUnsubscribeFooter({
+            const fullHtml = renderMdsEmailHtml({
+              subject: subjectPersonalized,
+              bodyHtml: personalized,
               locale: r.language === 'EN' ? 'en' : 'fr',
               appUrl: opts.appUrl,
             });
-            const fullHtml = `${personalized}\n${footer}`;
             messageId = await sendOneViaBrevo({
               apiKey: opts.apiKey,
               to: r.email,
