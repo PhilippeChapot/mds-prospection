@@ -58,6 +58,10 @@ const createSchema = z.object({
   content_mode: z.enum(['inline', 'template']),
   subject: z.string().trim().min(2).max(200),
   body_html: z.string().optional(),
+  /** P8.3-quater : version EN (optionnelle, peut etre generee plus tard
+   *  via translateCampaignAction). */
+  subject_en: z.string().trim().max(200).optional(),
+  body_html_en: z.string().optional(),
   brevo_template_id: z.number().int().positive().optional(),
   scheduled_at: z.string().datetime().optional(),
 });
@@ -65,6 +69,8 @@ const createSchema = z.object({
 const sendTestSchema = z.object({
   campaign_id: z.string().uuid(),
   test_email: z.string().trim().toLowerCase().email(),
+  /** P8.3-quater : choisir la langue du test (defaut FR). */
+  test_language: z.enum(['FR', 'EN']).default('FR'),
 });
 
 const sendCampaignSchema = z.object({
@@ -82,6 +88,9 @@ const editSchema = z.object({
   content_mode: z.enum(['inline', 'template']).optional(),
   subject: z.string().trim().min(2).max(200).optional(),
   body_html: z.string().optional(),
+  /** P8.3-quater : champs EN editables (l'admin a relu la traduction IA). */
+  subject_en: z.string().trim().max(200).nullable().optional(),
+  body_html_en: z.string().nullable().optional(),
   brevo_template_id: z.number().int().positive().nullable().optional(),
   scheduled_at: z.string().datetime().nullable().optional(),
 });
@@ -212,6 +221,8 @@ export async function createCampaignAction(
       content_mode: data.content_mode,
       subject_fr: data.subject,
       body_fr: data.body_html ?? null,
+      subject_en: data.subject_en ?? null,
+      body_en: data.body_html_en ?? null,
       brevo_template_id: data.brevo_template_id ?? null,
       scheduled_at: data.scheduled_at ?? null,
       status,
@@ -283,6 +294,16 @@ export async function editCampaignAction(
   if (parsed.data.content_mode !== undefined) patch.content_mode = parsed.data.content_mode;
   if (parsed.data.subject !== undefined) patch.subject_fr = parsed.data.subject;
   if (parsed.data.body_html !== undefined) patch.body_fr = parsed.data.body_html;
+  // P8.3-quater : edition manuelle des champs EN -> reset le flag IA
+  // (le contenu reflete la relecture editoriale).
+  if (parsed.data.subject_en !== undefined) {
+    patch.subject_en = parsed.data.subject_en;
+    patch.en_translated_by_ai_at = null;
+  }
+  if (parsed.data.body_html_en !== undefined) {
+    patch.body_en = parsed.data.body_html_en;
+    patch.en_translated_by_ai_at = null;
+  }
   if (parsed.data.brevo_template_id !== undefined)
     patch.brevo_template_id = parsed.data.brevo_template_id;
   if (parsed.data.scheduled_at !== undefined) {
@@ -354,36 +375,38 @@ export async function sendTestEmailAction(
 
   const { data: campaign } = await supabase
     .from('email_campaigns')
-    .select('id, name, subject_fr, body_fr, content_mode, brevo_template_id')
+    .select('id, name, subject_fr, body_fr, subject_en, body_en, content_mode, brevo_template_id')
     .eq('id', parsed.data.campaign_id)
     .maybeSingle();
   if (!campaign) return { ok: false, error: 'Campagne introuvable.' };
 
-  // P8.3-bis : le sample recipient sert AUSSI a la perso du subject
-  // (avant : seul le body etait personalize -> "{prenom}" apparaissait brut).
+  // P8.3-quater : la langue du test est choisie par l'admin (defaut FR).
+  // Fallback FR explicite si EN est demande mais vide.
+  const testLang = parsed.data.test_language;
+  const useEn = testLang === 'EN' && Boolean(campaign.subject_en && campaign.body_en);
+  const rawSubject = useEn ? (campaign.subject_en ?? '') : (campaign.subject_fr ?? campaign.name);
+  const rawBody = useEn ? campaign.body_en : campaign.body_fr;
   const sampleRecipient: CampaignRecipient = {
     contact_id: 'test',
     email: parsed.data.test_email,
     first_name: profile.full_name?.split(' ')[0] ?? 'Test',
     last_name: 'User',
     company_name: 'Test SAS',
-    language: 'FR',
+    language: useEn ? 'EN' : 'FR',
   };
-  const rawSubject = campaign.subject_fr ?? campaign.name;
-  // Fix #3 : personalize aussi le subject ({prenom}/{societe}/{etape}).
   const subjectPersonalized = personalize(rawSubject, sampleRecipient);
-  const subject = `[TEST] ${subjectPersonalized}`;
+  const subject = `[TEST${useEn ? ' EN' : ''}] ${subjectPersonalized}`;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mediadays.solutions';
 
   let html: string;
   if ((campaign.content_mode as ContentMode) === 'inline') {
-    if (!campaign.body_fr) return { ok: false, error: 'Body manquant.' };
-    const personalized = personalize(campaign.body_fr, sampleRecipient);
+    if (!rawBody) return { ok: false, error: `Body ${useEn ? 'EN' : 'FR'} manquant.` };
+    const personalized = personalize(rawBody, sampleRecipient);
     // P8.3-bis Fix #2 : wrapper MDS branded (header + footer + RGPD).
     html = renderMdsEmailHtml({
       subject: subjectPersonalized,
       bodyHtml: personalized,
-      locale: 'fr',
+      locale: useEn ? 'en' : 'fr',
       appUrl,
     });
   } else {
@@ -526,24 +549,59 @@ export async function sendCampaignAction(
   const senderName = process.env.BREVO_SENDER_NAME ?? 'MediaDays Solutions';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mediadays.solutions';
 
-  let result;
+  // P8.3-quater : routing FR/EN. On split l'audience en 2 groupes selon
+  // contact.language puis on envoie 2 batches avec subject_fr/body_fr vs
+  // subject_en/body_en. Fallback FR explicite si EN vide cote campagne.
+  const subjectFr = campaign.subject_fr ?? campaign.name;
+  const subjectEn = campaign.subject_en ?? subjectFr;
+  const bodyFr = campaign.body_fr ?? null;
+  const bodyEn = campaign.body_en ?? bodyFr;
+  const isInline = (campaign.content_mode as ContentMode) === 'inline';
+  const templateId = !isInline ? (campaign.brevo_template_id ?? undefined) : undefined;
+
+  const recipientsFr = resolution.eligible.filter((r) => r.language !== 'EN');
+  const recipientsEn = resolution.eligible.filter((r) => r.language === 'EN');
+
+  let result: Awaited<ReturnType<typeof sendCampaignBatch>> = {
+    sent: 0,
+    errors: [],
+    brevo_ids: [],
+  };
   try {
-    result = await sendCampaignBatch({
-      apiKey,
-      senderEmail,
-      senderName,
-      recipients: resolution.eligible,
-      subject: campaign.subject_fr ?? campaign.name,
-      htmlContent:
-        (campaign.content_mode as ContentMode) === 'inline'
-          ? (campaign.body_fr ?? undefined)
-          : undefined,
-      templateId:
-        (campaign.content_mode as ContentMode) === 'template'
-          ? (campaign.brevo_template_id ?? undefined)
-          : undefined,
-      appUrl,
-    });
+    if (recipientsFr.length > 0) {
+      const r = await sendCampaignBatch({
+        apiKey,
+        senderEmail,
+        senderName,
+        recipients: recipientsFr,
+        subject: subjectFr,
+        htmlContent: isInline ? (bodyFr ?? undefined) : undefined,
+        templateId,
+        appUrl,
+      });
+      result = {
+        sent: result.sent + r.sent,
+        errors: [...result.errors, ...r.errors],
+        brevo_ids: [...result.brevo_ids, ...r.brevo_ids],
+      };
+    }
+    if (recipientsEn.length > 0) {
+      const r = await sendCampaignBatch({
+        apiKey,
+        senderEmail,
+        senderName,
+        recipients: recipientsEn,
+        subject: subjectEn,
+        htmlContent: isInline ? (bodyEn ?? undefined) : undefined,
+        templateId,
+        appUrl,
+      });
+      result = {
+        sent: result.sent + r.sent,
+        errors: [...result.errors, ...r.errors],
+        brevo_ids: [...result.brevo_ids, ...r.brevo_ids],
+      };
+    }
   } catch (err) {
     await supabase
       .from('email_campaigns')

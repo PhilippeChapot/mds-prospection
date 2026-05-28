@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CampaignBodyEditor } from '@/components/admin/campaigns/CampaignBodyEditor';
+import { BilingualBodyEditor } from '@/components/admin/campaigns/BilingualBodyEditor';
 import { CampaignBodyPreview } from '@/components/admin/campaigns/CampaignBodyPreview';
 import {
   createCampaignAction,
@@ -33,7 +33,8 @@ import { cn } from '@/lib/utils';
  * en serveur. Ce wizard cree juste la campagne en draft puis redirige.
  */
 
-/** P8.3-bis Fix #1 : valeurs initiales pour le mode edition. */
+/** P8.3-bis Fix #1 : valeurs initiales pour le mode edition.
+ *  P8.3-quater : ajout champs EN + flags traduction IA. */
 export interface CampaignInitial {
   campaign_id: string;
   name: string;
@@ -47,6 +48,12 @@ export interface CampaignInitial {
   content_mode: 'inline' | 'template';
   subject: string;
   body_html: string | null;
+  /** P8.3-quater : version EN editable. */
+  subject_en: string | null;
+  body_html_en: string | null;
+  /** P8.3-quater : flags traduction IA (badge "à relire" si non-null). */
+  fr_translated_by_ai_at: string | null;
+  en_translated_by_ai_at: string | null;
   brevo_template_id: number | null;
   scheduled_at: string | null;
 }
@@ -83,6 +90,9 @@ export function NewCampaignWizard({ audiences, categories, initial }: Props) {
     initial?.body_html ??
       "<p>Bonjour {prenom},</p>\n<p>Votre message ici...</p>\n<p>L'équipe MediaDays Solutions</p>",
   );
+  // P8.3-quater : version EN.
+  const [subjectEn, setSubjectEn] = useState(initial?.subject_en ?? '');
+  const [bodyHtmlEn, setBodyHtmlEn] = useState(initial?.body_html_en ?? '');
   const [brevoTemplateId, setBrevoTemplateId] = useState(
     initial?.brevo_template_id ? String(initial.brevo_template_id) : '',
   );
@@ -170,6 +180,8 @@ export function NewCampaignWizard({ audiences, categories, initial }: Props) {
           content_mode: contentMode,
           subject: subject.trim(),
           body_html: contentMode === 'inline' ? bodyHtml : undefined,
+          subject_en: contentMode === 'inline' ? subjectEn.trim() || null : undefined,
+          body_html_en: contentMode === 'inline' ? bodyHtmlEn || null : undefined,
           brevo_template_id: contentMode === 'template' ? Number(brevoTemplateId) : null,
           scheduled_at:
             scheduleMode === 'later' && scheduledAt ? new Date(scheduledAt).toISOString() : null,
@@ -190,6 +202,8 @@ export function NewCampaignWizard({ audiences, categories, initial }: Props) {
         content_mode: contentMode,
         subject: subject.trim(),
         body_html: contentMode === 'inline' ? bodyHtml : undefined,
+        subject_en: contentMode === 'inline' ? subjectEn.trim() || undefined : undefined,
+        body_html_en: contentMode === 'inline' ? bodyHtmlEn || undefined : undefined,
         brevo_template_id: contentMode === 'template' ? Number(brevoTemplateId) : undefined,
         scheduled_at:
           scheduleMode === 'later' && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
@@ -385,31 +399,30 @@ export function NewCampaignWizard({ audiences, categories, initial }: Props) {
               Utiliser un template Brevo
             </button>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cmp-subject">Sujet *</Label>
-            <Input
-              id="cmp-subject"
-              required
-              maxLength={200}
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="Ex : Bonjour {prenom}, votre acompte est dû"
-            />
-            <p className="text-md-text-muted text-[11px]">
-              Variables disponibles : <code>{'{prenom}'}</code> · <code>{'{societe}'}</code> ·{' '}
-              <code>{'{etape}'}</code>
-            </p>
-          </div>
           {contentMode === 'inline' ? (
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label>Corps de l&apos;email *</Label>
-                <CampaignBodyEditor value={bodyHtml} onChange={setBodyHtml} />
-                <p className="text-md-text-muted text-[11px]">
-                  Un wrapper MDS branded (header + footer désinscription RGPD) sera appliqué
-                  automatiquement à l&apos;envoi.
-                </p>
-              </div>
+            <div className="space-y-4">
+              <p className="text-md-text-muted text-[11px]">
+                Variables disponibles : <code>{'{prenom}'}</code> · <code>{'{societe}'}</code> ·{' '}
+                <code>{'{etape}'}</code>. Le wrapper MDS (header + footer RGPD) est appliqué à
+                l&apos;envoi.
+              </p>
+              <BilingualBodyEditor
+                campaignId={initial?.campaign_id}
+                subjectFr={subject}
+                bodyHtmlFr={bodyHtml}
+                subjectEn={subjectEn}
+                bodyHtmlEn={bodyHtmlEn}
+                enTranslatedByAiAt={initial?.en_translated_by_ai_at ?? null}
+                frTranslatedByAiAt={initial?.fr_translated_by_ai_at ?? null}
+                onChangeFr={(s, b) => {
+                  setSubject(s);
+                  setBodyHtml(b);
+                }}
+                onChangeEn={(s, b) => {
+                  setSubjectEn(s);
+                  setBodyHtmlEn(b);
+                }}
+              />
               <CampaignBodyPreview
                 bodyHtml={bodyHtml}
                 subject={subject}
@@ -417,6 +430,19 @@ export function NewCampaignWizard({ audiences, categories, initial }: Props) {
               />
             </div>
           ) : (
+            <div className="space-y-1.5">
+              <Label htmlFor="cmp-subject-tpl">Sujet *</Label>
+              <Input
+                id="cmp-subject-tpl"
+                required
+                maxLength={200}
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Ex : Bonjour {prenom}, votre acompte est dû"
+              />
+            </div>
+          )}
+          {contentMode === 'template' ? (
             <div className="space-y-1.5">
               <Label htmlFor="cmp-tpl">ID template Brevo *</Label>
               <Input
@@ -432,7 +458,7 @@ export function NewCampaignWizard({ audiences, categories, initial }: Props) {
                 <code>preferencesUrl</code>.
               </p>
             </div>
-          )}
+          ) : null}
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setStep(1)}>
               ← Précédent

@@ -26,7 +26,9 @@ export default async function EditCampaignPage({ params }: { params: Promise<{ i
     .from('email_campaigns')
     .select(
       `id, name, status, category, audience_key, audience_filters, content_mode,
-       subject_fr, body_fr, brevo_template_id, scheduled_at`,
+       subject_fr, body_fr, subject_en, body_en,
+       fr_translated_by_ai_at, en_translated_by_ai_at,
+       brevo_template_id, scheduled_at`,
     )
     .eq('id', id)
     .maybeSingle();
@@ -60,6 +62,10 @@ export default async function EditCampaignPage({ params }: { params: Promise<{ i
       | 'template',
     subject: campaign.subject_fr ?? '',
     body_html: campaign.body_fr,
+    subject_en: campaign.subject_en,
+    body_html_en: campaign.body_en,
+    fr_translated_by_ai_at: campaign.fr_translated_by_ai_at,
+    en_translated_by_ai_at: campaign.en_translated_by_ai_at,
     brevo_template_id: campaign.brevo_template_id,
     scheduled_at: campaign.scheduled_at,
   };

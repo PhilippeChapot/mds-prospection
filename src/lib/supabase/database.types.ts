@@ -1175,7 +1175,9 @@ export type Database = {
           content_mode: string | null;
           created_at: string;
           created_by_user_id: string;
+          en_translated_by_ai_at: string | null;
           error_count: number;
+          fr_translated_by_ai_at: string | null;
           id: string;
           name: string;
           open_count: number;
@@ -1189,6 +1191,7 @@ export type Database = {
           subject_fr: string | null;
           target_filter: Json;
           test_email_sent_at: string | null;
+          translation_model: string | null;
           unsubscribe_count: number;
         };
         Insert: {
@@ -1205,7 +1208,9 @@ export type Database = {
           content_mode?: string | null;
           created_at?: string;
           created_by_user_id: string;
+          en_translated_by_ai_at?: string | null;
           error_count?: number;
+          fr_translated_by_ai_at?: string | null;
           id?: string;
           name: string;
           open_count?: number;
@@ -1219,6 +1224,7 @@ export type Database = {
           subject_fr?: string | null;
           target_filter?: Json;
           test_email_sent_at?: string | null;
+          translation_model?: string | null;
           unsubscribe_count?: number;
         };
         Update: {
@@ -1235,7 +1241,9 @@ export type Database = {
           content_mode?: string | null;
           created_at?: string;
           created_by_user_id?: string;
+          en_translated_by_ai_at?: string | null;
           error_count?: number;
+          fr_translated_by_ai_at?: string | null;
           id?: string;
           name?: string;
           open_count?: number;
@@ -1249,6 +1257,7 @@ export type Database = {
           subject_fr?: string | null;
           target_filter?: Json;
           test_email_sent_at?: string | null;
+          translation_model?: string | null;
           unsubscribe_count?: number;
         };
         Relationships: [
