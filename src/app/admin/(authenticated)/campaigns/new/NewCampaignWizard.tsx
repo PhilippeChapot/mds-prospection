@@ -7,7 +7,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { CampaignBodyEditor } from '@/components/admin/campaigns/CampaignBodyEditor';
+import { CampaignBodyPreview } from '@/components/admin/campaigns/CampaignBodyPreview';
 import {
   createCampaignAction,
   editCampaignAction,
@@ -400,18 +401,20 @@ export function NewCampaignWizard({ audiences, categories, initial }: Props) {
             </p>
           </div>
           {contentMode === 'inline' ? (
-            <div className="space-y-1.5">
-              <Label htmlFor="cmp-body">Corps HTML *</Label>
-              <Textarea
-                id="cmp-body"
-                rows={10}
-                className="font-mono text-xs"
-                value={bodyHtml}
-                onChange={(e) => setBodyHtml(e.target.value)}
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label>Corps de l&apos;email *</Label>
+                <CampaignBodyEditor value={bodyHtml} onChange={setBodyHtml} />
+                <p className="text-md-text-muted text-[11px]">
+                  Un wrapper MDS branded (header + footer désinscription RGPD) sera appliqué
+                  automatiquement à l&apos;envoi.
+                </p>
+              </div>
+              <CampaignBodyPreview
+                bodyHtml={bodyHtml}
+                subject={subject}
+                locale={langue === 'EN' ? 'en' : 'fr'}
               />
-              <p className="text-md-text-muted text-[11px]">
-                Un footer de désinscription RGPD sera ajouté automatiquement.
-              </p>
             </div>
           ) : (
             <div className="space-y-1.5">
