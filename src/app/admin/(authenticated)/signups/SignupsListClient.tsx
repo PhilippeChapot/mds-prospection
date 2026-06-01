@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Eye, ExternalLink } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PoleBadge } from '@/components/admin/PoleBadge';
+import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { POLE_CODES, type PoleCode } from '@/lib/design-tokens';
 import { SIGNUP_STATUS_CLASS, SIGNUP_STATUS_LABEL, type SignupRow } from './types';
 import { cn } from '@/lib/utils';
@@ -52,11 +53,11 @@ function Row({ row }: { row: SignupRow }) {
       </Td>
       <Td>
         <span className="text-md-text">{row.companyNameInput ?? '—'}</span>
-        {row.derivedCategory === 'prs_exhibitor' && (
-          <span className="bg-md-magenta/10 text-md-magenta ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
-            PRS
-          </span>
-        )}
+        {row.externalEventTags ? (
+          <div className="mt-1">
+            <ExternalEventBadges tags={row.externalEventTags} size="xs" />
+          </div>
+        ) : null}
       </Td>
       <Td>
         {row.category ? (

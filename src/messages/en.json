@@ -854,5 +854,25 @@
     "stand_status_reserve": "Reserved",
     "stand_status_paye": "Confirmed ✓",
     "stand_status_bloque": "Blocked"
+  },
+  "AdminExternalEvents": {
+    "page_title": "External events import review",
+    "page_subtitle": "Imported companies without strict match. To merge or validate.",
+    "tab_md_classic": "MD Classic",
+    "tab_rde": "RDE",
+    "tab_satis": "SATIS",
+    "tab_cbd": "CBD",
+    "potential_matches": "Potential matches in database",
+    "merge_with": "Merge here",
+    "validate_as_is": "Validate as-is",
+    "ignore": "Ignore",
+    "suggest_matches": "Suggest matches",
+    "confidence_label": "{score}% confidence",
+    "email_verified": "Verified email",
+    "email_medium": "Medium confidence email",
+    "email_low": "Low confidence email",
+    "priority_signup_subject": "Priority signup: {company} ({events})",
+    "no_unverified": "No unverified company for this source.",
+    "contacts_imported": "{count, plural, =0 {No contact} =1 {1 contact} other {# contacts}} imported"
   }
 }

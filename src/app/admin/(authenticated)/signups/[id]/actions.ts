@@ -344,6 +344,37 @@ export async function convertSignupToProspect(
     );
   }
 
+  // P5.x.ExternalEvents — alerte interne si la company matche un
+  // event externe (PRS / MD Classic / RDE / SATIS / CBD). Best-effort.
+  void (async () => {
+    try {
+      if (!companyId) return;
+      const { data: co } = await supabase
+        .from('companies')
+        .select('id, name, external_event_tags')
+        .eq('id', companyId)
+        .maybeSingle();
+      if (!co) return;
+      const { triggerExternalEventSignupAlert } =
+        await import('@/lib/external-events/signup-alert');
+      await triggerExternalEventSignupAlert({
+        signupId: signup.id,
+        signupEmail: signup.email,
+        signupFirstName: signup.contact_first_name,
+        signupLastName: signup.contact_last_name,
+        companyId: co.id,
+        companyName: co.name,
+        externalEventTags: co.external_event_tags as Record<string, unknown> | null,
+      });
+    } catch (err) {
+      console.error(
+        '[signups/convert] external-event-alert-failed signup=%s msg=%s',
+        signup.id,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  })();
+
   // 5. UPDATE signup
   const { error: updateSignupErr } = await supabase
     .from('public_signup_attempts')

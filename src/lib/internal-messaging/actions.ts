@@ -463,7 +463,7 @@ export async function listMyConversationsAction(input?: {
 
   let query = supabase
     .from('internal_conversations')
-    .select('id, type, subject, created_at, last_message_at, archived_at')
+    .select('id, type, subject, priority, created_at, last_message_at, archived_at')
     .order('last_message_at', { ascending: false })
     .limit(100);
   if (viewer.kind === 'contact') {
@@ -583,6 +583,7 @@ export async function listMyConversationsAction(input?: {
       id: c.id,
       type: c.type as ConversationType,
       subject: c.subject,
+      priority: ((c as { priority?: string }).priority ?? 'normal') as 'low' | 'normal' | 'high',
       created_at: c.created_at,
       last_message_at: c.last_message_at,
       archived_at: c.archived_at,
@@ -671,7 +672,7 @@ export async function getConversationAction(input: {
 
   const { data: conv } = await supabase
     .from('internal_conversations')
-    .select('id, type, subject, created_at, last_message_at, archived_at')
+    .select('id, type, subject, priority, created_at, last_message_at, archived_at')
     .eq('id', input.conversation_id)
     .maybeSingle();
   if (!conv) return null;
@@ -776,6 +777,7 @@ export async function getConversationAction(input: {
       id: conv.id,
       type: conv.type as ConversationType,
       subject: conv.subject,
+      priority: ((conv as { priority?: string }).priority ?? 'normal') as 'low' | 'normal' | 'high',
       created_at: conv.created_at,
       last_message_at: conv.last_message_at,
       archived_at: conv.archived_at,

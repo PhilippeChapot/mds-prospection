@@ -35,7 +35,7 @@ export {
 
 const PROSPECT_LIST_SELECT = `
   id, status, pack_code, estimated_amount, owner_id, affiliate_id, is_test, created_at, last_activity_at,
-  company:companies!inner(id, name, category, was_prs_2026_exhibitor, pole:poles(code, name_fr)),
+  company:companies!inner(id, name, category, was_prs_2026_exhibitor, external_event_tags, pole:poles(code, name_fr)),
   contact:contacts(id, first_name, last_name, email),
   owner:users!prospects_owner_id_fkey(id, full_name, email)
 `;
@@ -146,7 +146,7 @@ export async function listCompaniesPaginated(opts: {
   let query = supabase
     .from('companies')
     .select(
-      'id, name, primary_domain, country, category, was_prs_2026_exhibitor, created_at, pole:poles(code, name_fr)',
+      'id, name, primary_domain, country, category, was_prs_2026_exhibitor, external_event_tags, created_at, pole:poles(code, name_fr)',
       { count: 'exact' },
     )
     .order('name', { ascending: true })
@@ -173,6 +173,7 @@ export async function listCompaniesPaginated(opts: {
     country: row.country,
     category: row.category,
     was_prs_2026_exhibitor: row.was_prs_2026_exhibitor,
+    external_event_tags: (row.external_event_tags ?? {}) as Record<string, unknown>,
     created_at: row.created_at,
     pole: pickFirst(row.pole),
   }));
@@ -244,6 +245,7 @@ type RawProspectRow = {
     name: string;
     category: CategoryTarif;
     was_prs_2026_exhibitor: boolean;
+    external_event_tags: unknown;
     pole: MaybeArray<{ code: string; name_fr: string }>;
   }>;
   contact: MaybeArray<{
@@ -273,6 +275,7 @@ function normalizeProspectRow(row: RawProspectRow): ProspectListItem {
           name: company.name,
           category: company.category,
           was_prs_2026_exhibitor: company.was_prs_2026_exhibitor,
+          external_event_tags: (company.external_event_tags ?? {}) as Record<string, unknown>,
           pole: pickFirst(company.pole),
         }
       : null,

@@ -3,7 +3,8 @@
  * Sans 'use server' pour permettre l'import depuis client + server.
  */
 
-export type ConversationType = 'staff_dm' | 'support';
+export type ConversationType = 'staff_dm' | 'support' | 'staff_broadcast';
+export type ConversationPriority = 'low' | 'normal' | 'high';
 export type ParticipantType = 'user' | 'contact' | 'staff_pool';
 export type SenderType = 'user' | 'contact';
 
@@ -21,6 +22,7 @@ export interface ConversationListItem {
   id: string;
   type: ConversationType;
   subject: string | null;
+  priority: ConversationPriority;
   created_at: string;
   last_message_at: string;
   archived_at: string | null;

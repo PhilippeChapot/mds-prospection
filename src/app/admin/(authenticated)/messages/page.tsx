@@ -255,11 +255,25 @@ async function InternalConversationsView() {
                       'rounded-full px-2 py-0.5 text-[10px] font-bold uppercase',
                       c.type === 'staff_dm'
                         ? 'bg-md-blue/10 text-md-blue'
-                        : 'bg-md-magenta/10 text-md-magenta',
+                        : c.type === 'staff_broadcast'
+                          ? 'bg-md-warning/15 text-md-warning'
+                          : 'bg-md-magenta/10 text-md-magenta',
                     )}
                   >
-                    {c.type === 'staff_dm' ? 'DM' : 'Support'}
+                    {c.type === 'staff_dm'
+                      ? 'DM'
+                      : c.type === 'staff_broadcast'
+                        ? 'Broadcast'
+                        : 'Support'}
                   </span>
+                  {c.priority === 'high' ? (
+                    <span
+                      className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-red-700 uppercase"
+                      title="Priorite haute"
+                    >
+                      ⚠ HAUTE
+                    </span>
+                  ) : null}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-2">

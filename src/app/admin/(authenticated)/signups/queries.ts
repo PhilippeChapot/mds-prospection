@@ -45,7 +45,7 @@ export async function listSignups({
   let query = supabase
     .from('public_signup_attempts')
     .select(
-      'id, email, contact_first_name, contact_last_name, company_name_input, category, derived_category, language, status, ai_classification, created_at, verified_at, step2_submitted_at, converted_to_prospect_id',
+      'id, email, contact_first_name, contact_last_name, company_name_input, category, derived_category, language, status, ai_classification, created_at, verified_at, step2_submitted_at, converted_to_prospect_id, matched_company:companies(external_event_tags)',
       { count: 'exact' },
     )
     .order('created_at', { ascending: false });
@@ -94,6 +94,14 @@ export async function listSignups({
       confidence?: number;
       reasoning?: string;
     } | null;
+    const matched = Array.isArray(r.matched_company) ? r.matched_company[0] : r.matched_company;
+    const externalEventTags =
+      matched && typeof matched === 'object' && 'external_event_tags' in matched
+        ? ((matched as { external_event_tags: unknown }).external_event_tags as Record<
+            string,
+            unknown
+          > | null)
+        : null;
     // Filet de securite : si la status renvoyee n'est pas dans notre enum local,
     // fallback awaiting_verification (pas censee arriver, RLS et enum DB protegent).
     const status = (SIGNUP_STATUSES as readonly string[]).includes(r.status)
@@ -116,6 +124,7 @@ export async function listSignups({
       verifiedAt: r.verified_at,
       step2SubmittedAt: r.step2_submitted_at,
       convertedToProspectId: r.converted_to_prospect_id,
+      externalEventTags,
     };
   });
 

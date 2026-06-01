@@ -54,4 +54,6 @@ export interface SignupRow {
   verifiedAt: string | null;
   step2SubmittedAt: string | null;
   convertedToProspectId: string | null;
+  /** P5.x.ExternalEvents - tags multi-events de la matched_company (null si pas matchee). */
+  externalEventTags: Record<string, unknown> | null;
 }

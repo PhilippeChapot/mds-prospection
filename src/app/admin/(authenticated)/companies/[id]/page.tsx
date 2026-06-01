@@ -8,6 +8,7 @@ import { PoleBadge } from '@/components/admin/PoleBadge';
 import { NotesEditor } from '@/components/admin/NotesEditor';
 import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { LinkedProspectsTable, type LinkedProspect } from '@/components/admin/LinkedProspectsTable';
+import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { DeleteCompanyButton } from './DeleteButton';
 import { updateCompanyNotesAction } from './actions';
 import { CompanyContactsSection } from './_components/CompanyContactsSection';
@@ -32,7 +33,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     .from('companies')
     .select(
       `
-      id, name, primary_domain, alternate_domains, country, category, was_prs_2026_exhibitor, notes,
+      id, name, primary_domain, alternate_domains, country, category, was_prs_2026_exhibitor, external_event_tags, notes,
       created_at, updated_at,
       pole:poles(code, name_fr)
     `,
@@ -121,11 +122,12 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
               </a>
             )}
             {company.country && <span>{company.country}</span>}
-            {company.was_prs_2026_exhibitor && (
-              <span className="bg-md-magenta/10 text-md-magenta rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase">
-                Exposant PRS 2026
-              </span>
-            )}
+          </div>
+          <div className="mt-2">
+            <ExternalEventBadges
+              tags={company.external_event_tags as Record<string, unknown>}
+              size="sm"
+            />
           </div>
           {company.alternate_domains && company.alternate_domains.length > 0 ? (
             <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">

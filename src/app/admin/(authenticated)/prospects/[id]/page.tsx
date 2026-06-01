@@ -28,6 +28,7 @@ import type { PoleCode } from '@/lib/design-tokens';
 import type { Database } from '@/lib/supabase/database.types';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import { ProspectForbiddenPage } from '@/components/admin/prospects/ProspectForbiddenPage';
+import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { canViewProspectDetail } from '@/lib/prospects/access';
 
 export const metadata = { title: 'Fiche prospect' };
@@ -71,7 +72,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
       sellsy_invoice_id, sellsy_invoice_number, sellsy_invoice_public_url, sellsy_invoice_emitted_at,
       booth_assignment, booth_assigned_at, booth_assigned_by,
       created_at, updated_at, last_activity_at,
-      company:companies(id, name, primary_domain, country, category, sellsy_id, was_prs_2026_exhibitor, siren, siret, siren_verified_at, siren_source, pole:poles(code, name_fr)),
+      company:companies(id, name, primary_domain, country, category, sellsy_id, was_prs_2026_exhibitor, external_event_tags, siren, siret, siren_verified_at, siren_source, pole:poles(code, name_fr)),
       contact:contacts(id, first_name, last_name, email, phone, role),
       owner:users!prospects_owner_id_fkey(id, full_name, email, role),
       booth_assignee:users!prospects_booth_assigned_by_fkey(full_name, email)
@@ -233,6 +234,14 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           <h1 className="text-md-blue-dark font-[family-name:var(--font-montserrat)] text-2xl font-extrabold tracking-tight">
             {company?.name ?? 'Societe inconnue'}
           </h1>
+          {company?.external_event_tags ? (
+            <div className="mt-2">
+              <ExternalEventBadges
+                tags={company.external_event_tags as Record<string, unknown>}
+                size="sm"
+              />
+            </div>
+          ) : null}
           {contactName && (
             <p className="text-md-text-muted mt-1 text-sm">
               Contact : <strong className="text-md-text">{contactName}</strong>

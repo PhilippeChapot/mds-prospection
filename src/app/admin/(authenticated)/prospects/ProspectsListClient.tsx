@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CompanyAvatar } from '@/components/admin/CompanyAvatar';
+import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { PoleBadge } from '@/components/admin/PoleBadge';
 import { StatusPill } from '@/components/admin/StatusPill';
 import { PACK_LABEL, type ProspectListItem, type ProspectStatus } from '@/lib/supabase/constants';
@@ -301,6 +302,14 @@ export function ProspectsListClient({
                             <div className="text-md-text-muted truncate text-xs">
                               {contactDisplay}
                             </div>
+                            {row.company?.external_event_tags ? (
+                              <div className="mt-1">
+                                <ExternalEventBadges
+                                  tags={row.company.external_event_tags}
+                                  size="xs"
+                                />
+                              </div>
+                            ) : null}
                           </div>
                         </Link>
                       </td>

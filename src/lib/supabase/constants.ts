@@ -42,6 +42,7 @@ export type ProspectListItem = {
     name: string;
     category: CategoryTarif;
     was_prs_2026_exhibitor: boolean;
+    external_event_tags: Record<string, unknown>;
     pole: { code: string; name_fr: string } | null;
   } | null;
   contact: {
@@ -60,6 +61,7 @@ export type CompanyListItem = {
   country: string | null;
   category: CategoryTarif;
   was_prs_2026_exhibitor: boolean;
+  external_event_tags: Record<string, unknown>;
   created_at: string;
   pole: { code: string; name_fr: string } | null;
 };

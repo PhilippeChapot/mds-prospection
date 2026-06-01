@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PoleBadge } from '@/components/admin/PoleBadge';
 import { CompanyAvatar } from '@/components/admin/CompanyAvatar';
+import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { POLE_CODES, type PoleCode } from '@/lib/design-tokens';
 import { listCompaniesPaginated, listDistinctCountries } from '@/lib/supabase/queries';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
@@ -236,11 +237,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
                         <CompanyAvatar initials={initialsOf(row.name)} />
                         <div className="min-w-0">
                           <div className="text-md-text truncate font-semibold">{row.name}</div>
-                          {row.was_prs_2026_exhibitor ? (
-                            <div className="text-md-magenta text-[10px] font-bold tracking-wider uppercase">
-                              Exposant PRS 2026
-                            </div>
-                          ) : null}
+                          <ExternalEventBadges tags={row.external_event_tags} size="xs" />
                         </div>
                       </Link>
                     </td>
