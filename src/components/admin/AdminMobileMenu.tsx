@@ -39,7 +39,12 @@ export function AdminMobileMenu({ currentUserRole }: { currentUserRole: UserRole
           pas en 667px iPhone SE). */}
       <SheetContent
         side="left"
-        className="bg-card relative flex max-h-dvh w-72 flex-col overflow-y-auto p-0"
+        // P6.x-BURGER-FIX-ter : NE PAS ajouter `relative` ici. Le SheetContent
+        // primitive est `position: fixed` (cf src/components/ui/sheet.tsx) et
+        // tailwind-merge ferait gagner `relative` -> SheetContent perdrait son
+        // positioning fixed inset-y-0 left-0 -> invisible. `fixed` cree deja un
+        // containing block pour les enfants `absolute` (ex: SheetClose).
+        className="bg-card flex max-h-dvh w-72 flex-col overflow-y-auto p-0"
       >
         {/* SheetTitle requis par Radix pour l'a11y. */}
         <SheetTitle className="sr-only">Navigation admin</SheetTitle>

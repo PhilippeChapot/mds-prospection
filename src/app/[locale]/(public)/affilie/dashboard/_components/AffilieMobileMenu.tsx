@@ -32,7 +32,9 @@ export function AffilieMobileMenu() {
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="bg-card relative flex max-h-dvh w-72 flex-col overflow-y-auto p-0"
+        // P6.x-BURGER-FIX-ter : NE PAS ajouter `relative` ici (tailwind-merge
+        // ecrase `fixed` du SheetContent primitive -> invisible).
+        className="bg-card flex max-h-dvh w-72 flex-col overflow-y-auto p-0"
       >
         <SheetTitle className="sr-only">{t('sectionTitle')}</SheetTitle>
         {/* P9.1-natif-mobile : croix de fermeture top-right (tap-target ≥ 44px). */}

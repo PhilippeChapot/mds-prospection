@@ -24,12 +24,15 @@ function HarnessSheet({ side = 'left' as 'left' | 'right' }) {
 }
 
 describe('Sheet primitive (P6.x-BURGER-FIX)', () => {
-  it('SheetContent side=left utilise transition-transform + data-[state=closed]:-translate-x-full', () => {
+  it('SheetContent side=left utilise transition-transform + data-[state=open]:translate-x-0 + data-[state=closed]:-translate-x-full', () => {
     render(<HarnessSheet side="left" />);
     const content = document.querySelector('[data-slot="sheet-content"]');
     expect(content).toBeTruthy();
     const cls = content?.className ?? '';
     expect(cls).toMatch(/transition-transform/);
+    // P6.x-BURGER-FIX-bis : on force translate-x-0 explicite a data-state=open
+    // (defensif contre tailwind-merge order ou residus mobile Safari).
+    expect(cls).toMatch(/data-\[state=open\]:translate-x-0/);
     expect(cls).toMatch(/data-\[state=closed\]:-translate-x-full/);
     // Garde anti-regression : l ancienne pipeline animate-in/slide-in-from-left
     // ne doit PAS revenir (sinon stuck a -100% sous Tailwind v4 + tw-animate-css).
@@ -37,20 +40,22 @@ describe('Sheet primitive (P6.x-BURGER-FIX)', () => {
     expect(cls).not.toMatch(/data-open:animate-in/);
   });
 
-  it('SheetContent side=right utilise translate-x-full (sens oppose)', () => {
+  it('SheetContent side=right utilise translate-x-full + translate-x-0 open', () => {
     render(<HarnessSheet side="right" />);
     const content = document.querySelector('[data-slot="sheet-content"]');
     const cls = content?.className ?? '';
+    expect(cls).toMatch(/data-\[state=open\]:translate-x-0/);
     expect(cls).toMatch(/data-\[state=closed\]:translate-x-full/);
     expect(cls).not.toMatch(/data-\[state=closed\]:-translate-x-full/);
   });
 
-  it('SheetOverlay utilise transition-opacity (pas animate-in/fade-in)', () => {
+  it('SheetOverlay utilise transition-opacity (pas animate-in/fade-in) + opacity-100 open explicite', () => {
     render(<HarnessSheet />);
     const overlay = document.querySelector('[data-slot="sheet-overlay"]');
     expect(overlay).toBeTruthy();
     const cls = overlay?.className ?? '';
     expect(cls).toMatch(/transition-opacity/);
+    expect(cls).toMatch(/data-\[state=open\]:opacity-100/);
     expect(cls).toMatch(/data-\[state=closed\]:opacity-0/);
     expect(cls).not.toMatch(/data-open:fade-in/);
   });

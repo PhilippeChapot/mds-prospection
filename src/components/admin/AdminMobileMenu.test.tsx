@@ -68,4 +68,20 @@ describe('AdminMobileMenu (P6.x-mobile-burger)', () => {
     // et que les sections scrollent en-dessous.
     expect(className).toMatch(/flex-col/);
   });
+
+  it('P6.x-BURGER-FIX-ter — SheetContent garde "fixed" du primitive (pas d override "relative")', () => {
+    // tailwind-merge ferait gagner `relative` sur `fixed` -> SheetContent
+    // perdrait son positionnement inset-y-0 left-0 -> invisible hors ecran.
+    render(<AdminMobileMenu currentUserRole="super_admin" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' }));
+    const sheetContent = document.querySelector('[data-slot="sheet-content"]');
+    const className = sheetContent?.className ?? '';
+    expect(className).toMatch(/\bfixed\b/);
+    // Garde anti-regression : pas d override `relative` ni `absolute` ni
+    // `sticky` ni `static` qui ecraserait `fixed` via tailwind-merge.
+    expect(className).not.toMatch(/(^|\s)relative(\s|$)/);
+    expect(className).not.toMatch(/(^|\s)absolute(\s|$)/);
+    expect(className).not.toMatch(/(^|\s)sticky(\s|$)/);
+    expect(className).not.toMatch(/(^|\s)static(\s|$)/);
+  });
 });

@@ -32,7 +32,10 @@ export function ExposantMobileMenu({ profile }: { profile: ContactProfile | null
           <Menu className="size-5" aria-hidden />
         </button>
       </SheetTrigger>
-      <SheetContent side="left" className="relative w-72 p-0">
+      {/* P6.x-BURGER-FIX-ter : NE PAS ajouter `relative` ici (tailwind-merge
+          ecrase `fixed` du SheetContent primitive et le SheetContent devient
+          invisible). `fixed` cree deja un containing block pour les enfants. */}
+      <SheetContent side="left" className="w-72 p-0">
         {/* SheetTitle requis par Radix pour l'a11y -- on le rend visuellement
             invisible (le titre est deja dans la sidebar) avec sr-only. */}
         <SheetTitle className="sr-only">{spaceTitle}</SheetTitle>

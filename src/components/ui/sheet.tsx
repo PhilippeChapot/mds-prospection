@@ -41,7 +41,11 @@ function SheetOverlay({
     <DialogPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        'fixed inset-0 z-50 bg-black/30 transition-opacity duration-150 data-[state=closed]:opacity-0',
+        // P6.x-BURGER-FIX-bis : on force EXPLICITEMENT opacity-100 a l etat open
+        // (et pas seulement defaut) + opacity-0 a l etat closed. Defensif contre
+        // tout merge tailwind-merge / classe upstream qui ecraserait l opacite.
+        'fixed inset-0 z-50 bg-black/30 transition-opacity duration-150',
+        'data-[state=closed]:opacity-0 data-[state=open]:opacity-100',
         className,
       )}
       {...props}
@@ -55,10 +59,15 @@ interface SheetContentProps extends React.ComponentProps<typeof DialogPrimitive.
 }
 
 function SheetContent({ className, children, side = 'left', ...props }: SheetContentProps) {
+  // P6.x-BURGER-FIX-bis : on force EXPLICITEMENT translate-x-0 a data-state=open
+  // (au lieu de relier sur la valeur "default" du transform). Defensif contre
+  // les cas ou une autre classe set transform via cn() / tailwind-merge, ou
+  // contre un residu --tw-enter-translate-x propage par Radix Presence entre
+  // 2 frames sur mobile Safari.
   const sideClasses =
     side === 'left'
-      ? 'inset-y-0 left-0 h-full w-72 border-r data-[state=closed]:-translate-x-full'
-      : 'inset-y-0 right-0 h-full w-72 border-l data-[state=closed]:translate-x-full';
+      ? 'inset-y-0 left-0 h-full w-72 border-r data-[state=open]:translate-x-0 data-[state=closed]:-translate-x-full'
+      : 'inset-y-0 right-0 h-full w-72 border-l data-[state=open]:translate-x-0 data-[state=closed]:translate-x-full';
   return (
     <SheetPortal>
       <SheetOverlay />
