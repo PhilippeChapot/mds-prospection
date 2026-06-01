@@ -19,9 +19,9 @@
 
 import { sellsyFetch } from '@/lib/sellsy/client';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { isMdsReference } from '@/lib/sellsy/mds-filter';
 
 const LOG_PREFIX = '[sellsy/sync-products]';
-const SKU_PREFIX = 'MDS-';
 const PAGE_SIZE = 100;
 
 interface SellsyItem {
@@ -154,7 +154,9 @@ async function fetchAllMdsItems(result: SyncProductsResult): Promise<SellsyItem[
       const items = res.data ?? [];
       result.fetched += items.length;
 
-      const mdsItems = items.filter((it) => (it.reference ?? '').startsWith(SKU_PREFIX));
+      // P6.x.1a-quinquies : filtre case-insensitive via isMdsReference
+      // (helper centralise). 'MDS-', 'mds-', 'Mds-' matchent tous.
+      const mdsItems = items.filter((it) => isMdsReference(it.reference));
       all.push(...mdsItems);
 
       if (items.length < PAGE_SIZE) break;

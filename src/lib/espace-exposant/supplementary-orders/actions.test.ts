@@ -174,7 +174,7 @@ describe('createSupplementaryCheckoutSession (P6.x.1b)', () => {
       products: [
         {
           sellsy_item_id: 1,
-          reference: 'WIFI',
+          reference: 'MDS-WIFI',
           name: 'WiFi',
           price_excl_tax: 100,
           is_archived: true,
@@ -202,7 +202,13 @@ describe('createSupplementaryCheckoutSession (P6.x.1b)', () => {
         company_sellsy_id: '42',
       },
       products: [
-        { sellsy_item_id: 1, reference: 'X', name: 'X', price_excl_tax: 100, is_archived: false },
+        {
+          sellsy_item_id: 1,
+          reference: 'MDS-X',
+          name: 'X',
+          price_excl_tax: 100,
+          is_archived: false,
+        },
       ],
     });
     mockAll(state);
@@ -289,7 +295,13 @@ describe('createSupplementaryCheckoutSession (P6.x.1b)', () => {
         company_sellsy_id: '42',
       },
       products: [
-        { sellsy_item_id: 1, reference: 'X', name: 'X', price_excl_tax: 100, is_archived: false },
+        {
+          sellsy_item_id: 1,
+          reference: 'MDS-X',
+          name: 'X',
+          price_excl_tax: 100,
+          is_archived: false,
+        },
       ],
       stripeShouldFail: true,
     });

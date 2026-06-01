@@ -10,6 +10,7 @@
  */
 
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { isMdsReference } from '@/lib/sellsy/mds-filter';
 import { detectIsPremium, type QuoteItem } from './quote-calc';
 
 export type AdminCatalogCategory = 'pack' | 'option' | 'sponsor' | 'service';
@@ -71,6 +72,8 @@ export async function getCatalogForAdminQuote(): Promise<AdminCatalogProduct[]> 
     const s = pickOne(r.sellsy);
     if (!s) continue;
     if (s.is_archived) continue;
+    // P6.x.1a-quinquies : defense in depth — ignorer toute reference non-MDS.
+    if (!isMdsReference(s.reference)) continue;
     if (!['pack', 'option', 'sponsor', 'service'].includes(r.category)) continue;
     out.push({
       sellsy_product_id: r.sellsy_product_id,

@@ -19,13 +19,20 @@ describe('sync-products fetch behavior', () => {
     vi.resetModules();
   });
 
-  it('filtre client-side : ne garde que les references prefixees MDS-', async () => {
+  it('filtre client-side case-insensitive : garde MDS-/mds-/Mds-, drop autres', async () => {
     vi.doMock('@/lib/sellsy/client', () => ({
       sellsyFetch: vi.fn().mockResolvedValue({
         data: [
           { id: 1, reference: 'MDS-PACK-ACCESS-PARIS' },
           { id: 2, reference: 'OTHER-ITEM' },
           { id: 3, reference: 'MDS-ADDON-WIFI-PARIS' },
+          // P6.x.1a-quinquies : case-insensitive accepte lowercase + mixed.
+          { id: 4, reference: 'mds-pack-classic' },
+          { id: 5, reference: 'Mds-Addon-Logo' },
+          // Garde drop : ref sans prefixe.
+          { id: 6, reference: 'HF-LIVRE-BRIVE' },
+          // Garde drop : null reference.
+          { id: 7, reference: undefined },
         ],
       }),
     }));
@@ -51,15 +58,18 @@ describe('sync-products fetch behavior', () => {
 
     const { syncSellsyProducts } = await import('./sync-products');
     const result = await syncSellsyProducts();
-    // 3 items recus, 2 filtres MDS-* uploades.
-    expect(result.fetched).toBe(3);
+    // 7 items recus, 4 filtres MDS-* uploades (3 uppercase + 1 lower + 1 mixed - 2 drop).
+    expect(result.fetched).toBe(7);
     expect(upsert).toHaveBeenCalled();
     const upsertedRows = upsert.mock.calls[0][0];
-    expect(upsertedRows).toHaveLength(2);
-    expect(upsertedRows.map((r: { reference: string }) => r.reference).sort()).toEqual([
-      'MDS-ADDON-WIFI-PARIS',
-      'MDS-PACK-ACCESS-PARIS',
-    ]);
+    expect(upsertedRows).toHaveLength(4);
+    const refs = upsertedRows.map((r: { reference: string }) => r.reference).sort();
+    expect(refs).toContain('MDS-PACK-ACCESS-PARIS');
+    expect(refs).toContain('MDS-ADDON-WIFI-PARIS');
+    expect(refs).toContain('mds-pack-classic');
+    expect(refs).toContain('Mds-Addon-Logo');
+    expect(refs).not.toContain('OTHER-ITEM');
+    expect(refs).not.toContain('HF-LIVRE-BRIVE');
   });
 
   it('abort si Sellsy retourne 0 item (evite d archiver tout le mirror)', async () => {

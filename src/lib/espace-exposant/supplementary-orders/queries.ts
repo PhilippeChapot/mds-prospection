@@ -9,6 +9,7 @@
  */
 
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { isMdsReference } from '@/lib/sellsy/mds-filter';
 
 export type OrderableCategory = 'option' | 'sponsor' | 'service';
 
@@ -87,6 +88,8 @@ export async function getOrderableCatalog(): Promise<OrderableProduct[]> {
   for (const r of rows) {
     const sellsy = pickOne(r.sellsy);
     if (!sellsy || sellsy.is_archived) continue;
+    // P6.x.1a-quinquies : defense in depth — ignorer toute reference non-MDS.
+    if (!isMdsReference(sellsy.reference)) continue;
     const priceNum = sellsy.price_excl_tax != null ? Number(sellsy.price_excl_tax) : NaN;
     if (!Number.isFinite(priceNum)) continue;
     products.push({

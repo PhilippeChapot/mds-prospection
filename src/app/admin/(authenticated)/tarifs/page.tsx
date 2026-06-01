@@ -95,6 +95,22 @@ export default async function TarifsPage({ searchParams }: { searchParams: Searc
         </div>
       </header>
 
+      {/* P6.x.1a-quinquies — hint preffixe MDS-* (multi-business Sellsy) */}
+      <div className="rounded-md border border-blue-300 bg-blue-50 p-3 text-sm text-blue-900">
+        <p className="font-semibold">💡 Ajout d&apos;un nouveau tarif</p>
+        <p className="mt-1">
+          Pour qu&apos;un produit Sellsy apparaisse ici, sa <strong>référence</strong> doit
+          commencer par <code className="rounded bg-white px-1">MDS-</code> (ex&nbsp;:{' '}
+          <code className="rounded bg-white px-1">MDS-PACK-STANDARD-PARIS</code>,{' '}
+          <code className="rounded bg-white px-1">MDS-ADDON-LOGO-GOLD-PARIS</code>). La prochaine
+          synchronisation avec Sellsy l&apos;importera automatiquement.
+        </p>
+        <p className="mt-1 text-xs italic opacity-80">
+          For a Sellsy product to appear in this catalog, its reference must start with{' '}
+          <code className="rounded bg-white px-1">MDS-</code>.
+        </p>
+      </div>
+
       {/* KPIs */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <Stat label="Sellsy actifs" value={counters.total} />

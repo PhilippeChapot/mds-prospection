@@ -84,7 +84,7 @@ describe('getOrderableCatalog (P6.x.1b)', () => {
           display_order: 30,
           featured: false,
           tags: [],
-          sellsy: { reference: 'WIFI', name: 'WiFi', price_excl_tax: 100, is_archived: false },
+          sellsy: { reference: 'MDS-WIFI', name: 'WiFi', price_excl_tax: 100, is_archived: false },
         },
         {
           sellsy_product_id: 2,
@@ -98,7 +98,7 @@ describe('getOrderableCatalog (P6.x.1b)', () => {
           featured: true,
           tags: [],
           sellsy: {
-            reference: 'SPONSOR-GOLD',
+            reference: 'MDS-SPONSOR-GOLD',
             name: 'Sponsor Or',
             price_excl_tax: 5000,
             is_archived: false,
@@ -116,7 +116,7 @@ describe('getOrderableCatalog (P6.x.1b)', () => {
           featured: false,
           tags: [],
           sellsy: {
-            reference: 'ELEC',
+            reference: 'MDS-ELEC',
             name: 'Électricité',
             price_excl_tax: 150,
             is_archived: false,
@@ -145,7 +145,7 @@ describe('getOrderableCatalog (P6.x.1b)', () => {
           display_order: 10,
           featured: false,
           tags: [],
-          sellsy: { reference: 'X', name: 'X', price_excl_tax: 100, is_archived: true },
+          sellsy: { reference: 'MDS-X', name: 'X', price_excl_tax: 100, is_archived: true },
         },
       ],
     });
@@ -168,7 +168,7 @@ describe('getOrderableCatalog (P6.x.1b)', () => {
           display_order: 10,
           featured: false,
           tags: [],
-          sellsy: { reference: 'X', name: null, price_excl_tax: null, is_archived: false },
+          sellsy: { reference: 'MDS-X', name: null, price_excl_tax: null, is_archived: false },
         },
       ],
     });

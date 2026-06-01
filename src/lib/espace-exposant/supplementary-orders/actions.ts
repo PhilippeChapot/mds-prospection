@@ -21,6 +21,7 @@ import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { ESPACE_EXPOSANT_SESSION_COOKIE, verifySessionToken } from '@/lib/espace-exposant/jwt';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { isMdsReference } from '@/lib/sellsy/mds-filter';
 import { getStripe } from '@/lib/stripe/client';
 import { STRIPE_BUSINESS_TAG } from '@/lib/stripe/constants';
 import { canAccessSupplementaryOrders } from './eligibility';
@@ -114,6 +115,14 @@ export async function createSupplementaryCheckoutSession(input: unknown): Promis
       return {
         ok: false,
         error: `Produit ${requested.sellsy_product_id} introuvable ou archivé. Rafraîchissez la page.`,
+      };
+    }
+    // P6.x.1a-quinquies : defense in depth — refuser tout produit non-MDS
+    // (multi-business Sellsy pollution guard).
+    if (!isMdsReference(p.reference)) {
+      return {
+        ok: false,
+        error: `Produit ${requested.sellsy_product_id} non eligible (reference non-MDS).`,
       };
     }
     if (p.price_excl_tax == null) {

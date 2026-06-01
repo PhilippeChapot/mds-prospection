@@ -10,6 +10,7 @@
  */
 
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { MDS_REFERENCE_ILIKE_PATTERN } from '@/lib/sellsy/mds-filter';
 import type { ProductWithEditorial, SellsyMirrorProduct, TariffEditorialRow } from './types';
 
 export interface ListProductsFilters {
@@ -37,6 +38,10 @@ export async function listProductsWithEditorial(
   let productsQ = supabase
     .from('sellsy_products_mirror')
     .select('sellsy_item_id, reference, name, description, price_excl_tax, is_archived, synced_at')
+    // P6.x.1a-quinquies : defense in depth — meme si la sync filtre deja,
+    // on garde un filtre cote query pour ignorer les rows polluees
+    // (ex import manuel ou bypass futur). Pattern MDS-* case-insensitive.
+    .ilike('reference', MDS_REFERENCE_ILIKE_PATTERN)
     .order('reference', { ascending: true });
 
   if (!filters.includeArchived) {
@@ -113,6 +118,7 @@ export async function getTarifsCounters(): Promise<TarifsCounters> {
       supabase
         .from('sellsy_products_mirror')
         .select('sellsy_item_id', { count: 'exact', head: true })
+        .ilike('reference', MDS_REFERENCE_ILIKE_PATTERN)
         .eq('is_archived', false),
       supabase.from('tariff_editorial').select('id', { count: 'exact', head: true }),
       supabase
