@@ -1463,6 +1463,234 @@ export type Database = {
           },
         ];
       };
+      lifecycle_executions: {
+        Row: {
+          candidates_count: number;
+          duration_ms: number;
+          error: string | null;
+          executed_at: string;
+          id: string;
+          queued_count: number;
+          rule_id: string;
+          skipped_count: number;
+        };
+        Insert: {
+          candidates_count?: number;
+          duration_ms?: number;
+          error?: string | null;
+          executed_at?: string;
+          id?: string;
+          queued_count?: number;
+          rule_id: string;
+          skipped_count?: number;
+        };
+        Update: {
+          candidates_count?: number;
+          duration_ms?: number;
+          error?: string | null;
+          executed_at?: string;
+          id?: string;
+          queued_count?: number;
+          rule_id?: string;
+          skipped_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'lifecycle_executions_rule_id_fkey';
+            columns: ['rule_id'];
+            isOneToOne: false;
+            referencedRelation: 'lifecycle_rules';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      lifecycle_recipients: {
+        Row: {
+          contact_id: string;
+          queued_at: string;
+          rule_id: string;
+          sent_at: string | null;
+        };
+        Insert: {
+          contact_id: string;
+          queued_at?: string;
+          rule_id: string;
+          sent_at?: string | null;
+        };
+        Update: {
+          contact_id?: string;
+          queued_at?: string;
+          rule_id?: string;
+          sent_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'lifecycle_recipients_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'lifecycle_recipients_rule_id_fkey';
+            columns: ['rule_id'];
+            isOneToOne: false;
+            referencedRelation: 'lifecycle_rules';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      lifecycle_rules: {
+        Row: {
+          body_en_html: string;
+          body_fr_html: string;
+          created_at: string;
+          created_by: string | null;
+          cron_schedule: string;
+          description_en: string | null;
+          description_fr: string | null;
+          en_translated_by_ai_at: string | null;
+          fr_translated_by_ai_at: string | null;
+          id: string;
+          is_active: boolean;
+          label_en: string;
+          label_fr: string;
+          pref_category: string;
+          rule_key: string;
+          subject_en: string;
+          subject_fr: string;
+          translation_model: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          body_en_html: string;
+          body_fr_html: string;
+          created_at?: string;
+          created_by?: string | null;
+          cron_schedule?: string;
+          description_en?: string | null;
+          description_fr?: string | null;
+          en_translated_by_ai_at?: string | null;
+          fr_translated_by_ai_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          label_en: string;
+          label_fr: string;
+          pref_category: string;
+          rule_key: string;
+          subject_en: string;
+          subject_fr: string;
+          translation_model?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          body_en_html?: string;
+          body_fr_html?: string;
+          created_at?: string;
+          created_by?: string | null;
+          cron_schedule?: string;
+          description_en?: string | null;
+          description_fr?: string | null;
+          en_translated_by_ai_at?: string | null;
+          fr_translated_by_ai_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          label_en?: string;
+          label_fr?: string;
+          pref_category?: string;
+          rule_key?: string;
+          subject_en?: string;
+          subject_fr?: string;
+          translation_model?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'lifecycle_rules_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'lifecycle_rules_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      lifecycle_send_queue: {
+        Row: {
+          attempted_at: string | null;
+          brevo_message_id: string | null;
+          contact_id: string;
+          created_at: string;
+          error_message: string | null;
+          id: string;
+          prospect_id: string | null;
+          retry_count: number;
+          rule_id: string;
+          scheduled_for: string;
+          sent_at: string | null;
+          status: string;
+        };
+        Insert: {
+          attempted_at?: string | null;
+          brevo_message_id?: string | null;
+          contact_id: string;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          prospect_id?: string | null;
+          retry_count?: number;
+          rule_id: string;
+          scheduled_for?: string;
+          sent_at?: string | null;
+          status: string;
+        };
+        Update: {
+          attempted_at?: string | null;
+          brevo_message_id?: string | null;
+          contact_id?: string;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          prospect_id?: string | null;
+          retry_count?: number;
+          rule_id?: string;
+          scheduled_for?: string;
+          sent_at?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'lifecycle_send_queue_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'lifecycle_send_queue_prospect_id_fkey';
+            columns: ['prospect_id'];
+            isOneToOne: false;
+            referencedRelation: 'prospects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'lifecycle_send_queue_rule_id_fkey';
+            columns: ['rule_id'];
+            isOneToOne: false;
+            referencedRelation: 'lifecycle_rules';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       mcp_tokens: {
         Row: {
           call_count: number;
@@ -2803,6 +3031,22 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      fn_detect_event_j1_reminder: { Args: never; Returns: number };
+      fn_detect_event_j30_reminder: { Args: never; Returns: number };
+      fn_detect_event_j7_reminder: { Args: never; Returns: number };
+      fn_detect_payment_1d_welcome: { Args: never; Returns: number };
+      fn_detect_post_event_2d_thanks: { Args: never; Returns: number };
+      fn_detect_quote_sent_7d_no_signature: { Args: never; Returns: number };
+      fn_detect_signed_3d_no_payment: { Args: never; Returns: number };
+      fn_detect_signup_24h_no_quote: { Args: never; Returns: number };
+      fn_lifecycle_queue_recipients: {
+        Args: {
+          p_eligible_contact_ids: string[];
+          p_prospect_map: Json;
+          p_rule_key: string;
+        };
+        Returns: number;
+      };
       is_admin: { Args: never; Returns: boolean };
       is_admin_or_sales: { Args: never; Returns: boolean };
       unaccent: { Args: { '': string }; Returns: string };

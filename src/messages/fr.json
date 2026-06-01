@@ -874,5 +874,26 @@
     "priority_signup_subject": "Signup prioritaire : {company} ({events})",
     "no_unverified": "Aucune company unverified pour cette source.",
     "contacts_imported": "{count, plural, =0 {Aucun contact} =1 {1 contact} other {# contacts}} importé(s)"
+  },
+  "AdminLifecycle": {
+    "page_title": "Relances automatiques",
+    "page_subtitle": "8 règles de relance lifecycle pilotées par pg_cron + Vercel Cron.",
+    "rule_active": "Actif",
+    "rule_inactive": "Inactif",
+    "activate": "Activer",
+    "deactivate": "Désactiver",
+    "dry_run": "Test dry-run",
+    "edit_template": "Éditer template",
+    "history": "Historique",
+    "retarget": "Re-cibler",
+    "retarget_confirm_label": "Tapez RE-CIBLER pour confirmer",
+    "last_execution": "Dernière exécution",
+    "candidates": "Candidats",
+    "sent_7d": "Envoyés (7j)",
+    "errors_7d": "Échecs (7j)",
+    "translated_by_ai_warning": "Traduit par IA — à relire",
+    "verified_manually": "Vérifié manuellement",
+    "translate_ai": "Traduire avec IA",
+    "no_eligible": "Aucun contact éligible actuellement."
   }
 }

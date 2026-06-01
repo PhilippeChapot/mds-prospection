@@ -874,5 +874,26 @@
     "priority_signup_subject": "Priority signup: {company} ({events})",
     "no_unverified": "No unverified company for this source.",
     "contacts_imported": "{count, plural, =0 {No contact} =1 {1 contact} other {# contacts}} imported"
+  },
+  "AdminLifecycle": {
+    "page_title": "Automatic follow-ups",
+    "page_subtitle": "8 lifecycle follow-up rules powered by pg_cron + Vercel Cron.",
+    "rule_active": "Active",
+    "rule_inactive": "Inactive",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "dry_run": "Dry-run test",
+    "edit_template": "Edit template",
+    "history": "History",
+    "retarget": "Re-target all",
+    "retarget_confirm_label": "Type RE-CIBLER to confirm",
+    "last_execution": "Last execution",
+    "candidates": "Candidates",
+    "sent_7d": "Sent (7d)",
+    "errors_7d": "Errors (7d)",
+    "translated_by_ai_warning": "Translated by AI — review needed",
+    "verified_manually": "Manually verified",
+    "translate_ai": "Translate with AI",
+    "no_eligible": "No eligible contact currently."
   }
 }

@@ -94,6 +94,13 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         enabled: true,
       },
       {
+        href: '/admin/lifecycle',
+        label: 'Relances auto',
+        emoji: '🔁',
+        enabled: true,
+        roles_allowed: ADMIN_PLUS,
+      },
+      {
         href: '/admin/affiliates',
         label: 'Affilies',
         emoji: '🤝',
