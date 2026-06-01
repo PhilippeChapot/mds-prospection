@@ -319,7 +319,11 @@ export async function getRecentActivities(seasonId: string, limit = 10): Promise
 
 function formatRelativeLabel(iso: string, nowMs: number): string {
   const ms = nowMs - new Date(iso).getTime();
-  if (ms < 0) return new Date(iso).toLocaleString('fr-FR');
+  // P6.x-BURGER-FIX : timeZone explicite pour eviter mismatch SSR (UTC sur
+  // Vercel) vs CSR (Europe/Paris). Sans ca, le RecentActivityFeed peut
+  // afficher une heure differente cote serveur vs client et bail out
+  // l hydration React (#418) - cause connue des onClick morts type burger.
+  if (ms < 0) return new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
   const min = Math.floor(ms / 60_000);
   if (min < 1) return "à l'instant";
   if (min < 60) return `il y a ${min} min`;
@@ -330,6 +334,7 @@ function formatRelativeLabel(iso: string, nowMs: number): string {
   return new Date(iso).toLocaleDateString('fr-FR', {
     day: '2-digit',
     month: 'short',
+    timeZone: 'Europe/Paris',
   });
 }
 

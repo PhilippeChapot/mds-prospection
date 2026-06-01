@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { Link as LinkIcon, Loader2, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { formatParisDate } from '@/lib/format/dates';
 import {
   Dialog,
   DialogContent,
@@ -171,7 +172,7 @@ export function ConciergePaymentLinkDialog({
             <div className="border-md-success/30 bg-md-success/5 rounded-md border p-3 text-sm">
               <p className="text-md-success font-semibold">Lien créé ✓</p>
               <p className="text-md-text-muted mt-1 text-xs">
-                Expire le {new Date(result.expiresAt).toLocaleDateString('fr-FR')}
+                Expire le {formatParisDate(result.expiresAt)}
               </p>
             </div>
             <div className="space-y-1.5">

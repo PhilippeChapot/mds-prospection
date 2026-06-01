@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CampaignBodyEditor } from './CampaignBodyEditor';
+import { formatParisDateTime } from '@/lib/format/dates';
 import {
   translateCampaignAction,
   markCampaignBodyManuallyEditedAction,
@@ -154,8 +155,8 @@ export function BilingualBodyEditor({
         <div className="border-md-warning/40 bg-md-warning/10 flex flex-wrap items-center gap-3 rounded-md border p-3 text-sm">
           <AlertTriangle className="text-md-warning size-4 shrink-0" aria-hidden />
           <p className="text-md-text flex-1">
-            <strong>Traduit par IA</strong> le {new Date(currentAiFlag).toLocaleString('fr-FR')} — à
-            relire avant l&apos;envoi.
+            <strong>Traduit par IA</strong> le {formatParisDateTime(currentAiFlag)} — à relire avant
+            l&apos;envoi.
           </p>
           <Button
             size="sm"

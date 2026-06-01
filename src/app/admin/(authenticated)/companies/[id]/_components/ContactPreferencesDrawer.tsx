@@ -18,6 +18,7 @@ import {
   unsubscribeAllAction,
   resubscribeAction,
 } from '@/lib/admin/contact-preferences/actions';
+import { formatParisDateTime } from '@/lib/format/dates';
 import {
   PREF_CATEGORIES,
   type ContactPreferencesRow,
@@ -176,7 +177,7 @@ export function ContactPreferencesDrawer({
                 <br />
                 Désinscrit le{' '}
                 {initialPreferences?.unsubscribed_all_at
-                  ? new Date(initialPreferences.unsubscribed_all_at).toLocaleString('fr-FR')
+                  ? formatParisDateTime(initialPreferences.unsubscribed_all_at)
                   : '—'}
               </p>
             </div>

@@ -7,7 +7,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { formatDateTimeShortFr, APP_TIME_ZONE } from './dates';
+import {
+  formatDateTimeShortFr,
+  formatParisDateTime,
+  formatParisDate,
+  formatParisTime,
+  APP_TIME_ZONE,
+} from './dates';
 
 describe('formatDateTimeShortFr (P6.x.8)', () => {
   it("force timeZone Europe/Paris (heure d'été) → 16:18 UTC = 18:18 Paris", () => {
@@ -40,5 +46,57 @@ describe('formatDateTimeShortFr (P6.x.8)', () => {
     const iso = '2026-05-25T00:00:00Z';
     // 00:00 UTC = 02:00 Paris (CEST)
     expect(formatDateTimeShortFr(iso)).toMatch(/02:00/);
+  });
+});
+
+describe('formatParisDateTime / formatParisDate / formatParisTime (P6.x-BURGER-FIX)', () => {
+  // Doctrine : pour qu un composant 'use client' rendu en SSR + hydraté
+  // cote client produise une string IDENTIQUE des 2 cotes, il faut forcer
+  // timeZone Europe/Paris (sinon Vercel UTC vs browser Paris -> mismatch
+  // React #418 -> tous les onClick deviennent inertes, dont le burger menu).
+
+  it('formatParisDateTime : 25 mai 16:18 UTC -> "18:18" Paris (CEST)', () => {
+    const result = formatParisDateTime('2026-05-25T16:18:01Z');
+    expect(result).toMatch(/18:18/);
+    // Format FR par defaut "25/05/2026 18:18:01".
+    expect(result).toMatch(/25\/05/);
+  });
+
+  it('formatParisDateTime EN : "en-GB" locale + Paris TZ', () => {
+    const result = formatParisDateTime('2026-05-25T16:18:01Z', 'en');
+    // en-GB format DD/MM/YYYY HH:mm:ss, heure Paris = 18:18:01.
+    expect(result).toMatch(/18:18/);
+    expect(result).toMatch(/25\/05/);
+  });
+
+  it('formatParisDate : 15 janvier 23:00 UTC -> "16 jan" Paris (DST hiver)', () => {
+    // 15 janv 23:00 UTC = 16 janv 00:00 Paris (CET = UTC+1).
+    const result = formatParisDate('2026-01-15T23:00:00Z');
+    expect(result).toMatch(/16/);
+    expect(result).toMatch(/janv/i);
+  });
+
+  it('formatParisDate options custom : { day, month } sans year', () => {
+    const result = formatParisDate('2026-07-14T12:00:00Z', {
+      day: '2-digit',
+      month: 'short',
+    });
+    expect(result).toMatch(/14/);
+    expect(result).toMatch(/juil/i);
+    // Pas d annee dans les options custom.
+    expect(result).not.toMatch(/2026/);
+  });
+
+  it('formatParisTime : 22:30 UTC -> "00:30" Paris (CEST)', () => {
+    const result = formatParisTime('2026-06-15T22:30:00Z');
+    expect(result).toMatch(/00:30/);
+  });
+
+  it('Stabilite SSR-CSR : meme entree -> meme sortie sur 100 calls', () => {
+    const iso = '2026-05-25T16:18:01Z';
+    const first = formatParisDateTime(iso);
+    for (let i = 0; i < 100; i++) {
+      expect(formatParisDateTime(iso)).toBe(first);
+    }
   });
 });

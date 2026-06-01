@@ -13,6 +13,7 @@ import {
   sendCampaignAction,
   cancelCampaignAction,
 } from '@/lib/admin/campaigns/actions';
+import { formatParisDateTime } from '@/lib/format/dates';
 import { cn } from '@/lib/utils';
 
 interface CampaignSummary {
@@ -257,9 +258,8 @@ export function CampaignDetailClient({ campaign, previewCount, canSend }: Props)
       {isSent ? (
         <section className="border-md-border bg-md-success/10 rounded-xl border p-5">
           <p className="text-md-text text-sm">
-            ✅ Campagne envoyée le{' '}
-            {campaign.sent_at ? new Date(campaign.sent_at).toLocaleString('fr-FR') : '—'} —{' '}
-            {campaign.sent_count} envois réussis, {campaign.error_count} erreurs.
+            ✅ Campagne envoyée le {campaign.sent_at ? formatParisDateTime(campaign.sent_at) : '—'}{' '}
+            — {campaign.sent_count} envois réussis, {campaign.error_count} erreurs.
           </p>
         </section>
       ) : null}
