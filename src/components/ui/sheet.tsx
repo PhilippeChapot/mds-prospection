@@ -5,9 +5,23 @@
  * radix-ui Dialog. Reprend la meme API que shadcn/ui Sheet pour
  * permettre un swap futur si shadcn est installe (compatibilite).
  *
- * Utilise par le menu mobile de l'Espace Exposant (sidebar burger).
+ * Utilise par le menu mobile de l'Espace Exposant + admin sidebar burger.
  * On garde la surface API a strict minimum : Root/Trigger/Content +
  * Title/Description (Title est requis par Radix pour l'a11y).
+ *
+ * P6.x-BURGER-FIX (2026-06-01) : remplacement de l animation keyframe
+ * `data-open:animate-in / data-open:slide-in-from-left` par une simple
+ * `transition-transform + data-[state=closed]:-translate-x-full`. Avec
+ * Tailwind v4 + tw-animate-css + Radix data-state="open"/"closed", la
+ * pipeline animate-in/keyframes "enter" laissait `--tw-enter-translate-x`
+ * = -100% appliquee SANS jamais lancer l animation (bug observe en mobile
+ * Chrome DevTools) -> SheetContent stuck hors ecran a gauche, burger
+ * apparait clickable mais le contenu reste invisible. La transition CSS
+ * classique sur l attribut `data-state` Radix est :
+ *   - mount data-state=open : translate-x = 0 (default), visible immediatement
+ *   - close data-state=closed : translate-x = -100% (left) ou +100% (right)
+ *     avec transition-transform duration-200 -> glisse hors ecran propre
+ * Pareil pour l overlay : transition-opacity au lieu de fade-in/out keyframe.
  */
 
 import * as React from 'react';
@@ -27,7 +41,7 @@ function SheetOverlay({
     <DialogPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        'data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fixed inset-0 z-50 bg-black/30 duration-150',
+        'fixed inset-0 z-50 bg-black/30 transition-opacity duration-150 data-[state=closed]:opacity-0',
         className,
       )}
       {...props}
@@ -43,15 +57,15 @@ interface SheetContentProps extends React.ComponentProps<typeof DialogPrimitive.
 function SheetContent({ className, children, side = 'left', ...props }: SheetContentProps) {
   const sideClasses =
     side === 'left'
-      ? 'inset-y-0 left-0 h-full w-72 border-r data-open:slide-in-from-left data-closed:slide-out-to-left'
-      : 'inset-y-0 right-0 h-full w-72 border-l data-open:slide-in-from-right data-closed:slide-out-to-right';
+      ? 'inset-y-0 left-0 h-full w-72 border-r data-[state=closed]:-translate-x-full'
+      : 'inset-y-0 right-0 h-full w-72 border-l data-[state=closed]:translate-x-full';
   return (
     <SheetPortal>
       <SheetOverlay />
       <DialogPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          'bg-background data-open:animate-in data-closed:animate-out fixed z-50 flex flex-col duration-200 outline-none',
+          'bg-background fixed z-50 flex flex-col transition-transform duration-200 ease-out outline-none',
           sideClasses,
           className,
         )}
