@@ -10,6 +10,8 @@ import { DomainTagsInput } from '@/components/ui/DomainTagsInput';
 import { POLE_CODES } from '@/lib/design-tokens';
 import { useFieldErrors } from '@/components/admin/use-field-errors';
 import { updateCompanyAction, type UpdateCompanyState } from './actions';
+import { ApolloEnrichAddressButton } from './ApolloEnrichAddressButton';
+import { ExternalEventTagsEditor } from './ExternalEventTagsEditor';
 
 const initialState: UpdateCompanyState = {};
 
@@ -22,6 +24,13 @@ export type EditableCompany = {
   category: 'prs_exhibitor' | 'standard' | 'non_eligible';
   pole_code: string;
   was_prs_2026_exhibitor: boolean;
+  // P5.x.CompaniesAddressAndTags
+  raw_address: string | null;
+  city: string | null;
+  postal_code: string | null;
+  website: string | null;
+  phone: string | null;
+  external_event_tags: Record<string, number[]>;
 };
 
 export function EditCompanyForm({ company }: { company: EditableCompany }) {
@@ -72,6 +81,61 @@ export function EditCompanyForm({ company }: { company: EditableCompany }) {
               et <code>www.</code>.
             </p>
           </Field>
+        </div>
+      </Section>
+
+      <Section title="📍 Coordonnées postales">
+        <p className="text-md-text-muted -mt-1 mb-2 text-xs">
+          Requis pour générer un devis Sellsy. Si vide, utilisez le bouton « Compléter via Apollo »
+          (un crédit consommé par recherche).
+        </p>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <Field label="Adresse (rue + numéro)" error={errors.raw_address}>
+            <Input
+              name="raw_address"
+              defaultValue={company.raw_address ?? ''}
+              placeholder="4 rue Blaise Pascal"
+              maxLength={300}
+            />
+          </Field>
+          <Field label="Téléphone" error={errors.phone}>
+            <Input
+              name="phone"
+              defaultValue={company.phone ?? ''}
+              placeholder="+33 1 23 45 67 89"
+              maxLength={40}
+            />
+          </Field>
+          <Field label="Code postal" error={errors.postal_code}>
+            <Input
+              name="postal_code"
+              defaultValue={company.postal_code ?? ''}
+              placeholder="75008"
+              maxLength={20}
+            />
+          </Field>
+          <Field label="Ville" error={errors.city}>
+            <Input
+              name="city"
+              defaultValue={company.city ?? ''}
+              placeholder="Paris"
+              maxLength={120}
+            />
+          </Field>
+          <Field label="Site web (utilise par Apollo)" error={errors.website}>
+            <Input
+              name="website"
+              defaultValue={company.website ?? ''}
+              placeholder="https://example.com"
+              maxLength={255}
+            />
+          </Field>
+        </div>
+        <div className="pt-2">
+          <ApolloEnrichAddressButton
+            companyId={company.id}
+            hasWebsite={Boolean(company.website || company.primary_domain)}
+          />
         </div>
       </Section>
 
@@ -143,6 +207,10 @@ export function EditCompanyForm({ company }: { company: EditableCompany }) {
         </Button>
         <SubmitButton />
       </div>
+
+      {/* P5.x.CompaniesAddressAndTags : editeur tags événements externes
+          stocke via son propre server action (pas dans ce form). */}
+      <ExternalEventTagsEditor companyId={company.id} initialTags={company.external_event_tags} />
     </form>
   );
 }

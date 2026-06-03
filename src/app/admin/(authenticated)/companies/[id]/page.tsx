@@ -34,6 +34,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     .select(
       `
       id, name, primary_domain, alternate_domains, country, category, was_prs_2026_exhibitor, external_event_tags, notes,
+      raw_address, city, postal_code, website, phone,
       created_at, updated_at,
       pole:poles(code, name_fr)
     `,
@@ -94,8 +95,34 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     user: pickFirst(row.user),
   }));
 
+  // P5.x.CompaniesAddressAndTags : detection adresse incomplete pour banniere
+  // d alerte. Trois champs critiques : city, postal_code, country.
+  const c = company as typeof company & {
+    raw_address?: string | null;
+    city?: string | null;
+    postal_code?: string | null;
+    website?: string | null;
+    phone?: string | null;
+  };
+  const addressIncomplete = !c.city || !c.postal_code || !c.country;
+
   return (
     <div className="mx-auto max-w-5xl space-y-5">
+      {addressIncomplete ? (
+        <div className="border-md-warning/40 bg-md-warning/10 text-md-warning flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm">
+          <span className="font-semibold">⚠ Coordonnées postales incomplètes.</span>
+          <span className="text-md-text">
+            Impossible de générer un devis Sellsy sans ville + code postal + pays.
+          </span>
+          <Link
+            href={`/admin/companies/${id}/edit`}
+            className="text-md-warning ml-auto font-bold underline"
+          >
+            Compléter les coordonnées →
+          </Link>
+        </div>
+      ) : null}
+
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

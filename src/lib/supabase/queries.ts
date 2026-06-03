@@ -123,6 +123,8 @@ export async function listCompaniesPaginated(opts: {
   poleCode?: string | null;
   category?: CategoryTarif | null;
   country?: string | null;
+  /** P5.x.CompaniesAddressAndTags : filtre toggle adresse complete / manquante. */
+  missingAddress?: boolean | null;
   page?: number;
   perPage?: number;
 }): Promise<{ rows: CompanyListItem[]; total: number; page: number; perPage: number }> {
@@ -146,7 +148,7 @@ export async function listCompaniesPaginated(opts: {
   let query = supabase
     .from('companies')
     .select(
-      'id, name, primary_domain, country, category, was_prs_2026_exhibitor, external_event_tags, created_at, pole:poles(code, name_fr)',
+      'id, name, primary_domain, country, category, was_prs_2026_exhibitor, external_event_tags, raw_address, city, postal_code, website, created_at, pole:poles(code, name_fr)',
       { count: 'exact' },
     )
     .order('name', { ascending: true })
@@ -154,11 +156,18 @@ export async function listCompaniesPaginated(opts: {
 
   if (opts.q && opts.q.trim().length >= 2) {
     const term = `%${opts.q.trim()}%`;
-    query = query.or(`name.ilike.${term},primary_domain.ilike.${term}`);
+    // P5.x.CompaniesAddressAndTags : recherche etendue a city.
+    query = query.or(`name.ilike.${term},primary_domain.ilike.${term},city.ilike.${term}`);
   }
   if (poleIdFilter) query = query.eq('pole_id', poleIdFilter);
   if (opts.category) query = query.eq('category', opts.category);
   if (opts.country) query = query.eq('country', opts.country.toUpperCase());
+  if (opts.missingAddress === true) {
+    // Adresse manquante = city OR postal_code IS NULL/empty.
+    query = query.or('city.is.null,postal_code.is.null');
+  } else if (opts.missingAddress === false) {
+    query = query.not('city', 'is', null).not('postal_code', 'is', null);
+  }
 
   const { data, error, count } = await query;
   if (error) {
@@ -174,6 +183,11 @@ export async function listCompaniesPaginated(opts: {
     category: row.category,
     was_prs_2026_exhibitor: row.was_prs_2026_exhibitor,
     external_event_tags: (row.external_event_tags ?? {}) as Record<string, unknown>,
+    // P5.x.CompaniesAddressAndTags
+    raw_address: (row as { raw_address?: string | null }).raw_address ?? null,
+    city: (row as { city?: string | null }).city ?? null,
+    postal_code: (row as { postal_code?: string | null }).postal_code ?? null,
+    website: (row as { website?: string | null }).website ?? null,
     created_at: row.created_at,
     pole: pickFirst(row.pole),
   }));

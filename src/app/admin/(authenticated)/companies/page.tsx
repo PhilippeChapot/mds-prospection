@@ -31,6 +31,8 @@ type SearchParams = Promise<{
   pole?: string;
   category?: string;
   country?: string;
+  /** P5.x.CompaniesAddressAndTags : 'missing' | 'complete' | undefined. */
+  address?: string;
   page?: string;
 }>;
 
@@ -79,6 +81,8 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
       ? (params.category as CategoryTarif)
       : '';
   const countryFilter = params.country?.trim().toUpperCase() ?? '';
+  const addressFilter: 'missing' | 'complete' | '' =
+    params.address === 'missing' ? 'missing' : params.address === 'complete' ? 'complete' : '';
   const page = Math.max(1, Number(params.page ?? '1'));
 
   const [{ rows, total }, countries] = await Promise.all([
@@ -87,6 +91,8 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
       poleCode: poleFilter || null,
       category: categoryFilter || null,
       country: countryFilter || null,
+      missingAddress:
+        addressFilter === 'missing' ? true : addressFilter === 'complete' ? false : null,
       page,
       perPage: PER_PAGE,
     }),
@@ -94,7 +100,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
-  const hasFilters = Boolean(q || poleFilter || categoryFilter || countryFilter);
+  const hasFilters = Boolean(q || poleFilter || categoryFilter || countryFilter || addressFilter);
 
   return (
     <div className="space-y-5">
@@ -144,7 +150,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
           <Input
             name="q"
             defaultValue={q}
-            placeholder="Rechercher par nom ou domaine…"
+            placeholder="Rechercher par nom, domaine ou ville…"
             className="pl-9"
           />
         </div>
@@ -188,6 +194,17 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
           ))}
         </select>
 
+        {/* P5.x.CompaniesAddressAndTags : filtre adresse */}
+        <select
+          name="address"
+          defaultValue={addressFilter}
+          className="border-md-border rounded-md border bg-white px-2.5 py-1.5 text-xs"
+        >
+          <option value="">Adresse : tous</option>
+          <option value="missing">⚠ Adresse manquante</option>
+          <option value="complete">✓ Adresse complète</option>
+        </select>
+
         <button
           type="submit"
           className="bg-md-blue rounded-md px-3 py-1.5 text-xs font-semibold text-white"
@@ -212,17 +229,18 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
               <tr>
                 <th className="px-4 py-3">Societe</th>
                 <th className="px-4 py-3">Pole</th>
+                <th className="px-4 py-3">Ville</th>
+                <th className="px-4 py-3">CP</th>
                 <th className="px-4 py-3">Pays</th>
-                <th className="px-4 py-3">Domaine</th>
                 <th className="px-4 py-3">Categorie</th>
-                <th className="px-4 py-3">Date import</th>
+                <th className="px-4 py-3">Import</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-md-text-muted px-4 py-12 text-center text-sm">
+                  <td colSpan={8} className="text-md-text-muted px-4 py-12 text-center text-sm">
                     Aucune societe ne correspond aux filtres.
                   </td>
                 </tr>
@@ -238,6 +256,11 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
                         <div className="min-w-0">
                           <div className="text-md-text truncate font-semibold">{row.name}</div>
                           <ExternalEventBadges tags={row.external_event_tags} size="xs" />
+                          {row.primary_domain ? (
+                            <div className="text-md-text-muted truncate font-mono text-[10px]">
+                              {row.primary_domain}
+                            </div>
+                          ) : null}
                         </div>
                       </Link>
                     </td>
@@ -248,11 +271,20 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
                         <span className="text-md-text-muted text-xs">—</span>
                       )}
                     </td>
+                    <td className="px-4 py-3 text-xs">
+                      {row.city ? (
+                        <span className="text-md-text">{row.city}</span>
+                      ) : (
+                        <span className="bg-md-warning/15 text-md-warning rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
+                          ⚠ Manquant
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-md-text-muted px-4 py-3 font-mono text-xs">
+                      {row.postal_code ?? '—'}
+                    </td>
                     <td className="text-md-text px-4 py-3 text-xs">
                       {row.country ?? <span className="text-md-text-muted">—</span>}
-                    </td>
-                    <td className="text-md-text px-4 py-3 font-mono text-xs">
-                      {row.primary_domain ?? <span className="text-md-text-muted">—</span>}
                     </td>
                     <td className="px-4 py-3">
                       <span

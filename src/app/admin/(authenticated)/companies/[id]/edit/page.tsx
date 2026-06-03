@@ -22,6 +22,7 @@ export default async function EditCompanyPage({ params }: { params: Promise<{ id
     .select(
       `
       id, name, primary_domain, alternate_domains, country, category, was_prs_2026_exhibitor,
+      raw_address, city, postal_code, website, phone, external_event_tags,
       pole:poles(code)
     `,
     )
@@ -41,6 +42,13 @@ export default async function EditCompanyPage({ params }: { params: Promise<{ id
     category: company.category,
     pole_code: pole?.code ?? 'INCONNU',
     was_prs_2026_exhibitor: company.was_prs_2026_exhibitor,
+    // P5.x.CompaniesAddressAndTags
+    raw_address: company.raw_address ?? null,
+    city: company.city ?? null,
+    postal_code: company.postal_code ?? null,
+    website: company.website ?? null,
+    phone: (company as { phone?: string | null }).phone ?? null,
+    external_event_tags: (company.external_event_tags ?? {}) as Record<string, number[]>,
   };
 
   return (
