@@ -27,10 +27,13 @@ export const AFFILIE_NAV_ITEMS: readonly AffilieNavItem[] = [
   { labelKey: 'stats', emoji: '📊', segment: 'stats', enabled: true },
   // P7.x.1.F : section "Mes societes" (3 sources d'attribution + declaration).
   { labelKey: 'societes', emoji: '🏢', segment: 'societes', enabled: true },
+  // P7.x.AffiliePitchsAndChat : nouvelles rubriques pitchs + messages.
+  { labelKey: 'pitchs', emoji: '🎯', segment: 'pitchs', enabled: true },
   { labelKey: 'tracking', emoji: '🔗', segment: 'tracking', enabled: true },
   { labelKey: 'paiements', emoji: '💰', segment: 'paiements', enabled: true },
   { labelKey: 'kitCommunication', emoji: '🎨', segment: 'kit-communication', enabled: true },
   { labelKey: 'profil', emoji: '👤', segment: 'profil', enabled: true },
+  { labelKey: 'messages', emoji: '💬', segment: 'messages', enabled: true },
 ] as const;
 
 /** Section affichee par defaut quand on atterrit sur /affilie/dashboard. */

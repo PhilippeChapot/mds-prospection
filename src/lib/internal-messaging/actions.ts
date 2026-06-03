@@ -385,6 +385,26 @@ async function notifyOtherParticipants(
           locale: (c.language as 'fr' | 'en') === 'en' ? 'en' : 'fr',
         });
       }
+    } else if (p.participant_type === 'affiliate' && p.participant_id) {
+      // P7.x.AffiliePitchsAndChat — staff repond a une conv staff_affilie.
+      // On notifie l affilie sur son contact_email (pas de language sur
+      // affiliates -> defaut fr).
+      const { data: aff } = await supabase
+        .from('affiliates')
+        .select('display_name, contact_email, contact_first_name, contact_last_name')
+        .eq('id', p.participant_id)
+        .maybeSingle();
+      if (aff?.contact_email) {
+        const fullName =
+          [aff.contact_first_name, aff.contact_last_name].filter(Boolean).join(' ').trim() ||
+          aff.display_name;
+        recipients.push({
+          email: aff.contact_email,
+          name: fullName,
+          url: `${appUrl}/fr/affilie/dashboard/messages/${conversationId}`,
+          locale: 'fr',
+        });
+      }
     } else if (p.participant_type === 'staff_pool') {
       // Notif admin_notification_emails (1 email par admin).
       const admins = await loadStaffPoolRecipients();
