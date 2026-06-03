@@ -47,7 +47,7 @@ const inputSchema = z.object({
   customer_note: z.string().trim().max(2000).optional(),
 });
 
-export type CheckoutResult = { ok: true; url: string } | { ok: false; error: string };
+type CheckoutResult = { ok: true; url: string } | { ok: false; error: string };
 
 interface ItemSnapshot {
   sellsy_product_id: number;

@@ -34,11 +34,8 @@ import {
   SheetDescription,
   SheetTitle,
 } from '@/components/ui/sheet';
-import {
-  deleteResourceAction,
-  upsertResourceAction,
-  type PartnerResourceRow,
-} from '@/lib/partner-resources/actions';
+import { deleteResourceAction, upsertResourceAction } from '@/lib/partner-resources/actions';
+import type { PartnerResourceRow } from '@/lib/partner-resources/types';
 import { MarkdownView } from '@/components/partner-resources/MarkdownView';
 
 type FormState = {

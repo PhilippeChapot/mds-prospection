@@ -75,7 +75,7 @@ const updateSelfSchema = z.object({
 // listContactPreferencesByCompanyAction
 // ---------------------------------------------------------------------------
 
-export interface ContactWithPreferences {
+interface ContactWithPreferences {
   contact_id: string;
   email: string;
   first_name: string | null;

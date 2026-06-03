@@ -20,8 +20,8 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 
 type ActionResult<T = unknown> = { ok: true; data?: T } | { ok: false; error: string };
 
-export const ALLOWED_EVENT_KEYS = ['prs', 'mediadays_classic', 'rde', 'satis', 'cbd'] as const;
-export type AllowedEventKey = (typeof ALLOWED_EVENT_KEYS)[number];
+const ALLOWED_EVENT_KEYS = ['prs', 'mediadays_classic', 'rde', 'satis', 'cbd'] as const;
+type AllowedEventKey = (typeof ALLOWED_EVENT_KEYS)[number];
 
 const schema = z.object({
   company_id: z.string().uuid(),

@@ -35,7 +35,7 @@ type ActionResult<T = unknown> = { ok: true; data?: T } | { ok: false; error: st
 // listMyConversationsForAffilieAction
 // ---------------------------------------------------------------------------
 
-export interface AffilieConversationListItem {
+interface AffilieConversationListItem {
   id: string;
   subject: string | null;
   last_message_at: string;
@@ -295,7 +295,7 @@ export async function replyAsAffilieAction(
 // getConversationDetailForAffilieAction
 // ---------------------------------------------------------------------------
 
-export interface AffilieConversationDetail {
+interface AffilieConversationDetail {
   id: string;
   subject: string | null;
   created_at: string;

@@ -11,7 +11,7 @@
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { requireAffilieSession } from './session';
 
-export interface PitchDownload {
+interface PitchDownload {
   key: 'fr_tu' | 'fr_vous' | 'en';
   label: string;
   description: string;
