@@ -385,7 +385,7 @@
       }
     }
   },
-  "espaceExposant": {
+  "espacePartenaire": {
     "title": "Partner Portal",
     "subtitle": "Your MediaDays Solutions 2026 portal",
     "noLogoBanner": {
@@ -844,7 +844,7 @@
     "back_to_list": "Back to resources",
     "updated_at": "Updated {date}"
   },
-  "ExposantDashboard": {
+  "PartenaireDashboard": {
     "exploreVenueTitle": "📍 Floor plan — Salle Le Nôtre",
     "exploreVenueHelp": "Your booth {number} is highlighted (pink frame). Hover other booths to discover who exhibits next to you.",
     "exploreVenueHelpNoStand": "Hover the booths to discover who exhibits in Salle Le Nôtre.",

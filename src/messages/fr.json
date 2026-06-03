@@ -385,7 +385,7 @@
       }
     }
   },
-  "espaceExposant": {
+  "espacePartenaire": {
     "title": "Espace Partenaire",
     "subtitle": "Votre portail MediaDays Solutions 2026",
     "noLogoBanner": {
@@ -844,7 +844,7 @@
     "back_to_list": "Retour aux ressources",
     "updated_at": "Mise à jour {date}"
   },
-  "ExposantDashboard": {
+  "PartenaireDashboard": {
     "exploreVenueTitle": "📍 Plan du salon — Salle Le Nôtre",
     "exploreVenueHelp": "Votre stand {number} est mis en évidence (encadré rose). Survolez les autres stands pour découvrir qui expose à vos côtés.",
     "exploreVenueHelpNoStand": "Survolez les stands pour découvrir qui expose dans la Salle Le Nôtre.",
