@@ -29,7 +29,7 @@ describe('classifySignup', () => {
     companyCountry: 'FR',
     contactFirstName: 'Jean',
     contactLastName: 'Dupont',
-    category: 'exposant' as const,
+    category: 'partenaire' as const,
     emailDomain: 'nrj.fr',
   };
 

@@ -3,7 +3,7 @@
  *
  * Lit `tariff_editorial` JOIN `sellsy_products_mirror`, retourne TOUS les
  * produits non-archivés (peu importe `is_visible_public` — admin a la
- * pleine visibilité, contrairement à l'espace exposant qui filtre).
+ * pleine visibilité, contrairement à l'espace partenaire qui filtre).
  *
  * Inclut `pack` (les packs ne sont jamais exposés au catalogue public
  * commande complémentaire, mais sont obligatoires côté devis admin).

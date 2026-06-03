@@ -26,7 +26,8 @@ export default async function NewConversationPage() {
           ✉️ Nouvelle conversation
         </h1>
         <p className="text-md-text-muted text-sm">
-          Choisissez un destinataire (collègue staff ou contact exposant) puis tapez votre message.
+          Choisissez un destinataire (collègue staff ou contact partenaire) puis tapez votre
+          message.
         </p>
       </header>
 

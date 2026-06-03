@@ -120,7 +120,7 @@ export const config = {
    *    localisees, sinon next-intl tente une redirection vers /fr/merci-oui
    *    qui n'existe pas et plante en server error).
    *  - `/i/<id>` (P5.x.16 — route redirect tracking pour invitations
-   *    visiteurs envoyees par les exposants. URL courte sans locale
+   *    visiteurs envoyees par les partenaires. URL courte sans locale
    *    pour faire propre dans les emails. Sert le route handler
    *    src/app/i/[companyId]/route.ts directement.)
    *

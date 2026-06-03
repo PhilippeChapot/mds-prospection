@@ -36,28 +36,28 @@ export default async function AffilieKitCommPage({ params }: PageProps) {
   const { profile } = await loadAffilieDashboardData(affiliateId);
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mediadays.solutions';
 
-  // P7.x.1.E (refonte B2B) : on cible le wizard exposant (B2B), pas la
+  // P7.x.1.E (refonte B2B) : on cible le wizard partenaire (B2B), pas la
   // landing visiteur (entree gratuite, pas de commission). Le copy + la
-  // signature pointent donc vers /inscription-exposant?ref=.
-  const trackingExposantFr = `${baseUrl}/fr/inscription-exposant?ref=${encodeURIComponent(
+  // signature pointent donc vers /inscription-partenaire?ref=.
+  const trackingPartenaireFr = `${baseUrl}/fr/inscription-partenaire?ref=${encodeURIComponent(
     profile.token,
   )}`;
-  const trackingExposantEn = `${baseUrl}/en/exhibitor-registration?ref=${encodeURIComponent(
+  const trackingPartenaireEn = `${baseUrl}/en/partner-registration?ref=${encodeURIComponent(
     profile.token,
   )}`;
   const bannerUrl = `/api/affilie/kit/banner-linkedin.png`;
 
   const signatureHtml = buildEmailSignatureHtml({
     affilieName: profile.displayName,
-    trackingUrlExposant: trackingExposantFr,
+    trackingUrlPartenaire: trackingPartenaireFr,
   });
   const copyFr = buildEmailCopy('fr', {
     affilieName: profile.displayName,
-    trackingUrlExposant: trackingExposantFr,
+    trackingUrlPartenaire: trackingPartenaireFr,
   });
   const copyEn = buildEmailCopy('en', {
     affilieName: profile.displayName,
-    trackingUrlExposant: trackingExposantEn,
+    trackingUrlPartenaire: trackingPartenaireEn,
   });
 
   return (
@@ -67,7 +67,7 @@ export default async function AffilieKitCommPage({ params }: PageProps) {
         <p className="text-md-text-muted mt-1 text-sm">{t('subtitle')}</p>
       </header>
 
-      {/* P7.x.1.E — Rappel doctrine B2B (affiliation = exposants uniquement) */}
+      {/* P7.x.1.E — Rappel doctrine B2B (affiliation = partenaires uniquement) */}
       <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
         💡 {t('b2bNote')}
       </div>

@@ -105,7 +105,7 @@ export async function createCheckoutSession(
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
   const successUrl = `${baseUrl}/${locale}/merci?stripe_session={CHECKOUT_SESSION_ID}`;
-  const cancelUrl = `${baseUrl}/${locale}/inscription-exposant/etape-2?cancelled=stripe`;
+  const cancelUrl = `${baseUrl}/${locale}/inscription-partenaire/etape-2?cancelled=stripe`;
 
   const stripe = getStripe();
   const session = await stripe.checkout.sessions.create({

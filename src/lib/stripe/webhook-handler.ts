@@ -57,13 +57,13 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
-  // P6.x.1b-β — flow=supplementary (commandes complémentaires Espace Exposant)
+  // P6.x.1b-β — flow=supplementary (commandes complémentaires Espace Partenaire)
   // route vers un handler dédié AVANT la logique acompte/integral existante.
   // Ne touche PAS aux champs prospects.acompte_*/sellsy_devis_* (transaction
   // parallèle au parcours signup→signature).
   if (session.metadata?.flow === 'supplementary') {
     const { handleSupplementaryCheckoutCompleted } =
-      await import('@/lib/espace-exposant/supplementary-orders/webhook-handler');
+      await import('@/lib/espace-partenaire/supplementary-orders/webhook-handler');
     await handleSupplementaryCheckoutCompleted(session);
     return;
   }

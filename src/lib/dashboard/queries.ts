@@ -220,7 +220,7 @@ export interface ActivityEvent {
   /**
    * Pre-format relatif "il y a 5 min" calcule cote query (cote server,
    * Date.now() interdit pendant le render selon la regle ESLint
-   * react-hooks/purity ; cf. fix P5.x.2 sur le dashboard exposant).
+   * react-hooks/purity ; cf. fix P5.x.2 sur le dashboard partenaire).
    */
   relativeLabel: string;
 }

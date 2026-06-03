@@ -3,7 +3,7 @@
 /**
  * P7.x.1.D — Banner d'info au-dessus des KPI (dashboard affilie).
  *
- * Explique la regle d'exclusion PRS exhibitors + ouvre une modale
+ * Explique la regle d'exclusion PRS partners + ouvre une modale
  * shadcn Dialog avec la liste des societes exclues (nom + domaine,
  * pas d'email ni telephone — RGPD).
  *

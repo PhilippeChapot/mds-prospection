@@ -15,17 +15,17 @@ export type AppLocale = (typeof SUPPORTED_LOCALES)[number];
 export const PATHNAMES = {
   '/': '/',
   '/styleguide': '/styleguide',
-  '/inscription-exposant': {
-    fr: '/inscription-exposant',
-    en: '/exhibitor-registration',
+  '/inscription-partenaire': {
+    fr: '/inscription-partenaire',
+    en: '/partner-registration',
   },
-  '/inscription-exposant/check-email': {
-    fr: '/inscription-exposant/verifiez-votre-email',
-    en: '/exhibitor-registration/check-email',
+  '/inscription-partenaire/check-email': {
+    fr: '/inscription-partenaire/verifiez-votre-email',
+    en: '/partner-registration/check-email',
   },
-  '/inscription-exposant/step2': {
-    fr: '/inscription-exposant/etape-2',
-    en: '/exhibitor-registration/step-2',
+  '/inscription-partenaire/step2': {
+    fr: '/inscription-partenaire/etape-2',
+    en: '/partner-registration/step-2',
   },
   '/merci': {
     fr: '/merci',

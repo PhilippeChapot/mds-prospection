@@ -116,7 +116,7 @@ export default async function StyleguidePage({ params }: { params: Promise<{ loc
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <Badge>PRS exhibitor</Badge>
+                <Badge>PRS partner</Badge>
                 <span className="text-md-magenta text-2xl font-extrabold">1 980 €</span>
               </div>
             </CardContent>

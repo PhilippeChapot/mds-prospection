@@ -8,7 +8,7 @@
  * de verifier que la route :
  *   - renvoie 404 si la company est introuvable
  *   - construit bien un ImageResponse 600x120 pour un MDS standard
- *   - construit bien un ImageResponse pour un PRS exhibitor
+ *   - construit bien un ImageResponse pour un PRS partner
  *   - ne plante pas quand company.logo_url est null (fallback nom)
  */
 
@@ -90,7 +90,7 @@ describe('GET /api/badge/[companyId]/email-signature.png (P5.x.19)', () => {
     );
   });
 
-  it('200 pour un PRS exhibitor (rendu inclut le 2eme logo)', async () => {
+  it('200 pour un PRS partner (rendu inclut le 2eme logo)', async () => {
     fakeCompany = {
       id: 'cmp-2',
       name: 'Radio Lab',

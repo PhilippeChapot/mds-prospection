@@ -52,7 +52,9 @@ function HomeContent() {
           {/* CTAs */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
             <Button asChild size="lg" className="bg-md-magenta hover:bg-md-magenta-soft">
-              <Link href={{ pathname: '/inscription-exposant', query: { category: 'exposant' } }}>
+              <Link
+                href={{ pathname: '/inscription-partenaire', query: { category: 'partenaire' } }}
+              >
                 {t('ctaExhibitor')}
                 <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
               </Link>
@@ -63,7 +65,9 @@ function HomeContent() {
               variant="outline"
               className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"
             >
-              <Link href={{ pathname: '/inscription-exposant', query: { category: 'partenaire' } }}>
+              <Link
+                href={{ pathname: '/inscription-partenaire', query: { category: 'partenaire' } }}
+              >
                 {t('ctaPartner')}
               </Link>
             </Button>
@@ -81,7 +85,7 @@ function HomeContent() {
             {tLanding('polesSection.eyebrow', {
               poles: taxonomy.stats.total_poles,
               sectors: taxonomy.stats.total_sous_secteurs,
-              exhibitors: taxonomy.stats.total_exposants_cibles,
+              partners: taxonomy.stats.total_partenaires_cibles,
             })}
           </p>
           <h2 className="text-md-blue-dark mt-2 text-3xl font-extrabold tracking-tight md:text-4xl">

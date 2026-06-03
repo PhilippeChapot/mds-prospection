@@ -6,14 +6,14 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { renderEspaceExposantMagicLinkTemplate } from './espace-exposant-magic-link';
+import { renderEspacePartenaireMagicLinkTemplate } from './espace-partenaire-magic-link';
 import { renderProspectAcomptePaymentLinkTemplate } from './prospect-acompte-paymentlink';
 import { renderDoiTemplate } from './doi';
 import { renderDevisConciergeTemplate } from './devis-concierge';
 
 describe('capitalize firstName dans templates Resend (P5.x.5)', () => {
-  it('espace-exposant-magic-link FR : "phil" -> "Phil"', () => {
-    const tpl = renderEspaceExposantMagicLinkTemplate('fr', {
+  it('espace-partenaire-magic-link FR : "phil" -> "Phil"', () => {
+    const tpl = renderEspacePartenaireMagicLinkTemplate('fr', {
       firstName: 'phil',
       magicLinkUrl: 'https://x/y',
       requestPageUrl: 'https://x/z',
@@ -23,8 +23,8 @@ describe('capitalize firstName dans templates Resend (P5.x.5)', () => {
     expect(tpl.text).toContain('Bonjour Phil');
   });
 
-  it('espace-exposant-magic-link EN : "phil" -> "Phil"', () => {
-    const tpl = renderEspaceExposantMagicLinkTemplate('en', {
+  it('espace-partenaire-magic-link EN : "phil" -> "Phil"', () => {
+    const tpl = renderEspacePartenaireMagicLinkTemplate('en', {
       firstName: 'phil',
       magicLinkUrl: 'https://x/y',
       requestPageUrl: 'https://x/z',

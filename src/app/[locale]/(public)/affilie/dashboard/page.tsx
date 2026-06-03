@@ -2,7 +2,7 @@
  * Racine /{locale}/affilie/dashboard — P7.x.1.B
  *
  * Redirige vers la section par defaut (Stats) qui sert de page d'accueil
- * avec les KPI live. Pattern identique au dashboard exposant.
+ * avec les KPI live. Pattern identique au dashboard partenaire.
  */
 
 import { redirect } from 'next/navigation';

@@ -5,7 +5,7 @@
  * cf. memoire `project_brevo_tracker_bug.md` + commentaire en tête de
  * lib/brevo/client.ts).
  *
- * Branding cohérent avec espace-exposant-magic-link.ts (charte BASE_STYLES
+ * Branding cohérent avec espace-partenaire-magic-link.ts (charte BASE_STYLES
  * grise + carte blanche + CTA magenta).
  *
  * TTL Supabase Auth invite link : 24h (par défaut). Au-delà l'admin

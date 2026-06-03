@@ -69,16 +69,16 @@ describe('EtapesSection (P6.x.4-a-octies/nonies)', () => {
     expect(ETAPES.map((e) => e.id)).toEqual(['marseille', 'paris', 'bruxelles']);
   });
 
-  it('Marseille → CTA Link interne /inscription-exposant?venue=marseille (FR)', () => {
+  it('Marseille → CTA Link interne /inscription-partenaire?venue=marseille (FR)', () => {
     renderI18n(<EtapesSection />);
     const link = screen.getByRole('link', { name: /MEDIADAYS MARSEILLE.*Réserver/ });
-    expect(link.getAttribute('href')).toBe('/inscription-exposant?venue=marseille');
+    expect(link.getAttribute('href')).toBe('/inscription-partenaire?venue=marseille');
   });
 
-  it('Paris → CTA Link interne /inscription-exposant?venue=paris (FR)', () => {
+  it('Paris → CTA Link interne /inscription-partenaire?venue=paris (FR)', () => {
     renderI18n(<EtapesSection />);
     const link = screen.getByRole('link', { name: /MEDIADAYS PARIS.*Réserver/ });
-    expect(link.getAttribute('href')).toBe('/inscription-exposant?venue=paris');
+    expect(link.getAttribute('href')).toBe('/inscription-partenaire?venue=paris');
   });
 
   it('P6.x.4-a-decies — Bruxelles CTA = bouton (plus de mailto), label "Demander des infos" en FR', () => {

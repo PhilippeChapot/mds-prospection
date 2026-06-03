@@ -3113,7 +3113,7 @@ export type Database = {
       email_deliverability_status: 'unchecked' | 'valid' | 'invalid' | 'unknown' | 'accept_all';
       email_validation_status: 'valid' | 'free_provider' | 'disposable' | 'domain_mismatch';
       language_code: 'FR' | 'EN';
-      last_updated_by: 'exhibitor' | 'admin';
+      last_updated_by: 'partner' | 'admin';
       lifecycle_completion_status: 'empty' | 'in_progress' | 'profil_complet';
       pack_code: 'ACCESS' | 'CLASSIC' | 'PREMIUM' | 'A_DEFINIR';
       payment_path:
@@ -3353,7 +3353,7 @@ export const Constants = {
       email_deliverability_status: ['unchecked', 'valid', 'invalid', 'unknown', 'accept_all'],
       email_validation_status: ['valid', 'free_provider', 'disposable', 'domain_mismatch'],
       language_code: ['FR', 'EN'],
-      last_updated_by: ['exhibitor', 'admin'],
+      last_updated_by: ['partner', 'admin'],
       lifecycle_completion_status: ['empty', 'in_progress', 'profil_complet'],
       pack_code: ['ACCESS', 'CLASSIC', 'PREMIUM', 'A_DEFINIR'],
       payment_path: ['devis_sepa', 'devis_acompte_stripe', 'proforma_acompte', 'facture_integrale'],

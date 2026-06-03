@@ -2,7 +2,7 @@
  * GET /api/badge/[companyId]/invitation.png — P5.x.16.
  *
  * Genere un carton d'invitation 1200x800 (paysage 3:2, optimise email)
- * via next/og (Satori). L'exposant l'envoie par email/WhatsApp/SMS a
+ * via next/og (Satori). L'partenaire l'envoie par email/WhatsApp/SMS a
  * ses propres clients pour les inviter aux MediaDays Solutions 2026.
  *
  * Format paysage : ratio 3:2 s'affiche bien dans le corps d'un Gmail/
@@ -10,7 +10,7 @@
  * (story IG) qui sont trop verticaux pour l'email.
  *
  * Layout 3 zones :
- *   - Zone 1 (1200x320)  : bandeau blanc avec logo exposant contained
+ *   - Zone 1 (1200x320)  : bandeau blanc avec logo partenaire contained
  *     (1120x260 max, padding 40) ou fallback nom societe (base 72px).
  *   - Zone 2 (1200x380)  : gradient bleu MDS, "<Societe>" gros titre,
  *     "vous invite aux" sous-titre, logos events 220x220 (MDS + PRS si
@@ -24,7 +24,7 @@
  *
  * Reutilise les helpers src/lib/social-assets/ (cf P5.x.14).
  *
- * Public : pas d'auth (l'exposant partage l'URL).
+ * Public : pas d'auth (l'partenaire partage l'URL).
  * Logs : prefix [api/invitation].
  */
 
@@ -69,7 +69,7 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
   const logoDataUrl = await fetchLogoAsDataUrl(company.logo_url);
 
   // URL d'invitation a afficher dans le visuel (sans https:// pour
-  // gagner de la place, l'exposant complete son email avec le lien
+  // gagner de la place, l'partenaire complete son email avec le lien
   // complet a cote du bouton). On garde le domaine pour qu'un destinataire
   // qui prend juste le PNG sache ou aller.
   //
@@ -102,7 +102,7 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
         fontFamily: 'Arial, sans-serif',
       }}
     >
-      {/* ZONE 1 — bandeau blanc 1200x320 : logo exposant ou fallback nom */}
+      {/* ZONE 1 — bandeau blanc 1200x320 : logo partenaire ou fallback nom */}
       <div
         style={{
           display: 'flex',

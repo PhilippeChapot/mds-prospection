@@ -34,8 +34,8 @@ export default async function AffiliatesPage() {
             Affiliés &amp; commissions
           </h1>
           <p className="text-md-text-muted text-sm">
-            Apporteurs d&apos;affaires (médias partenaires &amp; parrainages exposants). Commission
-            calculée automatiquement à l&apos;acompte payé.
+            Apporteurs d&apos;affaires (médias partenaires &amp; parrainages partenaires).
+            Commission calculée automatiquement à l&apos;acompte payé.
           </p>
         </div>
         <Button asChild>

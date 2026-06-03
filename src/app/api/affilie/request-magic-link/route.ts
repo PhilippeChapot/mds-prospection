@@ -2,7 +2,7 @@
  * POST /api/affilie/request-magic-link — P7.x.1.A
  *
  * Demande d'envoi d'un magic-link a l'email d'un affilie actif. Mirror du
- * pattern espace-exposant : anti-enumeration (toujours { success: true }),
+ * pattern espace-partenaire : anti-enumeration (toujours { success: true }),
  * rate-limit IP + email.
  *
  * Lookup : `affiliates.contact_email ilike <email>` AND `is_active=true`.

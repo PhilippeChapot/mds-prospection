@@ -26,7 +26,7 @@ export interface Pole {
   description: string;
   sous_secteurs: PoleSubSector[];
   total_sous_secteurs: number;
-  total_exposants_cibles: number;
+  total_partenaires_cibles: number;
 }
 
 export interface VisitorFamily {
@@ -48,7 +48,7 @@ export interface Taxonomy {
   stats: {
     total_poles: number;
     total_sous_secteurs: number;
-    total_exposants_cibles: number;
+    total_partenaires_cibles: number;
     total_visiteurs_families: number;
     total_visiteurs_entites: number;
   };

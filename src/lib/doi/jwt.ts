@@ -2,7 +2,7 @@
  * JWT signe (HS256) pour les liens de double opt-in.
  *
  * On encode : { sub: signupId, email, jti } + exp = now + 24h.
- * Token retransmis dans l'URL `/inscription-exposant/<token>`.
+ * Token retransmis dans l'URL `/inscription-partenaire/<token>`.
  *
  * Lib choisie : `jose` (edge-compatible, ~30 KB, zero deps natives).
  */

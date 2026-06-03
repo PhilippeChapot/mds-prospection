@@ -7,7 +7,7 @@ import type { PrefKey } from '@/lib/admin/contact-preferences/types';
 
 export const CAMPAIGN_CATEGORIES = [
   'general',
-  'exposant',
+  'partenaire',
   'facturation',
   'kit_media',
   'administration',
@@ -19,7 +19,7 @@ export type CampaignCategory = (typeof CAMPAIGN_CATEGORIES)[number];
 /** Mapping category -> pref_xxx column (P8.1). */
 export const CATEGORY_TO_PREF: Record<CampaignCategory, PrefKey> = {
   general: 'pref_general',
-  exposant: 'pref_exposant',
+  partenaire: 'pref_exposant',
   facturation: 'pref_facturation',
   kit_media: 'pref_kit_media',
   administration: 'pref_administration',

@@ -116,7 +116,7 @@ describe('AUDIENCES catalog (P8.3)', () => {
   it('chaque audience a une defaultCategory valide', () => {
     const valid = [
       'general',
-      'exposant',
+      'partenaire',
       'facturation',
       'kit_media',
       'administration',
@@ -239,7 +239,7 @@ describe('resolveAudience (P8.3 RGPD)', () => {
     expect(r.eligible.map((e) => e.email)).toEqual(['fr@x.fr']);
   });
 
-  it('audience exposants_paid + pref_exposant=true -> eligible', async () => {
+  it('audience partenaires_paid + pref_exposant=true -> eligible', async () => {
     // Mock simplifie : on suppose que la query prospects filtre deja
     // serveur (filtres `not acompte_paid_at is null`). On seed seulement
     // les prospects qui passent le filtre. C'est la couche resolveAudience
@@ -261,8 +261,8 @@ describe('resolveAudience (P8.3 RGPD)', () => {
       }),
     ];
     const r = await resolveAudience(supabaseMock, {
-      audienceKey: 'exposants_paid',
-      category: 'exposant',
+      audienceKey: 'partenaires_paid',
+      category: 'partenaire',
     });
     expect(r.eligible.map((e) => e.email)).toEqual(['a@x.fr']);
   });

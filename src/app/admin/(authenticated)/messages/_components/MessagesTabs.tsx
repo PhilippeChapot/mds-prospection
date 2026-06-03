@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 /**
  * P9.2 — onglets du hub /admin/messages :
  *   - Visiteurs (P9.1-natif)  : messages captés via le widget public.
- *   - Interne   (P9.2)         : conversations staff↔staff + staff↔exposants.
+ *   - Interne   (P9.2)         : conversations staff↔staff + staff↔partenaires.
  *
  * Server component (juste 2 liens stylises selon `current`).
  */

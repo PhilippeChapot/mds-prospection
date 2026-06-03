@@ -36,7 +36,7 @@ type CategoryTarif = 'standard' | 'prs_exhibitor' | 'non_eligible';
 
 const CATEGORY_LABELS: Record<CategoryTarif, string> = {
   standard: 'Standard (MDS, tarif normal)',
-  prs_exhibitor: 'PRS Exhibitor (tarif préférentiel ex-PRS)',
+  prs_exhibitor: 'PRS Partner (tarif préférentiel ex-PRS)',
   non_eligible: 'Non éligible (hors cible MDS)',
 };
 

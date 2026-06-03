@@ -150,7 +150,7 @@
         }
       ],
       "total_sous_secteurs": 12,
-      "total_exposants_cibles": 73
+      "total_partenaires_cibles": 73
     },
     {
       "code": "AUDIO_RADIO",
@@ -361,7 +361,7 @@
         }
       ],
       "total_sous_secteurs": 15,
-      "total_exposants_cibles": 148
+      "total_partenaires_cibles": 148
     },
     {
       "code": "DIFFUSION_INFRA",
@@ -468,7 +468,7 @@
         }
       ],
       "total_sous_secteurs": 9,
-      "total_exposants_cibles": 61
+      "total_partenaires_cibles": 61
     },
     {
       "code": "VIDEO_CTV",
@@ -616,7 +616,7 @@
         }
       ],
       "total_sous_secteurs": 14,
-      "total_exposants_cibles": 88
+      "total_partenaires_cibles": 88
     },
     {
       "code": "OUTDOOR_DOOH",
@@ -684,7 +684,7 @@
         }
       ],
       "total_sous_secteurs": 6,
-      "total_exposants_cibles": 33
+      "total_partenaires_cibles": 33
     },
     {
       "code": "DATA_ADTECH",
@@ -828,7 +828,7 @@
         }
       ],
       "total_sous_secteurs": 13,
-      "total_exposants_cibles": 81
+      "total_partenaires_cibles": 81
     }
   ],
   "visiteurs": [
@@ -1233,7 +1233,7 @@
   "stats": {
     "total_poles": 6,
     "total_sous_secteurs": 69,
-    "total_exposants_cibles": 484,
+    "total_partenaires_cibles": 484,
     "total_visiteurs_families": 14,
     "total_visiteurs_entites": 245
   }

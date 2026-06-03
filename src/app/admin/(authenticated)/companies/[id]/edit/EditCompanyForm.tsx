@@ -84,7 +84,7 @@ export function EditCompanyForm({ company }: { company: EditableCompany }) {
               className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
               defaultValue={company.category}
             >
-              <option value="prs_exhibitor">PRS exposant</option>
+              <option value="prs_exhibitor">PRS partenaire</option>
               <option value="standard">Standard</option>
               <option value="non_eligible">Non eligible</option>
             </select>
@@ -103,7 +103,7 @@ export function EditCompanyForm({ company }: { company: EditableCompany }) {
               ))}
             </select>
           </Field>
-          <Field label="Exposant PRS 2026 ?">
+          <Field label="Partenaire PRS 2026 ?">
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"

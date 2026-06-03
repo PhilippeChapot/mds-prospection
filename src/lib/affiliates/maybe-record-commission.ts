@@ -79,7 +79,7 @@ export async function maybeRecordAffiliateCommission(prospectId: string): Promis
 
     const company = pickFirst(prospect.company);
 
-    // P7.x.1.D — Exclusion commission pour les PRS exhibitors (ils ont
+    // P7.x.1.D — Exclusion commission pour les PRS partners (ils ont
     // leur propre programme tarifaire, hors perimetre MDS commission).
     // Le prospect reste track comme conversion attribuee (affiliate_id
     // conserve), mais on UPDATE commission_eur_ht=0 + status='not_applicable'

@@ -24,7 +24,7 @@ function mockEnv(opts: {
   order?: OrderRow | null;
   processResult?: Awaited<
     ReturnType<
-      typeof import('@/lib/espace-exposant/supplementary-orders/webhook-handler').processPaidSupplementaryOrder
+      typeof import('@/lib/espace-partenaire/supplementary-orders/webhook-handler').processPaidSupplementaryOrder
     >
   >;
 }) {
@@ -64,7 +64,7 @@ function mockEnv(opts: {
     },
   );
 
-  vi.doMock('@/lib/espace-exposant/supplementary-orders/webhook-handler', () => ({
+  vi.doMock('@/lib/espace-partenaire/supplementary-orders/webhook-handler', () => ({
     processPaidSupplementaryOrder: procMock,
   }));
 }

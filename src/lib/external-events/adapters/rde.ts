@@ -1,7 +1,7 @@
 /**
  * P5.x.ExternalEvents — adapter RDE 2026 (Radio Days Europe).
  *
- * Source : MD PROSPECTION/Exposants_RDE2026_emails_déduits.xlsx
+ * Source : MD PROSPECTION/Partenaires_RDE2026_emails_déduits.xlsx
  * Sheet : "Emails Déduits"
  * Headers : Société, Nom complet, Fonction, Email, Source, Confiance.
  *

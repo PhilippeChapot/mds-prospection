@@ -4,7 +4,7 @@
  * Genere une banniere de profil LinkedIn (1584x396) via next/og (Satori).
  *
  * Layout 2 colonnes :
- *   - Colonne gauche (792x396)  : fond blanc, logo exposant contained
+ *   - Colonne gauche (792x396)  : fond blanc, logo partenaire contained
  *     (max 728x332, padding 32). Si pas de logo : nom societe en gros
  *     texte adaptatif (base 64px).
  *   - Colonne droite (792x396)  : gradient bleu MDS avec tagline
@@ -15,7 +15,7 @@
  * Reutilise les helpers src/lib/social-assets/ (cf P5.x.14 Phase 0)
  * pour partager couleurs, dates, wording avec le badge social.
  *
- * Public : pas d'auth (l'exposant partage l'URL pour son profil LinkedIn).
+ * Public : pas d'auth (l'partenaire partage l'URL pour son profil LinkedIn).
  * Logs : prefix [api/linkedin-cover].
  */
 
@@ -87,7 +87,7 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
         fontFamily: 'Arial, sans-serif',
       }}
     >
-      {/* COLONNE GAUCHE — 792x396 blanche : logo exposant ou fallback nom */}
+      {/* COLONNE GAUCHE — 792x396 blanche : logo partenaire ou fallback nom */}
       <div
         style={{
           display: 'flex',

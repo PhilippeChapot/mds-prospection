@@ -125,7 +125,7 @@ export function NewProspectForm({
                   defaultValue="standard"
                 >
                   <option value="standard">Standard</option>
-                  <option value="prs_exhibitor">PRS exposant</option>
+                  <option value="prs_exhibitor">PRS partenaire</option>
                   <option value="non_eligible">Non eligible</option>
                 </select>
               </Field>

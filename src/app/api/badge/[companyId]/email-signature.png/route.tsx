@@ -4,7 +4,7 @@
  * Genere une signature email tres compacte (600x120) via next/og (Satori).
  *
  * Layout 2 colonnes (very small format) :
- *   - Colonne gauche (200x120) : fond blanc, logo exposant contained
+ *   - Colonne gauche (200x120) : fond blanc, logo partenaire contained
  *     (max 160x80, padding 20). Si pas de logo : nom societe en texte
  *     adaptatif (base 22px) en bleu MDS.
  *   - Colonne droite (400x120) : gradient bleu MDS avec tagline
@@ -15,7 +15,7 @@
  *
  * Reutilise les helpers src/lib/social-assets/ (cf P5.x.14).
  *
- * Public : pas d'auth (l'exposant integre l'URL dans sa signature email).
+ * Public : pas d'auth (l'partenaire integre l'URL dans sa signature email).
  * Logs : prefix [api/email-signature].
  */
 
@@ -86,7 +86,7 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
         fontFamily: 'Arial, sans-serif',
       }}
     >
-      {/* COLONNE GAUCHE — 200x120 blanche : logo exposant ou fallback nom */}
+      {/* COLONNE GAUCHE — 200x120 blanche : logo partenaire ou fallback nom */}
       <div
         style={{
           display: 'flex',

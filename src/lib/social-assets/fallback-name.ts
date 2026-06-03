@@ -1,5 +1,5 @@
 /**
- * Font-size adaptative pour le fallback nom societe quand un exposant
+ * Font-size adaptative pour le fallback nom societe quand un partenaire
  * n'a pas uploade son logo. Empeche un nom long de deborder de la
  * zone dispo.
  *

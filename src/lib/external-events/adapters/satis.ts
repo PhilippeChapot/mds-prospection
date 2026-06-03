@@ -1,14 +1,14 @@
 /**
  * P5.x.ExternalEvents — adapter SATIS 2025.
  *
- * Source : MD PROSPECTION/Exposants_SATIS_2025.xlsx
- * Sheet : "Exposants SATIS 2025"
+ * Source : MD PROSPECTION/Partenaires_SATIS_2025.xlsx
+ * Sheet : "Partenaires SATIS 2025"
  * Headers (18 cols) :
  *   Nom, Salon, Stand, Profil, Secteurs, Description, Site Web,
  *   Téléphone, Email, Adresse, Code Postal, Ville, Pays, LinkedIn,
  *   Facebook, Instagram, YouTube, URL Fiche.
  *
- * Donnees publiques (fiche exposant SATIS) -> consentement implicite,
+ * Donnees publiques (fiche partenaire SATIS) -> consentement implicite,
  * emailConfidence='verified' pour les emails (ce sont des contacts
  * generiques de la societe, type dpo@/contact@). Pas de prenom/nom.
  *

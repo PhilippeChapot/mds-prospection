@@ -190,7 +190,7 @@ export default async function MessagesListPage({ searchParams }: { searchParams:
 }
 
 // ---------------------------------------------------------------------------
-// View "Interne" : conversations staff/exposants (P9.2)
+// View "Interne" : conversations staff/partenaires (P9.2)
 // ---------------------------------------------------------------------------
 
 async function InternalConversationsView() {
@@ -221,7 +221,8 @@ async function InternalConversationsView() {
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-md-text-muted text-xs">
-          Conversations avec vos collègues (DM) + conversations support exposants (inbox partagée).
+          Conversations avec vos collègues (DM) + conversations support partenaires (inbox
+          partagée).
         </p>
         <Link
           href="/admin/messages/conversations/new"

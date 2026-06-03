@@ -61,7 +61,7 @@ export function NewConversationForm({ staffOptions }: { staffOptions: StaffOptio
       return;
     }
     if (mode === 'support' && !recipientContactId) {
-      setError('Choisissez un contact exposant.');
+      setError('Choisissez un contact partenaire.');
       return;
     }
 
@@ -111,7 +111,7 @@ export function NewConversationForm({ staffOptions }: { staffOptions: StaffOptio
                 : 'border-md-border text-md-text hover:bg-muted rounded-md border px-3 py-1.5 text-sm'
             }
           >
-            💬 Message à un exposant (support)
+            💬 Message à un partenaire (support)
           </button>
         </div>
       </div>
@@ -136,7 +136,7 @@ export function NewConversationForm({ staffOptions }: { staffOptions: StaffOptio
         </div>
       ) : (
         <div className="space-y-1.5">
-          <Label>Destinataire (contact exposant)</Label>
+          <Label>Destinataire (contact partenaire)</Label>
           <div className="relative">
             <Search className="text-md-text-muted absolute top-2.5 left-2 size-4" aria-hidden />
             <Input

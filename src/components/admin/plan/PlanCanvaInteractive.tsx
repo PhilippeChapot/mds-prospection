@@ -6,7 +6,7 @@
  * Reutilise dans 2 contextes :
  *   - mode='admin'    : /admin/emplacements toggle "Plan visuel" -> click stand
  *                       ouvre le Sheet d'admin (drag-drop non supporte ici).
- *   - mode='exposant' : fiche stand espace exposant -> son stand est mis en
+ *   - mode='partenaire' : fiche stand espace partenaire -> son stand est mis en
  *                       evidence (ring rose) + tooltips voisins. Si voisin
  *                       company_public_visibility=false, on n'affiche pas le
  *                       nom (RGPD doctrine P6.x.3).
@@ -22,18 +22,18 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import type { StandPublicView } from '@/lib/espace-exposant/stands-public-view';
+import type { StandPublicView } from '@/lib/espace-partenaire/stands-public-view';
 
 const CANVA_PLAN_URL = 'https://www.canva.com/design/DAHGZNYdF2Q/3qgDD2_2W3KQJWUe_JpHIg/view?embed';
 
-type Mode = 'admin' | 'exposant';
+type Mode = 'admin' | 'partenaire';
 
 interface Props {
   mode: Mode;
   /** P6.x.3-ter : accepte StandPublicView (sanitized) ou super-type
    *  StandWithProspect côté admin (compat ascendante via structural typing). */
   stands: StandPublicView[];
-  /** Pour exposant : son stand est encadre rose et tooltip "Votre stand". */
+  /** Pour partenaire : son stand est encadre rose et tooltip "Votre stand". */
   highlightedStandId?: string;
   onStandClick?: (stand: StandPublicView) => void;
 }
@@ -141,7 +141,7 @@ function StandTooltip({
   //   - reserve/paye -> nom company si public_visibility=true (admin: toujours),
   //                     sinon "Confidentiel" italique
   //   - bloque       -> "Bloqué", pas de nom
-  const t = useTranslations('ExposantDashboard');
+  const t = useTranslations('PartenaireDashboard');
   const statusLabel = t(`stand_status_${stand.status}` as const);
 
   let nameLine: { text: string; muted: boolean } | null = null;

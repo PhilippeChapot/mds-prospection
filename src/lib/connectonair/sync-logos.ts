@@ -9,7 +9,7 @@
  * les companies sans logo manuel et appellera ce helper.
  *
  * Doctrine de precedence (a respecter en V1.3) :
- *   - Si `companies.logo_source = 'manual_upload'` : SKIP, l'exposant
+ *   - Si `companies.logo_source = 'manual_upload'` : SKIP, l'partenaire
  *     a la main (cf. P5.x.12 doctrine)
  *   - Sinon, fetch /api/companies/{coa_id}/logo signe HMAC
  *   - Si retourne une URL : UPDATE logo_url + logo_source='connectonair_sync'

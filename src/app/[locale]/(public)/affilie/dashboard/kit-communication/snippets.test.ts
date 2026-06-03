@@ -4,8 +4,8 @@
  * P7.x.1.E-bis — tests pures snippets kit comm (B2B + 5 pôles tech).
  *
  * Doctrine :
- *   - Affiliation = exposants UNIQUEMENT (visiteurs = entree gratuite,
- *     pas de commission). CTA pointe vers le wizard exposant.
+ *   - Affiliation = partenaires UNIQUEMENT (visiteurs = entree gratuite,
+ *     pas de commission). CTA pointe vers le wizard partenaire.
  *   - Perimetre = 5 poles MDS tech : audio, diffusion, video & CTV,
  *     outdoor & DOOH, data & adtech. PAS de regies, PAS de retail
  *     media (porte par Havas sur mediadays.net classique).
@@ -19,7 +19,7 @@ describe('buildEmailSignatureHtml (P7.x.1.E-bis)', () => {
   it('rend une table HTML avec nom + tagline "Les MediaDays" + 5 poles', () => {
     const html = buildEmailSignatureHtml({
       affilieName: 'Lucas Aubrée',
-      trackingUrlExposant: 'https://mediadays.solutions/fr/inscription-exposant?ref=LUCAS',
+      trackingUrlPartenaire: 'https://mediadays.solutions/fr/inscription-partenaire?ref=LUCAS',
     });
     expect(html).toMatch(/<table/);
     expect(html).toMatch(/Lucas Aubrée/);
@@ -41,7 +41,7 @@ describe('buildEmailSignatureHtml (P7.x.1.E-bis)', () => {
   it('ne mentionne PAS regies ni retailers (perimetre Havas, hors MDS)', () => {
     const html = buildEmailSignatureHtml({
       affilieName: 'Test',
-      trackingUrlExposant: 'https://example.com',
+      trackingUrlPartenaire: 'https://example.com',
     });
     expect(html).not.toMatch(/régies/i);
     expect(html).not.toMatch(/retailers/i);
@@ -51,16 +51,18 @@ describe('buildEmailSignatureHtml (P7.x.1.E-bis)', () => {
   it('CTA principal pointe vers le wizard EXPOSANT (B2B)', () => {
     const html = buildEmailSignatureHtml({
       affilieName: 'Test',
-      trackingUrlExposant: 'https://mediadays.solutions/fr/inscription-exposant?ref=T',
+      trackingUrlPartenaire: 'https://mediadays.solutions/fr/inscription-partenaire?ref=T',
     });
-    expect(html).toMatch(/href="https:\/\/mediadays\.solutions\/fr\/inscription-exposant\?ref=T"/);
+    expect(html).toMatch(
+      /href="https:\/\/mediadays\.solutions\/fr\/inscription-partenaire\?ref=T"/,
+    );
     expect(html).toMatch(/→ Réservez votre stand/);
   });
 
   it('sous-CTA secondaire vers mediadays.net : wording elargi (P7.x.1.E-quater)', () => {
     const html = buildEmailSignatureHtml({
       affilieName: 'Test',
-      trackingUrlExposant: 'https://example.com',
+      trackingUrlPartenaire: 'https://example.com',
     });
     expect(html).toMatch(/href="https:\/\/mediadays\.net"/);
     // E-quater : "Vous venez visiter ?" (neutre, ne discrimine pas les
@@ -73,7 +75,7 @@ describe('buildEmailSignatureHtml (P7.x.1.E-bis)', () => {
   it('brand colors MDS (#294294 marine + #E6007E magenta)', () => {
     const html = buildEmailSignatureHtml({
       affilieName: 'Test',
-      trackingUrlExposant: 'https://example.com',
+      trackingUrlPartenaire: 'https://example.com',
     });
     expect(html).toContain('#294294');
     expect(html).toContain('#E6007E');
@@ -82,7 +84,7 @@ describe('buildEmailSignatureHtml (P7.x.1.E-bis)', () => {
   it('echappe HTML (anti-injection sur affilieName)', () => {
     const html = buildEmailSignatureHtml({
       affilieName: '<script>alert(1)</script>',
-      trackingUrlExposant: 'https://example.com',
+      trackingUrlPartenaire: 'https://example.com',
     });
     expect(html).not.toMatch(/<script>alert\(1\)<\/script>/);
     expect(html).toMatch(/&lt;script&gt;/);
@@ -90,10 +92,10 @@ describe('buildEmailSignatureHtml (P7.x.1.E-bis)', () => {
 });
 
 describe('buildEmailCopy (P7.x.1.E-bis)', () => {
-  it('FR : tutoiement + 5 poles tech + signature affilie + tracking exposant', () => {
+  it('FR : tutoiement + 5 poles tech + signature affilie + tracking partenaire', () => {
     const text = buildEmailCopy('fr', {
       affilieName: 'Lucas Aubrée',
-      trackingUrlExposant: 'https://mediadays.solutions/fr/inscription-exposant?ref=LUCAS',
+      trackingUrlPartenaire: 'https://mediadays.solutions/fr/inscription-partenaire?ref=LUCAS',
     });
     expect(text).toMatch(/Bonjour \{prenom\}/);
     // Mention des 5 poles tech
@@ -109,14 +111,14 @@ describe('buildEmailCopy (P7.x.1.E-bis)', () => {
     expect(text).toMatch(/15\/12 à Paris/);
     // CTA "Réserve ton stand" tutoiement
     expect(text).toMatch(/Réserve ton stand/);
-    expect(text).toContain('https://mediadays.solutions/fr/inscription-exposant?ref=LUCAS');
+    expect(text).toContain('https://mediadays.solutions/fr/inscription-partenaire?ref=LUCAS');
     expect(text).toMatch(/À très vite,\nLucas Aubrée$/);
   });
 
   it('FR : ne mentionne PAS regies ni retailers (perimetre Havas, hors MDS)', () => {
     const text = buildEmailCopy('fr', {
       affilieName: 'Test',
-      trackingUrlExposant: 'https://example.com',
+      trackingUrlPartenaire: 'https://example.com',
     });
     expect(text).not.toMatch(/régies/i);
     expect(text).not.toMatch(/retailers/i);
@@ -126,7 +128,7 @@ describe('buildEmailCopy (P7.x.1.E-bis)', () => {
   it('EN : "Book your booth" + 5 tech areas + affilieName signature', () => {
     const text = buildEmailCopy('en', {
       affilieName: 'Jane Smith',
-      trackingUrlExposant: 'https://mediadays.solutions/en/exhibitor-registration?ref=JANE',
+      trackingUrlPartenaire: 'https://mediadays.solutions/en/partner-registration?ref=JANE',
     });
     expect(text).toMatch(/Hi \{first_name\}/);
     expect(text).toMatch(/5 tech areas/);
@@ -142,14 +144,14 @@ describe('buildEmailCopy (P7.x.1.E-bis)', () => {
     expect(text).not.toMatch(/ad networks/i);
     expect(text).toMatch(/Advertisers, agencies, publishers and content producers/);
     expect(text).toMatch(/Book your booth/);
-    expect(text).toContain('https://mediadays.solutions/en/exhibitor-registration?ref=JANE');
+    expect(text).toContain('https://mediadays.solutions/en/partner-registration?ref=JANE');
     expect(text).toMatch(/See you there,\nJane Smith$/);
   });
 
   it("FR : ne dit PLUS 'entrée gratuite' (visiteur) ni 'Inscrivez-vous ici' (landing)", () => {
     const text = buildEmailCopy('fr', {
       affilieName: 'Test',
-      trackingUrlExposant: 'https://example.com',
+      trackingUrlPartenaire: 'https://example.com',
     });
     expect(text).not.toMatch(/entrée est\s+gratuite/i);
     expect(text).not.toMatch(/Inscrivez-vous ici/);

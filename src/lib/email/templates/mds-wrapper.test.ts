@@ -20,7 +20,7 @@ describe('renderMdsEmailHtml (P8.3-bis Fix #2)', () => {
     expect(html).toContain('MediaDays Solutions 2026');
   });
 
-  it('footer FR : adresse Editions HF + lien preferences /espace-exposant', () => {
+  it('footer FR : adresse Editions HF + lien preferences /espace-partenaire', () => {
     const html = renderMdsEmailHtml({
       subject: 'X',
       bodyHtml: '<p>X</p>',
@@ -31,7 +31,7 @@ describe('renderMdsEmailHtml (P8.3-bis Fix #2)', () => {
     expect(html).toContain('19100');
     expect(html).toContain('Brive-la-Gaillarde');
     expect(html).toContain('Gérer mes préférences');
-    expect(html).toContain('https://mediadays.solutions/fr/espace-exposant');
+    expect(html).toContain('https://mediadays.solutions/fr/espace-partenaire');
   });
 
   it('footer EN traduit', () => {
@@ -42,7 +42,7 @@ describe('renderMdsEmailHtml (P8.3-bis Fix #2)', () => {
       appUrl: 'https://mediadays.solutions',
     });
     expect(html).toContain('Manage my preferences');
-    expect(html).toContain('/en/espace-exposant');
+    expect(html).toContain('/en/espace-partenaire');
   });
 
   it('styles inline (pas de Tailwind classes — compat email)', () => {

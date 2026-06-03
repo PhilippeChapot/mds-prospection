@@ -23,8 +23,8 @@
     "switchLanguage": "Changer de langue",
     "locale_fr": "Français",
     "locale_en": "English",
-    "exhibitorSpace": "Espace Exposant",
-    "exhibitorSpaceComingSoon": "Espace Exposant — bientôt disponible",
+    "exhibitorSpace": "Espace Partenaire",
+    "exhibitorSpaceComingSoon": "Espace Partenaire — bientôt disponible",
     "publisher": "Éditeur",
     "legalSection": "Mentions légales",
     "terms": "Conditions générales",
@@ -39,7 +39,7 @@
     "eyebrow": "Édition 2026",
     "tagline": "Le NOUVEAU rendez-vous des médias",
     "subtitle": "Deux journées professionnelles dédiées aux acteurs de la radio, du podcast, de la vidéo et du média numérique.",
-    "ctaExhibitor": "M'inscrire comme exposant",
+    "ctaExhibitor": "M'inscrire comme partenaire",
     "ctaPartner": "M'inscrire comme partenaire",
     "ctaLogin": "Mon espace",
     "event1": {
@@ -79,7 +79,7 @@
       "labelAffiliateInput": "Qui vous a parlé de nous ? (optionnel)",
       "labelAffiliateInputPlaceholder": "Nom de la société ou du contact qui vous a parlé de l'événement",
       "labelCategory": "Vous êtes…",
-      "categoryExhibitor": "Exposant",
+      "categoryExhibitor": "Partenaire",
       "categoryPartner": "Partenaire",
       "vat": {
         "sectionTitle": "TVA intracommunautaire (UE hors France)",
@@ -110,7 +110,7 @@
       "emailLabel": "Pourquoi un email professionnel ?",
       "emailBody": "Utilisez votre adresse email professionnelle (votre email d'entreprise). Évitez les adresses Gmail, Hotmail ou Yahoo personnelles : nous vérifions que l'email est rattaché à votre activité professionnelle pour garantir la qualité des inscriptions et éviter les doublons.",
       "categoryLabel": "Quelle est la différence ?",
-      "categoryBody": "Exposant : société proposant des produits/services audio, radio, podcast (régies, prestataires, studios, équipementiers...) qui souhaite avoir un emplacement physique pendant le salon Paris Radio Show 2026 du 15 décembre 2026 au Carrousel du Louvre. Partenaire : société souhaitant soutenir l'événement MediaDays Solutions 2026 (avec ou sans présence physique). Plusieurs niveaux de partenariat possibles (sponsor principal, sponsor pôle, partenaire média).",
+      "categoryBody": "Partenaire : société proposant des produits/services audio, radio, podcast (régies, prestataires, studios, équipementiers...) qui souhaite avoir un emplacement physique pendant le salon Paris Radio Show 2026 du 15 décembre 2026 au Carrousel du Louvre. Partenaire : société souhaitant soutenir l'événement MediaDays Solutions 2026 (avec ou sans présence physique). Plusieurs niveaux de partenariat possibles (sponsor principal, sponsor pôle, partenaire média).",
       "affiliateLabel": "Qui vous a parlé de nous ?",
       "affiliateBody": "Si une société, une régie ou un contact vous a parlé de MediaDays Solutions, indiquez son nom ici. Une commission lui sera versée si votre inscription est confirmée. Optionnel."
     },
@@ -137,7 +137,7 @@
       },
       "caseA": {
         "heading": "Bienvenue {firstName} !",
-        "subheading": "En tant qu'exposant Paris Radio Show, voici votre offre dédiée :",
+        "subheading": "En tant que partenaire Paris Radio Show, voici votre offre dédiée :",
         "step1Title": "Pack & salons",
         "step2Title": "Emplacement & options",
         "step3Title": "Paiement",
@@ -288,12 +288,12 @@
       },
       "exclusion": {
         "title": "💡 Important :",
-        "body": "les commissions ne s'appliquent pas aux exposants Paris Radio Show 2026. Toute autre société convertie via votre affiliation génère commission normalement.",
-        "seeListLink": "Voir la liste des exposants exclus ({count}) →",
-        "modalTitle": "Exposants Paris Radio Show 2026 exclus",
-        "modalDescription": "Ces sociétés sont déjà exposants PRS 2026 et ne génèrent pas de commission. Toute autre société convertie via votre lien d'affiliation reste éligible.",
+        "body": "les commissions ne s'appliquent pas aux partenaires Paris Radio Show 2026. Toute autre société convertie via votre affiliation génère commission normalement.",
+        "seeListLink": "Voir la liste des partenaires exclus ({count}) →",
+        "modalTitle": "Partenaires Paris Radio Show 2026 exclus",
+        "modalDescription": "Ces sociétés sont déjà partenaires PRS 2026 et ne génèrent pas de commission. Toute autre société convertie via votre lien d'affiliation reste éligible.",
         "searchPlaceholder": "Rechercher par nom ou domaine…",
-        "empty": "Aucun exposant exclu pour l'instant.",
+        "empty": "Aucun partenaire exclu pour l'instant.",
         "noResults": "Aucun résultat pour cette recherche.",
         "total": "{count} société(s) exclue(s) au total.",
         "close": "Fermer",
@@ -309,8 +309,8 @@
         "labels": {
           "landingFr": "Landing FR (page d'accueil)",
           "landingEn": "Landing EN (homepage)",
-          "signupFr": "Inscription exposant FR (wizard direct)",
-          "signupEn": "Inscription exposant EN (wizard direct)"
+          "signupFr": "Inscription partenaire FR (wizard direct)",
+          "signupEn": "Inscription partenaire EN (wizard direct)"
         },
         "copy": "Copier",
         "copied": "Lien copié !"
@@ -337,7 +337,7 @@
       "kit": {
         "title": "🎨 Kit de communication",
         "subtitle": "Vos assets personnalisés à partager avec votre audience : bannière LinkedIn, signature email, copy à utiliser dans vos campagnes.",
-        "b2bNote": "Rappel : l'affiliation MediaDays Solutions concerne uniquement les exposants (solutions tech audio, vidéo, adtech, OOH, data, diffusion). Les visiteurs ont l'entrée gratuite sur mediadays.net et ne génèrent pas de commission. Orientez vos communications vers les pros qui pourraient exposer.",
+        "b2bNote": "Rappel : l'affiliation MediaDays Solutions concerne uniquement les partenaires (solutions tech audio, vidéo, adtech, OOH, data, diffusion). Les visiteurs ont l'entrée gratuite sur mediadays.net et ne génèrent pas de commission. Orientez vos communications vers les pros qui pourraient exposer.",
         "copyHtml": "Copier le HTML",
         "copyText": "Copier le texte",
         "copied": "Copié !",
@@ -363,7 +363,7 @@
         "title": "👤 Mon profil",
         "subtitle": "Vos informations affilié et coordonnées bancaires pour le règlement de vos commissions.",
         "typeMedia": "Média partenaire",
-        "typeReferral": "Parrainage exposant",
+        "typeReferral": "Parrainage partenaire",
         "identity": {
           "section": "Identité",
           "displayName": "Nom",
@@ -386,7 +386,7 @@
     }
   },
   "espaceExposant": {
-    "title": "Espace Exposant",
+    "title": "Espace Partenaire",
     "subtitle": "Votre portail MediaDays Solutions 2026",
     "noLogoBanner": {
       "title": "Pour des visuels plus impactants, ajoutez d'abord le logo de votre société.",
@@ -414,7 +414,7 @@
       "generic": "Connexion impossible. Demandez un nouveau lien ci-dessous."
     },
     "nav": {
-      "sectionTitle": "Espace Exposant",
+      "sectionTitle": "Espace Partenaire",
       "stand": "Mon stand",
       "coordonnees": "Mes coordonnées",
       "documents": "Mes documents",
@@ -432,7 +432,7 @@
     },
     "dashboard": {
       "greeting": "Bonjour {firstName}",
-      "shortGreeting": "Espace Exposant",
+      "shortGreeting": "Espace Partenaire",
       "welcome": "Bienvenue sur votre espace MediaDays Solutions 2026.",
       "companyLabel": "Société",
       "logout": "Se déconnecter",
@@ -509,7 +509,7 @@
       },
       "documents": {
         "section": "📄 Documents",
-        "guide": "Guide exposant",
+        "guide": "Guide partenaire",
         "guideDownload": "Télécharger le guide PDF",
         "guideComingSoon": "Disponible prochainement",
         "floorPlan": "Plan de salle",
@@ -593,7 +593,7 @@
           "errorTooShort": "Le lien doit comporter au moins 3 caractères.",
           "errorTooLong": "Le lien ne peut pas dépasser 32 caractères.",
           "errorFormat": "Format invalide. Utilisez uniquement lettres minuscules, chiffres et tirets simples (pas en début ni en fin).",
-          "errorTaken": "Ce lien est déjà utilisé par un autre exposant. Essayez une autre variante.",
+          "errorTaken": "Ce lien est déjà utilisé par un autre partenaire. Essayez une autre variante.",
           "errorGeneric": "Échec de l'enregistrement. Réessayez."
         }
       },
@@ -659,9 +659,9 @@
   },
   "landing": {
     "polesSection": {
-      "eyebrow": "{poles} pôles · {sectors} sous-secteurs · {exhibitors} exposants cibles",
+      "eyebrow": "{poles} pôles · {sectors} sous-secteurs · {partners} partenaires cibles",
       "title": "Êtes-vous concerné par MediaDays ?",
-      "subtitle": "Cliquez sur un pôle pour découvrir les sous-secteurs, exposants attendus et le bon parcours d’inscription."
+      "subtitle": "Cliquez sur un pôle pour découvrir les sous-secteurs, partenaires attendus et le bon parcours d’inscription."
     },
     "visitorsSection": {
       "eyebrow": "{families} familles · {entities} entités identifiées",
@@ -669,7 +669,7 @@
       "subtitle": "MediaDays Solutions s’adresse à 14 grandes familles de visiteurs. Trouvez la vôtre."
     },
     "card": {
-      "subSectorsStats": "{count} sous-secteurs · {exhibitors} exposants cibles",
+      "subSectorsStats": "{count} sous-secteurs · {partners} partenaires cibles",
       "entities": "{count} entités",
       "transversalAccess": "accès transversal",
       "explore": "Explorer",

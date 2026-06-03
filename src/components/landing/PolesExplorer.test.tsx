@@ -51,7 +51,7 @@ describe('PolesExplorer (P6.x.4-a)', () => {
     const data = poles.find((p) => p.code === 'DATA_ADTECH')!;
     fireEvent.click(screen.getAllByText(data.name)[0].closest('button')!);
     const cta = screen.getByText(/Réserver mon stand/i).closest('a');
-    expect(cta?.getAttribute('href')).toContain('/inscription-exposant');
+    expect(cta?.getAttribute('href')).toContain('/inscription-partenaire');
   });
 
   it('P6.x.4-a-sexies — drawer ouvert affiche un bouton fermer accessible (aria-label="Fermer", FR)', () => {

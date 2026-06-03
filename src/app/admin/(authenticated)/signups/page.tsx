@@ -43,7 +43,7 @@ export default async function SignupsListPage({ searchParams }: { searchParams: 
       ? (params.status as SignupStatus)
       : null;
   const category =
-    params.category === 'exposant' || params.category === 'partenaire' ? params.category : null;
+    params.category === 'partenaire' || params.category === 'partenaire' ? params.category : null;
   const poleCode =
     params.pole && (POLE_CODES as readonly string[]).includes(params.pole) ? params.pole : null;
   const dateFrom = params.date_from?.match(/^\d{4}-\d{2}-\d{2}$/) ? params.date_from : null;
@@ -116,7 +116,7 @@ export default async function SignupsListPage({ searchParams }: { searchParams: 
           <option value="">Toutes catégories</option>
           {SIGNUP_CATEGORIES.map((c) => (
             <option key={c} value={c}>
-              {c === 'exposant' ? 'Exposant' : 'Partenaire'}
+              {c === 'partenaire' ? 'Partenaire' : 'Partenaire'}
             </option>
           ))}
         </select>

@@ -275,7 +275,7 @@ export async function createAcomptePaymentLink(
   const noteLine = `[${new Date().toISOString().slice(0, 10)}] Payment Link Stripe ACOMPTE 30% (auto, expire ${expiresAt.slice(0, 10)}) : ${link.url}`;
   const newNotes = prospect.notes ? `${prospect.notes}\n${noteLine}` : noteLine;
   // P5.x.2 — persiste l'URL + date d'expiration en colonnes dediees pour
-  // que l'Espace Exposant puisse afficher le CTA "Regler l'acompte"
+  // que l'Espace Partenaire puisse afficher le CTA "Regler l'acompte"
   // (queryable, contrairement au champ notes free-text).
   // P5.x.3 S3 — persiste aussi l'ID `plink_xxx` pour que le cron
   // cleanup-payment-links puisse appeler paymentLinks.update(id, ...)

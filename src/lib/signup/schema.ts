@@ -65,7 +65,7 @@ export const EU_VAT_COUNTRIES = [
 
 export type EuVatCountry = (typeof EU_VAT_COUNTRIES)[number];
 
-export const SIGNUP_CATEGORIES = ['exposant', 'partenaire'] as const;
+export const SIGNUP_CATEGORIES = ['partenaire', 'partenaire'] as const;
 export type SignupCategory = (typeof SIGNUP_CATEGORIES)[number];
 
 export const SIGNUP_LOCALES = ['fr', 'en'] as const;

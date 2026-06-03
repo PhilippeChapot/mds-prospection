@@ -58,7 +58,7 @@ export const SETTINGS_REGISTRY: SettingFieldDef[] = [
     key: 'acompte_percent',
     category: 'finance',
     label: "Pourcentage d'acompte",
-    description: 'Acompte demandé sur les devis exposants. Ex : 30 = 30 %.',
+    description: 'Acompte demandé sur les devis partenaires. Ex : 30 = 30 %.',
     schema: z.number().int().min(0).max(100),
     type: 'percent',
   },

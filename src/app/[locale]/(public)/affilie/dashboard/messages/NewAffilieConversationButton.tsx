@@ -3,9 +3,9 @@
 /**
  * P7.x.AffiliePitchsAndChat — bouton "Contacter l equipe MDS" affilie.
  *
- * Calque sur NewExposantConversationButton P9.2 — change l action
+ * Calque sur NewPartenaireConversationButton P9.2 — change l action
  * server (startConversationFromAffilieAction) + redirect vers la page
- * affilie. Sujet OBLIGATOIRE (vs optionnel cote exposant) car le staff
+ * affilie. Sujet OBLIGATOIRE (vs optionnel cote partenaire) car le staff
  * doit pouvoir router rapidement.
  */
 

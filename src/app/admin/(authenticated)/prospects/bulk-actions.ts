@@ -86,7 +86,7 @@ const STATUS_LABEL_FR: Record<ProspectStatus, string> = {
 };
 
 const CATEGORY_LABEL_FR: Record<Database['public']['Enums']['category_tarif'], string> = {
-  prs_exhibitor: 'PRS exposant',
+  prs_exhibitor: 'PRS partenaire',
   standard: 'Standard',
   non_eligible: 'Non eligible',
 };

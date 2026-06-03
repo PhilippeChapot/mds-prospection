@@ -138,8 +138,8 @@ export default async function SignupDetailPage({ params }: PageProps) {
           <Field label="Société">{signup.company_name_input ?? '—'}</Field>
           <Field label="Pays société">—</Field>
           <Field label="Catégorie déclarée">
-            {signup.category === 'exposant'
-              ? 'Exposant'
+            {signup.category === 'partenaire'
+              ? 'Partenaire'
               : signup.category === 'partenaire'
                 ? 'Partenaire'
                 : '—'}

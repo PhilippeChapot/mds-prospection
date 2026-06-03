@@ -44,12 +44,12 @@ function mapEmailValidationStatus(
  * Calcule la categorie tarifaire derivee depuis category declaree
  * + statut PRS de la societe matchee.
  *
- *   exposant + societe PRS connue          -> prs_exhibitor (Cas A)
- *   exposant + societe non PRS / inconnue  -> standard      (Cas B)
+ *   partenaire + societe PRS connue          -> prs_exhibitor (Cas A)
+ *   partenaire + societe non PRS / inconnue  -> standard      (Cas B)
  *   partenaire                              -> standard      (Cas B)
  */
 async function deriveCategory(
-  category: 'exposant' | 'partenaire',
+  category: 'partenaire' | 'partenaire',
   companyId: string | null,
 ): Promise<'prs_exhibitor' | 'standard' | 'non_eligible'> {
   if (category === 'partenaire') return 'standard';
@@ -115,7 +115,7 @@ interface BuildDoiUrlInput {
 
 /**
  * URL DOI dans l'email Brevo : pointe vers la route handler /api/signup/verify
- * (qui verify + set cookie + redirect 302 vers /[locale]/inscription-exposant/step2).
+ * (qui verify + set cookie + redirect 302 vers /[locale]/inscription-partenaire/step2).
  *
  * On evite de mettre le token dans une page Server Component car Next 15+
  * interdit cookies().set() depuis un SC. Une route handler peut faire les deux.

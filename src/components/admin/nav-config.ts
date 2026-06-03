@@ -115,7 +115,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         roles_allowed: ADMIN_PLUS,
       },
       {
-        href: '/admin/exhibitors-profiles',
+        href: '/admin/partners-profiles',
         label: 'Profils partenaires',
         emoji: '📋',
         enabled: false,
@@ -123,7 +123,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         roles_allowed: ADMIN_PLUS,
       },
       {
-        href: '/admin/exhibitor-resources',
+        href: '/admin/partner-resources',
         label: 'Ressources',
         emoji: '📚',
         enabled: true,

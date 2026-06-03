@@ -59,7 +59,7 @@ export default async function AffilieStatsPage({ params }: PageProps) {
         <p className="text-md-text-muted mt-1 text-sm">{t('subtitle')}</p>
       </header>
 
-      {/* P7.x.1.D — Banner regle d'exclusion commission (PRS exhibitors) */}
+      {/* P7.x.1.D — Banner regle d'exclusion commission (PRS partners) */}
       <CommissionExclusionBanner excludedCompanies={excludedCompanies} />
 
       {!hasAnyData ? (

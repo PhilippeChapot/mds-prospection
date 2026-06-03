@@ -5,7 +5,7 @@
  * radix-ui Dialog. Reprend la meme API que shadcn/ui Sheet pour
  * permettre un swap futur si shadcn est installe (compatibilite).
  *
- * Utilise par le menu mobile de l'Espace Exposant + admin sidebar burger.
+ * Utilise par le menu mobile de l'Espace Partenaire + admin sidebar burger.
  * On garde la surface API a strict minimum : Root/Trigger/Content +
  * Title/Description (Title est requis par Radix pour l'a11y).
  *

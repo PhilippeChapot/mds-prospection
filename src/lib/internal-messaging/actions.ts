@@ -14,15 +14,15 @@
  *
  * Polymorphisme :
  *   - viewer staff : authentifie via requireAdminProfile() (Supabase auth).
- *   - viewer contact : authentifie via requireEspaceExposantSession()
- *     (JWT cookie espace-exposant) -> resoudre l'id contact via
+ *   - viewer contact : authentifie via requireEspacePartenaireSession()
+ *     (JWT cookie espace-partenaire) -> resoudre l'id contact via
  *     prospects.primary_contact_id.
  */
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
-import { requireContactSession } from '@/lib/espace-exposant/session';
+import { requireContactSession } from '@/lib/espace-partenaire/session';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
 import { renderInternalMessageNotification } from '@/lib/resend/templates/internal-message-notification';
@@ -60,7 +60,7 @@ async function resolveStaffViewer(): Promise<Viewer> {
 
 async function resolveContactViewer(locale: string): Promise<Viewer> {
   // P8.2-redirect-loop : on utilise requireContactSession (universel,
-  // marche pour tout contact) au lieu de requireEspaceExposantSession
+  // marche pour tout contact) au lieu de requireEspacePartenaireSession
   // qui exigeait un prospect actif.
   const session = await requireContactSession(locale);
   if (!session.contactId) {
@@ -142,7 +142,7 @@ async function loadStaffPoolRecipients(): Promise<AdminRecipient[]> {
 // ---------------------------------------------------------------------------
 
 const createSchema = z.object({
-  /** Si `as_contact=true`, on resout le viewer comme contact via espace-exposant. */
+  /** Si `as_contact=true`, on resout le viewer comme contact via espace-partenaire. */
   as_contact: z.boolean().default(false),
   locale: z.enum(['fr', 'en']).default('fr'),
   type: z.enum(['staff_dm', 'support']),
@@ -176,7 +176,7 @@ export async function createConversationAction(
     if (data.type !== 'support' || data.recipient_type !== 'staff_pool') {
       return {
         ok: false,
-        error: "Vous ne pouvez contacter que l'équipe MDS (pas un autre exposant).",
+        error: "Vous ne pouvez contacter que l'équipe MDS (pas un autre partenaire).",
       };
     }
   } else {
@@ -381,7 +381,7 @@ async function notifyOtherParticipants(
         recipients.push({
           email: c.email,
           name: fullName,
-          url: `${appUrl}/espace-exposant/messages/${conversationId}`,
+          url: `${appUrl}/espace-partenaire/messages/${conversationId}`,
           locale: (c.language as 'fr' | 'en') === 'en' ? 'en' : 'fr',
         });
       }

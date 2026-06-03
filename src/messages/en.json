@@ -23,8 +23,8 @@
     "switchLanguage": "Switch language",
     "locale_fr": "Français",
     "locale_en": "English",
-    "exhibitorSpace": "Exhibitor area",
-    "exhibitorSpaceComingSoon": "Exhibitor area — coming soon",
+    "exhibitorSpace": "Partner area",
+    "exhibitorSpaceComingSoon": "Partner area — coming soon",
     "publisher": "Publisher",
     "legalSection": "Legal",
     "terms": "Terms & conditions",
@@ -39,7 +39,7 @@
     "eyebrow": "2026 edition",
     "tagline": "The NEW media industry meeting point",
     "subtitle": "Two professional days dedicated to the radio, podcast, video and digital media ecosystem.",
-    "ctaExhibitor": "Register as an exhibitor",
+    "ctaExhibitor": "Register as a partner",
     "ctaPartner": "Register as a partner",
     "ctaLogin": "My area",
     "event1": {
@@ -79,7 +79,7 @@
       "labelAffiliateInput": "Who told you about us? (optional)",
       "labelAffiliateInputPlaceholder": "Name of the company or contact who told you about the event",
       "labelCategory": "You are…",
-      "categoryExhibitor": "Exhibitor",
+      "categoryExhibitor": "Partner",
       "categoryPartner": "Partner",
       "vat": {
         "sectionTitle": "Intra-community VAT (EU outside France)",
@@ -110,7 +110,7 @@
       "emailLabel": "Why a work email?",
       "emailBody": "Please use your work email address. Avoid personal Gmail, Hotmail or Yahoo addresses: we verify that your email is linked to your business activity to ensure quality registrations and prevent duplicates.",
       "categoryLabel": "What is the difference?",
-      "categoryBody": "Exhibitor: company offering audio, radio, podcast products/services (sales houses, service providers, studios, equipment manufacturers...) that wants a physical booth at Paris Radio Show 2026 on December 15, 2026 at Carrousel du Louvre. Partner: company wishing to support MediaDays Solutions 2026 (with or without physical presence). Several partnership levels available (main sponsor, pole sponsor, media partner).",
+      "categoryBody": "Partner: company offering audio, radio, podcast products/services (sales houses, service providers, studios, equipment manufacturers...) that wants a physical booth at Paris Radio Show 2026 on December 15, 2026 at Carrousel du Louvre. Partner: company wishing to support MediaDays Solutions 2026 (with or without physical presence). Several partnership levels available (main sponsor, pole sponsor, media partner).",
       "affiliateLabel": "Who told you about us?",
       "affiliateBody": "If a company, sales house or contact told you about MediaDays Solutions, mention their name here. A commission will be paid if your registration is confirmed. Optional."
     },
@@ -137,7 +137,7 @@
       },
       "caseA": {
         "heading": "Welcome {firstName}!",
-        "subheading": "As a Paris Radio Show exhibitor, here is your dedicated offer:",
+        "subheading": "As a Paris Radio Show partner, here is your dedicated offer:",
         "step1Title": "Pack & shows",
         "step2Title": "Booth & options",
         "step3Title": "Payment",
@@ -288,12 +288,12 @@
       },
       "exclusion": {
         "title": "💡 Important:",
-        "body": "Commissions don't apply to existing Paris Radio Show 2026 exhibitors. Any other company converted through your affiliation generates commission normally.",
-        "seeListLink": "See the list of excluded exhibitors ({count}) →",
-        "modalTitle": "Paris Radio Show 2026 excluded exhibitors",
-        "modalDescription": "These companies are already PRS 2026 exhibitors and do not generate commission. Any other company converted through your affiliation link remains eligible.",
+        "body": "Commissions don't apply to existing Paris Radio Show 2026 partners. Any other company converted through your affiliation generates commission normally.",
+        "seeListLink": "See the list of excluded partners ({count}) →",
+        "modalTitle": "Paris Radio Show 2026 excluded partners",
+        "modalDescription": "These companies are already PRS 2026 partners and do not generate commission. Any other company converted through your affiliation link remains eligible.",
         "searchPlaceholder": "Search by name or domain…",
-        "empty": "No excluded exhibitor yet.",
+        "empty": "No excluded partner yet.",
         "noResults": "No result for this search.",
         "total": "{count} excluded company/companies in total.",
         "close": "Close",
@@ -309,8 +309,8 @@
         "labels": {
           "landingFr": "Landing FR (homepage)",
           "landingEn": "Landing EN (homepage)",
-          "signupFr": "Exhibitor signup FR (direct wizard)",
-          "signupEn": "Exhibitor signup EN (direct wizard)"
+          "signupFr": "Partner signup FR (direct wizard)",
+          "signupEn": "Partner signup EN (direct wizard)"
         },
         "copy": "Copy",
         "copied": "Link copied!"
@@ -337,7 +337,7 @@
       "kit": {
         "title": "🎨 Communication kit",
         "subtitle": "Your personalized assets to share with your audience: LinkedIn banner, email signature, and copy templates for your campaigns.",
-        "b2bNote": "Reminder: MediaDays Solutions affiliation is for exhibitors only (tech solutions in audio, video, adtech, OOH, data, broadcasting). Visitors get free entry via mediadays.net and don't generate commission. Focus your outreach on pros who could exhibit.",
+        "b2bNote": "Reminder: MediaDays Solutions affiliation is for partners only (tech solutions in audio, video, adtech, OOH, data, broadcasting). Visitors get free entry via mediadays.net and don't generate commission. Focus your outreach on pros who could exhibit.",
         "copyHtml": "Copy HTML",
         "copyText": "Copy text",
         "copied": "Copied!",
@@ -363,7 +363,7 @@
         "title": "👤 My profile",
         "subtitle": "Your affiliate information and bank details for commission payments.",
         "typeMedia": "Media partner",
-        "typeReferral": "Exhibitor referral",
+        "typeReferral": "Partner referral",
         "identity": {
           "section": "Identity",
           "displayName": "Name",
@@ -386,7 +386,7 @@
     }
   },
   "espaceExposant": {
-    "title": "Exhibitor Portal",
+    "title": "Partner Portal",
     "subtitle": "Your MediaDays Solutions 2026 portal",
     "noLogoBanner": {
       "title": "For more impactful visuals, upload your company logo first.",
@@ -414,7 +414,7 @@
       "generic": "Sign-in failed. Request a new link below."
     },
     "nav": {
-      "sectionTitle": "Exhibitor portal",
+      "sectionTitle": "Partner portal",
       "stand": "My booth",
       "coordonnees": "My contact info",
       "documents": "My documents",
@@ -432,7 +432,7 @@
     },
     "dashboard": {
       "greeting": "Hi {firstName}",
-      "shortGreeting": "Exhibitor portal",
+      "shortGreeting": "Partner portal",
       "welcome": "Welcome to your MediaDays Solutions 2026 portal.",
       "companyLabel": "Company",
       "logout": "Sign out",
@@ -509,7 +509,7 @@
       },
       "documents": {
         "section": "📄 Documents",
-        "guide": "Exhibitor guide",
+        "guide": "Partner guide",
         "guideDownload": "Download PDF guide",
         "guideComingSoon": "Available soon",
         "floorPlan": "Floor plan",
@@ -593,7 +593,7 @@
           "errorTooShort": "Link must be at least 3 characters.",
           "errorTooLong": "Link cannot exceed 32 characters.",
           "errorFormat": "Invalid format. Use only lowercase letters, digits and single dashes (no leading or trailing dash).",
-          "errorTaken": "This link is already used by another exhibitor. Try a different variant.",
+          "errorTaken": "This link is already used by another partner. Try a different variant.",
           "errorGeneric": "Save failed. Please try again."
         }
       },
@@ -659,9 +659,9 @@
   },
   "landing": {
     "polesSection": {
-      "eyebrow": "{poles} hubs · {sectors} sub-sectors · {exhibitors} target exhibitors",
+      "eyebrow": "{poles} hubs · {sectors} sub-sectors · {partners} target partners",
       "title": "Is MediaDays Solutions for you?",
-      "subtitle": "Click on a hub to discover sub-sectors, exhibitor examples, and the registration path."
+      "subtitle": "Click on a hub to discover sub-sectors, partner examples, and the registration path."
     },
     "visitorsSection": {
       "eyebrow": "{families} categories · {entities} identified entities",
@@ -669,7 +669,7 @@
       "subtitle": "MediaDays Solutions welcomes 14 main visitor categories. Find yours."
     },
     "card": {
-      "subSectorsStats": "{count} sub-sectors · {exhibitors} target exhibitors",
+      "subSectorsStats": "{count} sub-sectors · {partners} target partners",
       "entities": "{count} entities",
       "transversalAccess": "transversal access",
       "explore": "Explore",

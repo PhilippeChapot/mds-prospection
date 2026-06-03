@@ -29,10 +29,10 @@ export default async function Step2Page({ params }: PageProps) {
   const session = verifyStep2SessionValue(sessionRaw);
 
   if (!session) {
-    // Pas de session valide -> on renvoie vers /inscription-exposant
+    // Pas de session valide -> on renvoie vers /inscription-partenaire
     // (le user peut recommencer depuis le debut).
     redirect(
-      '/' + locale + (locale === 'fr' ? '/inscription-exposant' : '/exhibitor-registration'),
+      '/' + locale + (locale === 'fr' ? '/inscription-partenaire' : '/partner-registration'),
     );
   }
 
@@ -61,9 +61,9 @@ export default async function Step2Page({ params }: PageProps) {
     return <NoSeasonError />;
   }
 
-  // Cas A = exposant + societe matchee identifiee comme PRS exhibitor.
+  // Cas A = partenaire + societe matchee identifiee comme PRS partner.
   // Tout le reste = Cas B.
-  const isCaseA = signup.category === 'exposant' && signup.derived_category === 'prs_exhibitor';
+  const isCaseA = signup.category === 'partenaire' && signup.derived_category === 'prs_exhibitor';
 
   const firstName = signup.contact_first_name ?? '';
   const companyName = signup.company_name_input ?? '';
@@ -125,7 +125,7 @@ function ExpiredOrRejected() {
         <h1 className="text-md-text text-2xl font-bold">{t('heading')}</h1>
         <p className="text-md-text-muted">{t('body')}</p>
         <Button asChild className="bg-md-magenta hover:bg-md-magenta-soft">
-          <Link href="/inscription-exposant">{t('cta')}</Link>
+          <Link href="/inscription-partenaire">{t('cta')}</Link>
         </Button>
       </Card>
     </section>

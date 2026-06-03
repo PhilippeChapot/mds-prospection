@@ -2,7 +2,7 @@
  * Query liste des societes exclues du programme commission affilie —
  * P7.x.1.D
  *
- * Doctrine : seuls les exposants PRS 2026 (companies.category=
+ * Doctrine : seuls les partenaires PRS 2026 (companies.category=
  * 'prs_exhibitor') sont exclus. Toute autre societe est eligible.
  *
  * RGPD : on n'expose JAMAIS d'email ou de telephone contact ici. Seul

@@ -1,7 +1,7 @@
 /**
  * P6.x.1b-β — templates emails commande complémentaire.
  *
- * 1. renderClientSupplementaryConfirmation : confirmation exposant après
+ * 1. renderClientSupplementaryConfirmation : confirmation partenaire après
  *    paiement réussi (récap items + total TTC + lien facture Sellsy si dispo)
  * 2. renderAdminSupplementaryReceived : notif admin (vue d'ensemble + lien
  *    fiche prospect + lien facture)

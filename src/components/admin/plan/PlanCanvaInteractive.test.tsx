@@ -11,9 +11,9 @@ import { PlanCanvaInteractive } from './PlanCanvaInteractive';
 import type { StandWithProspect } from '@/lib/admin/stands/queries';
 
 // P6.x.3-ter — wrapper render avec NextIntlClientProvider pour fournir les
-// clés ExposantDashboard.* utilisées par le tooltip (i18n FR/EN).
+// clés PartenaireDashboard.* utilisées par le tooltip (i18n FR/EN).
 const messages = {
-  ExposantDashboard: {
+  PartenaireDashboard: {
     exploreVenueTitle: '📍 Plan du salon — Salle Le Nôtre',
     exploreVenueHelp:
       'Votre stand {number} est mis en évidence (encadré rose). Survolez les autres stands.',
@@ -96,7 +96,7 @@ describe('PlanCanvaInteractive (P6.x.3)', () => {
   it('highlightedStandId ajoute la classe ring-4 ring-pink-500 + data-highlighted', () => {
     const stands = [makeStand({ number: 'A1' }), makeStand({ number: 'B2' })];
     const { container } = render(
-      <PlanCanvaInteractive mode="exposant" stands={stands} highlightedStandId="id-B2" />,
+      <PlanCanvaInteractive mode="partenaire" stands={stands} highlightedStandId="id-B2" />,
     );
     const btn = container.querySelector<HTMLButtonElement>('[data-stand-number="B2"]')!;
     expect(btn.getAttribute('data-highlighted')).toBe('true');
@@ -129,7 +129,7 @@ describe('PlanCanvaInteractive (P6.x.3)', () => {
     expect(tooltip.textContent).toMatch(/6 m²/);
   });
 
-  it('RGPD voisins exposant : company_public_visibility=false → nom anonymisé', () => {
+  it('RGPD voisins partenaire : company_public_visibility=false → nom anonymisé', () => {
     const stands = [
       makeStand({
         number: 'A1',
@@ -143,10 +143,10 @@ describe('PlanCanvaInteractive (P6.x.3)', () => {
         },
       }),
     ];
-    const { container } = render(<PlanCanvaInteractive mode="exposant" stands={stands} />);
+    const { container } = render(<PlanCanvaInteractive mode="partenaire" stands={stands} />);
     fireEvent.mouseEnter(container.querySelector('[data-stand-number="A1"]')!);
     const tooltip = screen.getByTestId('stand-tooltip');
-    // Le nom NE doit PAS apparaitre quand public_visibility=false côté exposant
+    // Le nom NE doit PAS apparaitre quand public_visibility=false côté partenaire
     expect(tooltip.textContent).not.toMatch(/Radio France/);
     // Mais bien apparaitre côté admin (override)
     const { container: adminContainer } = render(

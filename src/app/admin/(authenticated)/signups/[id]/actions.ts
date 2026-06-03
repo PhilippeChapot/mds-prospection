@@ -565,7 +565,7 @@ export async function reclassifySignup(signupId: string): Promise<ActionResult> 
     return { success: false, error: 'Champs manquants pour relancer la classification.' };
   }
 
-  if (signup.category !== 'exposant' && signup.category !== 'partenaire') {
+  if (signup.category !== 'partenaire' && signup.category !== 'partenaire') {
     return { success: false, error: 'Catégorie invalide pour reclassification.' };
   }
   const result = await classifySignup({

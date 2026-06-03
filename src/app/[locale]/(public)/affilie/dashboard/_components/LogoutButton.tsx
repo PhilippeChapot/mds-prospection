@@ -3,7 +3,7 @@
 /**
  * P7.x.1.B — bouton de logout pour l'Espace Affilie.
  *
- * Mirror du LogoutButton espace-exposant (P5.x.17-ter) : POST form pour
+ * Mirror du LogoutButton espace-partenaire (P5.x.17-ter) : POST form pour
  * eviter le prefetch destructif de <Link>. Le serveur POST /api/affilie/logout
  * efface le cookie + redirect vers /{locale}/affilie?signed_out=1.
  */

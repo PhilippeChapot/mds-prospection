@@ -15,7 +15,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
-import { processPaidSupplementaryOrder } from '@/lib/espace-exposant/supplementary-orders/webhook-handler';
+import { processPaidSupplementaryOrder } from '@/lib/espace-partenaire/supplementary-orders/webhook-handler';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/debug/supplementary/simulate-paid]';

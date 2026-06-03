@@ -2,17 +2,17 @@
  * @vitest-environment jsdom
  *
  * P6.x.3-ter — tests StandsExplorerView (toggle Grid 2D ↔ Plan visuel
- * pour la section "Explorer le salon" de l'espace exposant).
+ * pour la section "Explorer le salon" de l'espace partenaire).
  */
 
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { StandsExplorerView } from './StandsExplorerView';
-import type { StandPublicView } from '@/lib/espace-exposant/stands-public-view';
+import type { StandPublicView } from '@/lib/espace-partenaire/stands-public-view';
 
 const messages = {
-  ExposantDashboard: {
+  PartenaireDashboard: {
     exploreVenueTitle: '📍 Plan du salon — Salle Le Nôtre',
     exploreVenueHelp:
       'Votre stand {number} est mis en évidence (encadré rose). Survolez les autres stands.',

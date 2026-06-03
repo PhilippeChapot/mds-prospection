@@ -3,7 +3,7 @@
 /**
  * P7.x.1.B — Sidebar de l'Espace Affilie.
  *
- * Mirror direct du pattern ExposantSidebar (P5.x.17) : items partages
+ * Mirror direct du pattern PartenaireSidebar (P5.x.17) : items partages
  * sidebar desktop + drawer mobile, active state via pathname prefix,
  * `onNavigate` pour fermer le drawer apres clic.
  */

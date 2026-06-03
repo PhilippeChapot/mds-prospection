@@ -57,7 +57,7 @@ export const PREF_CATEGORIES: PrefCategoryDef[] = [
     key: 'pref_exposant',
     lock_key: 'exposant_locked_by_admin',
     emoji: '🎤',
-    label_fr: 'Informations exposant',
+    label_fr: 'Informations partenaire',
     description_fr: 'Logistique, planning, kit média, badges.',
   },
   {
@@ -72,7 +72,7 @@ export const PREF_CATEGORIES: PrefCategoryDef[] = [
     lock_key: 'kit_media_locked_by_admin',
     emoji: '🎨',
     label_fr: 'Kit communication',
-    description_fr: 'Livraison du kit de communication exposant.',
+    description_fr: 'Livraison du kit de communication partenaire.',
   },
   {
     key: 'pref_administration',

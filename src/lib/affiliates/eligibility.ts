@@ -2,7 +2,7 @@
  * Helper eligibilite commission affilie — P7.x.1.D
  *
  * Doctrine business : la commission affiliation NE s'applique PAS aux
- * exposants Paris Radio Show 2026 existants (companies.category =
+ * partenaires Paris Radio Show 2026 existants (companies.category =
  * 'prs_exhibitor'). PRS a son propre programme tarifaire et ne fait pas
  * partie du periametre commission MDS.
  *

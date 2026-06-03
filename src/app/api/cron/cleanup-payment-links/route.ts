@@ -16,7 +16,7 @@
  *   3. Retour { ok, deactivated, errors }.
  *
  * On ne supprime PAS la row prospect ni les colonnes acompte_payment_link_*
- * — l'admin garde la trace (et l'expose dans le dashboard exposant qui
+ * — l'admin garde la trace (et l'expose dans le dashboard partenaire qui
  * affichera "lien expire, contactez-nous" via paymentLinkExpired).
  *
  * Idempotent : un Payment Link deja desactive (active=false) reste tel

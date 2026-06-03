@@ -1,8 +1,8 @@
 /**
  * P5.x.ExternalEvents — adapter CBD 25 (Broadcast Days).
  *
- * Source : MD PROSPECTION/CBD 25  Exposants.xlsx
- * Sheet : "Réponses au Formulaire Exposant"
+ * Source : MD PROSPECTION/CBD 25  Partenaires.xlsx
+ * Sheet : "Réponses au Formulaire Partenaire"
  * Headers : longs (formulaire Google avec emojis) — on resout par
  * pattern matching sur le contenu de l entete.
  *

@@ -50,7 +50,7 @@ function Content({ email }: { email: string | null }) {
         <div className="border-md-border border-t pt-4 text-xs">
           <span className="text-md-text-muted">{t('wrongEmail')} </span>
           <Link
-            href="/inscription-exposant"
+            href="/inscription-partenaire"
             className="text-md-blue underline-offset-2 hover:underline"
           >
             {t('wrongEmailLink')}

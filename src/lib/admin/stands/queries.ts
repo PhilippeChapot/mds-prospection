@@ -40,7 +40,7 @@ export interface StandWithProspect extends StandRow {
     id: string;
     status: string;
     company_name: string | null;
-    /** P6.x.3 — RGPD voisins : si false, nom non affiche cote exposant. */
+    /** P6.x.3 — RGPD voisins : si false, nom non affiche cote partenaire. */
     company_public_visibility: boolean;
     contact_email: string | null;
   } | null;

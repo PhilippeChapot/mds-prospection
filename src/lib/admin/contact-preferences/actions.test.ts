@@ -29,7 +29,7 @@ const state = {
     full_name: 'Alice',
     role: 'admin' as 'admin' | 'sales' | 'super_admin',
   },
-  // Espace exposant
+  // Espace partenaire
   prospectId: 'pppppppp-pppp-4ppp-8ppp-pppppppppppp',
   contactIdFromSession: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
   sessionThrows: false as boolean | string,
@@ -60,9 +60,9 @@ function mockEnv() {
     }),
   }));
 
-  vi.doMock('@/lib/espace-exposant/session', () => ({
+  vi.doMock('@/lib/espace-partenaire/session', () => ({
     // P8.2-redirect-loop : les actions utilisent maintenant
-    // requireContactSession (universel) au lieu de requireEspaceExposantSession.
+    // requireContactSession (universel) au lieu de requireEspacePartenaireSession.
     requireContactSession: vi.fn(async () => {
       if (state.sessionThrows) throw new Error(String(state.sessionThrows));
       return { contactId: state.contactIdFromSession, prospectId: state.prospectId };

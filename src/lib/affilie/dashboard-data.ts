@@ -249,12 +249,12 @@ export function buildTrackingLinks(baseUrl: string, token: string): TrackingLink
     {
       id: 'signup-fr',
       labelKey: 'signupFr',
-      url: `${root}/fr/inscription-exposant?ref=${ref}`,
+      url: `${root}/fr/inscription-partenaire?ref=${ref}`,
     },
     {
       id: 'signup-en',
       labelKey: 'signupEn',
-      url: `${root}/en/exhibitor-registration?ref=${ref}`,
+      url: `${root}/en/partner-registration?ref=${ref}`,
     },
   ];
 }

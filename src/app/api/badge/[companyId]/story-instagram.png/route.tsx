@@ -6,7 +6,7 @@
  *
  * Layout 3 zones (adaptation verticale du pattern badge social
  * P5.x.12.octies) :
- *   - Zone 1 (1080x640)  : bandeau blanc avec logo exposant contained
+ *   - Zone 1 (1080x640)  : bandeau blanc avec logo partenaire contained
  *     (960x560 max, padding 60) ou fallback nom societe en gros texte
  *     adaptatif (base 96px).
  *   - Zone 2 (1080x1120) : gradient bleu MDS, tagline "J'EXPOSE AU/AUX"
@@ -18,7 +18,7 @@
  *
  * Reutilise les helpers src/lib/social-assets/ (cf P5.x.14).
  *
- * Public : pas d'auth (l'exposant partage l'URL pour ses stories).
+ * Public : pas d'auth (l'partenaire partage l'URL pour ses stories).
  * Logs : prefix [api/story-instagram].
  */
 
@@ -89,7 +89,7 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
         fontFamily: 'Arial, sans-serif',
       }}
     >
-      {/* ZONE 1 — bandeau blanc 1080x640 : logo exposant ou fallback nom */}
+      {/* ZONE 1 — bandeau blanc 1080x640 : logo partenaire ou fallback nom */}
       <div
         style={{
           display: 'flex',

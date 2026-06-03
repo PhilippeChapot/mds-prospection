@@ -26,7 +26,8 @@ export default async function ExhibitorRegistrationPage({ params, searchParams }
   const { locale } = await params;
   setRequestLocale(locale);
   const sp = await searchParams;
-  const initialCategory: SignupCategory = sp.category === 'partenaire' ? 'partenaire' : 'exposant';
+  const initialCategory: SignupCategory =
+    sp.category === 'partenaire' ? 'partenaire' : 'partenaire';
 
   let reboundReason: ReboundReason | null = null;
   if (sp.expired) reboundReason = 'expired';

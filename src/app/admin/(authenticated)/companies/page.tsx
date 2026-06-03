@@ -19,7 +19,7 @@ type CategoryTarif = Database['public']['Enums']['category_tarif'];
 const CATEGORY_VALUES: CategoryTarif[] = ['prs_exhibitor', 'standard', 'non_eligible'];
 
 const CATEGORY_LABELS: Record<CategoryTarif, string> = {
-  prs_exhibitor: 'PRS exposant',
+  prs_exhibitor: 'PRS partenaire',
   standard: 'Standard',
   non_eligible: 'Non eligible',
 };

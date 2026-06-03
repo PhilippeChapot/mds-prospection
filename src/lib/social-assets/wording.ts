@@ -1,8 +1,8 @@
 /**
- * Wording "J'EXPOSE AU/AUX" selon la categorie tarif de l'exposant.
+ * Wording "J'EXPOSE AU/AUX" selon la categorie tarif de l'partenaire.
  *
  * Regle metier (P5.x.12.bis) :
- *  - PRS exhibitor : "J'EXPOSE AU" (singulier masculin — un seul event,
+ *  - PRS partner : "J'EXPOSE AU" (singulier masculin — un seul event,
  *    Paris Radio Show)
  *  - Autres        : "J'EXPOSE AUX" (pluriel — MediaDays Solutions =
  *    Paris + Marseille)

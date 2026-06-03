@@ -50,7 +50,7 @@ export function NewCompanyForm() {
               <option value="" disabled>
                 Choisir…
               </option>
-              <option value="prs_exhibitor">PRS exposant</option>
+              <option value="prs_exhibitor">PRS partenaire</option>
               <option value="standard">Standard</option>
               <option value="non_eligible">Non eligible</option>
             </select>
@@ -72,7 +72,7 @@ export function NewCompanyForm() {
               ))}
             </select>
           </Field>
-          <Field label="Exposant PRS 2026 ?">
+          <Field label="Partenaire PRS 2026 ?">
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="was_prs_2026_exhibitor" value="on" />
               <span>Oui — figurer dans la liste de reference PRS 2026</span>

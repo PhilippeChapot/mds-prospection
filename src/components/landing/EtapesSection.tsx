@@ -3,7 +3,7 @@
  *
  * Affiche les 3 villes (Marseille, Paris, Bruxelles) en grid responsive.
  *
- * - Marseille & Paris : CTA interne vers /inscription-exposant?venue=... (wizard).
+ * - Marseille & Paris : CTA interne vers /inscription-partenaire?venue=... (wizard).
  * - Bruxelles : lecture seule (pas de back office). CTA = mailto contact MDS.
  *
  * P6.x.4-a-nonies : la carte n'est plus enveloppee dans un anchor — seul le
@@ -123,7 +123,7 @@ function EtapeCta({ etape, label, ariaLabel }: { etape: Etape; label: string; ar
     return (
       <Button asChild className={className}>
         <Link
-          href={{ pathname: '/inscription-exposant', query: { venue: etape.venueParam } }}
+          href={{ pathname: '/inscription-partenaire', query: { venue: etape.venueParam } }}
           aria-label={ariaLabel}
         >
           <span className="inline-flex items-center justify-center gap-1.5">

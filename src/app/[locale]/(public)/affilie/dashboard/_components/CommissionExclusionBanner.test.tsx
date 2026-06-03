@@ -32,16 +32,16 @@ describe('CommissionExclusionBanner (P7.x.1.D)', () => {
     expect(screen.getByText(/Important/)).toBeInTheDocument();
     expect(screen.getByText(/Paris Radio Show 2026/)).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /Voir la liste des exposants exclus \(3\)/ }),
+      screen.getByRole('button', { name: /Voir la liste des partenaires exclus \(3\)/ }),
     ).toBeInTheDocument();
   });
 
   it('EN — mêmes elements en anglais', () => {
     renderBanner('en');
     expect(screen.getByText(/Important/)).toBeInTheDocument();
-    expect(screen.getByText(/Paris Radio Show 2026 exhibitors/)).toBeInTheDocument();
+    expect(screen.getByText(/Paris Radio Show 2026 partners/)).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /See the list of excluded exhibitors \(3\)/ }),
+      screen.getByRole('button', { name: /See the list of excluded partners \(3\)/ }),
     ).toBeInTheDocument();
   });
 
@@ -68,7 +68,7 @@ describe('CommissionExclusionBanner (P7.x.1.D)', () => {
   it('aucune societe -> message empty', () => {
     renderBanner('fr', []);
     fireEvent.click(screen.getByRole('button', { name: /Voir la liste/ }));
-    expect(screen.getByText(/Aucun exposant exclu/)).toBeInTheDocument();
+    expect(screen.getByText(/Aucun partenaire exclu/)).toBeInTheDocument();
   });
 
   it("RGPD : la table n'expose JAMAIS d'email ou telephone", () => {

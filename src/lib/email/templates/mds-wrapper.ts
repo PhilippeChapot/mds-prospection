@@ -20,7 +20,7 @@ export interface MdsEmailWrapperParams {
   bodyHtml: string;
   /** Locale pour le wording du footer. */
   locale: 'fr' | 'en';
-  /** App base URL pour le lien preferences (/espace-exposant). */
+  /** App base URL pour le lien preferences (/espace-partenaire). */
   appUrl: string;
 }
 
@@ -62,7 +62,7 @@ const COPY = {
  */
 export function renderMdsEmailHtml(params: MdsEmailWrapperParams): string {
   const copy = COPY[params.locale];
-  const prefsUrl = `${params.appUrl}/${params.locale}/espace-exposant`;
+  const prefsUrl = `${params.appUrl}/${params.locale}/espace-partenaire`;
   const legalUrl = `${params.appUrl}${copy.legalUrl}`;
   const privacyUrl = `${params.appUrl}${copy.privacyUrl}`;
 

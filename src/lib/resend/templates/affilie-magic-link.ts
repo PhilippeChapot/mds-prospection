@@ -1,7 +1,7 @@
 /**
  * Template magic-link Espace Affilie — P7.x.1.A
  *
- * Mirror du template `espace-exposant-magic-link.ts` adapte pour l'espace
+ * Mirror du template `espace-partenaire-magic-link.ts` adapte pour l'espace
  * affilie. FR uniquement en foundation (V1 monolingue) -- EN ajoute dans
  * une milestone ulterieure si besoin.
  *

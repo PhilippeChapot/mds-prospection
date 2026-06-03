@@ -3,7 +3,7 @@
 /**
  * P7.x.1.B — burger menu mobile Espace Affilie.
  *
- * Mirror direct d'ExposantMobileMenu (P5.x.17) + AdminMobileMenu (P6.x).
+ * Mirror direct d'PartenaireMobileMenu (P5.x.17) + AdminMobileMenu (P6.x).
  * SheetContent passe en flex-col + overflow-y-auto + max-h-dvh pour
  * permettre le scroll quand le contenu depasse la viewport mobile
  * (cf. fix P6.x.3-bis admin burger).

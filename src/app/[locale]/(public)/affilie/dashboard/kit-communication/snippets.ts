@@ -4,10 +4,10 @@
  * Pure functions (no DB / no React) — testables sans runtime React.
  *
  * Doctrine B2B (P7.x.1.E) : l'affiliation MDS concerne UNIQUEMENT les
- * exposants (tech audio/video/adtech/etc.). Les visiteurs ont l'entree
+ * partenaires (tech audio/video/adtech/etc.). Les visiteurs ont l'entree
  * gratuite via mediadays.net et ne generent PAS de commission. Le copy
- * et la signature doivent donc orienter vers le wizard exposant
- * (`/inscription-exposant?ref=...`), pas vers la landing visiteur.
+ * et la signature doivent donc orienter vers le wizard partenaire
+ * (`/inscription-partenaire?ref=...`), pas vers la landing visiteur.
  *
  * Doctrine perimetre (P7.x.1.E-bis) : MDS est porte par Editions HF sur
  * les 5 poles tech (Audio/Diffusion/Video/Outdoor/Data). Le pole
@@ -22,7 +22,7 @@
 export interface SignatureParams {
   affilieName: string;
   /** Lien tracking vers le wizard EXPOSANT (B2B). */
-  trackingUrlExposant: string;
+  trackingUrlPartenaire: string;
 }
 
 /**
@@ -39,7 +39,7 @@ export interface SignatureParams {
  */
 export function buildEmailSignatureHtml(params: SignatureParams): string {
   const name = escapeHtml(params.affilieName);
-  const exposantHref = escapeAttr(params.trackingUrlExposant);
+  const partenaireHref = escapeAttr(params.trackingUrlPartenaire);
   return [
     '<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.5;">',
     '<tr>',
@@ -51,7 +51,7 @@ export function buildEmailSignatureHtml(params: SignatureParams): string {
     '<strong style="color: #294294;">Les MediaDays Solutions 2026</strong> — Le NOUVEAU rendez-vous des médias<br/>',
     '<span style="color: #5c6b80; font-size: 11px;">Audio &middot; Diffusion &middot; Vidéo &middot; Outdoor &middot; Data &amp; adtech</span><br/>',
     '🇧🇪 26 nov Bruxelles &middot; 🇫🇷 10 déc Marseille &middot; 🇫🇷 15 déc Paris<br/>',
-    `<a href="${exposantHref}" style="color: #E6007E; text-decoration: none; font-weight: 600;">→ Réservez votre stand</a><br/>`,
+    `<a href="${partenaireHref}" style="color: #E6007E; text-decoration: none; font-weight: 600;">→ Réservez votre stand</a><br/>`,
     '<span style="color: #5c6b80; font-size: 11px;">Vous venez visiter ? <a href="https://mediadays.net" style="color: #294294;">Inscription gratuite → mediadays.net</a></span>',
     '</td>',
     '</tr>',
@@ -60,7 +60,7 @@ export function buildEmailSignatureHtml(params: SignatureParams): string {
 }
 
 export interface CopyParams {
-  trackingUrlExposant: string;
+  trackingUrlPartenaire: string;
   /** Nom de l'affilie pour signer l'email. */
   affilieName: string;
 }
@@ -86,7 +86,7 @@ export function buildEmailCopy(locale: 'fr' | 'en', params: CopyParams): string 
       'their next partners. If you sell a solution in one of these 5 areas,',
       'this is THE event to land your next clients in one day.',
       '',
-      `👉 Book your booth: ${params.trackingUrlExposant}`,
+      `👉 Book your booth: ${params.trackingUrlPartenaire}`,
       '',
       'See you there,',
       params.affilieName,
@@ -105,7 +105,7 @@ export function buildEmailCopy(locale: 'fr' | 'en', params: CopyParams): string 
     "l'un de ces 5 pôles, c'est LE rendez-vous pour décrocher tes",
     'prochains clients en 1 journée.',
     '',
-    `👉 Réserve ton stand : ${params.trackingUrlExposant}`,
+    `👉 Réserve ton stand : ${params.trackingUrlPartenaire}`,
     '',
     'À très vite,',
     params.affilieName,

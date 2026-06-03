@@ -61,7 +61,7 @@ export async function syncSignupLifecycle(signupId: string): Promise<SyncSignupL
   const isVerifiedNotConverted =
     !!signup.verified_at && !signup.step2_submitted_at && !signup.converted_to_prospect_id;
 
-  // Build SIGNUP_RESUME_URL : pointe vers /[locale]/inscription-exposant/etape-2
+  // Build SIGNUP_RESUME_URL : pointe vers /[locale]/inscription-partenaire/etape-2
   // via la route DOI verify (qui set le cookie session et redirect step2).
   // L'URL utilise short_token, valide 14j (P5.x.8 update).
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';

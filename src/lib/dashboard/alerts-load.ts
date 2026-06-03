@@ -4,7 +4,7 @@
  * Helper non-component utilise par AlertsCard (Server Component).
  * Isole le `Date.now()` ici car la regle ESLint react-hooks/purity
  * interdit l'appel pendant le render meme cote server component
- * (cf. fix P5.x.2.bis dashboard exposant).
+ * (cf. fix P5.x.2.bis dashboard partenaire).
  */
 
 import { createSupabaseServerClient } from '@/lib/supabase/server';

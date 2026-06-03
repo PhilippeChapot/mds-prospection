@@ -33,9 +33,9 @@ describe('mds-taxonomy.json (P6.x.4-a)', () => {
     expect(tax.stats.total_visiteurs_entites).toBe(245);
   });
 
-  it('totaux pôles = 69 sous-secteurs · 484 exposants cibles (doc v2.1)', () => {
+  it('totaux pôles = 69 sous-secteurs · 484 partenaires cibles (doc v2.1)', () => {
     expect(tax.stats.total_sous_secteurs).toBe(69);
-    expect(tax.stats.total_exposants_cibles).toBe(484);
+    expect(tax.stats.total_partenaires_cibles).toBe(484);
   });
 
   it('famille 11 → institutionnel_form, famille 13 → ecole_form', () => {

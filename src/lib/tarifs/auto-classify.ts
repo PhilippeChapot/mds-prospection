@@ -49,7 +49,7 @@ const RULES: RulePattern[] = [
     pattern: /^MDS-PACK-PRSEXH\b/i,
     category: 'pack',
     sub_category: 'prs',
-    label: 'Pack Exposant PRS Paris',
+    label: 'Pack Partenaire PRS Paris',
   },
   // Variantes futures plausibles (au cas où Phil renomme un jour) :
   {

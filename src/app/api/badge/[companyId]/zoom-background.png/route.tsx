@@ -17,7 +17,7 @@
  *
  * Reutilise les helpers src/lib/social-assets/ (cf P5.x.14).
  *
- * Public : pas d'auth (l'exposant importe l'image dans Zoom/Teams).
+ * Public : pas d'auth (l'partenaire importe l'image dans Zoom/Teams).
  * Logs : prefix [api/zoom-background].
  */
 

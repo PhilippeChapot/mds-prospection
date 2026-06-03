@@ -13,11 +13,11 @@
  *   1. Lookup signup par short_token OR doi_token
  *   2. Verifier expiration cote DB
  *   3. status='converted' -> redirect /<locale>/merci avec ref signe
- *      status='expired'|'rejected' -> redirect /<locale>/inscription-exposant?expired=1
+ *      status='expired'|'rejected' -> redirect /<locale>/inscription-partenaire?expired=1
  *      status='awaiting_verification' -> bascule en 'verified' + verified_at = now()
  *      status='verified'|'step2_started'|'step2_completed' -> on continue
  *   4. Set cookie HMAC mds_step2_session
- *   5. Redirect 302 vers /<locale>/inscription-exposant/step2
+ *   5. Redirect 302 vers /<locale>/inscription-partenaire/step2
  */
 import { NextResponse } from 'next/server';
 import { verifyDoiToken, DoiTokenError } from '@/lib/doi/jwt';
@@ -33,13 +33,13 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const STEP2_SLUG: Record<'fr' | 'en', string> = {
-  fr: '/fr/inscription-exposant/etape-2',
-  en: '/en/exhibitor-registration/step-2',
+  fr: '/fr/inscription-partenaire/etape-2',
+  en: '/en/partner-registration/step-2',
 };
 
 const RESTART_SLUG: Record<'fr' | 'en', string> = {
-  fr: '/fr/inscription-exposant',
-  en: '/en/exhibitor-registration',
+  fr: '/fr/inscription-partenaire',
+  en: '/en/partner-registration',
 };
 
 const THANKYOU_SLUG: Record<'fr' | 'en', string> = {

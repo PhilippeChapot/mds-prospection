@@ -8,7 +8,7 @@ import { LocaleSwitcher } from '@/components/public/LocaleSwitcher';
  * Topbar publique — distincte de AdminTopbar.
  * Aucune dependance auth/season : utilisable sur toutes les routes publiques.
  *
- * Logo MDS + PRS gauche / LocaleSwitcher + bouton Espace Exposant (placeholder
+ * Logo MDS + PRS gauche / LocaleSwitcher + bouton Espace Partenaire (placeholder
  * desactive pour P3 — actif en P5) droite.
  */
 export function PublicTopbar() {

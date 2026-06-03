@@ -6,7 +6,7 @@
  * etre lisible a 2-3 metres de distance.
  *
  * Layout 2 colonnes :
- *   - Colonne gauche (960x1080) : fond blanc, logo exposant contained
+ *   - Colonne gauche (960x1080) : fond blanc, logo partenaire contained
  *     (max 900x900, padding 30). Si pas de logo : nom societe en texte
  *     adaptatif tres grand (base 160px) en bleu MDS.
  *   - Colonne droite (960x1080) : gradient bleu MDS avec tagline
@@ -17,7 +17,7 @@
  *
  * Reutilise les helpers src/lib/social-assets/ (cf P5.x.14).
  *
- * Public : pas d'auth (l'exposant affiche le visuel sur son stand).
+ * Public : pas d'auth (l'partenaire affiche le visuel sur son stand).
  * Logs : prefix [api/wall-display].
  */
 
@@ -88,7 +88,7 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
         fontFamily: 'Arial, sans-serif',
       }}
     >
-      {/* COLONNE GAUCHE — 960x1080 blanche : logo exposant ou fallback nom */}
+      {/* COLONNE GAUCHE — 960x1080 blanche : logo partenaire ou fallback nom */}
       <div
         style={{
           display: 'flex',

@@ -46,7 +46,7 @@ export default function NewAffiliatePage() {
             <Label className="font-semibold">Type</Label>
             <div className="grid grid-cols-2 gap-2">
               <TypeRadio value="media" label="Média partenaire" defaultChecked />
-              <TypeRadio value="referral" label="Parrainage exposant" />
+              <TypeRadio value="referral" label="Parrainage partenaire" />
             </div>
           </div>
 

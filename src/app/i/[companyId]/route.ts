@@ -2,7 +2,7 @@
  * GET /i/[companyId] — P5.x.16 + P5.x.16-bis (slug court + UUID retrocompat).
  *
  * Route redirect courte pour les liens d'invitation visiteurs envoyes
- * par les exposants. Le param URL est volontairement nomme `companyId`
+ * par les partenaires. Le param URL est volontairement nomme `companyId`
  * dans le filesystem pour ne pas casser le routing, mais represente
  * en realite soit :
  *   - le slug court nominatif de la company (P5.x.16-bis, defaut)

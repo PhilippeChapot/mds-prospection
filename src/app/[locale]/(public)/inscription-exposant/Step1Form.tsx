@@ -206,7 +206,7 @@ export function Step1Form({
       }
 
       router.push({
-        pathname: '/inscription-exposant/check-email',
+        pathname: '/inscription-partenaire/check-email',
         query: { e: encodeURIComponent(maskEmail(values.email)) },
       });
     } catch {
@@ -478,7 +478,7 @@ export function Step1Form({
           <div className="grid gap-2 sm:grid-cols-2">
             <CategoryRadio
               name="category"
-              value="exposant"
+              value="partenaire"
               label={t('categoryExhibitor')}
               register={register}
             />

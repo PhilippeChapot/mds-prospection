@@ -69,13 +69,13 @@ describe('buildUnsubscribeFooter (P8.3)', () => {
   it('contient le lien preferences en FR', () => {
     const f = buildUnsubscribeFooter({ locale: 'fr', appUrl: 'https://mediadays.solutions' });
     expect(f).toContain('Gérer mes préférences');
-    expect(f).toContain('https://mediadays.solutions/fr/espace-exposant');
+    expect(f).toContain('https://mediadays.solutions/fr/espace-partenaire');
   });
 
   it('EN variant', () => {
     const f = buildUnsubscribeFooter({ locale: 'en', appUrl: 'https://mediadays.solutions' });
     expect(f).toContain('Manage my preferences');
-    expect(f).toContain('/en/espace-exposant');
+    expect(f).toContain('/en/espace-partenaire');
   });
 });
 
@@ -184,7 +184,7 @@ describe('sendCampaignBatch (P8.3)', () => {
     expect(calls[0].body.params).toMatchObject({
       firstName: 'Alice',
       company: 'Acme',
-      preferencesUrl: expect.stringContaining('/fr/espace-exposant'),
+      preferencesUrl: expect.stringContaining('/fr/espace-partenaire'),
     });
   });
 

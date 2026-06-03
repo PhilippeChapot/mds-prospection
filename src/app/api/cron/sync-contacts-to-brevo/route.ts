@@ -7,7 +7,7 @@
  * Auth : header `Authorization: Bearer ${CRON_SECRET}` envoyé par Vercel.
  *
  * Batch limité à 200 contacts/jour — couvre les nouveaux contacts ajoutés
- * via Espace Exposant sans saturer la quota Brevo si la base grossit.
+ * via Espace Partenaire sans saturer la quota Brevo si la base grossit.
  *
  * Logs structurés (prefix [cron/sync-contacts-to-brevo]).
  */

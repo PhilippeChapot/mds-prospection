@@ -83,7 +83,7 @@ export function SelectDemo() {
         <SelectValue placeholder="Categorie tarifaire" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="prs_exhibitor">PRS exposant</SelectItem>
+        <SelectItem value="prs_exhibitor">PRS partenaire</SelectItem>
         <SelectItem value="standard">Standard</SelectItem>
         <SelectItem value="non_eligible">Non eligible</SelectItem>
       </SelectContent>

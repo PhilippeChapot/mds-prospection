@@ -402,7 +402,7 @@ function EnrichedPreview({
             className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
           >
             <option value="standard">Standard</option>
-            <option value="prs_exhibitor">PRS Exhibitor</option>
+            <option value="prs_exhibitor">PRS Partner</option>
             <option value="non_eligible">Non éligible</option>
           </select>
         </div>

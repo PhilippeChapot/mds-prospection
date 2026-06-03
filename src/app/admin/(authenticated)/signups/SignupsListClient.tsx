@@ -64,12 +64,12 @@ function Row({ row }: { row: SignupRow }) {
           <span
             className={cn(
               'rounded-full px-2 py-0.5 text-[11px] font-semibold',
-              row.category === 'exposant'
+              row.category === 'partenaire'
                 ? 'bg-md-blue/10 text-md-blue'
                 : 'bg-md-warning/15 text-md-warning',
             )}
           >
-            {row.category === 'exposant' ? 'Exposant' : 'Partenaire'}
+            {row.category === 'partenaire' ? 'Partenaire' : 'Partenaire'}
           </span>
         ) : (
           <span className="text-md-text-muted text-xs">—</span>

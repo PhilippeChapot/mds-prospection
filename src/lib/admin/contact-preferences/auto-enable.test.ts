@@ -134,7 +134,7 @@ describe('autoEnableExpoPreferencesOnSignature (P8.1)', () => {
     }
   });
 
-  it('2) contact avec exposant_locked=true : pas de patch pref_exposant (autres MAJ)', async () => {
+  it('2) contact avec partenaire_locked=true : pas de patch pref_exposant (autres MAJ)', async () => {
     state.contacts = [{ id: 'c1', email: 'a@x.fr', company_id: 'co' }];
     state.prefs = [makePrefRow('c1', { exposant_locked_by_admin: true })];
     mockEnv();

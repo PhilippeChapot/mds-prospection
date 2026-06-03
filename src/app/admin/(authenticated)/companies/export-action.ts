@@ -10,7 +10,7 @@ import type { Database } from '@/lib/supabase/database.types';
 type CategoryTarif = Database['public']['Enums']['category_tarif'];
 
 const CATEGORY_LABEL_FR: Record<CategoryTarif, string> = {
-  prs_exhibitor: 'PRS exposant',
+  prs_exhibitor: 'PRS partenaire',
   standard: 'Standard',
   non_eligible: 'Non eligible',
 };
@@ -51,7 +51,7 @@ export async function exportCompaniesCsvAction(
       { key: 'country', label: 'Pays' },
       { key: 'category', label: 'Categorie' },
       { key: 'pole', label: 'Pole' },
-      { key: 'was_prs_2026_exhibitor', label: 'Exposant PRS 2026' },
+      { key: 'was_prs_2026_exhibitor', label: 'Partenaire PRS 2026' },
       { key: 'created_at', label: 'Cree le' },
     ],
     result.rows.map((row) => ({

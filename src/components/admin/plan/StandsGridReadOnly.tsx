@@ -1,22 +1,22 @@
 'use client';
 
 /**
- * P6.x.3-ter — Grid 2D read-only pour les exposants (vue exploration salon).
+ * P6.x.3-ter — Grid 2D read-only pour les partenaires (vue exploration salon).
  *
  * Reproduit visuellement le PlanGrid admin (8 rangées A-H × 11 colonnes 10..0)
  * mais SANS drag-drop, SANS actions admin. Affiche :
  *   - Couleur status (libre/réservé/payé/bloqué)
- *   - Highlight rose ring si stand de l'exposant
+ *   - Highlight rose ring si stand de l'partenaire
  *   - Nom company conditionnel à `company_public_visibility` (RGPD opt-out)
  *
  * Aucune PII (contact_email/phone/SIRET) n'est jamais utilisée — props limitées
- * à `StandPublicView` (cf. `lib/espace-exposant/stands-public-view.ts`).
+ * à `StandPublicView` (cf. `lib/espace-partenaire/stands-public-view.ts`).
  */
 
 import { Fragment, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import type { StandPublicView } from '@/lib/espace-exposant/stands-public-view';
+import type { StandPublicView } from '@/lib/espace-partenaire/stands-public-view';
 
 const PLAN_ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
 const PLAN_COLS = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0] as const;
@@ -27,7 +27,7 @@ interface Props {
 }
 
 export function StandsGridReadOnly({ stands, highlightedStandId }: Props) {
-  const t = useTranslations('ExposantDashboard');
+  const t = useTranslations('PartenaireDashboard');
   const byNumber = useMemo(() => {
     const m = new Map<string, StandPublicView>();
     for (const s of stands) m.set(s.number, s);

@@ -50,26 +50,26 @@ export const AUDIENCES: AudienceDef[] = [
     defaultCategory: 'general',
   },
   {
-    key: 'exposants_confirmed',
-    label: 'Exposants confirmés (devis signé)',
+    key: 'partenaires_confirmed',
+    label: 'Partenaires confirmés (devis signé)',
     description: 'Contacts dont le prospect a signed_at non null.',
-    defaultCategory: 'exposant',
+    defaultCategory: 'partenaire',
   },
   {
-    key: 'exposants_paid',
-    label: 'Exposants payés',
+    key: 'partenaires_paid',
+    label: 'Partenaires payés',
     description: 'Contacts dont le prospect a acompte_paid_at non null.',
-    defaultCategory: 'exposant',
+    defaultCategory: 'partenaire',
   },
   {
-    key: 'exposants_unsigned_7d',
+    key: 'partenaires_unsigned_7d',
     label: 'Devis envoyé non signé > 7j',
     description: 'Contacts en relance acquisition (devis_envoye + 7+ jours).',
     defaultCategory: 'general',
   },
   {
     key: 'billing_contacts',
-    label: 'Contacts facturation (exposants confirmés)',
+    label: 'Contacts facturation (partenaires confirmés)',
     description: 'Contacts opt-in catégorie facturation, prospect signé.',
     defaultCategory: 'facturation',
   },
@@ -134,9 +134,9 @@ async function resolveCandidateContactIds(supabase: Supa, audienceKey: string): 
 
   if (
     audienceKey === 'active_prospects' ||
-    audienceKey === 'exposants_confirmed' ||
-    audienceKey === 'exposants_paid' ||
-    audienceKey === 'exposants_unsigned_7d' ||
+    audienceKey === 'partenaires_confirmed' ||
+    audienceKey === 'partenaires_paid' ||
+    audienceKey === 'partenaires_unsigned_7d' ||
     audienceKey === 'billing_contacts' ||
     audienceKey === 'marketing_contacts'
   ) {
@@ -146,14 +146,14 @@ async function resolveCandidateContactIds(supabase: Supa, audienceKey: string): 
     if (audienceKey === 'active_prospects') {
       q = q.in('status', ['lead', 'contact', 'devis_envoye']);
     } else if (
-      audienceKey === 'exposants_confirmed' ||
+      audienceKey === 'partenaires_confirmed' ||
       audienceKey === 'billing_contacts' ||
       audienceKey === 'marketing_contacts'
     ) {
       q = q.not('signed_at', 'is', null);
-    } else if (audienceKey === 'exposants_paid') {
+    } else if (audienceKey === 'partenaires_paid') {
       q = q.not('acompte_paid_at', 'is', null);
-    } else if (audienceKey === 'exposants_unsigned_7d') {
+    } else if (audienceKey === 'partenaires_unsigned_7d') {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       q = q.eq('status', 'devis_envoye').lt('created_at', sevenDaysAgo);
     }

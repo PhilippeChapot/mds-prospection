@@ -21,7 +21,7 @@ interface SignupRow {
   contact_first_name: string | null;
   contact_last_name: string | null;
   company_name_input: string | null;
-  category: 'exposant' | 'partenaire' | null;
+  category: 'partenaire' | 'partenaire' | null;
   derived_category: string | null;
   language: 'FR' | 'EN';
   status: string;
@@ -68,7 +68,7 @@ function makeSignup(overrides: Partial<SignupRow>): SignupRow {
     contact_first_name: 'X',
     contact_last_name: 'Y',
     company_name_input: 'Acme',
-    category: 'exposant',
+    category: 'partenaire',
     derived_category: 'standard',
     language: 'FR',
     status: 'awaiting_verification',

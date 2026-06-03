@@ -2,7 +2,7 @@
  * Layout shell Espace Affilie — P7.x.1.B
  *
  * Shell visuel : sidebar desktop 240px gauche + header burger mobile.
- * Pattern direct copie de l'EspaceExposantDashboardLayout (P5.x.17).
+ * Pattern direct copie de l'EspacePartenaireDashboardLayout (P5.x.17).
  *
  * Auth check cheap (cookie + JWT, ZERO query DB) en haut du layout via
  * requireAffilieSession. Si KO -> redirect /{locale}/affilie?error=...

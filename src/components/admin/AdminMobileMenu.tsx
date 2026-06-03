@@ -17,7 +17,7 @@ import type { UserRole } from '@/lib/supabase/auth-helpers';
  * P5.x.1-quater (bug #2) : `currentUserRole` est forward a la sidebar pour
  * filtrer les items selon le role (Sales voit moins d'items).
  *
- * Inspire d'`ExposantMobileMenu` (P5.x.17) pour la coherence du shell mobile.
+ * Inspire d'`PartenaireMobileMenu` (P5.x.17) pour la coherence du shell mobile.
  */
 export function AdminMobileMenu({ currentUserRole }: { currentUserRole: UserRole }) {
   const [open, setOpen] = useState(false);

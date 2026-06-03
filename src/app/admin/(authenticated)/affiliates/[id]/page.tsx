@@ -39,7 +39,7 @@ export default async function AffiliateDetailPage({ params }: { params: Promise<
 
   const { affiliate, prospects } = detail;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
-  const trackingUrl = `${baseUrl}/fr/inscription-exposant?ref=${affiliate.token}`;
+  const trackingUrl = `${baseUrl}/fr/inscription-partenaire?ref=${affiliate.token}`;
 
   return (
     <div className="space-y-5">

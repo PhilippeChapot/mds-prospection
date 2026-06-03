@@ -9,7 +9,7 @@
  *   - profil       : edition IBAN/BIC/contact (P7.x.1.C — disabled en B)
  *
  * Source unique partagee sidebar desktop + drawer mobile, idem pattern
- * espace-exposant (P5.x.17).
+ * espace-partenaire (P5.x.17).
  */
 
 export interface AffilieNavItem {

@@ -7,7 +7,7 @@
  * Supabase. Cas couverts :
  *   - 404 quand la company est introuvable
  *   - 200 + image/png pour MDS standard (sans logo -> fallback nom)
- *   - 200 pour PRS exhibitor (rendu inclut le 2e logo)
+ *   - 200 pour PRS partner (rendu inclut le 2e logo)
  *   - filename suit le pattern `invitation-mds-2026-<slug>.png`
  */
 
@@ -89,7 +89,7 @@ describe('GET /api/badge/[companyId]/invitation.png (P5.x.16)', () => {
     );
   });
 
-  it('200 pour un PRS exhibitor (rendu inclut le 2e logo)', async () => {
+  it('200 pour un PRS partner (rendu inclut le 2e logo)', async () => {
     fakeCompany = {
       id: 'cmp-2',
       name: 'Radio Lab',

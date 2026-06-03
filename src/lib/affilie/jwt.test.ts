@@ -3,9 +3,9 @@
  *
  * P7.x.1.A — tests JWT helpers Espace Affilie.
  *
- * Mirror du test exposant : on verifie sign + verify happy path + erreur
+ * Mirror du test partenaire : on verifie sign + verify happy path + erreur
  * codes + protection cross-type (un magic ne peut pas servir de session) +
- * protection cross-scope (un token exposant ne peut pas servir d'affilie).
+ * protection cross-scope (un token partenaire ne peut pas servir d'affilie).
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -54,10 +54,10 @@ describe('Affilie JWT helpers (P7.x.1.A)', () => {
     }
   });
 
-  it('verify rejette un token signe avec scope!=affilie (anti cross-use exposant)', async () => {
-    // Forge un token avec scope='exposant' qui sinon serait valide
+  it('verify rejette un token signe avec scope!=affilie (anti cross-use partenaire)', async () => {
+    // Forge un token avec scope='partenaire' qui sinon serait valide
     const secret = new TextEncoder().encode(TEST_SECRET);
-    const token = await new SignJWT({ type: 'session', scope: 'exposant' })
+    const token = await new SignJWT({ type: 'session', scope: 'partenaire' })
       .setProtectedHeader({ alg: 'HS256' })
       .setSubject(AFFILIATE_ID)
       .setJti('test-jti')

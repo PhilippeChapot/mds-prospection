@@ -1,7 +1,7 @@
 /**
  * Helper session Espace Affilie — P7.x.1.A / a-bis
  *
- * Mirror de `lib/espace-exposant/session.ts` (P5.x.2). Verifie le cookie
+ * Mirror de `lib/espace-partenaire/session.ts` (P5.x.2). Verifie le cookie
  * `affilie_session` + JWT, redirect vers /{locale}/affilie?error=... si KO.
  * ZERO query DB pour rester cheap dans le layout shell.
  *

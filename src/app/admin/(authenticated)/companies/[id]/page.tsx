@@ -19,7 +19,7 @@ import { hasAdminAccess } from '@/lib/auth/role-helpers';
 export const metadata = { title: 'Fiche societe' };
 
 const CATEGORY_LABEL: Record<string, string> = {
-  prs_exhibitor: 'PRS exposant',
+  prs_exhibitor: 'PRS partenaire',
   standard: 'Standard',
   non_eligible: 'Non eligible',
 };

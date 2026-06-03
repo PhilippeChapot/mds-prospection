@@ -24,7 +24,7 @@ const baseValid = {
   vatCountry: null,
   vatNumber: null,
   vatVerified: false,
-  category: 'exposant' as const,
+  category: 'partenaire' as const,
   consentRgpd: true,
   consentMarketing: false,
   hcaptchaToken: null,

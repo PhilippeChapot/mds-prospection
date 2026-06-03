@@ -1,7 +1,7 @@
 /**
  * JWT helpers Espace Affilie — P7.x.1.A
  *
- * Mirror direct de `lib/espace-exposant/jwt.ts` (P5.x.2) avec deux differences :
+ * Mirror direct de `lib/espace-partenaire/jwt.ts` (P5.x.2) avec deux differences :
  *   - subject = affiliateId (au lieu de prospectId)
  *   - cookie  = `affilie_session`
  *
@@ -16,7 +16,7 @@
  * token type='session' et inversement.
  *
  * Secret reuse : DOI_JWT_SECRET (32+ chars, deja en env Vercel Sensitive
- * depuis P3 M5). Memes contraintes que l'exposant.
+ * depuis P3 M5). Memes contraintes que l'partenaire.
  */
 
 import { SignJWT, jwtVerify, errors as joseErrors } from 'jose';
@@ -94,7 +94,7 @@ async function verifyToken(
       throw new AffilieTokenError('wrong-type');
     }
     // Defense en profondeur : on verifie qu'on signe bien un token affilie
-    // (scope claim) -- si DOI_JWT_SECRET fuite, un token exposant ne peut
+    // (scope claim) -- si DOI_JWT_SECRET fuite, un token partenaire ne peut
     // pas etre utilise comme session affilie.
     if (payload.scope !== 'affilie') {
       throw new AffilieTokenError('wrong-type', 'scope must be "affilie"');

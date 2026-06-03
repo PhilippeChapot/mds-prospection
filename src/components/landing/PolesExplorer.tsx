@@ -11,7 +11,7 @@
  *   - Pôle "mediadays_classique" (RÉGIES & RETAIL MEDIA) → CTA externe
  *     vers mediadays.net + sous-CTA "Visiteur gratuit".
  *   - Pôles "mediadays_solutions" → CTA interne "Réserver mon stand"
- *     vers /inscription-exposant.
+ *     vers /inscription-partenaire.
  */
 
 import { useState } from 'react';
@@ -28,10 +28,10 @@ import { Button } from '@/components/ui/button';
 import type { Pole } from '@/lib/landing/taxonomy';
 import { getSubSectorLabel } from '@/lib/landing/subsector-translations';
 
-const EXHIBITOR_SIGNUP_URL = '/inscription-exposant?category=exposant';
+const EXHIBITOR_SIGNUP_URL = '/inscription-partenaire?category=partenaire';
 const MEDIADAYS_NET_URL = 'https://mediadays.net';
 // P6.x.4-a-bis : tout CTA "S'inscrire visiteur" (pôle Régies inclus) bascule
-// sur mediadays.net — mediadays.solutions est le site exposants tech.
+// sur mediadays.net — mediadays.solutions est le site partenaires tech.
 
 function hexWithAlpha(hex: string, alpha: number): string {
   return `${hex}${Math.round(alpha * 255)
@@ -100,7 +100,7 @@ function PoleCard({ pole, onClick }: { pole: Pole; onClick: () => void }) {
         <span className="text-md-text">
           {t('card.subSectorsStats', {
             count: pole.total_sous_secteurs,
-            exhibitors: pole.total_exposants_cibles,
+            partners: pole.total_partenaires_cibles,
           })}
         </span>
         <span className="text-md-magenta flex items-center gap-1 transition-all group-hover:gap-2">
@@ -139,7 +139,7 @@ function PoleDetail({ pole }: { pole: Pole }) {
           <span className="font-semibold">{t('drawer.stats')} :</span>{' '}
           {t('card.subSectorsStats', {
             count: pole.total_sous_secteurs,
-            exhibitors: pole.total_exposants_cibles,
+            partners: pole.total_partenaires_cibles,
           })}
         </p>
       </div>

@@ -28,7 +28,7 @@ const state = {
     full_name: 'Alice MDS',
     role: 'admin' as const,
   },
-  // Contact (espace exposant)
+  // Contact (espace partenaire)
   contactId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
   contactEmail: 'bob@acme.com',
   contactFirst: 'Bob',
@@ -60,7 +60,7 @@ function mockEnv() {
     }),
   }));
 
-  vi.doMock('@/lib/espace-exposant/session', () => ({
+  vi.doMock('@/lib/espace-partenaire/session', () => ({
     // P8.2-redirect-loop : les actions utilisent maintenant requireContactSession.
     requireContactSession: vi.fn(async () => ({
       contactId: state.contactId,

@@ -34,7 +34,7 @@ export const SIGNUP_STATUS_CLASS: Record<SignupStatus, string> = {
   expired: 'bg-slate-200 text-slate-600',
 };
 
-export const SIGNUP_CATEGORIES = ['exposant', 'partenaire'] as const;
+export const SIGNUP_CATEGORIES = ['partenaire', 'partenaire'] as const;
 export type SignupCategory = (typeof SIGNUP_CATEGORIES)[number];
 
 export interface SignupRow {
@@ -43,7 +43,7 @@ export interface SignupRow {
   contactFirstName: string | null;
   contactLastName: string | null;
   companyNameInput: string | null;
-  category: 'exposant' | 'partenaire' | null;
+  category: 'partenaire' | 'partenaire' | null;
   derivedCategory: 'prs_exhibitor' | 'standard' | 'non_eligible';
   language: 'FR' | 'EN';
   status: SignupStatus;

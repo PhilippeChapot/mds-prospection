@@ -4,7 +4,7 @@
  * Genere un badge social 1080x1080 via next/og (Satori).
  *
  * Layout P5.x.12.octies (3 zones) :
- *   - Zone 1 (1080x360)  : bandeau blanc avec logo exposant contained
+ *   - Zone 1 (1080x360)  : bandeau blanc avec logo partenaire contained
  *     (1000x280 max, padding 40px). Si pas de logo : nom societe en
  *     gros texte adaptatif.
  *   - Zone 2 (flex:1)    : fond bleu degrade, tagline "J'EXPOSE AU/AUX"
@@ -16,7 +16,7 @@
  * helpers logo/font) extrait dans src/lib/social-assets/ pour
  * partage avec la banniere LinkedIn (/api/badge/[companyId]/linkedin-cover.png).
  *
- * Public : pas d'auth (l'exposant partage l'URL pour social media).
+ * Public : pas d'auth (l'partenaire partage l'URL pour social media).
  * Logs : prefix [api/badge].
  */
 
@@ -89,7 +89,7 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<Respo
         fontFamily: 'Arial, sans-serif',
       }}
     >
-      {/* ZONE 1 — bandeau blanc 1080x360 : logo exposant contained ou
+      {/* ZONE 1 — bandeau blanc 1080x360 : logo partenaire contained ou
           fallback nom societe en gros texte adaptatif. */}
       <div
         style={{

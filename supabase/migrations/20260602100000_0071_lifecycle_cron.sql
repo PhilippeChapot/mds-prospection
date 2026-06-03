@@ -66,7 +66,7 @@ create table if not exists public.lifecycle_rules (
 );
 
 comment on table public.lifecycle_rules is
-  'P8.5 - 8 regles de relance automatique (cycle de vie prospect/exposant). is_active=false par defaut.';
+  'P8.5 - 8 regles de relance automatique (cycle de vie prospect/partenaire). is_active=false par defaut.';
 
 create table if not exists public.lifecycle_send_queue (
   id uuid primary key default gen_random_uuid(),
@@ -671,10 +671,10 @@ values
     'Payment received — welcome D+1',
     'pref_general',
     '20 * * * *',
-    'Bienvenue {prenom} — votre espace exposant est prêt !',
-    'Welcome {prenom} — your exhibitor space is ready!',
-    '<p>Bonjour {prenom},</p><p>Bienvenue parmi les exposants MDS 2026 ! Votre paiement est confirmé. Votre espace personnel <a href="https://mediadays.solutions/fr/espace-exposant">est accessible ici</a>.</p><p>Vous y trouverez votre kit communication, la logistique de votre stand et bien plus.</p><p>L''équipe MDS</p>',
-    '<p>Hi {prenom},</p><p>Welcome to the MDS 2026 exhibitors! Your payment is confirmed. Your personal space <a href="https://mediadays.solutions/en/espace-exposant">is accessible here</a>.</p><p>You will find your communication kit, booth logistics and more.</p><p>The MDS team</p>',
+    'Bienvenue {prenom} — votre espace partenaire est prêt !',
+    'Welcome {prenom} — your partner space is ready!',
+    '<p>Bonjour {prenom},</p><p>Bienvenue parmi les partenaires MDS 2026 ! Votre paiement est confirmé. Votre espace personnel <a href="https://mediadays.solutions/fr/espace-partenaire">est accessible ici</a>.</p><p>Vous y trouverez votre kit communication, la logistique de votre stand et bien plus.</p><p>L''équipe MDS</p>',
+    '<p>Hi {prenom},</p><p>Welcome to the MDS 2026 partners! Your payment is confirmed. Your personal space <a href="https://mediadays.solutions/en/espace-partenaire">is accessible here</a>.</p><p>You will find your communication kit, booth logistics and more.</p><p>The MDS team</p>',
     'Email de bienvenue 1 jour apres paiement de l acompte.',
     'Welcome email 1 day after deposit payment.'
   ),
@@ -686,8 +686,8 @@ values
     '25 * * * *',
     'MDS 2026 dans 30 jours — checklist logistique',
     'MDS 2026 in 30 days — logistics checklist',
-    '<p>Bonjour {prenom},</p><p>MDS 2026 dans 30 jours ! Pensez à vérifier votre checklist logistique exposant : badges, plan de stand, signalétique, kit communication.</p><p><a href="https://mediadays.solutions/fr/espace-exposant">Accéder à mon espace exposant</a></p><p>L''équipe MDS</p>',
-    '<p>Hi {prenom},</p><p>MDS 2026 in 30 days! Please check your exhibitor logistics checklist: badges, booth plan, signage, communication kit.</p><p><a href="https://mediadays.solutions/en/espace-exposant">Access my exhibitor space</a></p><p>The MDS team</p>',
+    '<p>Bonjour {prenom},</p><p>MDS 2026 dans 30 jours ! Pensez à vérifier votre checklist logistique partenaire : badges, plan de stand, signalétique, kit communication.</p><p><a href="https://mediadays.solutions/fr/espace-partenaire">Accéder à mon espace partenaire</a></p><p>L''équipe MDS</p>',
+    '<p>Hi {prenom},</p><p>MDS 2026 in 30 days! Please check your partner logistics checklist: badges, booth plan, signage, communication kit.</p><p><a href="https://mediadays.solutions/en/espace-partenaire">Access my partner space</a></p><p>The MDS team</p>',
     'Rappel logistique 30 jours avant l ouverture du salon.',
     'Logistics reminder 30 days before the event opens.'
   ),
@@ -699,8 +699,8 @@ values
     '30 * * * *',
     'MDS 2026 dans 7 jours — votre plan de stand et badges',
     'MDS 2026 in 7 days — your booth plan and badges',
-    '<p>Bonjour {prenom},</p><p>Plus que 7 jours avant MDS 2026 ! Téléchargez votre plan de stand finalisé et vos badges depuis votre espace exposant.</p><p><a href="https://mediadays.solutions/fr/espace-exposant">Mes documents salon</a></p><p>L''équipe MDS</p>',
-    '<p>Hi {prenom},</p><p>Only 7 days before MDS 2026! Download your final booth plan and badges from your exhibitor space.</p><p><a href="https://mediadays.solutions/en/espace-exposant">My event documents</a></p><p>The MDS team</p>',
+    '<p>Bonjour {prenom},</p><p>Plus que 7 jours avant MDS 2026 ! Téléchargez votre plan de stand finalisé et vos badges depuis votre espace partenaire.</p><p><a href="https://mediadays.solutions/fr/espace-partenaire">Mes documents salon</a></p><p>L''équipe MDS</p>',
+    '<p>Hi {prenom},</p><p>Only 7 days before MDS 2026! Download your final booth plan and badges from your partner space.</p><p><a href="https://mediadays.solutions/en/espace-partenaire">My event documents</a></p><p>The MDS team</p>',
     'Rappel finalisation 7 jours avant.',
     'Final reminder 7 days before.'
   ),

@@ -4,7 +4,7 @@
  * classifie en transitions metier). Composant purement presentationnel :
  * la classification + le `relativeLabel` sont calcules cote query
  * (Date.now() interdit pendant le render selon la regle ESLint
- * react-hooks/purity, cf. fix P5.x.2.bis dashboard exposant).
+ * react-hooks/purity, cf. fix P5.x.2.bis dashboard partenaire).
  *
  * Mobile-first : empile en colonne, icone fixe a gauche, contenu flex.
  */

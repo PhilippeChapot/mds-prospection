@@ -12,7 +12,7 @@
  * sous la limite). En cas d'erreur 429 on retente apres delai.
  *
  * Footer desinscription : OBLIGATOIRE (RGPD + anti-blacklist). On ajoute
- * un block en bas du HTML avec lien vers /espace-exposant (le contact
+ * un block en bas du HTML avec lien vers /espace-partenaire (le contact
  * clique, demande un magic-link, gere ses prefs). Pas de tracking pixel
  * Brevo (doctrine V1 : pas de stats open/click — V2).
  */
@@ -81,7 +81,7 @@ export function buildUnsubscribeFooter(opts: { locale: 'fr' | 'en'; appUrl: stri
 <p style="margin:0;font-size:11px;color:#888;text-align:center;line-height:1.5">
   You receive this email from MediaDays Solutions because you have opted-in
   to this category.<br/>
-  <a href="${opts.appUrl}/en/espace-exposant" style="color:#888;text-decoration:underline">Manage my preferences / Unsubscribe</a>
+  <a href="${opts.appUrl}/en/espace-partenaire" style="color:#888;text-decoration:underline">Manage my preferences / Unsubscribe</a>
 </p>`.trim();
   }
   return `
@@ -89,7 +89,7 @@ export function buildUnsubscribeFooter(opts: { locale: 'fr' | 'en'; appUrl: stri
 <p style="margin:0;font-size:11px;color:#888;text-align:center;line-height:1.5">
   Vous recevez cet email de MediaDays Solutions car vous avez opté pour
   cette catégorie de communication.<br/>
-  <a href="${opts.appUrl}/fr/espace-exposant" style="color:#888;text-decoration:underline">Gérer mes préférences / Me désinscrire</a>
+  <a href="${opts.appUrl}/fr/espace-partenaire" style="color:#888;text-decoration:underline">Gérer mes préférences / Me désinscrire</a>
 </p>`.trim();
 }
 
@@ -206,7 +206,7 @@ export async function sendCampaignBatch(opts: {
                 lastName: r.last_name ?? '',
                 company: r.company_name ?? '',
                 etape: opts.etape ?? '',
-                preferencesUrl: `${opts.appUrl}/${r.language === 'EN' ? 'en' : 'fr'}/espace-exposant`,
+                preferencesUrl: `${opts.appUrl}/${r.language === 'EN' ? 'en' : 'fr'}/espace-partenaire`,
               },
               senderEmail: opts.senderEmail,
               senderName: opts.senderName,

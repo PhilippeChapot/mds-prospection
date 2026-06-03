@@ -18,10 +18,10 @@ describe('buildTrackingLinks (P7.x.1.B, pure)', () => {
     });
     expect(links[1].url).toBe('https://mediadays.solutions/en?ref=LUCAS_AUBREE');
     expect(links[2].url).toBe(
-      'https://mediadays.solutions/fr/inscription-exposant?ref=LUCAS_AUBREE',
+      'https://mediadays.solutions/fr/inscription-partenaire?ref=LUCAS_AUBREE',
     );
     expect(links[3].url).toBe(
-      'https://mediadays.solutions/en/exhibitor-registration?ref=LUCAS_AUBREE',
+      'https://mediadays.solutions/en/partner-registration?ref=LUCAS_AUBREE',
     );
   });
 
