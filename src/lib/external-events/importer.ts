@@ -151,13 +151,29 @@ export async function findCompanyByNormalizedName(
   normalizedName: string,
 ): Promise<CompanyMatch | null> {
   if (!normalizedName) return null;
-  const { data, error } = await supabase
+  // P5.x.MatchingFix : 1) tente le match strict name_normalized (rapide), 2)
+  // fallback case+accent insensitive via ILIKE sur `name` directement
+  // (gère les rows historiques dont le name_normalized n a pas le bon algo,
+  // ex "Lawo AG" -> normalized "lawo ag" vs input "LAWO" -> "lawo").
+  const { data: strictMatch } = await supabase
     .from('companies')
     .select('id, external_event_tags, name_normalized')
     .eq('name_normalized', normalizedName)
     .limit(1);
-  if (error || !data || data.length === 0) return null;
-  const row = data[0];
+  if (strictMatch && strictMatch.length > 0) {
+    const row = strictMatch[0];
+    const tags = (row.external_event_tags ?? {}) as Record<string, number[]>;
+    return { id: row.id, external_event_tags: tags };
+  }
+  // Fallback : ILIKE sur le name (case insensitive), utile si la DB contient
+  // des rows dont le name_normalized a ete genere par un algo different.
+  const { data: looseMatch } = await supabase
+    .from('companies')
+    .select('id, external_event_tags, name, name_normalized')
+    .ilike('name', normalizedName)
+    .limit(1);
+  if (!looseMatch || looseMatch.length === 0) return null;
+  const row = looseMatch[0];
   const tags = (row.external_event_tags ?? {}) as Record<string, number[]>;
   return { id: row.id, external_event_tags: tags };
 }

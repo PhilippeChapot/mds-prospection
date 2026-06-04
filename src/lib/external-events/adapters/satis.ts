@@ -19,6 +19,7 @@
 import * as XLSX from 'xlsx';
 import { readFileSync } from 'fs';
 import { normalizeCompanyName } from '../normalize';
+import { normalizeCountryToIso } from '@/lib/format/country';
 import type {
   NormalizedImport,
   ImportedCompany,
@@ -74,7 +75,7 @@ export function parseSatisRows(rows: RawRow[]): NormalizedImport {
       address: trim(row.Adresse),
       city: trim(row.Ville),
       postalCode: trim(row['Code Postal']),
-      country: trim(row.Pays),
+      country: normalizeCountryToIso(trim(row.Pays)) ?? undefined,
       linkedin: trim(row.LinkedIn),
       facebook: trim(row.Facebook),
       instagram: trim(row.Instagram),

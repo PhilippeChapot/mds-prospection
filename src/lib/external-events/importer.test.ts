@@ -96,6 +96,13 @@ function makeChain(table: string) {
         lastFilterVal = val;
         return selectChain;
       },
+      // P5.x.MatchingFix : fallback ilike sur companies.name. Le mock
+      // ne contient pas de fuzzy match, donc on retourne [] -> pas de match.
+      ilike: (col: string, val: unknown) => {
+        lastFilterCol = col;
+        lastFilterVal = val;
+        return selectChain;
+      },
       limit: () => {
         if (table === 'companies' && lastFilterCol === 'name_normalized') {
           const found = state.byNormalizedName.get(String(lastFilterVal));
@@ -111,6 +118,27 @@ function makeChain(table: string) {
               : [],
             error: null,
           });
+        }
+        // Fallback ilike sur name : pour le mock, on cherche dans
+        // byNormalizedName via le name (case-insensitive simu : meme key).
+        if (table === 'companies' && lastFilterCol === 'name') {
+          const lower = String(lastFilterVal).toLowerCase();
+          for (const [k, v] of state.byNormalizedName) {
+            if (k === lower) {
+              return Promise.resolve({
+                data: [
+                  {
+                    id: v.id,
+                    external_event_tags: v.external_event_tags,
+                    name: lastFilterVal,
+                    name_normalized: k,
+                  },
+                ],
+                error: null,
+              });
+            }
+          }
+          return Promise.resolve({ data: [], error: null });
         }
         if (table === 'contacts' && lastFilterCol === 'email') {
           const found = state.byEmail.get(String(lastFilterVal));
