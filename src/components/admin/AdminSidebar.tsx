@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ADMIN_NAV_SECTIONS, filterNavSectionsForRole, type AdminNavItem } from './nav-config';
+import { QuickLoginSection } from './QuickLoginSection';
 import type { UserRole } from '@/lib/supabase/auth-helpers';
 
 /**
@@ -56,6 +57,7 @@ export function AdminSidebar({ onNavigate, currentUserRole }: Props) {
             </ul>
           </div>
         ))}
+        {currentUserRole === 'super_admin' ? <QuickLoginSection onNavigate={onNavigate} /> : null}
       </nav>
     </div>
   );

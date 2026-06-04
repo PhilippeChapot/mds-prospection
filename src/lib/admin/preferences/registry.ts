@@ -204,6 +204,30 @@ export const SETTINGS_REGISTRY: SettingFieldDef[] = [
     schema: z.boolean(),
     type: 'boolean',
   },
+
+  // ═══════ GENERAL — P12.x.SuperAdminQuickLogin ═══════
+  // Comptes démo ciblés par les raccourcis super_admin (sidebar admin).
+  // Ces 2 UUIDs sont obligatoires pour activer les boutons "Mode démo".
+  {
+    key: 'demo_affiliate_id',
+    category: 'general',
+    label: 'Affilié démo (quick-login super_admin)',
+    description:
+      "UUID de l'affilié ciblé par le raccourci super_admin « Se connecter en démo affilié ». Doit pointer vers un compte de test (pas un vrai partenaire).",
+    schema: z.string().uuid().or(z.literal('')),
+    type: 'uuid',
+    placeholder: '00000000-0000-0000-0000-000000000000',
+  },
+  {
+    key: 'demo_partenaire_contact_id',
+    category: 'general',
+    label: 'Contact partenaire démo (quick-login super_admin)',
+    description:
+      'UUID du contact ciblé par le raccourci super_admin « Se connecter en démo partenaire ». Doit pointer vers un contact de test rattaché à une company de démo.',
+    schema: z.string().uuid().or(z.literal('')),
+    type: 'uuid',
+    placeholder: '00000000-0000-0000-0000-000000000000',
+  },
 ];
 
 export function getSettingDef(key: string): SettingFieldDef | undefined {

@@ -16,6 +16,7 @@ import type { Locale } from 'next-intl';
 import { requireAffilieSession } from '@/lib/affilie/session';
 import { AffilieSidebar } from './_components/AffilieSidebar';
 import { AffilieMobileMenu } from './_components/AffilieMobileMenu';
+import { DemoModeBanner } from '@/components/admin/DemoModeBanner';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -31,8 +32,11 @@ export default async function AffilieDashboardLayout({ children, params }: Layou
 
   const t = await getTranslations({ locale, namespace: 'espaceAffilie.dashboard' });
 
+  const localeSafe = locale === 'en' ? 'en' : 'fr';
+
   return (
     <div className="bg-md-bg flex min-h-svh flex-col">
+      <DemoModeBanner locale={localeSafe} space="affilie" />
       {/* Header mobile (burger + titre) — masque sur md+ */}
       <header className="border-md-border bg-card sticky top-0 z-30 flex items-center gap-3 border-b px-4 py-2 md:hidden">
         <AffilieMobileMenu />

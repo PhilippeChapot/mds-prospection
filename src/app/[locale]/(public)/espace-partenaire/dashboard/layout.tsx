@@ -4,6 +4,7 @@ import { requireContactSession } from '@/lib/espace-partenaire/session';
 import { detectUserProfile, getSpaceTitle } from '@/lib/espace-partenaire/detect-profile';
 import { PartenaireSidebar } from './_components/PartenaireSidebar';
 import { PartenaireMobileMenu } from './_components/PartenaireMobileMenu';
+import { DemoModeBanner } from '@/components/admin/DemoModeBanner';
 
 /**
  * P5.x.17 / P5.x.17-bis / P8.2 — Layout shell de l'Espace Contact V2.
@@ -46,6 +47,7 @@ export default async function EspacePartenaireDashboardLayout({ children, params
 
   return (
     <div className="bg-md-bg flex min-h-svh flex-col">
+      <DemoModeBanner locale={localeSafe} space="partenaire" />
       {/* Header mobile (burger + titre) — masque sur md+ */}
       <header className="border-md-border bg-card sticky top-0 z-30 flex items-center gap-3 border-b px-4 py-2 md:hidden">
         <PartenaireMobileMenu profile={profile} />
