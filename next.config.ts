@@ -38,6 +38,31 @@ const nextConfig: NextConfig = {
         destination: '/api/espace-partenaire/:path*',
         permanent: true,
       },
+      // P11.x.Rebrand hotfix (2026-06-05) : le folder physique
+      // inscription-exposant a ete renomme en inscription-partenaire pour
+      // matcher la config next-intl. On garde les anciennes URLs valides
+      // via 308 au cas ou Google/inbound liens externes pointent encore
+      // dessus.
+      {
+        source: '/:locale/inscription-exposant/:path*',
+        destination: '/:locale/inscription-partenaire/:path*',
+        permanent: true,
+      },
+      {
+        source: '/:locale/inscription-exposant',
+        destination: '/:locale/inscription-partenaire',
+        permanent: true,
+      },
+      {
+        source: '/:locale/exhibitor-registration/:path*',
+        destination: '/:locale/partner-registration/:path*',
+        permanent: true,
+      },
+      {
+        source: '/:locale/exhibitor-registration',
+        destination: '/:locale/partner-registration',
+        permanent: true,
+      },
     ];
   },
 };
