@@ -1,6 +1,6 @@
 # Mentions légales
 
-_Dernière mise à jour : 4 mai 2026_
+_Dernière mise à jour : 5 juin 2026_
 
 ## Éditeur du site
 
@@ -13,7 +13,7 @@ France
 
 **Contact :** [philippe@mediadays.solutions](mailto:philippe@mediadays.solutions)
 
-**SIRET / RCS :** _à renseigner_
+**SIRET / RCS :** 439 382 631
 
 **Directeur de publication :** Philippe Chapot
 
@@ -26,9 +26,9 @@ Le site est hébergé par :
 
 ## Propriété intellectuelle
 
-L'ensemble des contenus présents sur le site (textes, logos, images, vidéos, etc.) est protégé par le droit de la propriété intellectuelle et appartient à Editions HF ou à ses partenaires. Toute reproduction, représentation ou diffusion, totale ou partielle, sans autorisation écrite préalable, est interdite.
+L'ensemble des contenus présents sur le site (textes, logos, images, vidéos, etc.) est protégé par le droit de la propriété intellectuelle et appartient à Havas Edition et/ou Editions HF. Toute reproduction, représentation ou diffusion, totale ou partielle, sans autorisation écrite préalable, est interdite.
 
-Les marques **MediaDays Solutions**, **Paris Radio Show** et leurs logos respectifs sont des marques déposées d'Editions HF.
+Les marques **MediaDays Solutions**, **Paris Radio Show** et leurs logos respectifs sont des marques déposées respectivement par Havas Edition et Editions HF.
 
 ## Crédits
 

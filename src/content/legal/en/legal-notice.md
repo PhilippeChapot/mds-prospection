@@ -1,6 +1,6 @@
 # Legal notice
 
-_Last updated: May 4, 2026_
+_Last updated: June 5, 2026_
 
 ## Site editor
 
@@ -13,7 +13,7 @@ France
 
 **Contact:** [philippe@mediadays.solutions](mailto:philippe@mediadays.solutions)
 
-**SIRET / French trade register:** _to be completed_
+**SIRET / French trade register:** 439 382 631
 
 **Publication director:** Philippe Chapot
 
@@ -26,9 +26,9 @@ The website is hosted by:
 
 ## Intellectual property
 
-All content present on the site (texts, logos, images, videos, etc.) is protected by intellectual property law and belongs to Editions HF or its partners. Any reproduction, representation or distribution, in whole or in part, without prior written authorisation, is prohibited.
+All content present on the site (texts, logos, images, videos, etc.) is protected by intellectual property law and belongs to Havas Edition and/or Editions HF. Any reproduction, representation or distribution, in whole or in part, without prior written authorisation, is prohibited.
 
-The trademarks **MediaDays Solutions**, **Paris Radio Show** and their respective logos are registered trademarks of Editions HF.
+The trademarks **MediaDays Solutions** and **Paris Radio Show**, together with their respective logos, are registered trademarks of Havas Edition and Editions HF respectively.
 
 ## Credits
 
