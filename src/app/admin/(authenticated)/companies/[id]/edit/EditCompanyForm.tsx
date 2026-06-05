@@ -10,7 +10,7 @@ import { DomainTagsInput } from '@/components/ui/DomainTagsInput';
 import { POLE_CODES } from '@/lib/design-tokens';
 import { useFieldErrors } from '@/components/admin/use-field-errors';
 import { updateCompanyAction, type UpdateCompanyState } from './actions';
-import { ApolloEnrichAddressButton } from './ApolloEnrichAddressButton';
+import { EnrichAddressSection } from './EnrichAddressSection';
 import { ExternalEventTagsEditor } from './ExternalEventTagsEditor';
 
 const initialState: UpdateCompanyState = {};
@@ -86,8 +86,9 @@ export function EditCompanyForm({ company }: { company: EditableCompany }) {
 
       <Section title="📍 Coordonnées postales">
         <p className="text-md-text-muted -mt-1 mb-2 text-xs">
-          Requis pour générer un devis Sellsy. Si vide, utilisez le bouton « Compléter via Apollo »
-          (un crédit consommé par recherche).
+          Requis pour générer un devis Sellsy. Si vide, utilisez «&nbsp;Enrichir
+          automatiquement&nbsp;» ci-dessous — ConnectOnAir est tenté d&apos;abord (cache local
+          gratuit, précis FR audio/radio), Apollo en fallback (payant, international).
         </p>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <Field label="Adresse (rue + numéro)" error={errors.raw_address}>
@@ -122,7 +123,7 @@ export function EditCompanyForm({ company }: { company: EditableCompany }) {
               maxLength={120}
             />
           </Field>
-          <Field label="Site web (utilise par Apollo)" error={errors.website}>
+          <Field label="Site web" error={errors.website}>
             <Input
               name="website"
               defaultValue={company.website ?? ''}
@@ -132,7 +133,7 @@ export function EditCompanyForm({ company }: { company: EditableCompany }) {
           </Field>
         </div>
         <div className="pt-2">
-          <ApolloEnrichAddressButton
+          <EnrichAddressSection
             companyId={company.id}
             hasWebsite={Boolean(company.website || company.primary_domain)}
           />
