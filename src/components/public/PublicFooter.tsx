@@ -28,24 +28,11 @@ export function PublicFooter() {
           <p className="text-md-text font-semibold">{t('legalSection')}</p>
           <ul className="text-md-text-muted space-y-1.5">
             <li>
-              <Link href="/cgv" className="hover:text-md-blue underline-offset-2 hover:underline">
-                {t('terms')}
-              </Link>
-            </li>
-            <li>
               <Link
                 href="/mentions-legales"
                 className="hover:text-md-blue underline-offset-2 hover:underline"
               >
                 {t('legalNotice')}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/politique-confidentialite"
-                className="hover:text-md-blue underline-offset-2 hover:underline"
-              >
-                {t('privacyPolicy')}
               </Link>
             </li>
           </ul>
