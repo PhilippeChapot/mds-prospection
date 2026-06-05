@@ -79,8 +79,9 @@
       "labelAffiliateInput": "Qui vous a parlé de nous ? (optionnel)",
       "labelAffiliateInputPlaceholder": "Nom de la société ou du contact qui vous a parlé de l'événement",
       "labelCategory": "Vous êtes…",
-      "categoryExhibitor": "Partenaire",
-      "categoryPartner": "Partenaire",
+      "categoryPartenaire": "M'inscrire comme partenaire",
+      "categorySponsor": "M'inscrire comme sponsor",
+      "categorySponsorIntro": "Sponsorisez l'événement sans avoir de stand : logo Gold/Silver/Bronze, naming, emailing sponsorisé, lanyard, badge…",
       "vat": {
         "sectionTitle": "TVA intracommunautaire (UE hors France)",
         "sectionHelp": "Si votre société est basée dans un autre pays de l'UE et est assujettie à la TVA, indiquez votre numéro de TVA pour bénéficier de l'autoliquidation (Article 196 directive 2006/112/CE).",
@@ -110,9 +111,9 @@
       "emailLabel": "Pourquoi un email professionnel ?",
       "emailBody": "Utilisez votre adresse email professionnelle (votre email d'entreprise). Évitez les adresses Gmail, Hotmail ou Yahoo personnelles : nous vérifions que l'email est rattaché à votre activité professionnelle pour garantir la qualité des inscriptions et éviter les doublons.",
       "categoryLabel": "Quelle est la différence ?",
-      "categoryBody": "Partenaire : société proposant des produits/services audio, radio, podcast (régies, prestataires, studios, équipementiers...) qui souhaite avoir un emplacement physique pendant le salon Paris Radio Show 2026 du 15 décembre 2026 au Carrousel du Louvre. Partenaire : société souhaitant soutenir l'événement MediaDays Solutions 2026 (avec ou sans présence physique). Plusieurs niveaux de partenariat possibles (sponsor principal, sponsor pôle, partenaire média).",
+      "categoryBody": "Partenaire : société proposant des produits/services audio, radio, podcast (régies, prestataires, studios, équipementiers…) qui souhaite avoir un emplacement physique pendant le salon Paris Radio Show 2026 du 15 décembre 2026 au Carrousel du Louvre. Sponsor : société souhaitant soutenir l'événement sans avoir de stand (logo Gold/Silver/Bronze, naming, emailing sponsorisé, lanyard, badge…).",
       "affiliateLabel": "Qui vous a parlé de nous ?",
-      "affiliateBody": "Si une société, une régie ou un contact vous a parlé de MediaDays Solutions, indiquez son nom ici. Une commission lui sera versée si votre inscription est confirmée. Optionnel."
+      "affiliateBody": "Si une société, une régie ou un contact vous a parlé de MediaDays Solutions, indiquez son nom ici. Optionnel."
     },
     "checkEmail": {
       "heading": "Vérifiez votre boîte mail",

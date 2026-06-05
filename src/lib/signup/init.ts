@@ -44,15 +44,15 @@ function mapEmailValidationStatus(
  * Calcule la categorie tarifaire derivee depuis category declaree
  * + statut PRS de la societe matchee.
  *
- *   partenaire + societe PRS connue          -> prs_exhibitor (Cas A)
- *   partenaire + societe non PRS / inconnue  -> standard      (Cas B)
- *   partenaire                              -> standard      (Cas B)
+ *   partenaire (stand) + societe PRS connue       -> prs_exhibitor (Cas A)
+ *   partenaire (stand) + societe non PRS / unknown -> standard     (Cas B)
+ *   sponsor (sans stand)                          -> standard     (Cas B)
  */
 async function deriveCategory(
-  category: 'partenaire' | 'partenaire',
+  category: 'partenaire' | 'sponsor',
   companyId: string | null,
 ): Promise<'prs_exhibitor' | 'standard' | 'non_eligible'> {
-  if (category === 'partenaire') return 'standard';
+  if (category === 'sponsor') return 'standard';
   if (!companyId) return 'standard';
 
   const supabase = getSupabaseServiceClient();

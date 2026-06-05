@@ -69,7 +69,7 @@ function Row({ row }: { row: SignupRow }) {
                 : 'bg-md-warning/15 text-md-warning',
             )}
           >
-            {row.category === 'partenaire' ? 'Partenaire' : 'Partenaire'}
+            {row.category === 'partenaire' ? 'Partenaire' : 'Sponsor'}
           </span>
         ) : (
           <span className="text-md-text-muted text-xs">—</span>

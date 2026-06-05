@@ -4,7 +4,7 @@ import { SIGNUP_STATUSES, type SignupRow, type SignupStatus } from './types';
 interface ListSignupsParams {
   q?: string;
   status?: SignupStatus | null;
-  category?: 'partenaire' | 'partenaire' | null;
+  category?: 'partenaire' | 'sponsor' | null;
   poleCode?: string | null;
   dateFrom?: string | null; // ISO yyyy-mm-dd
   dateTo?: string | null;
@@ -22,7 +22,7 @@ export interface ListSignupsResult {
  *
  * Filtre cote DB :
  *   - status (single)
- *   - category (partenaire|partenaire)
+ *   - category (partenaire|sponsor)
  *   - poleCode : sur ai_classification->>pole_code
  *   - date range sur created_at
  *   - search "or" sur email + company_name_input + contact_first_name +
@@ -113,7 +113,7 @@ export async function listSignups({
       contactFirstName: r.contact_first_name,
       contactLastName: r.contact_last_name,
       companyNameInput: r.company_name_input,
-      category: (r.category as 'partenaire' | 'partenaire' | null) ?? null,
+      category: (r.category as 'partenaire' | 'sponsor' | null) ?? null,
       derivedCategory: r.derived_category,
       language: r.language as 'FR' | 'EN',
       status,

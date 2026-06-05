@@ -479,16 +479,17 @@ export function Step1Form({
             <CategoryRadio
               name="category"
               value="partenaire"
-              label={t('categoryExhibitor')}
+              label={t('categoryPartenaire')}
               register={register}
             />
             <CategoryRadio
               name="category"
-              value="partenaire"
-              label={t('categoryPartner')}
+              value="sponsor"
+              label={t('categorySponsor')}
               register={register}
             />
           </div>
+          <p className="text-md-text-muted mt-2 text-xs">{t('categorySponsorIntro')}</p>
           <FieldError messageKey={errors.category?.message} />
         </fieldset>
 

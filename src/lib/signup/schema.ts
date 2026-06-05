@@ -65,7 +65,16 @@ export const EU_VAT_COUNTRIES = [
 
 export type EuVatCountry = (typeof EU_VAT_COUNTRIES)[number];
 
-export const SIGNUP_CATEGORIES = ['partenaire', 'partenaire'] as const;
+/**
+ * P11.x.Sponsor-Rename (2026-06-05) : intention d inscription declaree
+ * a l etape 1.
+ *   - 'partenaire' = ex-Exposant = inscription pour avoir un stand physique
+ *   - 'sponsor'    = ex-Partenaire historique = soutien marque sans stand
+ *
+ * Distinct de companies.category (`category_tarif`) qui gere l eligibilite
+ * tarifaire (`prs_exhibitor` | `standard` | `non_eligible`).
+ */
+export const SIGNUP_CATEGORIES = ['partenaire', 'sponsor'] as const;
 export type SignupCategory = (typeof SIGNUP_CATEGORIES)[number];
 
 export const SIGNUP_LOCALES = ['fr', 'en'] as const;

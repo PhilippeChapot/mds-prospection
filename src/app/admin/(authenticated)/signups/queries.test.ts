@@ -21,7 +21,7 @@ interface SignupRow {
   contact_first_name: string | null;
   contact_last_name: string | null;
   company_name_input: string | null;
-  category: 'partenaire' | 'partenaire' | null;
+  category: 'partenaire' | 'sponsor' | null;
   derived_category: string | null;
   language: 'FR' | 'EN';
   status: string;

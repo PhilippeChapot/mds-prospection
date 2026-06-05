@@ -46,7 +46,7 @@ export interface ClassifySignupInput {
   companyCountry?: string | null;
   contactFirstName?: string | null;
   contactLastName?: string | null;
-  category: 'partenaire' | 'partenaire';
+  category: 'partenaire' | 'sponsor';
   emailDomain?: string | null;
 }
 

@@ -79,8 +79,9 @@
       "labelAffiliateInput": "Who told you about us? (optional)",
       "labelAffiliateInputPlaceholder": "Name of the company or contact who told you about the event",
       "labelCategory": "You are…",
-      "categoryExhibitor": "Partner",
-      "categoryPartner": "Partner",
+      "categoryPartenaire": "Register as partner",
+      "categorySponsor": "Register as sponsor",
+      "categorySponsorIntro": "Sponsor the event without a booth: Gold/Silver/Bronze logo, naming rights, sponsored emailing, lanyard, badge…",
       "vat": {
         "sectionTitle": "Intra-community VAT (EU outside France)",
         "sectionHelp": "If your company is based in another EU country and registered for VAT, enter your intra-community VAT number to qualify for reverse charge (Article 196 of Directive 2006/112/EC).",
@@ -110,9 +111,9 @@
       "emailLabel": "Why a work email?",
       "emailBody": "Please use your work email address. Avoid personal Gmail, Hotmail or Yahoo addresses: we verify that your email is linked to your business activity to ensure quality registrations and prevent duplicates.",
       "categoryLabel": "What is the difference?",
-      "categoryBody": "Partner: company offering audio, radio, podcast products/services (sales houses, service providers, studios, equipment manufacturers...) that wants a physical booth at Paris Radio Show 2026 on December 15, 2026 at Carrousel du Louvre. Partner: company wishing to support MediaDays Solutions 2026 (with or without physical presence). Several partnership levels available (main sponsor, pole sponsor, media partner).",
+      "categoryBody": "Partner: company offering audio, radio, podcast products/services (sales houses, service providers, studios, equipment manufacturers…) that wants a physical booth at Paris Radio Show 2026 on December 15, 2026 at Carrousel du Louvre. Sponsor: company wishing to support the event without a booth (Gold/Silver/Bronze logo, naming rights, sponsored emailing, lanyard, badge…).",
       "affiliateLabel": "Who told you about us?",
-      "affiliateBody": "If a company, sales house or contact told you about MediaDays Solutions, mention their name here. A commission will be paid if your registration is confirmed. Optional."
+      "affiliateBody": "If a company, sales house or contact told you about MediaDays Solutions, mention their name here. Optional."
     },
     "checkEmail": {
       "heading": "Check your inbox",

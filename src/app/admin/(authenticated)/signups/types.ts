@@ -43,7 +43,7 @@ export interface SignupRow {
   contactFirstName: string | null;
   contactLastName: string | null;
   companyNameInput: string | null;
-  category: 'partenaire' | 'partenaire' | null;
+  category: 'partenaire' | 'sponsor' | null;
   derivedCategory: 'prs_exhibitor' | 'standard' | 'non_eligible';
   language: 'FR' | 'EN';
   status: SignupStatus;

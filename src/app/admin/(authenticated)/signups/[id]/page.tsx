@@ -140,8 +140,8 @@ export default async function SignupDetailPage({ params }: PageProps) {
           <Field label="Catégorie déclarée">
             {signup.category === 'partenaire'
               ? 'Partenaire'
-              : signup.category === 'partenaire'
-                ? 'Partenaire'
+              : signup.category === 'sponsor'
+                ? 'Sponsor'
                 : '—'}
           </Field>
           <Field label="Catégorie tarifaire (auto)">{signup.derived_category}</Field>
