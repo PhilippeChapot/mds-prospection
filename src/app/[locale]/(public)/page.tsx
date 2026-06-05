@@ -1,8 +1,10 @@
 import { setRequestLocale } from 'next-intl/server';
 import { useTranslations } from 'next-intl';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ExternalLink } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
+
+const MEDIADAYS_NET_URL = 'https://mediadays.net';
 import type { Locale } from 'next-intl';
 import { getTaxonomy } from '@/lib/landing/taxonomy';
 import { PolesExplorer } from '@/components/landing/PolesExplorer';
@@ -65,11 +67,10 @@ function HomeContent() {
               variant="outline"
               className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"
             >
-              <Link
-                href={{ pathname: '/inscription-partenaire', query: { category: 'partenaire' } }}
-              >
-                {t('ctaPartner')}
-              </Link>
+              <a href={MEDIADAYS_NET_URL} target="_blank" rel="noopener noreferrer">
+                {t('ctaVisitor')}
+                <ExternalLink className="ml-1.5 h-4 w-4" aria-hidden />
+              </a>
             </Button>
           </div>
         </div>
