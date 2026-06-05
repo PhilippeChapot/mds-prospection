@@ -1,8 +1,8 @@
 # Terms and conditions of sale
 
-_Last updated: May 4, 2026_
+_Last updated: June 5, 2026_
 
-These Terms and Conditions of Sale ("Terms") govern any registration for the **MediaDays Solutions 2026** event organised by **Editions HF — Podcast & RadioHouse** ("we", "the Organiser").
+These Terms and Conditions of Sale ("Terms") govern any registration for the **MediaDays Solutions 2026** event organised by **Havas Edition** ("we", "the Organiser") and powered by **Editions HF — Podcast & RadioHouse**.
 
 ## 1. Subject
 
@@ -11,7 +11,7 @@ The Terms apply to any reservation of a booth, attendance or partnership in the 
 - **Paris Radio Show** — Tuesday, December 15, 2026, Carrousel du Louvre, Paris.
 - **MediaDays Marseille** — Thursday, December 10, 2026, Palais du Pharo, Marseille.
 
-Registration via the online form on [mediadays.solutions](https://mediadays.solutions) constitutes full acceptance of these Terms by the customer ("Partner", "Partner").
+Registration via the online form on [mediadays.solutions](https://mediadays.solutions) constitutes full acceptance of these Terms by the customer ("Partner").
 
 ## 2. Pricing
 
@@ -76,7 +76,7 @@ The processing of personal data collected during registration is governed by our
 
 ## 9. Applicable law and jurisdiction
 
-These Terms are governed by **French law**. Any dispute relating to their performance or interpretation will fall under the exclusive jurisdiction of the **Commercial Court of Brive-la-Gaillarde**, failing prior amicable settlement.
+These Terms are governed by **French law**. Any dispute relating to their performance or interpretation will fall under the exclusive jurisdiction of the **Commercial Court of Paris**, failing prior amicable settlement.
 
 ## 10. Acceptance
 

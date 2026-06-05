@@ -1,8 +1,8 @@
 # Conditions générales de vente
 
-_Dernière mise à jour : 4 mai 2026_
+_Dernière mise à jour : 5 juin 2026_
 
-Les présentes Conditions générales de vente (« CGV ») régissent toute inscription au salon **MediaDays Solutions 2026** organisé par **Editions HF — Podcast & RadioHouse** (« nous », « l'Organisateur »).
+Les présentes Conditions générales de vente (« CGV ») régissent toute inscription au salon **MediaDays Solutions 2026** organisé par **Havas Edition** (« nous », « l'Organisateur ») et propulsé par **Editions HF — Podcast & RadioHouse**.
 
 ## 1. Objet
 
@@ -11,7 +11,7 @@ Les CGV s'appliquent à toute réservation d'un emplacement, d'une participation
 - **Paris Radio Show** — mardi 15 décembre 2026, Carrousel du Louvre, Paris.
 - **MediaDays Marseille** — jeudi 10 décembre 2026, Palais du Pharo, Marseille.
 
-L'inscription via le formulaire en ligne sur [mediadays.solutions](https://mediadays.solutions) vaut acceptation pleine et entière des présentes CGV par le client (« Exposant », « Partenaire »).
+L'inscription via le formulaire en ligne sur [mediadays.solutions](https://mediadays.solutions) vaut acceptation pleine et entière des présentes CGV par le client (« Partenaire »).
 
 ## 2. Tarifs
 
@@ -25,7 +25,7 @@ Le prix final, mode de paiement, échéancier et conditions d'annulation sont r�
 
 ## 3. Modalités de paiement
 
-L'Exposant peut choisir entre les modes de règlement suivants :
+Le Partenaire peut choisir entre les modes de règlement suivants :
 
 - **Devis avec virement SEPA** (par défaut) : règlement à réception de la facture, virement bancaire en euros.
 - **Devis avec acompte par carte bancaire** (Stripe) : 30 % à la signature, solde 30 jours avant l'événement.
@@ -36,13 +36,13 @@ L'inscription n'est définitivement validée qu'à la réception de l'acompte ou
 
 ## 4. Attribution des emplacements
 
-L'Exposant indique trois emplacements préférés à l'inscription. L'attribution finale est confirmée par l'Organisateur dans un délai de **48 heures ouvrées après réception du paiement**.
+Le Partenaire indique trois emplacements préférés à l'inscription. L'attribution finale est confirmée par l'Organisateur dans un délai de **48 heures ouvrées après réception du paiement**.
 
-Les emplacements sont attribués selon l'ordre des inscriptions enregistrées. L'Organisateur se réserve le droit d'attribuer un emplacement différent si les trois choix de l'Exposant ne sont plus disponibles, en concertation avec l'Exposant.
+Les emplacements sont attribués selon l'ordre des inscriptions enregistrées. L'Organisateur se réserve le droit d'attribuer un emplacement différent si les trois choix du Partenaire ne sont plus disponibles, en concertation avec le Partenaire.
 
 ## 5. Conditions d'annulation
 
-En cas d'annulation par l'Exposant :
+En cas d'annulation par le Partenaire :
 
 - **Plus de 60 jours avant l'événement** : remboursement intégral des sommes versées.
 - **Entre 30 et 60 jours avant l'événement** : remboursement de 50 % des sommes versées.
@@ -57,18 +57,18 @@ En cas d'événement constituant un cas de force majeure au sens de l'article 12
 - **Reporter l'événement** à une date ultérieure, l'inscription restant valable.
 - **Annuler l'événement** et rembourser intégralement les sommes versées.
 
-Aucune indemnité supplémentaire ne pourra être réclamée par l'Exposant au titre de cette annulation.
+Aucune indemnité supplémentaire ne pourra être réclamée par le Partenaire au titre de cette annulation.
 
-## 7. Obligations de l'Exposant
+## 7. Obligations du Partenaire
 
-L'Exposant s'engage à :
+Le Partenaire s'engage à :
 
 - Respecter les dates et horaires de montage, exploitation et démontage communiqués.
 - Respecter le règlement intérieur du lieu (Carrousel du Louvre, Palais du Pharo) et les consignes de sécurité.
 - Disposer de toutes les autorisations administratives et professionnelles nécessaires à son activité.
 - S'acquitter de ses obligations en matière d'assurance responsabilité civile.
 
-Tout manquement grave peut entraîner l'expulsion de l'Exposant, sans remboursement.
+Tout manquement grave peut entraîner l'expulsion du Partenaire, sans remboursement.
 
 ## 8. Données personnelles
 
@@ -76,8 +76,8 @@ Le traitement des données personnelles collectées dans le cadre de l'inscripti
 
 ## 9. Droit applicable et juridiction
 
-Les présentes CGV sont régies par le **droit français**. Tout litige relatif à leur exécution ou à leur interprétation sera de la compétence exclusive du **Tribunal de Commerce de Brive-la-Gaillarde**, à défaut de règlement amiable préalable.
+Les présentes CGV sont régies par le **droit français**. Tout litige relatif à leur exécution ou à leur interprétation sera de la compétence exclusive du **Tribunal de Commerce de Paris**, à défaut de règlement amiable préalable.
 
 ## 10. Acceptation
 
-La case « J'accepte les conditions générales de vente » cochée à l'étape 2 du formulaire d'inscription en ligne vaut acceptation pleine et entière des présentes CGV par l'Exposant. L'Organisateur conserve une trace horodatée de cette acceptation à des fins probatoires.
+La case « J'accepte les conditions générales de vente » cochée à l'étape 2 du formulaire d'inscription en ligne vaut acceptation pleine et entière des présentes CGV par le Partenaire. L'Organisateur conserve une trace horodatée de cette acceptation à des fins probatoires.
