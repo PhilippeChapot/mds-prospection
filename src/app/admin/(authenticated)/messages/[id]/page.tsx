@@ -5,6 +5,7 @@ import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getVisitorMessageAction } from '@/lib/visitor-messages/actions';
 import { ReplyForm } from './ReplyForm';
 import { StatusActions } from './StatusActions';
+import { formatParisDateTime } from '@/lib/format/dates';
 
 export const metadata = { title: 'Message visiteur' };
 export const dynamic = 'force-dynamic';
@@ -67,7 +68,7 @@ export default async function VisitorMessageDetailPage({
             </>
           ) : null}
           {' · '}
-          <span className="font-mono">{new Date(message.created_at).toLocaleString('fr-FR')}</span>
+          <span className="font-mono">{formatParisDateTime(message.created_at)}</span>
         </p>
       </header>
 

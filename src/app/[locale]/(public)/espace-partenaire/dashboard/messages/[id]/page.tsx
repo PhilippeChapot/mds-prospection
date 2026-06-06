@@ -8,6 +8,7 @@ import { requireContactSession } from '@/lib/espace-partenaire/session';
 import { detectUserProfile } from '@/lib/espace-partenaire/detect-profile';
 import { PartenaireConversationReplyForm } from './PartenaireConversationReplyForm';
 import { cn } from '@/lib/utils';
+import { formatParisDateTime } from '@/lib/format/dates';
 
 export const metadata = { title: 'Conversation' };
 export const dynamic = 'force-dynamic';
@@ -86,9 +87,7 @@ export default async function EspacePartenaireConversationPage({ params }: PageP
                       )}
                     >
                       {isSelf ? myFullName || m.sender_name : m.sender_name} ·{' '}
-                      {new Date(m.created_at).toLocaleString(
-                        localeSafe === 'en' ? 'en-GB' : 'fr-FR',
-                      )}
+                      {formatParisDateTime(m.created_at, localeSafe)}
                     </p>
                     <div className="mt-1 whitespace-pre-wrap">{m.body}</div>
                   </div>

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { History, Plus, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatParisDateTime } from '@/lib/format/dates';
 import type { Database } from '@/lib/supabase/database.types';
 
 type AuditAction = Database['public']['Enums']['audit_action'];
@@ -40,7 +41,8 @@ const SKIP_KEYS = new Set([
 ]);
 
 function formatTs(iso: string): string {
-  return new Date(iso).toLocaleString('fr-FR', {
+  // P13.x.Phase2 : doctrine timezone Europe/Paris via helper centralise.
+  return formatParisDateTime(iso, 'fr', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

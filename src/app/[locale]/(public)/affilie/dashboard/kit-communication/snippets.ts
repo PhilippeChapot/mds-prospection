@@ -21,7 +21,7 @@
 
 export interface SignatureParams {
   affilieName: string;
-  /** Lien tracking vers le wizard EXPOSANT (B2B). */
+  /** Lien tracking vers le wizard PARTENAIRE (B2B). */
   trackingUrlPartenaire: string;
 }
 
@@ -70,7 +70,7 @@ export interface CopyParams {
  *
  * Tone FR : tutoiement (les affilies MDS sont des contacts pros directs).
  * Pitch : qui sera la (regies/annonceurs/agences UDECAM/etc.) + qui devrait
- * exposer (solutions tech). CTA = wizard EXPOSANT, pas landing visiteur.
+ * exposer (solutions tech). CTA = wizard PARTENAIRE, pas landing visiteur.
  */
 export function buildEmailCopy(locale: 'fr' | 'en', params: CopyParams): string {
   if (locale === 'en') {

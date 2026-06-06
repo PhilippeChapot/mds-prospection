@@ -32,7 +32,7 @@ const FULL_EXPO_PROFILE: ContactProfile = {
 };
 
 let mockedPathname = '/fr/espace-partenaire/dashboard/stand';
-vi.mock('next/navigation', () => ({
+vi.mock('@/i18n/navigation', () => ({
   usePathname: () => mockedPathname,
 }));
 

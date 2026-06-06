@@ -5,6 +5,7 @@ import type { Locale } from 'next-intl';
 import { requireEspacePartenaireSession } from '@/lib/espace-partenaire/session';
 import { listSupplementaryOrdersForProspect } from '@/lib/espace-partenaire/supplementary-orders/queries';
 import { formatEurHt } from '@/lib/tarifs/format';
+import { formatParisDate } from '@/lib/format/dates';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Mes commandes complémentaires — Espace Partenaire' };
@@ -23,11 +24,8 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 
 function fmtDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
+    // P13.x.Phase2 : doctrine timezone Europe/Paris via helper centralise.
+    return formatParisDate(iso, { day: '2-digit', month: 'short', year: 'numeric' });
   } catch {
     return iso.slice(0, 10);
   }

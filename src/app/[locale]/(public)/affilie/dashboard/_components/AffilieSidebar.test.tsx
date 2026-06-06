@@ -10,7 +10,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import frMessages from '@/messages/fr.json';
 
 let mockedPathname = '/fr/affilie/dashboard/stats';
-vi.mock('next/navigation', () => ({
+vi.mock('@/i18n/navigation', () => ({
   usePathname: () => mockedPathname,
 }));
 

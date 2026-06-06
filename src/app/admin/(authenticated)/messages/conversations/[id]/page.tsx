@@ -5,6 +5,7 @@ import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getConversationAction } from '@/lib/internal-messaging/actions';
 import { ConversationReplyForm } from './ConversationReplyForm';
 import { cn } from '@/lib/utils';
+import { formatParisDateTime } from '@/lib/format/dates';
 
 export const metadata = { title: 'Conversation interne' };
 export const dynamic = 'force-dynamic';
@@ -57,8 +58,8 @@ export default async function ConversationDetailPage({
           </p>
         ) : null}
         <p className="text-md-text-muted text-xs">
-          Créée le {new Date(conversation.created_at).toLocaleString('fr-FR')} · {messages.length}{' '}
-          message{messages.length > 1 ? 's' : ''}
+          Créée le {formatParisDateTime(conversation.created_at)} · {messages.length} message
+          {messages.length > 1 ? 's' : ''}
         </p>
       </header>
 
@@ -85,7 +86,7 @@ export default async function ConversationDetailPage({
                         isSelf ? 'text-white' : 'text-md-text-muted',
                       )}
                     >
-                      {m.sender_name} · {new Date(m.created_at).toLocaleString('fr-FR')}
+                      {m.sender_name} · {formatParisDateTime(m.created_at)}
                     </p>
                     <div className="mt-1 whitespace-pre-wrap">{m.body}</div>
                   </div>

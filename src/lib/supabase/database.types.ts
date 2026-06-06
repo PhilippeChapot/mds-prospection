@@ -738,6 +738,8 @@ export type Database = {
           id: string;
           industry: string | null;
           keywords: string[];
+          last_enriched_at: string | null;
+          last_enrichment_source: string | null;
           last_synced_brevo_at: string | null;
           last_synced_sellsy_at: string | null;
           linkedin_url: string | null;
@@ -795,6 +797,8 @@ export type Database = {
           id?: string;
           industry?: string | null;
           keywords?: string[];
+          last_enriched_at?: string | null;
+          last_enrichment_source?: string | null;
           last_synced_brevo_at?: string | null;
           last_synced_sellsy_at?: string | null;
           linkedin_url?: string | null;
@@ -852,6 +856,8 @@ export type Database = {
           id?: string;
           industry?: string | null;
           keywords?: string[];
+          last_enriched_at?: string | null;
+          last_enrichment_source?: string | null;
           last_synced_brevo_at?: string | null;
           last_synced_sellsy_at?: string | null;
           linkedin_url?: string | null;
@@ -969,6 +975,60 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      connectonair_directory: {
+        Row: {
+          address: string | null;
+          city: string | null;
+          country: string | null;
+          email: string | null;
+          id: string;
+          import_batch_id: string | null;
+          imported_at: string;
+          name: string;
+          normalized_name: string;
+          phone: string | null;
+          postal_code: string | null;
+          raw_data: Json | null;
+          sector: string | null;
+          source_id: string | null;
+          website: string | null;
+        };
+        Insert: {
+          address?: string | null;
+          city?: string | null;
+          country?: string | null;
+          email?: string | null;
+          id?: string;
+          import_batch_id?: string | null;
+          imported_at?: string;
+          name: string;
+          normalized_name: string;
+          phone?: string | null;
+          postal_code?: string | null;
+          raw_data?: Json | null;
+          sector?: string | null;
+          source_id?: string | null;
+          website?: string | null;
+        };
+        Update: {
+          address?: string | null;
+          city?: string | null;
+          country?: string | null;
+          email?: string | null;
+          id?: string;
+          import_batch_id?: string | null;
+          imported_at?: string;
+          name?: string;
+          normalized_name?: string;
+          phone?: string | null;
+          postal_code?: string | null;
+          raw_data?: Json | null;
+          sector?: string | null;
+          source_id?: string | null;
+          website?: string | null;
+        };
+        Relationships: [];
       };
       contact_preferences: {
         Row: {
@@ -3113,7 +3173,7 @@ export type Database = {
       email_deliverability_status: 'unchecked' | 'valid' | 'invalid' | 'unknown' | 'accept_all';
       email_validation_status: 'valid' | 'free_provider' | 'disposable' | 'domain_mismatch';
       language_code: 'FR' | 'EN';
-      last_updated_by: 'partner' | 'admin';
+      last_updated_by: 'exhibitor' | 'admin';
       lifecycle_completion_status: 'empty' | 'in_progress' | 'profil_complet';
       pack_code: 'ACCESS' | 'CLASSIC' | 'PREMIUM' | 'A_DEFINIR';
       payment_path:
@@ -3353,7 +3413,7 @@ export const Constants = {
       email_deliverability_status: ['unchecked', 'valid', 'invalid', 'unknown', 'accept_all'],
       email_validation_status: ['valid', 'free_provider', 'disposable', 'domain_mismatch'],
       language_code: ['FR', 'EN'],
-      last_updated_by: ['partner', 'admin'],
+      last_updated_by: ['exhibitor', 'admin'],
       lifecycle_completion_status: ['empty', 'in_progress', 'profil_complet'],
       pack_code: ['ACCESS', 'CLASSIC', 'PREMIUM', 'A_DEFINIR'],
       payment_path: ['devis_sepa', 'devis_acompte_stripe', 'proforma_acompte', 'facture_integrale'],

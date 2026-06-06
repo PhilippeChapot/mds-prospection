@@ -31,7 +31,7 @@ import { useInstitutionnelEcoleForm } from './institutionnel-ecole-form-context'
 
 /**
  * P6.x.4-a-bis : tous les CTA visiteur basculent vers mediadays.net (externe).
- * mediadays.solutions = site EXPOSANTS uniquement, pas de flow visiteur interne.
+ * mediadays.solutions = site PARTENAIRES uniquement, pas de flow visiteur interne.
  */
 const MEDIADAYS_NET_URL = 'https://mediadays.net';
 

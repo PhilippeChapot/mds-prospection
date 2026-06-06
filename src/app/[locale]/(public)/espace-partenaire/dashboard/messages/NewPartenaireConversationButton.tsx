@@ -1,6 +1,10 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+// P13.x.Phase2 : next/navigation conserve volontairement -- le push fait
+// vers `/${locale}/espace-partenaire/dashboard/messages/${id}` avec le
+// prefixe locale explicite, ce qui est incompatible avec le typage strict
+// de next-intl (PATHNAMES ne couvre que les routes a slug FR/EN distinct).
 import { useRouter } from 'next/navigation';
 import { MessagesSquare, Loader2, Send, X } from 'lucide-react';
 import { toast } from 'sonner';

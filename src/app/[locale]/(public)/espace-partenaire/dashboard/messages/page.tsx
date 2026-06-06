@@ -4,6 +4,7 @@ import { setRequestLocale } from 'next-intl/server';
 import type { Locale } from 'next-intl';
 import { listMyConversationsAction } from '@/lib/internal-messaging/actions';
 import { NewPartenaireConversationButton } from './NewPartenaireConversationButton';
+import { formatParisDateTime } from '@/lib/format/dates';
 
 export const metadata = { title: 'Messages' };
 export const dynamic = 'force-dynamic';
@@ -82,7 +83,7 @@ export default async function EspacePartenaireMessagesPage({ params }: PageProps
                   ) : null}
                 </div>
                 <div className="text-md-text-muted shrink-0 text-xs">
-                  {new Date(c.last_message_at).toLocaleString(locale === 'en' ? 'en-GB' : 'fr-FR')}
+                  {formatParisDateTime(c.last_message_at, locale === 'en' ? 'en' : 'fr')}
                 </div>
               </Link>
             </li>

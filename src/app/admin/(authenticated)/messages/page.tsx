@@ -6,6 +6,7 @@ import { listVisitorMessagesAction } from '@/lib/visitor-messages/actions';
 import type { VisitorMessageStatus } from '@/lib/visitor-messages/types';
 import { listMyConversationsAction } from '@/lib/internal-messaging/actions';
 import { cn } from '@/lib/utils';
+import { formatParisDateTime } from '@/lib/format/dates';
 import { MessagesTabs } from './_components/MessagesTabs';
 
 export const metadata = { title: 'Messages' };
@@ -151,7 +152,7 @@ export default async function MessagesListPage({ searchParams }: { searchParams:
                     {m.message.length > 80 ? '…' : ''}
                   </td>
                   <td className="text-md-text-muted px-3 py-2.5 text-xs">
-                    {new Date(m.created_at).toLocaleString('fr-FR')}
+                    {formatParisDateTime(m.created_at)}
                   </td>
                   <td className="px-3 py-2.5">
                     {m.prospect_id ? (
@@ -296,7 +297,7 @@ async function InternalConversationsView() {
                   ) : null}
                 </div>
                 <div className="text-md-text-muted shrink-0 text-xs">
-                  {new Date(c.last_message_at).toLocaleString('fr-FR')}
+                  {formatParisDateTime(c.last_message_at)}
                 </div>
               </Link>
             </li>

@@ -48,7 +48,7 @@ describe('buildEmailSignatureHtml (P7.x.1.E-bis)', () => {
     expect(html).not.toMatch(/retail media/i);
   });
 
-  it('CTA principal pointe vers le wizard EXPOSANT (B2B)', () => {
+  it('CTA principal pointe vers le wizard PARTENAIRE (B2B)', () => {
     const html = buildEmailSignatureHtml({
       affilieName: 'Test',
       trackingUrlPartenaire: 'https://mediadays.solutions/fr/inscription-partenaire?ref=T',

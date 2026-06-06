@@ -1,5 +1,6 @@
 import { History, Plus, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatParisDateTime } from '@/lib/format/dates';
 
 export type AuditRow = {
   id: string;
@@ -83,7 +84,8 @@ function ActionIcon({ action }: { action: AuditRow['action'] }) {
 }
 
 function formatTs(iso: string): string {
-  return new Date(iso).toLocaleString('fr-FR', {
+  // P13.x.Phase2 : doctrine timezone Europe/Paris via helper centralise.
+  return formatParisDateTime(iso, 'fr', {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
