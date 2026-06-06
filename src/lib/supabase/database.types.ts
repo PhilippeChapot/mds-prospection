@@ -582,6 +582,103 @@ export type Database = {
           },
         ];
       };
+      calendar_events: {
+        Row: {
+          created_at: string;
+          created_by_user_id: string | null;
+          description: string | null;
+          duration_minutes: number | null;
+          end_at: string | null;
+          event_type: Database['public']['Enums']['calendar_event_type'];
+          google_calendar_event_id: string | null;
+          google_calendar_synced_at: string | null;
+          id: string;
+          is_all_day: boolean;
+          location: string | null;
+          outcome: string | null;
+          priority: Database['public']['Enums']['calendar_event_priority'];
+          prospect_id: string | null;
+          reminder_15min_sent_at: string | null;
+          reminder_1h_sent_at: string | null;
+          reminder_24h_sent_at: string | null;
+          start_at: string;
+          status: Database['public']['Enums']['calendar_event_status'];
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by_user_id?: string | null;
+          description?: string | null;
+          duration_minutes?: number | null;
+          end_at?: string | null;
+          event_type?: Database['public']['Enums']['calendar_event_type'];
+          google_calendar_event_id?: string | null;
+          google_calendar_synced_at?: string | null;
+          id?: string;
+          is_all_day?: boolean;
+          location?: string | null;
+          outcome?: string | null;
+          priority?: Database['public']['Enums']['calendar_event_priority'];
+          prospect_id?: string | null;
+          reminder_15min_sent_at?: string | null;
+          reminder_1h_sent_at?: string | null;
+          reminder_24h_sent_at?: string | null;
+          start_at: string;
+          status?: Database['public']['Enums']['calendar_event_status'];
+          title: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by_user_id?: string | null;
+          description?: string | null;
+          duration_minutes?: number | null;
+          end_at?: string | null;
+          event_type?: Database['public']['Enums']['calendar_event_type'];
+          google_calendar_event_id?: string | null;
+          google_calendar_synced_at?: string | null;
+          id?: string;
+          is_all_day?: boolean;
+          location?: string | null;
+          outcome?: string | null;
+          priority?: Database['public']['Enums']['calendar_event_priority'];
+          prospect_id?: string | null;
+          reminder_15min_sent_at?: string | null;
+          reminder_1h_sent_at?: string | null;
+          reminder_24h_sent_at?: string | null;
+          start_at?: string;
+          status?: Database['public']['Enums']['calendar_event_status'];
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_events_created_by_user_id_fkey';
+            columns: ['created_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_events_prospect_id_fkey';
+            columns: ['prospect_id'];
+            isOneToOne: false;
+            referencedRelation: 'prospects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_events_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       campaign_recipients: {
         Row: {
           brevo_message_id: string | null;
@@ -978,55 +1075,238 @@ export type Database = {
       };
       connectonair_directory: {
         Row: {
+          activites: string | null;
           address: string | null;
+          address_complement: string | null;
+          categorie: string | null;
           city: string | null;
           country: string | null;
+          country_code: string | null;
           email: string | null;
+          est_public: boolean | null;
+          est_radio: boolean | null;
+          facebook_url: string | null;
+          fax: string | null;
+          forme_juridique: string | null;
+          frequences: string | null;
           id: string;
           import_batch_id: string | null;
           imported_at: string;
+          instagram_url: string | null;
+          keyword: string | null;
+          linkedin_url: string | null;
+          marques: string | null;
           name: string;
+          name_abrege: string | null;
           normalized_name: string;
           phone: string | null;
           postal_code: string | null;
+          produits: string | null;
           raw_data: Json | null;
           sector: string | null;
+          sigle: string | null;
+          siret: string | null;
           source_id: string | null;
+          source_societe_id: string | null;
+          source_unik_id: string | null;
+          source_updated_at: string | null;
+          twitter_url: string | null;
+          type_exposant: string | null;
           website: string | null;
         };
         Insert: {
+          activites?: string | null;
           address?: string | null;
+          address_complement?: string | null;
+          categorie?: string | null;
           city?: string | null;
           country?: string | null;
+          country_code?: string | null;
           email?: string | null;
+          est_public?: boolean | null;
+          est_radio?: boolean | null;
+          facebook_url?: string | null;
+          fax?: string | null;
+          forme_juridique?: string | null;
+          frequences?: string | null;
           id?: string;
           import_batch_id?: string | null;
           imported_at?: string;
+          instagram_url?: string | null;
+          keyword?: string | null;
+          linkedin_url?: string | null;
+          marques?: string | null;
           name: string;
+          name_abrege?: string | null;
           normalized_name: string;
           phone?: string | null;
           postal_code?: string | null;
+          produits?: string | null;
           raw_data?: Json | null;
           sector?: string | null;
+          sigle?: string | null;
+          siret?: string | null;
           source_id?: string | null;
+          source_societe_id?: string | null;
+          source_unik_id?: string | null;
+          source_updated_at?: string | null;
+          twitter_url?: string | null;
+          type_exposant?: string | null;
           website?: string | null;
         };
         Update: {
+          activites?: string | null;
           address?: string | null;
+          address_complement?: string | null;
+          categorie?: string | null;
           city?: string | null;
           country?: string | null;
+          country_code?: string | null;
           email?: string | null;
+          est_public?: boolean | null;
+          est_radio?: boolean | null;
+          facebook_url?: string | null;
+          fax?: string | null;
+          forme_juridique?: string | null;
+          frequences?: string | null;
           id?: string;
           import_batch_id?: string | null;
           imported_at?: string;
+          instagram_url?: string | null;
+          keyword?: string | null;
+          linkedin_url?: string | null;
+          marques?: string | null;
           name?: string;
+          name_abrege?: string | null;
           normalized_name?: string;
           phone?: string | null;
           postal_code?: string | null;
+          produits?: string | null;
           raw_data?: Json | null;
           sector?: string | null;
+          sigle?: string | null;
+          siret?: string | null;
           source_id?: string | null;
+          source_societe_id?: string | null;
+          source_unik_id?: string | null;
+          source_updated_at?: string | null;
+          twitter_url?: string | null;
+          type_exposant?: string | null;
           website?: string | null;
+        };
+        Relationships: [];
+      };
+      connectonair_directory_contacts: {
+        Row: {
+          address: string | null;
+          address_2: string | null;
+          address_3: string | null;
+          address_complement: string | null;
+          city: string | null;
+          civility: string | null;
+          coa_societe_id: string | null;
+          country: string | null;
+          email: string | null;
+          email_additional: string | null;
+          email_normalized: string | null;
+          email_valid: boolean | null;
+          family_function: string | null;
+          fax: string | null;
+          first_name: string | null;
+          genre: string | null;
+          id: string;
+          import_batch_id: string | null;
+          imported_at: string;
+          language: string | null;
+          last_name: string | null;
+          linkedin_url: string | null;
+          mobile: string | null;
+          phone: string | null;
+          postal_code: string | null;
+          raw_data: Json | null;
+          rgpd: boolean | null;
+          role: string | null;
+          send_in_blue: string | null;
+          source_created_at: string | null;
+          source_unik_id: string | null;
+          source_updated_at: string | null;
+          source_user_id: number;
+          state: string | null;
+          type_profil: string | null;
+        };
+        Insert: {
+          address?: string | null;
+          address_2?: string | null;
+          address_3?: string | null;
+          address_complement?: string | null;
+          city?: string | null;
+          civility?: string | null;
+          coa_societe_id?: string | null;
+          country?: string | null;
+          email?: string | null;
+          email_additional?: string | null;
+          email_normalized?: string | null;
+          email_valid?: boolean | null;
+          family_function?: string | null;
+          fax?: string | null;
+          first_name?: string | null;
+          genre?: string | null;
+          id?: string;
+          import_batch_id?: string | null;
+          imported_at?: string;
+          language?: string | null;
+          last_name?: string | null;
+          linkedin_url?: string | null;
+          mobile?: string | null;
+          phone?: string | null;
+          postal_code?: string | null;
+          raw_data?: Json | null;
+          rgpd?: boolean | null;
+          role?: string | null;
+          send_in_blue?: string | null;
+          source_created_at?: string | null;
+          source_unik_id?: string | null;
+          source_updated_at?: string | null;
+          source_user_id: number;
+          state?: string | null;
+          type_profil?: string | null;
+        };
+        Update: {
+          address?: string | null;
+          address_2?: string | null;
+          address_3?: string | null;
+          address_complement?: string | null;
+          city?: string | null;
+          civility?: string | null;
+          coa_societe_id?: string | null;
+          country?: string | null;
+          email?: string | null;
+          email_additional?: string | null;
+          email_normalized?: string | null;
+          email_valid?: boolean | null;
+          family_function?: string | null;
+          fax?: string | null;
+          first_name?: string | null;
+          genre?: string | null;
+          id?: string;
+          import_batch_id?: string | null;
+          imported_at?: string;
+          language?: string | null;
+          last_name?: string | null;
+          linkedin_url?: string | null;
+          mobile?: string | null;
+          phone?: string | null;
+          postal_code?: string | null;
+          raw_data?: Json | null;
+          rgpd?: boolean | null;
+          role?: string | null;
+          send_in_blue?: string | null;
+          source_created_at?: string | null;
+          source_unik_id?: string | null;
+          source_updated_at?: string | null;
+          source_user_id?: number;
+          state?: string | null;
+          type_profil?: string | null;
         };
         Relationships: [];
       };
@@ -1133,10 +1413,13 @@ export type Database = {
           import_source: string | null;
           is_primary: boolean;
           language: Database['public']['Enums']['language_code'];
+          last_enriched_at: string | null;
+          last_enrichment_source: string | null;
           last_name: string | null;
           last_synced_brevo_at: string | null;
           last_synced_sellsy_at: string | null;
           lifecycle_emails_enabled: boolean;
+          linkedin_url: string | null;
           marketing_consent: boolean;
           phone: string | null;
           role: string | null;
@@ -1157,10 +1440,13 @@ export type Database = {
           import_source?: string | null;
           is_primary?: boolean;
           language?: Database['public']['Enums']['language_code'];
+          last_enriched_at?: string | null;
+          last_enrichment_source?: string | null;
           last_name?: string | null;
           last_synced_brevo_at?: string | null;
           last_synced_sellsy_at?: string | null;
           lifecycle_emails_enabled?: boolean;
+          linkedin_url?: string | null;
           marketing_consent?: boolean;
           phone?: string | null;
           role?: string | null;
@@ -1181,10 +1467,13 @@ export type Database = {
           import_source?: string | null;
           is_primary?: boolean;
           language?: Database['public']['Enums']['language_code'];
+          last_enriched_at?: string | null;
+          last_enrichment_source?: string | null;
           last_name?: string | null;
           last_synced_brevo_at?: string | null;
           last_synced_sellsy_at?: string | null;
           lifecycle_emails_enabled?: boolean;
+          linkedin_url?: string | null;
           marketing_consent?: boolean;
           phone?: string | null;
           role?: string | null;
@@ -2868,6 +3157,7 @@ export type Database = {
       users: {
         Row: {
           archived_at: string | null;
+          calendar_ics_token: string | null;
           created_at: string;
           email: string;
           full_name: string | null;
@@ -2879,6 +3169,7 @@ export type Database = {
         };
         Insert: {
           archived_at?: string | null;
+          calendar_ics_token?: string | null;
           created_at?: string;
           email: string;
           full_name?: string | null;
@@ -2890,6 +3181,7 @@ export type Database = {
         };
         Update: {
           archived_at?: string | null;
+          calendar_ics_token?: string | null;
           created_at?: string;
           email?: string;
           full_name?: string | null;
@@ -3156,6 +3448,9 @@ export type Database = {
         | 'sync_manual';
       booth_event: 'paris' | 'marseille' | 'bruxelles';
       booth_status: 'available' | 'option' | 'reserved' | 'signed';
+      calendar_event_priority: 'low' | 'normal' | 'high';
+      calendar_event_status: 'pending' | 'done' | 'cancelled' | 'missed';
+      calendar_event_type: 'call_relance' | 'meeting' | 'task';
       campaign_status:
         | 'draft'
         | 'scheduled'
@@ -3403,6 +3698,9 @@ export const Constants = {
       ],
       booth_event: ['paris', 'marseille', 'bruxelles'],
       booth_status: ['available', 'option', 'reserved', 'signed'],
+      calendar_event_priority: ['low', 'normal', 'high'],
+      calendar_event_status: ['pending', 'done', 'cancelled', 'missed'],
+      calendar_event_type: ['call_relance', 'meeting', 'task'],
       campaign_status: ['draft', 'scheduled', 'sending', 'sent', 'archived', 'cancelled', 'error'],
       category_tarif: ['prs_exhibitor', 'standard', 'non_eligible'],
       chat_role: ['user', 'assistant', 'tool_use', 'tool_result'],
