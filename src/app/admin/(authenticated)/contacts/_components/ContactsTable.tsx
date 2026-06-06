@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { PoleBadge } from '@/components/admin/PoleBadge';
+import { ContactEnrichCoAButton } from './ContactEnrichCoAButton';
 import type { ContactListRow } from '@/lib/contacts/admin-queries';
 import type { PoleCode } from '@/lib/design-tokens';
 
@@ -86,14 +87,17 @@ export function ContactsTable({ rows }: { rows: ContactListRow[] }) {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <Link
-                    href={`/admin/prospects/new?contact_id=${row.id}`}
-                    title="Convertir en prospect"
-                    className="text-md-blue hover:text-md-blue-dark inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap"
-                  >
-                    <ArrowRight className="size-3" aria-hidden />
-                    Convertir
-                  </Link>
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <ContactEnrichCoAButton contactId={row.id} hasEmail={Boolean(row.email)} />
+                    <Link
+                      href={`/admin/prospects/new?contact_id=${row.id}`}
+                      title="Convertir en prospect"
+                      className="text-md-blue hover:text-md-blue-dark inline-flex items-center gap-1 text-xs font-semibold"
+                    >
+                      <ArrowRight className="size-3" aria-hidden />
+                      Convertir
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}
