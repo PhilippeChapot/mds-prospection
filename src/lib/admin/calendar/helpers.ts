@@ -118,10 +118,7 @@ export async function checkOverlap(
   client?: SupabaseClient,
 ): Promise<ConflictMatch | null> {
   if (!endAt) return null;
-  // Cast `as any` minimal : la table calendar_events vient d etre creee
-  // par 0082, types pas encore regen. A retirer apres `pnpm db:types`.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = (client ?? getSupabaseServiceClient()) as any;
+  const supabase = client ?? getSupabaseServiceClient();
 
   // Overlap = (a.start < b.end) && (a.end > b.start). On filtre cote DB
   // tout event qui chevauche [startAt, endAt] sur le meme user, en

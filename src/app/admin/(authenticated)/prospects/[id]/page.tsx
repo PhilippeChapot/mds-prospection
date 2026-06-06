@@ -10,6 +10,7 @@ import { StatusEditor } from '@/components/admin/StatusEditor';
 import { NotesEditor } from '@/components/admin/NotesEditor';
 import { updateProspectNotesAction } from './actions';
 import { ActivitiesSection, type ActivityRow } from '@/components/admin/ActivitiesSection';
+import { ProspectCalendarSection } from './_components/ProspectCalendarSection';
 import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { CompanyContactsSection } from '../../companies/[id]/_components/CompanyContactsSection';
 import { listContactsForCompany } from '@/lib/contacts/admin-queries';
@@ -527,6 +528,15 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           />
         </section>
       ) : null}
+
+      {/* Calendrier (P14.1.SalesCalendarCore) */}
+      <Section title="📅 Calendrier">
+        <ProspectCalendarSection
+          prospectId={id}
+          companyName={prospect.company?.name ?? 'ce prospect'}
+          currentUserRole={profile.role}
+        />
+      </Section>
 
       {/* Activites */}
       <Section title="Activites">

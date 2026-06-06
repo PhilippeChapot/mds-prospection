@@ -22,15 +22,6 @@ import { requireAdminProfile, type AdminProfile } from '@/lib/supabase/auth-help
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { checkOverlap, type CalendarEventRow, type CalendarEventStatus } from './helpers';
 
-/**
- * Cast vers `any` minimal : la table calendar_events vient d etre creee
- * par la migration 0082, ses types ne sont pas encore presents dans
- * src/lib/supabase/database.types.ts tant que `pnpm db:types` n a pas
- * tourne. A retirer apres regen.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SupaCast = any;
-
 // ─── Schemas Zod ───
 
 const createSchema = z.object({
@@ -185,7 +176,7 @@ export async function createCalendarEventAction(
     }
   }
 
-  const supabase = getSupabaseServiceClient() as SupaCast;
+  const supabase = getSupabaseServiceClient();
   const { data: created, error } = await supabase
     .from('calendar_events')
     .insert({
@@ -251,7 +242,7 @@ export async function updateCalendarEventAction(
     };
   }
   const data = parsed.data;
-  const supabase = getSupabaseServiceClient() as SupaCast;
+  const supabase = getSupabaseServiceClient();
 
   const { data: current, error: readErr } = await supabase
     .from('calendar_events')
@@ -367,7 +358,7 @@ export async function deleteCalendarEventAction(
   if (!parsed.success) {
     return { ok: false, error: 'id invalide', errorCode: 'validation' };
   }
-  const supabase = getSupabaseServiceClient() as SupaCast;
+  const supabase = getSupabaseServiceClient();
 
   const { data: current } = await supabase
     .from('calendar_events')
@@ -415,7 +406,7 @@ export async function listCalendarEventsAction(
     };
   }
   const data = parsed.data;
-  const supabase = getSupabaseServiceClient() as SupaCast;
+  const supabase = getSupabaseServiceClient();
 
   // RBAC : si user_id fourni et != profile.id → super_admin only.
   // Si user_id absent → on retourne les events du profil courant
@@ -461,7 +452,7 @@ export async function markCalendarEventDoneAction(
   if (!parsed.success) {
     return { ok: false, error: 'Donnees invalides', errorCode: 'validation' };
   }
-  const supabase = getSupabaseServiceClient() as SupaCast;
+  const supabase = getSupabaseServiceClient();
 
   const { data: current } = await supabase
     .from('calendar_events')

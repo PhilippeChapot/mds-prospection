@@ -61,6 +61,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         enabled: true,
         roles_allowed: ADMIN_PLUS,
       },
+      {
+        href: '/admin/calendar',
+        label: 'Calendrier',
+        emoji: '📅',
+        enabled: true,
+      },
     ],
   },
   {
