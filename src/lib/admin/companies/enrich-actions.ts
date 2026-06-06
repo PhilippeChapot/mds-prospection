@@ -32,10 +32,10 @@ import { normalizeDomain } from '@/lib/utils/domain';
 import { normalizeNameJs } from '@/lib/external-events/normalize-query';
 import { applyEnrichmentToCompany, type EnrichmentSource } from './enrich-helpers';
 
-// Local typing for connectonair_directory rows. La table existe en DB
-// (migration 0076) mais n est pas encore presente dans
-// src/lib/supabase/database.types.ts (regenerer via `pnpm db:types`
-// apres `pnpm db:push`). En attendant on cast les queries.
+// Sous-ensemble des colonnes selectionnees dans connectonair_directory.
+// Migration 0076 + `pnpm db:types` regenere : la table est typee dans
+// src/lib/supabase/database.types.ts. On garde ce type local pour
+// formaliser le shape attendu cote consommateur.
 type CoaDirectoryMatch = {
   id: string;
   name: string;
@@ -109,25 +109,25 @@ export async function enrichCompanyAddressFromConnectOnAirAction(
   }
 
   // 1) Match strict sur normalized_name.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supaAny = supabase as any;
-  let matches = ((
-    await supaAny
-      .from('connectonair_directory')
-      .select('id, name, address, city, postal_code, country, phone, website')
-      .eq('normalized_name', normalized)
-      .limit(1)
-  ).data ?? []) as CoaDirectoryMatch[];
+  let matches: CoaDirectoryMatch[] =
+    (
+      await supabase
+        .from('connectonair_directory')
+        .select('id, name, address, city, postal_code, country, phone, website')
+        .eq('normalized_name', normalized)
+        .limit(1)
+    ).data ?? [];
 
   // 2) Fallback fuzzy ILIKE (au cas ou suffix manquant cote XLSX vs DB).
   if (matches.length === 0) {
-    matches = ((
-      await supaAny
-        .from('connectonair_directory')
-        .select('id, name, address, city, postal_code, country, phone, website')
-        .ilike('normalized_name', `%${normalized}%`)
-        .limit(1)
-    ).data ?? []) as CoaDirectoryMatch[];
+    matches =
+      (
+        await supabase
+          .from('connectonair_directory')
+          .select('id, name, address, city, postal_code, country, phone, website')
+          .ilike('normalized_name', `%${normalized}%`)
+          .limit(1)
+      ).data ?? [];
   }
 
   if (!matches || matches.length === 0) {
