@@ -34,7 +34,7 @@ export const SIGNUP_STATUS_CLASS: Record<SignupStatus, string> = {
   expired: 'bg-slate-200 text-slate-600',
 };
 
-export const SIGNUP_CATEGORIES = ['partenaire', 'partenaire'] as const;
+export const SIGNUP_CATEGORIES = ['partenaire', 'sponsor'] as const;
 export type SignupCategory = (typeof SIGNUP_CATEGORIES)[number];
 
 export interface SignupRow {

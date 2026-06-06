@@ -31,7 +31,7 @@ Your data is collected to:
 When you register:
 
 - Work email, first name, last name, phone (optional).
-- Company, country, declared category (partner or partner).
+- Company, country, declared category (partner or sponsor).
 - GDPR and marketing consents.
 - At step 2: chosen pack, shows, preferred booths, options, payment method.
 
