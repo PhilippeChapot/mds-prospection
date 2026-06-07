@@ -24,6 +24,12 @@
 .DS_Store
 *.pem
 
+# data imports (curated source files copies localement pour les scripts
+# d enrichissement — ne PAS committer, peuvent contenir des PII et
+# sources externes proprietaires)
+/data/imports/*
+!/data/imports/.gitkeep
+
 # debug
 npm-debug.log*
 yarn-debug.log*

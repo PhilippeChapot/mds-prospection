@@ -13,6 +13,106 @@
  */
 
 /**
+ * P5.x.PhoneEnrichmentDisplay-bis — country codes ITU-T E.164 connus
+ * pour reconnaitre les prefixes pays nus (sans `+`). Sources curated :
+ * NANP + EU pays principaux + IL + APAC populaires.
+ *
+ * Note : 1 = NANP (US/CA/etc.), 7 = Russie/Kazakhstan.
+ */
+const KNOWN_COUNTRY_CODES = new Set<string>([
+  // 1 chiffre
+  '1', // NANP (US, CA, etc.)
+  '7', // RU, KZ
+  // 2 chiffres
+  '20', // EG
+  '27', // ZA
+  '30', // GR
+  '31', // NL
+  '32', // BE
+  '33', // FR
+  '34', // ES
+  '36', // HU
+  '39', // IT
+  '40', // RO
+  '41', // CH
+  '43', // AT
+  '44', // GB
+  '45', // DK
+  '46', // SE
+  '47', // NO
+  '48', // PL
+  '49', // DE
+  '51', // PE
+  '52', // MX
+  '54', // AR
+  '55', // BR
+  '56', // CL
+  '57', // CO
+  '58', // VE
+  '60', // MY
+  '61', // AU
+  '62', // ID
+  '63', // PH
+  '64', // NZ
+  '65', // SG
+  '66', // TH
+  '81', // JP
+  '82', // KR
+  '84', // VN
+  '86', // CN
+  '90', // TR
+  '91', // IN
+  '92', // PK
+  '94', // LK
+  '98', // IR
+  // 3 chiffres (sous-ensemble courant)
+  '212', // MA
+  '213', // DZ
+  '216', // TN
+  '218', // LY
+  '220', // GM
+  '221', // SN
+  '225', // CI
+  '230', // MU
+  '233', // GH
+  '234', // NG
+  '237', // CM
+  '243', // CD
+  '350', // GI
+  '351', // PT
+  '352', // LU
+  '353', // IE
+  '354', // IS
+  '355', // AL
+  '356', // MT
+  '357', // CY
+  '358', // FI
+  '359', // BG
+  '370', // LT
+  '371', // LV
+  '372', // EE
+  '380', // UA
+  '381', // RS
+  '385', // HR
+  '386', // SI
+  '387', // BA
+  '389', // MK
+  '420', // CZ
+  '421', // SK
+  '423', // LI
+  '852', // HK
+  '886', // TW
+  '961', // LB
+  '962', // JO
+  '965', // KW
+  '966', // SA
+  '971', // AE
+  '972', // IL
+  '974', // QA
+  '975', // BT
+]);
+
+/**
  * Normalise un numero (chaine libre) vers E.164.
  *
  *  - "01 42 36 78 90"       -> "+33142367890"
@@ -20,15 +120,26 @@
  *  - "0142367890"           -> "+33142367890"
  *  - "33142367890"          -> "+33142367890"
  *  - "+442079460958"        -> "+442079460958" (international garde)
+ *  - "34699248200"          -> "+34699248200"  (ES sans +)
+ *  - "49 1514 2613393"      -> "+4915142613393" (DE sans +)
+ *  - "972 9 744 0055"       -> "+97297440055"  (IL sans +)
  *  - "NULL" / null / ""     -> null
  *  - garbage / trop court   -> null
+ *
+ * @param raw chaine libre du XLSX / DB / input user.
+ * @param defaultCountryCode prefixe pays par defaut quand 9 chiffres
+ *   ambigus ('33' = FR par defaut, '34' pour ES, etc.). Mettre `null`
+ *   pour desactiver l auto-FR (V1 conservatif = '33').
  */
-export function normalizePhoneE164(raw: string | null | undefined): string | null {
+export function normalizePhoneE164(
+  raw: string | null | undefined,
+  defaultCountryCode: string | null = '33',
+): string | null {
   if (!raw) return null;
   const trimmed = String(raw).trim();
   if (!trimmed || trimmed.toUpperCase() === 'NULL') return null;
 
-  // International explicite (commence par +).
+  // 1. International explicite (commence par +) → trust.
   if (trimmed.startsWith('+')) {
     const digits = trimmed.slice(1).replace(/\D/g, '');
     if (digits.length < 8 || digits.length > 15) return null;
@@ -38,21 +149,39 @@ export function normalizePhoneE164(raw: string | null | undefined): string | nul
   const digits = trimmed.replace(/\D/g, '');
   if (!digits) return null;
 
-  // Format FR national (10 chiffres commencant par 0).
+  // 2. Format FR national (10 chiffres commencant par 0).
   if (digits.length === 10 && digits.startsWith('0')) {
     return `+33${digits.slice(1)}`;
   }
-  // Format FR international sans + (11 chiffres : 33 + 9).
+  // 3. Format FR international sans + (11 chiffres : 33 + 9).
   if (digits.length === 11 && digits.startsWith('33')) {
     return `+${digits}`;
   }
-  // 9 chiffres : on suppose FR sans le 0 initial.
-  if (digits.length === 9) {
-    return `+33${digits}`;
+
+  // 4. 9 chiffres sans 0 initial → suppose defaultCountryCode (FR par defaut).
+  //    Check AVANT prefix detection pour eviter le faux positif "1" NANP
+  //    sur des numeros FR sans 0 (ex: 142367890 → +33142367890 et pas
+  //    +142367890 NANP).
+  if (digits.length === 9 && defaultCountryCode) {
+    return `+${defaultCountryCode}${digits}`;
   }
 
-  // International possible (>= 8 chiffres) mais sans + → on n a pas le
-  // pays, on refuse pour eviter de stocker une chaine ambigue.
+  // 5. P5.x.PhoneEnrichmentDisplay-bis : detecter un prefixe pays nu.
+  //    On essaye 3 chiffres puis 2 puis 1 par ordre decroissant
+  //    (KNOWN_COUNTRY_CODES). Apres prefixe, verifier que le reste est
+  //    plausible (7-12 chiffres = bornes E.164 raisonnables).
+  for (const prefixLen of [3, 2, 1]) {
+    if (digits.length <= prefixLen + 6) continue; // trop court pour ce prefixe
+    const prefix = digits.slice(0, prefixLen);
+    if (KNOWN_COUNTRY_CODES.has(prefix)) {
+      const rest = digits.slice(prefixLen);
+      if (rest.length >= 7 && rest.length <= 12) {
+        return `+${digits}`;
+      }
+    }
+  }
+
+  // 6. International possible mais sans prefix connu → refuse.
   return null;
 }
 

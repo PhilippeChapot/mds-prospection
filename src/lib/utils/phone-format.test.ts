@@ -41,6 +41,28 @@ describe('normalizePhoneE164 (P5.x.PhoneEnrichmentDisplay)', () => {
     expect(normalizePhoneE164('12345')).toBeNull();
     expect(normalizePhoneE164('5551234')).toBeNull(); // 7 chiffres = ambigu
   });
+
+  // P5.x.PhoneEnrichmentDisplay-bis : country codes nus.
+  it('ES sans + : "34699248200" → "+34699248200"', () => {
+    expect(normalizePhoneE164('34699248200')).toBe('+34699248200');
+  });
+  it('DE sans + avec espaces : "49 1514 2613393" → "+4915142613393"', () => {
+    expect(normalizePhoneE164('49 1514 2613393')).toBe('+4915142613393');
+  });
+  it('IL sans + : "972 9 744 0055" → "+97297440055"', () => {
+    expect(normalizePhoneE164('972 9 744 0055')).toBe('+97297440055');
+  });
+  it('UK sans + : "44 20 7946 0958" → "+442079460958"', () => {
+    expect(normalizePhoneE164('44 20 7946 0958')).toBe('+442079460958');
+  });
+  it('Garbage 123456 reste null (pas faussement detecte)', () => {
+    expect(normalizePhoneE164('123456')).toBeNull();
+  });
+  it('FR 9 chiffres prioritaire sur prefix NANP (default fr=33)', () => {
+    // 142367890 commence par "1" (NANP) mais c est 9 chiffres → on
+    // priorise FR (defaultCountryCode=33) plutot que NANP +1+8chiffres.
+    expect(normalizePhoneE164('142367890')).toBe('+33142367890');
+  });
 });
 
 describe('formatPhoneForDisplay (P5.x.PhoneEnrichmentDisplay)', () => {
