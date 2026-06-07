@@ -156,3 +156,38 @@ export const COMMON_OUTCOMES: readonly string[] = [
   'lost',
   'wrong_contact',
 ] as const;
+
+/**
+ * P14.1.HOTFIX-UX-Modal-Validation — duree par defaut d un event
+ * (utilisee par l auto-ajustement end_at quand start_at change).
+ */
+export const DEFAULT_EVENT_DURATION_MINUTES = 30;
+
+/**
+ * Helper pure-function pour calculer le nouveau end_at quand l user
+ * change start_at dans la modal de creation/edition.
+ *
+ *   - Si l user a deja edite end_at manuellement (hasUserEditedEnd=true) :
+ *     return null (ne pas toucher, il sait ce qu il fait).
+ *   - Sinon : return start_at + DEFAULT_EVENT_DURATION_MINUTES.
+ *
+ * Le caller doit appliquer setEndAt(result) seulement si result !== null.
+ */
+export function computeAutoEnd(newStart: Date, hasUserEditedEnd: boolean): Date | null {
+  if (hasUserEditedEnd) return null;
+  const end = new Date(newStart);
+  end.setMinutes(end.getMinutes() + DEFAULT_EVENT_DURATION_MINUTES);
+  return end;
+}
+
+/**
+ * Validation client-side : end doit etre strictement apres start.
+ * Retourne null si OK, sinon un errorCode.
+ */
+export type DateRangeError = 'end_before_or_equal_start';
+
+export function validateDateRange(start: Date, end: Date | null): DateRangeError | null {
+  if (!end) return null; // task sans duree
+  if (end.getTime() <= start.getTime()) return 'end_before_or_equal_start';
+  return null;
+}

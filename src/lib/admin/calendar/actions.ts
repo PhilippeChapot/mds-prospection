@@ -84,6 +84,7 @@ export type CalendarActionFailure = {
     | 'super_admin_required'
     | 'not_found'
     | 'validation'
+    | 'end_after_start'
     | 'internal';
   conflictEvent?: {
     id: string;
@@ -196,13 +197,23 @@ export async function createCalendarEventAction(
     .single();
 
   if (error) {
-    // EXCLUDE constraint DB → 23P01. Si on arrive ici malgre le check
-    // applicatif, c est une race condition → on remappe en overlap.
+    // EXCLUDE constraint DB → 23P01 (overlap, race condition).
     if (error.code === '23P01') {
       return {
         ok: false,
         error: 'Creneau deja occupe (detection DB en backup).',
         errorCode: 'overlap',
+      };
+    }
+    // CHECK constraint calendar_events_end_after_start → 23514.
+    // Cas rare car la validation client + Zod attrappe en amont, mais
+    // defense en profondeur : remap en message friendly plutot que
+    // d exposer le message Postgres brut.
+    if (error.code === '23514' && /end_after_start/i.test(error.message ?? '')) {
+      return {
+        ok: false,
+        error: 'La date de fin doit etre apres la date de debut.',
+        errorCode: 'end_after_start',
       };
     }
     return { ok: false, error: `Create: ${error.message}`, errorCode: 'internal' };
@@ -327,6 +338,13 @@ export async function updateCalendarEventAction(
         ok: false,
         error: 'Creneau deja occupe (detection DB en backup).',
         errorCode: 'overlap',
+      };
+    }
+    if (updErr.code === '23514' && /end_after_start/i.test(updErr.message ?? '')) {
+      return {
+        ok: false,
+        error: 'La date de fin doit etre apres la date de debut.',
+        errorCode: 'end_after_start',
       };
     }
     return { ok: false, error: updErr.message, errorCode: 'internal' };

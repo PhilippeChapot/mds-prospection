@@ -18,6 +18,9 @@ import {
   getEventTypeColor,
   getEventTypeIcon,
   getEventStatusColor,
+  computeAutoEnd,
+  validateDateRange,
+  DEFAULT_EVENT_DURATION_MINUTES,
   CALENDAR_EVENT_TYPES,
   CALENDAR_EVENT_STATUSES,
 } from './helpers';
@@ -232,5 +235,54 @@ describe('checkOverlap (P14.1)', () => {
       makeClient([existing]),
     );
     expect(r).toBeNull();
+  });
+});
+
+describe('computeAutoEnd (P14.1.HOTFIX-UX)', () => {
+  it('Si hasUserEditedEnd=false : retourne start + 30 min', () => {
+    const start = new Date('2026-06-07T10:00:00.000Z');
+    const result = computeAutoEnd(start, false);
+    expect(result).not.toBeNull();
+    expect(result!.toISOString()).toBe('2026-06-07T10:30:00.000Z');
+  });
+
+  it('Default duree = 30 min (constante exportee)', () => {
+    expect(DEFAULT_EVENT_DURATION_MINUTES).toBe(30);
+  });
+
+  it('Si hasUserEditedEnd=true : retourne null (ne pas toucher)', () => {
+    const start = new Date('2026-06-07T10:00:00.000Z');
+    const result = computeAutoEnd(start, true);
+    expect(result).toBeNull();
+  });
+
+  it('Idempotent — retour pure fonction du parametre', () => {
+    const start = new Date('2026-06-07T14:30:00.000Z');
+    const r1 = computeAutoEnd(start, false);
+    const r2 = computeAutoEnd(start, false);
+    expect(r1?.toISOString()).toBe(r2?.toISOString());
+  });
+});
+
+describe('validateDateRange (P14.1.HOTFIX-UX)', () => {
+  it('null si end > start', () => {
+    expect(
+      validateDateRange(new Date('2026-06-07T10:00:00Z'), new Date('2026-06-07T11:00:00Z')),
+    ).toBeNull();
+  });
+
+  it('null si end null (task sans duree)', () => {
+    expect(validateDateRange(new Date('2026-06-07T10:00:00Z'), null)).toBeNull();
+  });
+
+  it('end_before_or_equal_start si end == start', () => {
+    const t = new Date('2026-06-07T10:00:00Z');
+    expect(validateDateRange(t, t)).toBe('end_before_or_equal_start');
+  });
+
+  it('end_before_or_equal_start si end < start', () => {
+    expect(
+      validateDateRange(new Date('2026-06-07T11:00:00Z'), new Date('2026-06-07T10:00:00Z')),
+    ).toBe('end_before_or_equal_start');
   });
 });

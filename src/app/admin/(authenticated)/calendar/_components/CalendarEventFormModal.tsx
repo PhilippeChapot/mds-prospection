@@ -37,6 +37,8 @@ import {
 import {
   CALENDAR_EVENT_TYPES,
   getEventTypeIcon,
+  computeAutoEnd,
+  validateDateRange,
   type CalendarEventRow,
   type CalendarEventType,
   type CalendarEventPriority,
@@ -114,12 +116,42 @@ export function CalendarEventFormModal({
   } | null>(null);
   const [outcome, setOutcome] = useState<string>('');
 
+  // P14.1.HOTFIX-UX : track si l user a explicitement edite endAt. Si non,
+  // un changement de startAt re-aligne endAt sur startAt + 30min (auto).
+  // Si oui, on ne touche plus a endAt (sticky user input).
+  const [hasUserEditedEnd, setHasUserEditedEnd] = useState(false);
+
   const isTask = eventType === 'task';
   const isMeeting = eventType === 'meeting';
+
+  function handleStartAtChange(newValue: string) {
+    setStartAt(newValue);
+    // Auto-adjust endAt si pas encore touche par l user + ce n est pas une task.
+    if (!isTask) {
+      const newStart = new Date(newValue);
+      const newEnd = computeAutoEnd(newStart, hasUserEditedEnd);
+      if (newEnd) {
+        setEndAt(toDatetimeLocal(newEnd));
+      }
+    }
+  }
+
+  function handleEndAtChange(newValue: string) {
+    setEndAt(newValue);
+    setHasUserEditedEnd(true);
+  }
+
+  // Validation client-side end_at > start_at (sauf pour task).
+  const dateRangeError =
+    !isTask && startAt && endAt ? validateDateRange(new Date(startAt), new Date(endAt)) : null;
 
   function handleSubmit(forceOverlap = false) {
     if (!title.trim()) {
       toast.error('Le titre est obligatoire.');
+      return;
+    }
+    if (dateRangeError === 'end_before_or_equal_start') {
+      toast.error('La date de fin doit être après la date de début.');
       return;
     }
     setOverlapWarning(null);
@@ -152,6 +184,12 @@ export function CalendarEventFormModal({
             title: r.conflictEvent.title,
             start_at: r.conflictEvent.start_at,
           });
+          return;
+        }
+        // Mapping errorCode → message friendly (rare car validation
+        // client + Zod attrappe en amont, mais defense en profondeur).
+        if (r.errorCode === 'end_after_start') {
+          toast.error('La date de fin doit être après la date de début.');
           return;
         }
         toast.error(r.error);
@@ -263,7 +301,7 @@ export function CalendarEventFormModal({
                 id="start_at"
                 type="datetime-local"
                 value={startAt}
-                onChange={(e) => setStartAt(e.target.value)}
+                onChange={(e) => handleStartAtChange(e.target.value)}
               />
             </div>
             {!isTask && (
@@ -275,8 +313,19 @@ export function CalendarEventFormModal({
                   id="end_at"
                   type="datetime-local"
                   value={endAt}
-                  onChange={(e) => setEndAt(e.target.value)}
+                  onChange={(e) => handleEndAtChange(e.target.value)}
+                  aria-invalid={dateRangeError === 'end_before_or_equal_start'}
+                  className={
+                    dateRangeError === 'end_before_or_equal_start'
+                      ? 'border-md-danger focus-visible:ring-md-danger/30'
+                      : ''
+                  }
                 />
+                {dateRangeError === 'end_before_or_equal_start' && (
+                  <p className="text-md-danger text-xs">
+                    La date de fin doit être après la date de début.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -390,8 +439,13 @@ export function CalendarEventFormModal({
               type="button"
               size="sm"
               onClick={() => handleSubmit(false)}
-              disabled={pending}
+              disabled={pending || !!dateRangeError}
               className="bg-md-magenta hover:bg-md-magenta-soft"
+              title={
+                dateRangeError === 'end_before_or_equal_start'
+                  ? 'Corrige la date de fin avant de continuer'
+                  : undefined
+              }
             >
               {pending && <Loader2 className="mr-1 size-3 animate-spin" />}
               {mode === 'edit' ? 'Mettre à jour' : 'Créer'}

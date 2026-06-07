@@ -426,6 +426,30 @@ describe('createCalendarEventAction (P14.1)', () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errorCode).toBe('overlap');
   });
+
+  it('DB CHECK constraint 23514 end_after_start → errorCode=end_after_start', async () => {
+    // P14.1.HOTFIX-UX : si la validation client + Zod laissait passer un
+    // end <= start (rare), la DB rejette via check constraint. Le server
+    // action doit remapper vers un message friendly plutot que le brut PG.
+    state.insertError = {
+      code: '23514',
+      message:
+        'new row for relation "calendar_events" violates check constraint "calendar_events_end_after_start"',
+    };
+    mockEnv();
+    const { createCalendarEventAction } = await import('./actions');
+    const r = await createCalendarEventAction({
+      event_type: 'meeting',
+      title: 'Bad range',
+      start_at: NOW,
+      end_at: PLUS30, // valide cote Zod, mais la DB rejette en simu
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errorCode).toBe('end_after_start');
+      expect(r.error).toMatch(/fin.*apres.*debut/i);
+    }
+  });
 });
 
 describe('markCalendarEventDoneAction (P14.1)', () => {
