@@ -19,6 +19,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Calendar, type View, type SlotInfo } from 'react-big-calendar';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { calendarLocalizer, getCalendarMessages } from '@/lib/admin/calendar/calendar-localizer';
@@ -190,6 +191,13 @@ export function CalendarShell({ currentUserId, currentUserRole }: Props) {
         )}
         <div className="flex-1" />
         {loading && <span className="text-md-text-muted text-xs">Chargement…</span>}
+        <Link
+          href="/admin/calendar/settings"
+          title="Paramètres / Synchroniser avec Apple ou Google Calendar"
+          className="text-md-text-muted hover:text-md-text hover:border-md-border inline-flex size-8 items-center justify-center rounded-md border border-transparent"
+        >
+          ⚙️
+        </Link>
         <Button
           type="button"
           size="sm"
