@@ -35,8 +35,8 @@ export {
 
 const PROSPECT_LIST_SELECT = `
   id, status, pack_code, estimated_amount, owner_id, affiliate_id, is_test, created_at, last_activity_at,
-  company:companies!inner(id, name, category, was_prs_2026_exhibitor, external_event_tags, pole:poles(code, name_fr)),
-  contact:contacts(id, first_name, last_name, email),
+  company:companies!inner(id, name, category, was_prs_2026_exhibitor, external_event_tags, phone, pole:poles(code, name_fr)),
+  contact:contacts(id, first_name, last_name, email, phone_mobile),
   owner:users!prospects_owner_id_fkey(id, full_name, email)
 `;
 
@@ -110,8 +110,10 @@ export async function listProspectsPaginated(opts: {
     return { rows: [], total: 0, page, perPage };
   }
 
-  // Normalise les relations (postgrest peut retourner array ou objet)
-  const rows = (data ?? []).map((row) => normalizeProspectRow(row)) as ProspectListItem[];
+  // Normalise les relations (postgrest peut retourner array ou objet).
+  // Cast `as never` minimal : phone_mobile / companies.phone via migration
+  // 0083 pas encore regen dans les types Supabase generated.
+  const rows = (data ?? []).map((row) => normalizeProspectRow(row as never)) as ProspectListItem[];
   return { rows, total: count ?? 0, page, perPage };
 }
 
@@ -260,6 +262,7 @@ type RawProspectRow = {
     category: CategoryTarif;
     was_prs_2026_exhibitor: boolean;
     external_event_tags: unknown;
+    phone: string | null;
     pole: MaybeArray<{ code: string; name_fr: string }>;
   }>;
   contact: MaybeArray<{
@@ -267,6 +270,7 @@ type RawProspectRow = {
     first_name: string | null;
     last_name: string | null;
     email: string;
+    phone_mobile: string | null;
   }>;
   owner: MaybeArray<{ id: string; full_name: string | null; email: string }>;
 };
@@ -290,6 +294,7 @@ function normalizeProspectRow(row: RawProspectRow): ProspectListItem {
           category: company.category,
           was_prs_2026_exhibitor: company.was_prs_2026_exhibitor,
           external_event_tags: (company.external_event_tags ?? {}) as Record<string, unknown>,
+          phone: company.phone ?? null,
           pole: pickFirst(company.pole),
         }
       : null,

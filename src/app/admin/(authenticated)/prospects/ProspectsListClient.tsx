@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
-import { Download, UserCog, Tag } from 'lucide-react';
+import { Download, UserCog, Tag, Phone, Smartphone } from 'lucide-react';
+import { formatPhoneForDisplay } from '@/lib/utils/phone-format';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
@@ -298,9 +299,31 @@ export function ProspectsListClient({
                                   TEST
                                 </span>
                               )}
+                              {row.company?.phone ? (
+                                <a
+                                  href={`tel:${row.company.phone}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-md-text-muted hover:text-md-blue ml-1 inline-flex shrink-0 items-center gap-1 text-[11px] font-normal"
+                                  title="Appeler la société"
+                                >
+                                  <Phone className="size-3" aria-hidden />
+                                  {formatPhoneForDisplay(row.company.phone)}
+                                </a>
+                              ) : null}
                             </div>
-                            <div className="text-md-text-muted truncate text-xs">
-                              {contactDisplay}
+                            <div className="text-md-text-muted flex flex-wrap items-center gap-2 truncate text-xs">
+                              <span className="truncate">{contactDisplay}</span>
+                              {row.contact?.phone_mobile ? (
+                                <a
+                                  href={`tel:${row.contact.phone_mobile}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="hover:text-md-blue inline-flex items-center gap-1 text-[11px]"
+                                  title="Appeler le mobile"
+                                >
+                                  <Smartphone className="size-3" aria-hidden />
+                                  {formatPhoneForDisplay(row.contact.phone_mobile)}
+                                </a>
+                              ) : null}
                             </div>
                             {row.company?.external_event_tags ? (
                               <div className="mt-1">

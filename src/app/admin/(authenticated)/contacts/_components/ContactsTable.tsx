@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Phone, Smartphone } from 'lucide-react';
 import { PoleBadge } from '@/components/admin/PoleBadge';
 import { ContactEnrichCoAButton } from './ContactEnrichCoAButton';
+import { formatPhoneForDisplay } from '@/lib/utils/phone-format';
 import type { ContactListRow } from '@/lib/contacts/admin-queries';
 import type { PoleCode } from '@/lib/design-tokens';
 
@@ -46,6 +47,17 @@ export function ContactsTable({ rows }: { rows: ContactListRow[] }) {
                       <div className="text-md-text-muted text-[10px]">{row.role}</div>
                     ) : null}
                   </Link>
+                  {row.phone_mobile ? (
+                    <a
+                      href={`tel:${row.phone_mobile}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-md-text-muted hover:text-md-blue mt-0.5 inline-flex items-center gap-1 text-[11px]"
+                      title="Appeler le mobile"
+                    >
+                      <Smartphone className="size-3" aria-hidden />
+                      {formatPhoneForDisplay(row.phone_mobile)}
+                    </a>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3">
                   <Link
@@ -54,6 +66,17 @@ export function ContactsTable({ rows }: { rows: ContactListRow[] }) {
                   >
                     {row.company.name}
                   </Link>
+                  {row.company.phone ? (
+                    <a
+                      href={`tel:${row.company.phone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-md-text-muted hover:text-md-blue mt-0.5 flex items-center gap-1 text-[11px]"
+                      title="Appeler la société"
+                    >
+                      <Phone className="size-3" aria-hidden />
+                      {formatPhoneForDisplay(row.company.phone)}
+                    </a>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3">
                   {row.company.pole_code ? (

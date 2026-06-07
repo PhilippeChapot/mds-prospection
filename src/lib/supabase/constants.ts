@@ -43,6 +43,7 @@ export type ProspectListItem = {
     category: CategoryTarif;
     was_prs_2026_exhibitor: boolean;
     external_event_tags: Record<string, unknown>;
+    phone: string | null;
     pole: { code: string; name_fr: string } | null;
   } | null;
   contact: {
@@ -50,6 +51,7 @@ export type ProspectListItem = {
     first_name: string | null;
     last_name: string | null;
     email: string;
+    phone_mobile: string | null;
   } | null;
   owner: { id: string; full_name: string | null; email: string } | null;
 };

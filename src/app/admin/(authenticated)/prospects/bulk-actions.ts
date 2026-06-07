@@ -118,8 +118,8 @@ export async function exportProspectsCsvAction(
       .select(
         `
         id, status, pack_code, estimated_amount, owner_id, affiliate_id, is_test, created_at, last_activity_at,
-        company:companies!inner(id, name, category, was_prs_2026_exhibitor, external_event_tags, pole:poles(code, name_fr)),
-        contact:contacts(id, first_name, last_name, email),
+        company:companies!inner(id, name, category, was_prs_2026_exhibitor, external_event_tags, phone, pole:poles(code, name_fr)),
+        contact:contacts(id, first_name, last_name, email, phone_mobile),
         owner:users!prospects_owner_id_fkey(id, full_name, email)
       `,
       )
@@ -137,6 +137,7 @@ export async function exportProspectsCsvAction(
         category: Database['public']['Enums']['category_tarif'];
         was_prs_2026_exhibitor: boolean;
         external_event_tags: unknown;
+        phone: string | null;
         pole: { code: string; name_fr: string } | { code: string; name_fr: string }[] | null;
       } | null;
       const contact = pickFirst(r.contact);
@@ -158,6 +159,7 @@ export async function exportProspectsCsvAction(
               category: company.category,
               was_prs_2026_exhibitor: company.was_prs_2026_exhibitor,
               external_event_tags: (company.external_event_tags ?? {}) as Record<string, unknown>,
+              phone: company.phone ?? null,
               pole: pickFirst(company.pole) as { code: string; name_fr: string } | null,
             }
           : null,

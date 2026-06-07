@@ -27,6 +27,7 @@ export type ContactListRow = {
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
+  phone_mobile: string | null;
   role: string | null;
   is_primary: boolean;
   language: 'FR' | 'EN';
@@ -40,6 +41,7 @@ export type ContactListRow = {
     id: string;
     name: string;
     pole_code: string | null;
+    phone: string | null;
   };
 };
 
@@ -71,13 +73,18 @@ export async function listContactsPaginated(
     poleIdFilter = poleRow?.id ?? null;
   }
 
-  let query = supabase
+  // P5.x.PhoneEnrichmentDisplay : phone_mobile + companies.phone via
+  // migration 0083 ; les types Supabase ne sont pas encore regenerees
+  // jusqu a `pnpm db:types` post-push. Cast minimal en attendant.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supaAny = supabase as any;
+  let query = supaAny
     .from('contacts')
     .select(
-      `id, email, first_name, last_name, phone, role, is_primary, language,
+      `id, email, first_name, last_name, phone, phone_mobile, role, is_primary, language,
        marketing_consent, lifecycle_emails_enabled, email_deliverability_status,
        brevo_contact_id, last_synced_brevo_at, created_at,
-       company:companies!inner(id, name, pole_id, pole:poles(code))`,
+       company:companies!inner(id, name, pole_id, phone, pole:poles(code))`,
       { count: 'exact' },
     )
     .order('created_at', { ascending: false })
@@ -103,7 +110,8 @@ export async function listContactsPaginated(
     return { rows: [], total: 0, page, perPage };
   }
 
-  const rows: ContactListRow[] = (data ?? []).map((r) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows: ContactListRow[] = ((data ?? []) as any[]).map((r: any) => {
     const company = pickFirst(r.company);
     const pole = pickFirst(company?.pole);
     return {
@@ -112,6 +120,7 @@ export async function listContactsPaginated(
       first_name: r.first_name,
       last_name: r.last_name,
       phone: r.phone,
+      phone_mobile: (r as { phone_mobile?: string | null }).phone_mobile ?? null,
       role: r.role,
       is_primary: r.is_primary,
       language: r.language,
@@ -125,6 +134,7 @@ export async function listContactsPaginated(
         id: company?.id ?? '',
         name: company?.name ?? '',
         pole_code: pole?.code ?? null,
+        phone: (company as { phone?: string | null } | null)?.phone ?? null,
       },
     };
   });
