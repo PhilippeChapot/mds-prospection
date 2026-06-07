@@ -73,12 +73,7 @@ export async function listContactsPaginated(
     poleIdFilter = poleRow?.id ?? null;
   }
 
-  // P5.x.PhoneEnrichmentDisplay : phone_mobile + companies.phone via
-  // migration 0083 ; les types Supabase ne sont pas encore regenerees
-  // jusqu a `pnpm db:types` post-push. Cast minimal en attendant.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supaAny = supabase as any;
-  let query = supaAny
+  let query = supabase
     .from('contacts')
     .select(
       `id, email, first_name, last_name, phone, phone_mobile, role, is_primary, language,

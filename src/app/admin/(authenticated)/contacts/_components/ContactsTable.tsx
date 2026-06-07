@@ -50,7 +50,6 @@ export function ContactsTable({ rows }: { rows: ContactListRow[] }) {
                   {row.phone_mobile ? (
                     <a
                       href={`tel:${row.phone_mobile}`}
-                      onClick={(e) => e.stopPropagation()}
                       className="text-md-text-muted hover:text-md-blue mt-0.5 inline-flex items-center gap-1 text-[11px]"
                       title="Appeler le mobile"
                     >
@@ -69,7 +68,6 @@ export function ContactsTable({ rows }: { rows: ContactListRow[] }) {
                   {row.company.phone ? (
                     <a
                       href={`tel:${row.company.phone}`}
-                      onClick={(e) => e.stopPropagation()}
                       className="text-md-text-muted hover:text-md-blue mt-0.5 flex items-center gap-1 text-[11px]"
                       title="Appeler la société"
                     >
