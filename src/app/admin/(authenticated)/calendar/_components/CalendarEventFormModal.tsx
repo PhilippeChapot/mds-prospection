@@ -36,12 +36,17 @@ import {
 } from '@/lib/admin/calendar/actions';
 import {
   CALENDAR_EVENT_TYPES,
-  COMMON_OUTCOMES,
   getEventTypeIcon,
   type CalendarEventRow,
   type CalendarEventType,
   type CalendarEventPriority,
 } from '@/lib/admin/calendar/helpers';
+import {
+  COMMON_OUTCOME_VALUES,
+  getEventTypeShortLabel,
+  getPriorityLabel,
+  getOutcomeLabel,
+} from '@/lib/admin/calendar/i18n-helpers';
 
 interface Props {
   mode: 'create' | 'edit';
@@ -54,18 +59,6 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
 }
-
-const TYPE_LABELS: Record<CalendarEventType, string> = {
-  call_relance: 'Appel',
-  meeting: 'RDV',
-  task: 'Tâche',
-};
-
-const PRIORITY_LABELS: Record<CalendarEventPriority, string> = {
-  low: 'Basse',
-  normal: 'Normale',
-  high: 'Haute',
-};
 
 /**
  * Convertit Date → string compatible <input type="datetime-local">.
@@ -225,7 +218,7 @@ export function CalendarEventFormModal({
                     eventType === t ? 'bg-md-magenta text-white' : 'bg-card hover:bg-muted'
                   }`}
                 >
-                  {getEventTypeIcon(t)} {TYPE_LABELS[t]}
+                  {getEventTypeIcon(t)} {getEventTypeShortLabel(t, 'fr')}
                 </button>
               ))}
             </div>
@@ -317,7 +310,7 @@ export function CalendarEventFormModal({
                     priority === p ? 'bg-md-blue text-white' : 'bg-card hover:bg-muted'
                   }`}
                 >
-                  {PRIORITY_LABELS[p]}
+                  {getPriorityLabel(p, 'fr')}
                 </button>
               ))}
             </div>
@@ -357,9 +350,9 @@ export function CalendarEventFormModal({
                 className="border-md-border h-8 w-full rounded-md border bg-white px-2 text-xs"
               >
                 <option value="">Sans résultat</option>
-                {COMMON_OUTCOMES.map((o) => (
+                {COMMON_OUTCOME_VALUES.map((o) => (
                   <option key={o} value={o}>
-                    {o.replace(/_/g, ' ')}
+                    {getOutcomeLabel(o, 'fr')}
                   </option>
                 ))}
               </select>
