@@ -21,14 +21,35 @@ const StatusSchema = z.enum([
 ]) satisfies z.ZodType<ProspectStatus>;
 
 export async function updateProspectStatusAction(prospectId: string, newStatus: ProspectStatus) {
-  await requireAdminProfile();
+  const profile = await requireAdminProfile();
   const status = StatusSchema.parse(newStatus);
   const supabase = await createSupabaseServerClient();
+
+  // P14.4 : capture statut avant pour audit_log diff.
+  const { data: before } = await supabase
+    .from('prospects')
+    .select('status')
+    .eq('id', prospectId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from('prospects')
     .update({ status, last_activity_at: new Date().toISOString() })
     .eq('id', prospectId);
   if (error) throw new Error(error.message);
+
+  // P14.4 : audit_log pour timeline drawer (auto-entry "statut changé").
+  if (before && before.status !== status) {
+    await supabase.from('audit_log').insert({
+      user_id: profile.id,
+      entity_type: 'prospects',
+      entity_id: prospectId,
+      action: 'update',
+      before: { status: before.status },
+      after: { kind: 'status_changed', status },
+    });
+  }
+
   revalidatePath(`/admin/prospects/${prospectId}`);
   revalidatePath('/admin/prospects');
 
@@ -304,6 +325,19 @@ export async function assignBoothAction(prospectId: string, boothAssignment: str
     })
     .eq('id', prospectId);
   if (error) throw new Error(error.message);
+
+  // P14.4 : audit_log pour timeline drawer.
+  await supabase.from('audit_log').insert({
+    user_id: profile.id,
+    entity_type: 'prospects',
+    entity_id: prospectId,
+    action: 'update',
+    after: {
+      kind: value ? 'booth_assigned' : 'booth_cleared',
+      booth_assignment: value,
+    },
+  });
+
   revalidatePath(`/admin/prospects/${prospectId}`);
 }
 

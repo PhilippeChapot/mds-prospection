@@ -389,6 +389,20 @@ export async function convertSignupToProspect(
     // Le prospect est cree, on ne rollback pas. L'admin peut relier manuellement.
   }
 
+  // P14.4 : audit_log auto-entry "signup web converti" pour timeline drawer.
+  await supabase.from('audit_log').insert({
+    user_id: null,
+    entity_type: 'prospects',
+    entity_id: newProspect.id,
+    action: 'create',
+    after: {
+      kind: 'signup_converted',
+      signup_id: signup.id,
+      email: signup.email,
+      language: signup.language,
+    },
+  });
+
   revalidatePath('/admin/signups');
   revalidatePath(`/admin/signups/${signupId}`);
   revalidatePath('/admin/prospects');

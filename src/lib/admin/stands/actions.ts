@@ -142,6 +142,21 @@ export async function assignStandToProspectAction(
     previousStandId ?? '-',
   );
 
+  // P14.4 : audit_log pour timeline drawer auto-entry "stand attribue".
+  await supabase.from('audit_log').insert({
+    user_id: profile.id,
+    entity_type: 'prospects',
+    entity_id: prospect_id,
+    action: 'update',
+    after: {
+      kind: 'stand_assigned',
+      stand_id,
+      stand_number: stand.number,
+      stand_salle: stand.salle,
+      previous_stand_id: previousStandId,
+    },
+  });
+
   revalidatePath(`/admin/prospects/${prospect_id}`);
   revalidatePath('/admin/emplacements');
   return { ok: true, data: { stand_id, previous_stand_id: previousStandId } };

@@ -24,6 +24,7 @@ import type { TimelineEntry, ProspectContactLite } from '@/lib/admin/prospects/t
 import { NoteForm } from './NoteForm';
 import { TimelineEntryNote } from './TimelineEntry';
 import { CalendarEventEntry } from './CalendarEventEntry';
+import { AutoEntryChip } from './AutoEntryChip';
 
 type Props = {
   prospectId: string;
@@ -108,18 +109,22 @@ export function ProspectTimelineDrawer({
               Aucune entrée pour le moment. Ajoute une première note ci-dessus.
             </p>
           ) : (
-            initialTimeline.map((entry) =>
-              entry.entry_type === 'note' ? (
-                <TimelineEntryNote
-                  key={`note-${entry.id}`}
-                  entry={entry}
-                  currentUserId={currentUserId}
-                  currentUserRole={currentUserRole}
-                />
-              ) : (
-                <CalendarEventEntry key={`ce-${entry.id}`} entry={entry} />
-              ),
-            )
+            initialTimeline.map((entry) => {
+              if (entry.entry_type === 'note') {
+                return (
+                  <TimelineEntryNote
+                    key={`note-${entry.id}`}
+                    entry={entry}
+                    currentUserId={currentUserId}
+                    currentUserRole={currentUserRole}
+                  />
+                );
+              }
+              if (entry.entry_type === 'calendar_event') {
+                return <CalendarEventEntry key={`ce-${entry.id}`} entry={entry} />;
+              }
+              return <AutoEntryChip key={`auto-${entry.id}`} entry={entry} />;
+            })
           )}
         </div>
       </SheetContent>

@@ -11,7 +11,10 @@ import { ActivitiesSection, type ActivityRow } from '@/components/admin/Activiti
 import { ProspectCalendarSection } from './_components/ProspectCalendarSection';
 import { ProspectTimelineDrawer } from './_components/timeline/ProspectTimelineDrawer';
 import { ProspectMainSection } from './_components/timeline/ProspectMainSection';
-import { getProspectTimeline, getProspectContacts } from '@/lib/admin/prospects/timeline-helpers';
+import {
+  getProspectTimelineFull,
+  getProspectContacts,
+} from '@/lib/admin/prospects/timeline-helpers';
 import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { CompanyContactsSection } from '../../companies/[id]/_components/CompanyContactsSection';
 import { listContactsForCompany } from '@/lib/contacts/admin-queries';
@@ -185,9 +188,9 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
   // P5.x.22 — tous les contacts de la societe rattachee
   const companyContacts = company ? await listContactsForCompany(company.id) : [];
 
-  // P14.3 — Timeline drawer : prefetch entries + dropdown contacts.
+  // P14.3 + P14.4 : Timeline drawer = notes + calendar + auto-entries (audit_log).
   const [timelineEntries, timelineContacts] = await Promise.all([
-    getProspectTimeline(id),
+    getProspectTimelineFull(id),
     getProspectContacts(id),
   ]);
 

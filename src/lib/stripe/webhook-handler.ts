@@ -256,6 +256,23 @@ async function markProspectPaid(
     await import('@/lib/affiliates/maybe-record-commission');
   await maybeRecordAffiliateCommission(prospectId);
 
+  // 6. P14.4 : audit_log auto-entry "paiement Stripe recu" pour timeline drawer.
+  await getSupabaseServiceClient()
+    .from('audit_log')
+    .insert({
+      user_id: null,
+      entity_type: 'prospects',
+      entity_id: prospectId,
+      action: 'update',
+      after: {
+        kind: 'stripe_payment_received',
+        payment_type: type,
+        amount_eur: ctx.amountEur,
+        flow: ctx.flow,
+        payment_intent_id: ctx.paymentIntentId ?? null,
+      },
+    });
+
   console.log(
     '%s mark-paid prospect=%s type=%s amount=%d',
     LOG_PREFIX,

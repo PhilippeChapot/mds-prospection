@@ -13,7 +13,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProspectQuickNoteForm } from './ProspectQuickNoteForm';
 
-const createActionMock = vi.fn(async () => ({ ok: true as const, id: 'note-1' }));
+const createActionMock = vi.fn(async (_arg: unknown) => ({ ok: true as const, id: 'note-1' }));
 const refreshMock = vi.fn();
 
 vi.mock('next/navigation', () => ({
@@ -21,7 +21,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/lib/admin/prospects/notes-actions', () => ({
-  createProspectNoteAction: (...args: unknown[]) => createActionMock(...args),
+  createProspectNoteAction: (arg: unknown) => createActionMock(arg),
 }));
 
 describe('ProspectQuickNoteForm (P14.3-bis)', () => {

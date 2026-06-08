@@ -101,7 +101,14 @@ export async function updateProspectAction(
     }
   }
 
-  // 2. Update prospect
+  // 2. Capture before pour audit_log diff (P14.4 timeline drawer)
+  const { data: before } = await supabase
+    .from('prospects')
+    .select('pack_code, status, owner_id, estimated_amount')
+    .eq('id', data.prospect_id)
+    .maybeSingle();
+
+  // 3. Update prospect
   const { error: prospectErr } = await supabase
     .from('prospects')
     .update({
@@ -115,6 +122,38 @@ export async function updateProspectAction(
     .eq('id', data.prospect_id);
   if (prospectErr) {
     return { error: prospectErr.message };
+  }
+
+  // P14.4 : audit_log un seul row par "edit prospect" avec les champs
+  // diffes. Le mapper TS regardera `after.kind` pour discriminer.
+  if (before) {
+    const diff: Record<string, unknown> = { kind: 'prospect_edited' };
+    if (before.owner_id !== data.owner_id) {
+      diff.owner_changed = { from: before.owner_id, to: data.owner_id };
+    }
+    if (before.status !== data.status) {
+      diff.status_changed = { from: before.status, to: data.status };
+    }
+    if (before.pack_code !== data.pack_code) {
+      diff.pack_changed = { from: before.pack_code, to: data.pack_code };
+    }
+    // Si quelque chose a change (au-dela de kind), on logge.
+    if (Object.keys(diff).length > 1) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sb = supabase as any;
+      await sb.from('audit_log').insert({
+        user_id: profile.id,
+        entity_type: 'prospects',
+        entity_id: data.prospect_id,
+        action: 'update',
+        before: {
+          owner_id: before.owner_id,
+          status: before.status,
+          pack_code: before.pack_code,
+        },
+        after: diff,
+      });
+    }
   }
 
   revalidatePath(`/admin/prospects/${data.prospect_id}`);
