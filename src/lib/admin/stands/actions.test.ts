@@ -117,6 +117,14 @@ function mockEnv() {
             }),
           };
         }
+        if (table === 'audit_log') {
+          // P14.4 : assignStandToProspectAction logge un audit_log fire-and-forget
+          // (timeline drawer auto-entry). Mock no-op, on n a pas besoin de
+          // vérifier le contenu dans les tests stands.
+          return {
+            insert: () => Promise.resolve({ error: null }),
+          };
+        }
         return {};
       },
     }),
