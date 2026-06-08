@@ -10,12 +10,13 @@ import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { LinkedProspectsTable, type LinkedProspect } from '@/components/admin/LinkedProspectsTable';
 import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { DeleteCompanyButton } from './DeleteButton';
+import { MergeCompanyButton } from './MergeButton';
 import { updateCompanyNotesAction } from './actions';
 import { CompanyContactsSection } from './_components/CompanyContactsSection';
 import { SellsyClientLinkSection } from './_components/SellsyClientLinkSection';
 import { listContactsForCompany } from '@/lib/contacts/admin-queries';
 import type { PoleCode } from '@/lib/design-tokens';
-import { hasAdminAccess } from '@/lib/auth/role-helpers';
+import { hasAdminAccess, isSuperAdmin } from '@/lib/auth/role-helpers';
 
 export const metadata = { title: 'Fiche societe' };
 
@@ -191,6 +192,9 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
                   Editer
                 </Link>
               </Button>
+              {isSuperAdmin(profile.role) ? (
+                <MergeCompanyButton sourceId={id} sourceName={company.name} />
+              ) : null}
               <DeleteCompanyButton companyId={id} prospectCount={linkedProspects.length} />
             </>
           ) : null}
