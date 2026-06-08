@@ -32,6 +32,9 @@ type Props = {
   contacts: ProspectContactLite[];
   currentUserId: string;
   currentUserRole: 'admin' | 'sales' | 'super_admin';
+  /** P14.3-bis : si fournis, le composant est CONTROLLED (no trigger interne). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export function ProspectTimelineDrawer({
@@ -41,26 +44,37 @@ export function ProspectTimelineDrawer({
   contacts,
   currentUserId,
   currentUserRole,
+  open: openProp,
+  onOpenChange,
 }: Props) {
-  const [open, setOpen] = useState(false);
+  // Mode controlled si open/onOpenChange fournis (P14.3-bis: integration
+  // ProspectMainSection share state avec QuickNoteForm). Sinon: state interne
+  // backward-compat (header button du prospect detail page).
+  const isControlled = openProp !== undefined;
+  const [openInternal, setOpenInternal] = useState(false);
+  const open = isControlled ? openProp : openInternal;
+  const setOpen = isControlled ? (onOpenChange ?? (() => undefined)) : setOpenInternal;
+
   const noteCount = initialTimeline.filter((e) => e.entry_type === 'note').length;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <button
-          type="button"
-          className="bg-card border-md-border hover:border-md-blue text-md-text inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold shadow-sm transition-colors"
-        >
-          <MessageSquareText className="size-4" aria-hidden />
-          Timeline
-          {noteCount > 0 ? (
-            <span className="bg-md-blue-light text-md-blue-dark rounded-full px-1.5 text-[10px] font-bold">
-              {noteCount}
-            </span>
-          ) : null}
-        </button>
-      </SheetTrigger>
+      {!isControlled ? (
+        <SheetTrigger asChild>
+          <button
+            type="button"
+            className="bg-card border-md-border hover:border-md-blue text-md-text inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold shadow-sm transition-colors"
+          >
+            <MessageSquareText className="size-4" aria-hidden />
+            Timeline
+            {noteCount > 0 ? (
+              <span className="bg-md-blue-light text-md-blue-dark rounded-full px-1.5 text-[10px] font-bold">
+                {noteCount}
+              </span>
+            ) : null}
+          </button>
+        </SheetTrigger>
+      ) : null}
 
       <SheetContent
         side="right"

@@ -7,11 +7,10 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { PoleBadge } from '@/components/admin/PoleBadge';
 import { StatusEditor } from '@/components/admin/StatusEditor';
-import { NotesEditor } from '@/components/admin/NotesEditor';
-import { updateProspectNotesAction } from './actions';
 import { ActivitiesSection, type ActivityRow } from '@/components/admin/ActivitiesSection';
 import { ProspectCalendarSection } from './_components/ProspectCalendarSection';
 import { ProspectTimelineDrawer } from './_components/timeline/ProspectTimelineDrawer';
+import { ProspectMainSection } from './_components/timeline/ProspectMainSection';
 import { getProspectTimeline, getProspectContacts } from '@/lib/admin/prospects/timeline-helpers';
 import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { CompanyContactsSection } from '../../companies/[id]/_components/CompanyContactsSection';
@@ -504,12 +503,15 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           </dl>
         </Section>
 
-        {/* Notes */}
+        {/* Notes (P14.3-bis : timeline drawer share state via ProspectMainSection) */}
         <Section title="Notes" full>
-          <NotesEditor
-            entityId={id}
-            initialNotes={prospect.notes ?? ''}
-            action={updateProspectNotesAction}
+          <ProspectMainSection
+            prospectId={id}
+            companyName={company?.name ?? 'ce prospect'}
+            initialTimeline={timelineEntries}
+            contacts={timelineContacts}
+            currentUserId={profile.id}
+            currentUserRole={profile.role}
           />
         </Section>
       </div>
