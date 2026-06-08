@@ -44,13 +44,23 @@ const dryRun = args.includes('--dry-run');
 const fileIdx = args.indexOf('--file');
 const file = fileIdx >= 0 ? args[fileIdx + 1] : DEFAULT_FILE;
 
-const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!url || !key) {
-  console.error('SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY requis dans .env.local');
-  process.exit(1);
+/**
+ * Hotfix CI : init Supabase lazy via getter au lieu de top-level. Les
+ * tests vitest importent parseSocietes/parseContacts depuis ce script
+ * (pure functions xlsx parsing) — en CI les env vars Supabase ne sont
+ * pas définies, donc le top-level `process.exit(1)` faisait tomber la
+ * suite de tests. Lazy init = exit déclenché seulement au vrai run du
+ * script (main()), pas au load module.
+ */
+function getSupabaseOrExit(): ReturnType<typeof createClient> {
+  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    console.error('SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY requis dans .env.local');
+    process.exit(1);
+  }
+  return createClient(url, key, { auth: { persistSession: false } });
 }
-const supabase = createClient(url, key, { auth: { persistSession: false } });
 
 // ─── Helpers ───────────────────────────────────────────────────────────
 
@@ -176,6 +186,9 @@ interface Stats {
 // ─── Run principal ─────────────────────────────────────────────────────
 
 async function main() {
+  // Hotfix CI : init Supabase lazy (cf. getSupabaseOrExit).
+  const supabase = getSupabaseOrExit();
+
   console.log(dryRun ? '🔍 DRY RUN — aucun UPDATE DB' : '⚠️  LIVE RUN — UPDATE DB');
   console.log(`📂 file = ${file}`);
   console.log(`🏷️  source tag = ${SOURCE_TAG}\n`);
