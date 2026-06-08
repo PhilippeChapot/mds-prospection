@@ -216,8 +216,8 @@ function pushRow(results: SellsyClientLite[], c: SellsyCompanyRow): void {
  *   2. filters: { name: query } brute (cas où Sellsy accepte la query telle quelle).
  *   3. filters: { name: normalizedQuery } (sans tirets, lower) — couvre
  *      "Win-group" → match "Win-Group Software SAS" via la similarité Sellsy.
- *   4. Si toujours rien : list 200 companies + filter JS substring normalisée
- *      (fallback robuste pour les cas où Sellsy ne tolère pas les variantes).
+ *   4. Si aucun résultat ne contient qNorm en substring (faux positifs Sellsy) :
+ *      list 200 companies + filter JS substring normalisée.
  *
  * Retourne max 10 résultats normalisés (SellsyClientLite). Best-effort sur
  * erreurs Sellsy : retourne ce qui a été trouvé jusque-là.
@@ -245,6 +245,7 @@ export async function searchSellsyClientsAction(
     } catch {
       // skip
     }
+    if (results.length > 0) return results.slice(0, 10);
   }
 
   // ── 2. Search par nom brut ──
@@ -271,28 +272,28 @@ export async function searchSellsyClientsAction(
     }
   }
 
-  // ── 4. Fallback list + filter JS si toujours rien ──
-  // Couvre "Win-group" → "Win-Group Software SAS" si Sellsy n'a matché
-  // ni la query brute ni la normalisée. On liste les 200 premières companies
-  // (ordre Sellsy natif, ce qui peut louper si > 200 — mais c'est mieux que
-  // "Aucun résultat" en cas d'échec total des filtres).
-  if (results.length === 0) {
+  // Sellsy fuzzy search returns false positives — keep only results that
+  // actually contain qNorm as substring before deciding to fall back.
+  const realMatches = results.filter((r) => normalizeForMatch(r.name).includes(qNorm));
+
+  // ── 4. Fallback list + filter JS si aucun vrai match ──
+  if (realMatches.length === 0) {
     try {
       const res = await sellsyFetch<{ data: SellsyCompanyRow[] }>('/companies/search?limit=200', {
         method: 'POST',
         body: JSON.stringify({ filters: {} }),
       });
-      const matches = (res.data ?? []).filter((c) => {
-        const nameNorm = normalizeForMatch(c.name ?? '');
-        return nameNorm.includes(qNorm);
-      });
-      for (const c of matches) pushRow(results, c);
+      const fallback: SellsyClientLite[] = [];
+      for (const c of res.data ?? []) {
+        if (normalizeForMatch(c.name ?? '').includes(qNorm)) pushRow(fallback, c);
+      }
+      return fallback.slice(0, 10);
     } catch {
-      // skip
+      return [];
     }
   }
 
-  return results.slice(0, 10);
+  return realMatches.slice(0, 10);
 }
 
 // ─── List All Sellsy clients (drawer "Voir tout") ─────────────────────

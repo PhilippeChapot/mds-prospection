@@ -190,6 +190,45 @@ describe('searchSellsyClientsAction (P6.x.SellsyDedupClient)', () => {
     expect(r[0].siren).toBe('123456789');
   });
 
+  it('HOTFIX3 — "Win-group" trouve Win-Group SAS même quand passes 2/3 retournent des faux positifs', async () => {
+    mockEnv();
+    const { sellsyFetch } = await import('@/lib/sellsy/client');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mock = sellsyFetch as any;
+    // Passes 2/3 : Sellsy retourne des faux positifs (noms qui ne contiennent
+    // pas "win group" en substring) → le filter JS doit les écarter et
+    // déclencher le fallback pass 4.
+    mock
+      .mockResolvedValueOnce({ data: [{ id: 999, name: 'Winco Corp', siren: null, email: null }] })
+      .mockResolvedValueOnce({ data: [{ id: 998, name: 'Win Systems', siren: null, email: null }] })
+      .mockResolvedValueOnce({
+        data: [
+          { id: 33688, name: 'Win-Group Software SAS', siren: null, email: null },
+          { id: 99, name: 'Autre Société', siren: null, email: null },
+        ],
+      });
+    const { searchSellsyClientsAction } = await import('./sellsy-link-actions');
+    const r = await searchSellsyClientsAction({ q: 'Win-group' });
+    expect(r.some((c) => c.id === '33688')).toBe(true);
+    expect(r.some((c) => c.id === '999')).toBe(false);
+    expect(r.some((c) => c.id === '998')).toBe(false);
+  });
+
+  it('HOTFIX3 — "Acast" qui matche Sellsy directement → pas de fallback list+200', async () => {
+    mockEnv();
+    const { sellsyFetch } = await import('@/lib/sellsy/client');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mock = sellsyFetch as any;
+    mock.mockResolvedValueOnce({
+      data: [{ id: 100, name: 'Acast France', siren: null, email: null }],
+    });
+    const { searchSellsyClientsAction } = await import('./sellsy-link-actions');
+    const r = await searchSellsyClientsAction({ q: 'Acast' });
+    expect(r.some((c) => c.id === '100')).toBe(true);
+    // "acast" normalisé === "acast" → pass 3 skipée ; realMatches non-vide → pas de pass 4
+    expect(mock.mock.calls).toHaveLength(1);
+  });
+
   it('HOTFIX2 BUG 1 — "Win-group" match "Win-Group Software SAS" via fallback list+JS', async () => {
     mockEnv();
     const { sellsyFetch } = await import('@/lib/sellsy/client');
