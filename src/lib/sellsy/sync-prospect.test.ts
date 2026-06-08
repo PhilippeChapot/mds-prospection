@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 const mockSupabaseClient = {
   prospect: null as Record<string, unknown> | null,
   updates: [] as Array<{ table: string; values: Record<string, unknown>; id?: string }>,
+  inserts: [] as Array<{ table: string; values: Record<string, unknown> }>,
   from(table: string) {
     return {
       select: () => ({
@@ -23,6 +24,10 @@ const mockSupabaseClient = {
           return { error: null };
         },
       }),
+      insert: async (values: Record<string, unknown>) => {
+        mockSupabaseClient.inserts.push({ table, values });
+        return { error: null };
+      },
     };
   },
 };
@@ -110,6 +115,7 @@ describe('syncProspectToSellsy', () => {
   beforeEach(() => {
     mockSupabaseClient.prospect = null;
     mockSupabaseClient.updates = [];
+    mockSupabaseClient.inserts = [];
     mockSellsyFetch.mockReset();
     // Reset le cache du step pipeline pour que chaque test soit isole.
     _resetSellsyPipelineCacheForTests();

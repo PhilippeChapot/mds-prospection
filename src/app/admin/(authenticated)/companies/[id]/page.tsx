@@ -12,6 +12,7 @@ import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { DeleteCompanyButton } from './DeleteButton';
 import { updateCompanyNotesAction } from './actions';
 import { CompanyContactsSection } from './_components/CompanyContactsSection';
+import { SellsyClientLinkSection } from './_components/SellsyClientLinkSection';
 import { listContactsForCompany } from '@/lib/contacts/admin-queries';
 import type { PoleCode } from '@/lib/design-tokens';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
@@ -35,6 +36,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       `
       id, name, primary_domain, alternate_domains, country, category, was_prs_2026_exhibitor, external_event_tags, notes,
       raw_address, city, postal_code, website, phone,
+      sellsy_id, siren,
       created_at, updated_at,
       pole:poles(code, name_fr)
     `,
@@ -258,6 +260,15 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
             )}
           </div>
         )}
+      </Section>
+
+      {/* P6.x.SellsyDedupClient — lien manuel Sellsy */}
+      <Section title="Synchronisation Sellsy">
+        <SellsyClientLinkSection
+          companyId={id}
+          currentSellsyId={(company as { sellsy_id?: string | null }).sellsy_id ?? null}
+          companyMdsName={company.name}
+        />
       </Section>
 
       {/* Contacts de la societe (P5.x.22) */}

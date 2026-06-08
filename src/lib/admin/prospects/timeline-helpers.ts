@@ -31,6 +31,10 @@ export type AutoEntryKind =
   | 'quote_emit_success'
   | 'stripe_payment_received'
   | 'signup_converted'
+  // P6.x.SellsyDedupClient
+  | 'sellsy_client_resolved'
+  | 'company_sellsy_link_set'
+  | 'company_sellsy_link_removed'
   | 'unknown';
 
 export type TimelineActor = {
@@ -260,6 +264,27 @@ export function mapAuditLogToAutoEntry(row: AuditLogRow): {
   if (kindHint === 'quote_emit_success') {
     const num = (after as { devis_number?: string }).devis_number ?? '';
     return { kind: 'quote_emit_success', content: `Devis Sellsy émis${num ? ` · ${num}` : ''}` };
+  }
+  if (kindHint === 'sellsy_client_resolved') {
+    const wasExisting = (after as { was_existing?: boolean }).was_existing;
+    const source = (after as { source?: string }).source ?? 'unknown';
+    return {
+      kind: 'sellsy_client_resolved',
+      content: wasExisting
+        ? `Client Sellsy retrouvé (source: ${source})`
+        : 'Nouveau client Sellsy créé',
+    };
+  }
+  if (kindHint === 'company_sellsy_link_set') {
+    const sname = (after as { sellsy_name?: string }).sellsy_name ?? '';
+    const sid = (after as { sellsy_id?: string }).sellsy_id ?? '?';
+    return {
+      kind: 'company_sellsy_link_set',
+      content: `Client Sellsy lié manuellement${sname ? ` : ${sname}` : ''} (ID ${sid})`,
+    };
+  }
+  if (kindHint === 'company_sellsy_link_removed') {
+    return { kind: 'company_sellsy_link_removed', content: 'Client Sellsy délié' };
   }
 
   // 2. Pattern P14.4 "prospect_edited" : un seul audit_log avec sub-changes.

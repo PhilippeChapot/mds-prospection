@@ -44,6 +44,8 @@ interface ProspectForSync {
     name: string;
     primary_domain: string | null;
     sellsy_id: string | null;
+    // P6.x.SellsyDedupClient — SIREN = match prioritaire (unique en FR).
+    siren: string | null;
   };
   contact: {
     id: string;
@@ -54,6 +56,17 @@ interface ProspectForSync {
     sellsy_contact_id: string | null;
   } | null;
 }
+
+/**
+ * P6.x.SellsyDedupClient — discriminator du chemin de résolution Sellsy.
+ * Loggé dans audit_log pour permettre debug / cleanup des doublons existants.
+ */
+export type SellsyClientResolveSource =
+  | 'cache' // companies.sellsy_id déjà set
+  | 'siren' // match Sellsy par SIREN (priorité 1)
+  | 'name_exact' // match Sellsy par nom strict
+  | 'name_prefix' // match Sellsy par prefix 2-mots (P4.M2)
+  | 'created'; // create nouveau (aucun match)
 
 // Sellsy V2 response shapes (minimaux — uniquement les champs qu'on lit).
 interface SellsySearchResponse<T> {
@@ -117,7 +130,7 @@ export async function syncProspectToSellsy(prospectId: string): Promise<void> {
     .select(
       `
       id, is_test, estimated_amount, source_detail, sellsy_opportunity_id,
-      company:companies!inner(id, name, primary_domain, sellsy_id),
+      company:companies!inner(id, name, primary_domain, sellsy_id, siren),
       contact:contacts(id, first_name, last_name, email, phone, sellsy_contact_id)
       `,
     )
@@ -152,6 +165,7 @@ export async function syncProspectToSellsy(prospectId: string): Promise<void> {
       name: company.name,
       primary_domain: company.primary_domain,
       sellsy_id: company.sellsy_id,
+      siren: company.siren ?? null,
     },
     contact: contact
       ? {
@@ -234,14 +248,32 @@ async function runSyncSteps(prospect: ProspectForSync): Promise<void> {
   const supabase = getSupabaseServiceClient();
   const nowIso = new Date().toISOString();
 
-  // ----- Step 3 : Company -----
+  // ----- Step 3 : Company (P6.x.SellsyDedupClient — find-or-create avec source tracking) -----
   let companySellsyId = prospect.company.sellsy_id;
+  let resolveSource: SellsyClientResolveSource = 'cache';
   if (!companySellsyId) {
-    companySellsyId = await findOrCreateSellsyCompany(prospect.company, prospect.company.id);
+    const r = await findOrCreateSellsyCompany(prospect.company, prospect.company.id);
+    companySellsyId = r.sellsy_id;
+    resolveSource = r.source;
     await supabase
       .from('companies')
       .update({ sellsy_id: companySellsyId, last_synced_sellsy_at: nowIso })
       .eq('id', prospect.company.id);
+
+    // P6.x.SellsyDedupClient — audit_log timeline drawer P14.4 :
+    // tracé pour debug doublons + visible côté admin sur fiche prospect.
+    await supabase.from('audit_log').insert({
+      user_id: null,
+      entity_type: 'prospects',
+      entity_id: prospect.id,
+      action: 'update',
+      after: {
+        kind: 'sellsy_client_resolved',
+        sellsy_company_id: companySellsyId,
+        was_existing: resolveSource !== 'created',
+        source: resolveSource,
+      },
+    });
   } else {
     console.log(
       '%s company-existing prospect_id=%s sellsy_id=%s',
@@ -305,20 +337,37 @@ async function runSyncSteps(prospect: ProspectForSync): Promise<void> {
 async function findOrCreateSellsyCompany(
   company: ProspectForSync['company'],
   mdsCompanyId: string,
-): Promise<string> {
+): Promise<{ sellsy_id: string; source: SellsyClientResolveSource }> {
   const fullName = company.name.trim();
 
-  // ----- 1. Match exact case-insensitive sur nom complet -----
+  // ----- 1. P6.x.SellsyDedupClient — Match SIREN (prioritaire si dispo) -----
+  // SIREN = identifiant légal unique en FR : si match, zero faux positif.
+  // À l'inverse, si la company MDS n'a pas de SIREN renseigné (cas prospect
+  // hors-FR ou data non enrichie), on tombe direct sur le matcher name.
+  if (company.siren && company.siren.length >= 9) {
+    const sirenMatch = await searchSellsyCompanyBySiren(company.siren);
+    if (sirenMatch) {
+      console.log(
+        '%s company-found-by-siren siren=%s sellsy_id=%d',
+        LOG_PREFIX,
+        company.siren,
+        sirenMatch.id,
+      );
+      return { sellsy_id: String(sirenMatch.id), source: 'siren' };
+    }
+  }
+
+  // ----- 2. Match exact case-insensitive sur nom complet -----
   const exactCandidates = await searchSellsyCompaniesByName(fullName);
   const exact = exactCandidates.find(
     (c) => normalizeName(c.name ?? '') === normalizeName(fullName),
   );
   if (exact) {
     console.log('%s company-found-exact name=%s sellsy_id=%d', LOG_PREFIX, fullName, exact.id);
-    return String(exact.id);
+    return { sellsy_id: String(exact.id), source: 'name_exact' };
   }
 
-  // ----- 2. Match prefix sur les 2 premiers mots -----
+  // ----- 3. Match prefix sur les 2 premiers mots -----
   const words = fullName.split(/\s+/).filter(Boolean);
   if (words.length >= 2) {
     const prefix = words.slice(0, 2).join(' ');
@@ -345,7 +394,7 @@ async function findOrCreateSellsyCompany(
         matches[0].name,
         matches[0].id,
       );
-      return String(matches[0].id);
+      return { sellsy_id: String(matches[0].id), source: 'name_prefix' };
     }
 
     if (matches.length > 1) {
@@ -366,7 +415,7 @@ async function findOrCreateSellsyCompany(
     }
   }
 
-  // ----- 3. CREATE -----
+  // ----- 4. CREATE -----
   const companyPayload = { name: fullName, type: 'client' };
   let newId: number;
   try {
@@ -394,7 +443,57 @@ async function findOrCreateSellsyCompany(
     status: 'success',
     payload: { sellsy_id: newId, name: fullName },
   });
-  return String(newId);
+  return { sellsy_id: String(newId), source: 'created' };
+}
+
+/**
+ * P6.x.SellsyDedupClient — search Sellsy company par SIREN.
+ *
+ * Quirks Sellsy V2 confirmes via curl :
+ *   - `filters` est REQUIS au top level du body.
+ *   - Champ `siret` ou `siren` dans filters — on tente `siren` en premier
+ *     (cohérent avec le champ MDS), Sellsy V2 supporte les 2 (priorise
+ *     siret pour les établissements secondaires).
+ *
+ * Retourne le 1er match (limit 1) ou null. Pas de fuzzy : SIREN est exact.
+ *
+ * Doctrine [[reference_sellsy_v2_quirks]] : si Sellsy renvoie 400 "Ce champ
+ * est inconnu" sur filters.siren, fallback sur filters.siret (test live à
+ * faire — V1 livre les 2 noms de champs en best-effort).
+ */
+async function searchSellsyCompanyBySiren(siren: string): Promise<SellsyCompany | null> {
+  // Tente d'abord siren, puis siret en fallback (couvre les 2 noms de champs
+  // possibles selon la version Sellsy V2). Best-effort : silencieux sur 400.
+  const filtersToTry: Array<Record<string, string>> = [{ siren }, { siret: siren }];
+  for (const filters of filtersToTry) {
+    try {
+      const res = await sellsyFetch<SellsySearchResponse<SellsyCompany>>(
+        '/companies/search?limit=1',
+        {
+          method: 'POST',
+          body: JSON.stringify({ filters }),
+        },
+      );
+      if (res.data && res.data.length > 0) return res.data[0];
+    } catch (err) {
+      // 400 "champ inconnu" → on essaie le suivant. Autre 400/500 → log et skip.
+      if (err instanceof SellsyError && err.status === 400) {
+        const body = err.body as { error?: { message?: string } } | undefined;
+        const msg = body?.error?.message ?? '';
+        if (/champ.*inconnu/i.test(msg) || /unknown field/i.test(msg)) {
+          continue;
+        }
+      }
+      console.warn(
+        '%s siren-search-failed siren=%s msg=%s',
+        LOG_PREFIX,
+        siren,
+        err instanceof Error ? err.message : String(err),
+      );
+      return null;
+    }
+  }
+  return null;
 }
 
 /**
