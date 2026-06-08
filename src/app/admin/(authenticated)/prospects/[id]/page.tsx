@@ -11,6 +11,8 @@ import { NotesEditor } from '@/components/admin/NotesEditor';
 import { updateProspectNotesAction } from './actions';
 import { ActivitiesSection, type ActivityRow } from '@/components/admin/ActivitiesSection';
 import { ProspectCalendarSection } from './_components/ProspectCalendarSection';
+import { ProspectTimelineDrawer } from './_components/timeline/ProspectTimelineDrawer';
+import { getProspectTimeline, getProspectContacts } from '@/lib/admin/prospects/timeline-helpers';
 import { AuditTimeline, type AuditRow } from '@/components/admin/AuditTimeline';
 import { CompanyContactsSection } from '../../companies/[id]/_components/CompanyContactsSection';
 import { listContactsForCompany } from '@/lib/contacts/admin-queries';
@@ -184,6 +186,12 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
   // P5.x.22 — tous les contacts de la societe rattachee
   const companyContacts = company ? await listContactsForCompany(company.id) : [];
 
+  // P14.3 — Timeline drawer : prefetch entries + dropdown contacts.
+  const [timelineEntries, timelineContacts] = await Promise.all([
+    getProspectTimeline(id),
+    getProspectContacts(id),
+  ]);
+
   // P5.x.23 — alerte SIREN ambigu pour ce prospect (si présente, non résolue)
   const { data: sirenAlertRaw } = await supabase
     .from('admin_alerts')
@@ -252,6 +260,14 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <ProspectTimelineDrawer
+            prospectId={id}
+            companyName={company?.name ?? 'ce prospect'}
+            initialTimeline={timelineEntries}
+            contacts={timelineContacts}
+            currentUserId={profile.id}
+            currentUserRole={profile.role}
+          />
           {hasAdminAccess(profile.role) && (
             <IsTestToggle prospectId={id} isTest={prospect.is_test} />
           )}

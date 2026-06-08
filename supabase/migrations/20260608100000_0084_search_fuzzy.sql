@@ -19,19 +19,26 @@
 -- via SET LOCAL pg_trgm.similarity_threshold cote query si besoin.
 
 -- ─── Extensions ───
+-- Supabase install pg_trgm + unaccent dans le schema `extensions`, deja
+-- present dans le search_path du role postgres. On ne prefixe donc PAS
+-- gin_trgm_ops / unaccent (sinon ERROR 42704 "operator class
+-- public.gin_trgm_ops does not exist").
 create extension if not exists unaccent;
 create extension if not exists pg_trgm;
 
 -- ─── Wrapper IMMUTABLE pour unaccent (requis pour indexer) ───
 -- L unaccent natif est STABLE (depend du dictionnaire). On wrap pour
 -- forcer IMMUTABLE (acceptable car unaccent ne change pas en pratique).
+-- Le SET search_path est defensif : il fige la resolution dans le corps
+-- de la fonction au cas ou un appelant aurait un search_path different.
 create or replace function public.f_unaccent(text)
   returns text
-  as $$ select public.unaccent('public.unaccent'::regdictionary, $1) $$
+  as $$ select unaccent('unaccent'::regdictionary, $1) $$
   language sql
   immutable
   parallel safe
-  strict;
+  strict
+  set search_path = extensions, public, pg_temp;
 
 -- ─── Indexes GIN trigram ───
 -- Permet ILIKE rapide + operator % (similarity) sur ces colonnes.
@@ -40,25 +47,25 @@ create or replace function public.f_unaccent(text)
 
 create index if not exists idx_companies_name_trgm
   on public.companies
-  using gin (public.f_unaccent(lower(name)) public.gin_trgm_ops);
+  using gin (public.f_unaccent(lower(name)) gin_trgm_ops);
 
 create index if not exists idx_companies_website_trgm
   on public.companies
-  using gin (public.f_unaccent(lower(coalesce(website, ''))) public.gin_trgm_ops)
+  using gin (public.f_unaccent(lower(coalesce(website, ''))) gin_trgm_ops)
   where website is not null;
 
 create index if not exists idx_companies_primary_domain_trgm
   on public.companies
-  using gin (public.f_unaccent(lower(coalesce(primary_domain, ''))) public.gin_trgm_ops)
+  using gin (public.f_unaccent(lower(coalesce(primary_domain, ''))) gin_trgm_ops)
   where primary_domain is not null;
 
 create index if not exists idx_contacts_full_name_trgm
   on public.contacts
-  using gin (public.f_unaccent(lower(coalesce(first_name, '') || ' ' || coalesce(last_name, ''))) public.gin_trgm_ops);
+  using gin (public.f_unaccent(lower(coalesce(first_name, '') || ' ' || coalesce(last_name, ''))) gin_trgm_ops);
 
 create index if not exists idx_contacts_email_trgm
   on public.contacts
-  using gin (public.f_unaccent(lower(email)) public.gin_trgm_ops);
+  using gin (public.f_unaccent(lower(email)) gin_trgm_ops);
 
 -- ─── RPC : search_companies_fuzzy ───
 -- Retourne exact_matches (substring insensible) + suggestions (trgm).

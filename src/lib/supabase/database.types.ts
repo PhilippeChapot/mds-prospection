@@ -849,6 +849,7 @@ export type Database = {
           notes: string | null;
           parent_company: string | null;
           phone: string | null;
+          phone_source: string | null;
           pole_classified_at: string | null;
           pole_classified_by: Database['public']['Enums']['classification_source'] | null;
           pole_confidence: number | null;
@@ -908,6 +909,7 @@ export type Database = {
           notes?: string | null;
           parent_company?: string | null;
           phone?: string | null;
+          phone_source?: string | null;
           pole_classified_at?: string | null;
           pole_classified_by?: Database['public']['Enums']['classification_source'] | null;
           pole_confidence?: number | null;
@@ -967,6 +969,7 @@ export type Database = {
           notes?: string | null;
           parent_company?: string | null;
           phone?: string | null;
+          phone_source?: string | null;
           pole_classified_at?: string | null;
           pole_classified_by?: Database['public']['Enums']['classification_source'] | null;
           pole_confidence?: number | null;
@@ -1422,6 +1425,8 @@ export type Database = {
           linkedin_url: string | null;
           marketing_consent: boolean;
           phone: string | null;
+          phone_mobile: string | null;
+          phone_mobile_source: string | null;
           role: string | null;
           sellsy_contact_id: string | null;
         };
@@ -1449,6 +1454,8 @@ export type Database = {
           linkedin_url?: string | null;
           marketing_consent?: boolean;
           phone?: string | null;
+          phone_mobile?: string | null;
+          phone_mobile_source?: string | null;
           role?: string | null;
           sellsy_contact_id?: string | null;
         };
@@ -1476,6 +1483,8 @@ export type Database = {
           linkedin_url?: string | null;
           marketing_consent?: boolean;
           phone?: string | null;
+          phone_mobile?: string | null;
+          phone_mobile_source?: string | null;
           role?: string | null;
           sellsy_contact_id?: string | null;
         };
@@ -2202,6 +2211,71 @@ export type Database = {
             columns: ['season_id'];
             isOneToOne: false;
             referencedRelation: 'seasons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      prospect_notes: {
+        Row: {
+          author_user_id: string | null;
+          contact_id: string | null;
+          content: string;
+          created_at: string;
+          deleted_at: string | null;
+          deleted_by: string | null;
+          id: string;
+          prospect_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          author_user_id?: string | null;
+          contact_id?: string | null;
+          content: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
+          id?: string;
+          prospect_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          author_user_id?: string | null;
+          contact_id?: string | null;
+          content?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
+          id?: string;
+          prospect_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'prospect_notes_author_user_id_fkey';
+            columns: ['author_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'prospect_notes_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'prospect_notes_deleted_by_fkey';
+            columns: ['deleted_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'prospect_notes_prospect_id_fkey';
+            columns: ['prospect_id'];
+            isOneToOne: false;
+            referencedRelation: 'prospects';
             referencedColumns: ['id'];
           },
         ];
@@ -3380,9 +3454,25 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      prospect_timeline_view: {
+        Row: {
+          actor_user_id: string | null;
+          calendar_event_end: string | null;
+          calendar_event_start: string | null;
+          calendar_event_status: string | null;
+          calendar_event_type: string | null;
+          contact_id: string | null;
+          content: string | null;
+          entry_type: string | null;
+          event_at: string | null;
+          id: string | null;
+          prospect_id: string | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
+      f_unaccent: { Args: { '': string }; Returns: string };
       fn_detect_event_j1_reminder: { Args: never; Returns: number };
       fn_detect_event_j30_reminder: { Args: never; Returns: number };
       fn_detect_event_j7_reminder: { Args: never; Returns: number };
@@ -3401,6 +3491,53 @@ export type Database = {
       };
       is_admin: { Args: never; Returns: boolean };
       is_admin_or_sales: { Args: never; Returns: boolean };
+      search_companies_fuzzy: {
+        Args: {
+          p_limit_exact?: number;
+          p_limit_fuzzy?: number;
+          p_query: string;
+        };
+        Returns: {
+          id: string;
+          match_type: string;
+          name: string;
+          pole_id: string;
+          primary_domain: string;
+          score: number;
+          website: string;
+        }[];
+      };
+      search_contacts_fuzzy: {
+        Args: {
+          p_limit_exact?: number;
+          p_limit_fuzzy?: number;
+          p_query: string;
+        };
+        Returns: {
+          company_id: string;
+          email: string;
+          first_name: string;
+          id: string;
+          last_name: string;
+          match_type: string;
+          score: number;
+        }[];
+      };
+      search_prospects_fuzzy: {
+        Args: {
+          p_limit_exact?: number;
+          p_limit_fuzzy?: number;
+          p_query: string;
+        };
+        Returns: {
+          company_id: string;
+          company_name: string;
+          id: string;
+          match_type: string;
+          score: number;
+          status: string;
+        }[];
+      };
       unaccent: { Args: { '': string }; Returns: string };
     };
     Enums: {
