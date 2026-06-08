@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ProspectsListClient } from './ProspectsListClient';
 import { SavedViewsBar } from '@/components/admin/SavedViewsBar';
+import { SearchSuggestions } from '@/components/admin/SearchSuggestions';
+import { searchProspectsFuzzy } from '@/lib/admin/search/fuzzy-search';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import {
   PROSPECT_STATUSES,
@@ -52,14 +54,19 @@ export default async function ProspectsListPage({ searchParams }: { searchParams
   const page = Math.max(1, Number(params.page ?? '1'));
   const q = params.q?.trim() ?? '';
 
-  const { rows, total } = await listProspectsPaginated({
-    q: q || undefined,
-    status,
-    poleCode,
-    ownerId: ownerFilter || null,
-    page,
-    perPage: PER_PAGE,
-  });
+  const [{ rows, total }, fuzzyResults] = await Promise.all([
+    listProspectsPaginated({
+      q: q || undefined,
+      status,
+      poleCode,
+      ownerId: ownerFilter || null,
+      page,
+      perPage: PER_PAGE,
+    }),
+    q.length >= 2
+      ? searchProspectsFuzzy(q, { limitFuzzy: 5 })
+      : Promise.resolve({ exact: [], suggestions: [], query: q }),
+  ]);
 
   let owners: { id: string; label: string }[] = [];
   if (hasAdminAccess(profile.role)) {
@@ -179,6 +186,10 @@ export default async function ProspectsListPage({ searchParams }: { searchParams
           owner: ownerFilter ?? undefined,
         }}
       />
+
+      {fuzzyResults.suggestions.length > 0 ? (
+        <SearchSuggestions suggestions={fuzzyResults.suggestions} />
+      ) : null}
 
       {totalPages > 1 && (
         <Pagination

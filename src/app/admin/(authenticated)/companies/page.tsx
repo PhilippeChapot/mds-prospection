@@ -8,6 +8,8 @@ import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { POLE_CODES, type PoleCode } from '@/lib/design-tokens';
 import { listCompaniesPaginated, listDistinctCountries } from '@/lib/supabase/queries';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
+import { searchCompaniesFuzzy } from '@/lib/admin/search/fuzzy-search';
+import { SearchSuggestions } from '@/components/admin/SearchSuggestions';
 import type { Database } from '@/lib/supabase/database.types';
 import { cn } from '@/lib/utils';
 import { CompaniesExportButton } from './CompaniesExportButton';
@@ -85,7 +87,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
     params.address === 'missing' ? 'missing' : params.address === 'complete' ? 'complete' : '';
   const page = Math.max(1, Number(params.page ?? '1'));
 
-  const [{ rows, total }, countries] = await Promise.all([
+  const [{ rows, total }, countries, fuzzyResults] = await Promise.all([
     listCompaniesPaginated({
       q: q || undefined,
       poleCode: poleFilter || null,
@@ -97,6 +99,9 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
       perPage: PER_PAGE,
     }),
     listDistinctCountries(),
+    q.length >= 2
+      ? searchCompaniesFuzzy(q, { limitFuzzy: 5 })
+      : Promise.resolve({ exact: [], suggestions: [], query: q }),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
@@ -319,6 +324,10 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
           </table>
         </div>
       </div>
+
+      {fuzzyResults.suggestions.length > 0 ? (
+        <SearchSuggestions suggestions={fuzzyResults.suggestions} />
+      ) : null}
 
       {totalPages > 1 && (
         <Pagination

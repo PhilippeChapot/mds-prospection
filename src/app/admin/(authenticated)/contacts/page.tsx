@@ -10,6 +10,8 @@ import {
 } from '@/lib/contacts/admin-queries';
 import { ContactsTable } from './_components/ContactsTable';
 import { ContactsKpisCards } from './_components/ContactsKpisCards';
+import { searchContactsFuzzy } from '@/lib/admin/search/fuzzy-search';
+import { SearchSuggestions } from '@/components/admin/SearchSuggestions';
 
 export const metadata = { title: 'Contacts' };
 
@@ -55,9 +57,13 @@ export default async function AdminContactsPage({ searchParams }: { searchParams
     perPage: PER_PAGE,
   };
 
-  const [{ rows, total }, kpis] = await Promise.all([
+  const [{ rows, total }, kpis, fuzzyResults] = await Promise.all([
     listContactsPaginated(filters),
     getContactsKpis(),
+    // P5.x.SearchFuzzy : suggestions "vouliez-vous dire" si q >= 2 chars.
+    q.length >= 2
+      ? searchContactsFuzzy(q, { limitFuzzy: 5 })
+      : Promise.resolve({ exact: [], suggestions: [], query: q }),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
@@ -167,6 +173,10 @@ export default async function AdminContactsPage({ searchParams }: { searchParams
       </form>
 
       <ContactsTable rows={rows} />
+
+      {fuzzyResults.suggestions.length > 0 ? (
+        <SearchSuggestions suggestions={fuzzyResults.suggestions} />
+      ) : null}
 
       {totalPages > 1 ? (
         <Pagination
