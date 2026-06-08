@@ -189,4 +189,68 @@ describe('searchSellsyClientsAction (P6.x.SellsyDedupClient)', () => {
     expect(r[0].name).toBe('Mediarun SAS');
     expect(r[0].siren).toBe('123456789');
   });
+
+  it('HOTFIX2 BUG 1 — "Win-group" match "Win-Group Software SAS" via fallback list+JS', async () => {
+    mockEnv();
+    const { sellsyFetch } = await import('@/lib/sellsy/client');
+    // Sellsy ne renvoie rien sur les 3 premiers filters (name brut +
+    // name normalisé "win group") MAIS sur le 4e call (list 200) on
+    // récupère Win-Group Software SAS → le filter JS normalisé doit
+    // matcher car "win group" ⊆ "win group software sas".
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mock = sellsyFetch as any;
+    mock
+      .mockResolvedValueOnce({ data: [] }) // pass 2 : name brut
+      .mockResolvedValueOnce({ data: [] }) // pass 3 : name normalisé
+      .mockResolvedValueOnce({
+        data: [
+          { id: 33688, name: 'Win-Group Software SAS', siren: null, email: null },
+          { id: 99, name: 'Autre Société', siren: null, email: null },
+        ],
+      }); // pass 4 : list 200 + JS filter
+    const { searchSellsyClientsAction } = await import('./sellsy-link-actions');
+    const r = await searchSellsyClientsAction({ q: 'Win-group' });
+    expect(r.length).toBeGreaterThanOrEqual(1);
+    expect(r.some((c) => c.id === '33688')).toBe(true);
+  });
+});
+
+describe('listAllSellsyClientsAction (P6.x.HOTFIX2 BUG 3)', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    reset();
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('Retourne page 0 + has_more=true si data.length === limit', async () => {
+    mockEnv();
+    const { sellsyFetch } = await import('@/lib/sellsy/client');
+    const fiftyItems = Array.from({ length: 50 }, (_, i) => ({
+      id: 1000 + i,
+      name: `Société ${i}`,
+      siren: null,
+      email: null,
+    }));
+    (sellsyFetch as unknown as { mockResolvedValue: (v: unknown) => void }).mockResolvedValue({
+      data: fiftyItems,
+      pagination: { total: 200 },
+    });
+    const { listAllSellsyClientsAction } = await import('./sellsy-link-actions');
+    const r = await listAllSellsyClientsAction({ page: 0, limit: 50 });
+    expect(r.data).toHaveLength(50);
+    expect(r.has_more).toBe(true);
+    expect(r.page).toBe(0);
+  });
+
+  it('Retourne has_more=false sur dernière page', async () => {
+    mockEnv();
+    const { sellsyFetch } = await import('@/lib/sellsy/client');
+    (sellsyFetch as unknown as { mockResolvedValue: (v: unknown) => void }).mockResolvedValue({
+      data: [{ id: 1, name: 'Dernière' }],
+      pagination: { total: 1 },
+    });
+    const { listAllSellsyClientsAction } = await import('./sellsy-link-actions');
+    const r = await listAllSellsyClientsAction({ page: 0, limit: 50 });
+    expect(r.has_more).toBe(false);
+  });
 });

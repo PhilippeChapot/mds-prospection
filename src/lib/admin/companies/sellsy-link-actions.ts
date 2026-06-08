@@ -184,9 +184,43 @@ type SellsyCompanyRow = {
 };
 
 /**
- * Search live dans Sellsy par nom (toujours) + optionnellement SIREN si
- * la query contient 9 chiffres. Retourne max 10 résultats normalisés
- * (SellsyClientLite). Best-effort sur erreurs Sellsy : retourne [].
+ * P6.x.SellsyDedupClient-HOTFIX2 — normalise une query (ou un nom Sellsy)
+ * pour matching tolérant aux tirets/casse/espaces.
+ *
+ * Exemple : "Win-group" → "win group" / "Win-Group Software SAS" → "win group software sas"
+ * Permet le substring match local "win group" ⊆ "win group software sas".
+ */
+function normalizeForMatch(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // diacritics
+    .toLowerCase()
+    .replace(/[-_/.,;:]+/g, ' ') // ponctuation → espace
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function pushRow(results: SellsyClientLite[], c: SellsyCompanyRow): void {
+  if (results.some((r) => r.id === String(c.id))) return;
+  results.push({
+    id: String(c.id),
+    name: c.name ?? '(sans nom)',
+    email: c.email ?? null,
+    siren: c.siren ?? c.siret ?? null,
+  });
+}
+
+/**
+ * Search live dans Sellsy avec stratégie tolérante 3 passes :
+ *   1. Si query = 9 chiffres → filters: { siren } (match exact).
+ *   2. filters: { name: query } brute (cas où Sellsy accepte la query telle quelle).
+ *   3. filters: { name: normalizedQuery } (sans tirets, lower) — couvre
+ *      "Win-group" → match "Win-Group Software SAS" via la similarité Sellsy.
+ *   4. Si toujours rien : list 200 companies + filter JS substring normalisée
+ *      (fallback robuste pour les cas où Sellsy ne tolère pas les variantes).
+ *
+ * Retourne max 10 résultats normalisés (SellsyClientLite). Best-effort sur
+ * erreurs Sellsy : retourne ce qui a été trouvé jusque-là.
  */
 export async function searchSellsyClientsAction(
   input: z.input<typeof searchSchema>,
@@ -195,10 +229,11 @@ export async function searchSellsyClientsAction(
   const parsed = searchSchema.safeParse(input);
   if (!parsed.success) return [];
   const q = parsed.data.q;
+  const qNorm = normalizeForMatch(q);
 
   const results: SellsyClientLite[] = [];
 
-  // 1. Si la query ressemble à un SIREN (9 chiffres) → search SIREN d'abord.
+  // ── 1. Search SIREN si query = 9 chiffres ──
   const sirenDigits = q.replace(/\D/g, '');
   if (sirenDigits.length === 9) {
     try {
@@ -206,38 +241,113 @@ export async function searchSellsyClientsAction(
         method: 'POST',
         body: JSON.stringify({ filters: { siren: sirenDigits } }),
       });
-      for (const c of res.data ?? []) {
-        results.push({
-          id: String(c.id),
-          name: c.name ?? '(sans nom)',
-          email: c.email ?? null,
-          siren: c.siren ?? c.siret ?? null,
-        });
-      }
+      for (const c of res.data ?? []) pushRow(results, c);
     } catch {
-      // skip silencieux — V1 best-effort
+      // skip
     }
   }
 
-  // 2. Search par nom (toujours, complète les SIREN matches).
+  // ── 2. Search par nom brut ──
   try {
     const res = await sellsyFetch<{ data: SellsyCompanyRow[] }>('/companies/search?limit=10', {
       method: 'POST',
       body: JSON.stringify({ filters: { name: q } }),
     });
+    for (const c of res.data ?? []) pushRow(results, c);
+  } catch {
+    // skip
+  }
+
+  // ── 3. Search par nom normalisé (sans tirets) si différent de q ──
+  if (qNorm !== q.toLowerCase() && results.length < 5) {
+    try {
+      const res = await sellsyFetch<{ data: SellsyCompanyRow[] }>('/companies/search?limit=10', {
+        method: 'POST',
+        body: JSON.stringify({ filters: { name: qNorm } }),
+      });
+      for (const c of res.data ?? []) pushRow(results, c);
+    } catch {
+      // skip
+    }
+  }
+
+  // ── 4. Fallback list + filter JS si toujours rien ──
+  // Couvre "Win-group" → "Win-Group Software SAS" si Sellsy n'a matché
+  // ni la query brute ni la normalisée. On liste les 200 premières companies
+  // (ordre Sellsy natif, ce qui peut louper si > 200 — mais c'est mieux que
+  // "Aucun résultat" en cas d'échec total des filtres).
+  if (results.length === 0) {
+    try {
+      const res = await sellsyFetch<{ data: SellsyCompanyRow[] }>('/companies/search?limit=200', {
+        method: 'POST',
+        body: JSON.stringify({ filters: {} }),
+      });
+      const matches = (res.data ?? []).filter((c) => {
+        const nameNorm = normalizeForMatch(c.name ?? '');
+        return nameNorm.includes(qNorm);
+      });
+      for (const c of matches) pushRow(results, c);
+    } catch {
+      // skip
+    }
+  }
+
+  return results.slice(0, 10);
+}
+
+// ─── List All Sellsy clients (drawer "Voir tout") ─────────────────────
+
+const listAllSchema = z.object({
+  page: z.number().int().min(0).default(0),
+  limit: z.number().int().min(10).max(100).default(50),
+});
+
+export type SellsyClientsPage = {
+  data: SellsyClientLite[];
+  has_more: boolean;
+  page: number;
+};
+
+/**
+ * P6.x.SellsyDedupClient-HOTFIX2 (BUG 3) — liste paginée TOUTES les
+ * companies Sellsy. Permet à Phil de scroller manuellement quand la
+ * search échoue (cas raison sociale très différente du nom marque).
+ *
+ * Pagination via offset query param Sellsy V2. Limit max 100 par page,
+ * default 50.
+ */
+export async function listAllSellsyClientsAction(
+  input: z.input<typeof listAllSchema>,
+): Promise<SellsyClientsPage> {
+  await requireAdminProfile();
+  const parsed = listAllSchema.safeParse(input);
+  if (!parsed.success) {
+    return { data: [], has_more: false, page: 0 };
+  }
+  const { page, limit } = parsed.data;
+  const offset = page * limit;
+
+  try {
+    const res = await sellsyFetch<{
+      data: SellsyCompanyRow[];
+      pagination?: { total?: number };
+    }>(`/companies/search?limit=${limit}&offset=${offset}&order_by=name&order_direction=asc`, {
+      method: 'POST',
+      body: JSON.stringify({ filters: {} }),
+    });
+    const data: SellsyClientLite[] = [];
     for (const c of res.data ?? []) {
-      // Dedup : skip si déjà ajouté via SIREN.
-      if (results.some((r) => r.id === String(c.id))) continue;
-      results.push({
+      data.push({
         id: String(c.id),
         name: c.name ?? '(sans nom)',
         email: c.email ?? null,
         siren: c.siren ?? c.siret ?? null,
       });
     }
+    const total = res.pagination?.total ?? 0;
+    const has_more = total > 0 ? offset + data.length < total : data.length === limit;
+    return { data, has_more, page };
   } catch {
-    // skip silencieux
+    return { data: [], has_more: false, page };
   }
-
-  return results.slice(0, 10);
 }

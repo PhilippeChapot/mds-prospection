@@ -92,7 +92,7 @@ export function SellsyClientLinkSection({ companyId, currentSellsyId, companyMds
         </p>
         <div className="flex flex-wrap gap-2">
           <a
-            href={`https://go.sellsy.com/companies/${currentSellsyId}`}
+            href={`https://www.sellsy.com/thirds/client/${currentSellsyId}/`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-md-blue inline-flex items-center gap-1 text-xs font-medium hover:underline"

@@ -10,11 +10,12 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { X, Search } from 'lucide-react';
+import { X, Search, List } from 'lucide-react';
 import {
   searchSellsyClientsAction,
   type SellsyClientLite,
 } from '@/lib/admin/companies/sellsy-link-actions';
+import { SellsyClientBrowseAllDrawer } from './SellsyClientBrowseAllDrawer';
 
 type Props = {
   /** Query pré-remplie (typiquement le nom MDS de la company). */
@@ -33,6 +34,7 @@ export function SellsyClientSearchPicker({
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SellsyClientLite[]>([]);
   const [loading, setLoading] = useState(false);
+  const [browseAllOpen, setBrowseAllOpen] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Trigger search au montage si initialQuery >= 2 chars. Debounce 300ms.
@@ -45,7 +47,7 @@ export function SellsyClientSearchPicker({
       setResults([]);
       return;
     }
-     
+
     setLoading(true);
     debounceRef.current = setTimeout(async () => {
       const r = await searchSellsyClientsAction({ q: query.trim() });
@@ -59,6 +61,11 @@ export function SellsyClientSearchPicker({
 
   return (
     <div className="border-md-border bg-card space-y-3 rounded-lg border p-3 shadow-sm">
+      <SellsyClientBrowseAllDrawer
+        open={browseAllOpen}
+        onOpenChange={setBrowseAllOpen}
+        onPicked={onPicked}
+      />
       <div className="flex items-center gap-2">
         <Search className="text-md-text-muted size-4" aria-hidden />
         <input
@@ -88,7 +95,22 @@ export function SellsyClientSearchPicker({
           Tapez au moins 2 caractères pour lancer la recherche.
         </p>
       ) : results.length === 0 ? (
-        <p className="text-md-text-muted text-xs">Aucun client Sellsy trouvé.</p>
+        <div className="space-y-2">
+          <p className="text-md-text-muted text-xs">
+            Aucun client Sellsy trouvé. La raison sociale Sellsy peut être très différente du nom
+            marque MDS (ex : marque &laquo;&nbsp;Mediarun&nbsp;&raquo; &harr; raison sociale
+            &laquo;&nbsp;Editions Mediarun SAS&nbsp;&raquo;).
+          </p>
+          <button
+            type="button"
+            onClick={() => setBrowseAllOpen(true)}
+            disabled={disabled}
+            className="border-md-border bg-card text-md-blue hover:border-md-blue inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+          >
+            <List className="size-3.5" aria-hidden />
+            Voir toutes les sociétés Sellsy
+          </button>
+        </div>
       ) : (
         <ul className="divide-md-border max-h-96 divide-y overflow-y-auto">
           {results.map((c) => (

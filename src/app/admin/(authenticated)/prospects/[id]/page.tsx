@@ -398,7 +398,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
                 prospect.sellsy_proforma_public_url ||
                 prospect.sellsy_invoice_public_url ||
                 (company?.sellsy_id
-                  ? `https://go.sellsy.com/companies/${company.sellsy_id}`
+                  ? `https://www.sellsy.com/thirds/client/${company.sellsy_id}/`
                   : null);
               if (!sellsyHref) return null;
               return (
