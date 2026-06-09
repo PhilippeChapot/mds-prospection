@@ -183,6 +183,36 @@ export function standStatusForProspectStatus(
   }
 }
 
+/** P6.x.MultiBooths — stands actuellement assignés à un prospect (fiche prospect). */
+export interface ProspectStandLite {
+  id: string;
+  number: string;
+  salle: Salle;
+  taille_m2: number;
+  status: StandStatus;
+}
+
+export async function getProspectStands(prospectId: string): Promise<ProspectStandLite[]> {
+  if (!prospectId) return [];
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from('stands')
+    .select('id, number, salle, taille_m2, status')
+    .eq('prospect_id', prospectId)
+    .order('number', { ascending: true });
+  if (error) {
+    console.warn('[stands/queries] getProspectStands failed: %s', error.message);
+    return [];
+  }
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    number: r.number,
+    salle: r.salle as Salle,
+    taille_m2: Number(r.taille_m2),
+    status: r.status as StandStatus,
+  }));
+}
+
 /** Lookup prospects en pipeline mais sans stand assigné — sidebar /admin/emplacements. */
 export interface ProspectWithoutStand {
   id: string;

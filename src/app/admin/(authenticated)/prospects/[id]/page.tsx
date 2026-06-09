@@ -24,7 +24,7 @@ import { IsTestToggle } from './IsTestToggle';
 import { ConciergePaymentLinkDialog } from './ConciergePaymentLinkDialog';
 import { SyncBadgesSection } from './SyncBadgesSection';
 import { StandPickerSection } from './StandPickerSection';
-import { listStands } from '@/lib/admin/stands/queries';
+import { listStands, getProspectStands } from '@/lib/admin/stands/queries';
 import { QuoteBuilder } from './_components/QuoteBuilder';
 import { getCatalogForAdminQuote } from '@/lib/admin/prospects/catalog';
 import { detectIsPremium, type QuoteItem } from '@/lib/admin/prospects/quote-calc';
@@ -656,22 +656,21 @@ function normalizeQuoteItems(raw: unknown): QuoteItem[] {
  * JSX du Server Component (await dans JSX = OK en Next.js 16 RSC).
  */
 async function renderStandPickerSection(prospectId: string) {
-  const available = await listStands({ available_for: prospectId });
-  const currentRaw = available.find((s) => s.prospect_id === prospectId) ?? null;
+  // P6.x.MultiBooths : un prospect peut détenir N stands.
+  const [available, currentStands] = await Promise.all([
+    listStands({ available_for: prospectId }),
+    getProspectStands(prospectId),
+  ]);
   return (
     <StandPickerSection
       prospectId={prospectId}
-      currentStand={
-        currentRaw
-          ? {
-              id: currentRaw.id,
-              number: currentRaw.number,
-              salle: currentRaw.salle,
-              taille_m2: currentRaw.taille_m2,
-              status: currentRaw.status,
-            }
-          : null
-      }
+      currentStands={currentStands.map((s) => ({
+        id: s.id,
+        number: s.number,
+        salle: s.salle,
+        taille_m2: s.taille_m2,
+        status: s.status,
+      }))}
       availableStands={available.map((s) => ({
         id: s.id,
         number: s.number,

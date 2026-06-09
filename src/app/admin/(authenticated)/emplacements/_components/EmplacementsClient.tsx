@@ -31,6 +31,7 @@ import type {
   ProspectWithoutStand,
 } from '@/lib/admin/stands/queries';
 import { PlanCanvaInteractive } from '@/components/admin/plan/PlanCanvaInteractive';
+import { AssignBoothsModal } from './AssignBoothsModal';
 
 const SALLE_LABEL: Record<string, string> = {
   delorme: 'Salle Delorme',
@@ -77,6 +78,29 @@ const PLAN_COLS = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0] as const;
 
 const PROSPECT_DRAG_TYPE = 'application/x-prospect-id';
 
+// P6.x.MultiBooths — couleur stable par prospect (hash déterministe → palette
+// de 12 teintes distinctes) pour repérer les blocs d'un même exposant sur le
+// plan. Rendu via inline-style (hex), donc non concerné par la purge Tailwind.
+const PROSPECT_PALETTE = [
+  '#ef4444',
+  '#f97316',
+  '#eab308',
+  '#22c55e',
+  '#14b8a6',
+  '#0ea5e9',
+  '#6366f1',
+  '#8b5cf6',
+  '#d946ef',
+  '#ec4899',
+  '#f43f5e',
+  '#84cc16',
+];
+export function prospectAccentColor(prospectId: string): string {
+  let hash = 0;
+  for (let i = 0; i < prospectId.length; i++) hash = (hash + prospectId.charCodeAt(i)) % 997;
+  return PROSPECT_PALETTE[hash % PROSPECT_PALETTE.length];
+}
+
 export function EmplacementsClient({
   initialStands,
   initialKpis,
@@ -96,6 +120,43 @@ export function EmplacementsClient({
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   // P6.x.3 — toggle vue Grid 2D (default) <-> Plan visuel Canva
   const [view, setView] = useState<'grid' | 'plan'>('grid');
+  // P6.x.MultiBooths — mode multi-sélection + assignation groupée.
+  const [multiSelect, setMultiSelect] = useState(false);
+  const [selectedBooths, setSelectedBooths] = useState<Set<string>>(new Set());
+  const [assignOpen, setAssignOpen] = useState(false);
+
+  // Nombre de stands par prospect (label "{nom} ({count})" sur le plan).
+  const prospectCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of initialStands) {
+      if (s.prospect_id) m.set(s.prospect_id, (m.get(s.prospect_id) ?? 0) + 1);
+    }
+    return m;
+  }, [initialStands]);
+
+  function toggleBoothSelect(stand: StandWithProspect) {
+    if (stand.status !== 'libre') return; // on ne sélectionne que des blocs libres
+    setSelectedBooths((prev) => {
+      const next = new Set(prev);
+      if (next.has(stand.id)) next.delete(stand.id);
+      else next.add(stand.id);
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelectedBooths(new Set());
+  }
+
+  function exitMultiSelect() {
+    setMultiSelect(false);
+    clearSelection();
+  }
+
+  const selectedNumbers = useMemo(
+    () => initialStands.filter((s) => selectedBooths.has(s.id)).map((s) => s.number),
+    [initialStands, selectedBooths],
+  );
 
   const filteredStands = useMemo(() => {
     let list = initialStands;
@@ -208,6 +269,44 @@ export function EmplacementsClient({
             Grid 2D reste le defaut (drag-drop fonctionne, lookup rapide).
             Plan visuel : iframe Canva + overlay clickable. */}
         <Legend />
+
+        {/* P6.x.MultiBooths — bascule sélection unique <-> multiple (Grid 2D). */}
+        <div className="border-md-border bg-card flex flex-wrap items-center gap-3 rounded-lg border p-3">
+          <span className="text-md-text-muted text-[10px] font-bold tracking-wide uppercase">
+            Mode
+          </span>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={() => exitMultiSelect()}
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition ${
+                !multiSelect
+                  ? 'bg-md-magenta text-white'
+                  : 'border-md-border text-md-text hover:bg-muted border bg-white'
+              }`}
+            >
+              Sélection unique
+            </button>
+            <button
+              type="button"
+              onClick={() => setMultiSelect(true)}
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition ${
+                multiSelect
+                  ? 'bg-md-magenta text-white'
+                  : 'border-md-border text-md-text hover:bg-muted border bg-white'
+              }`}
+            >
+              Sélection multiple
+            </button>
+          </div>
+          {multiSelect ? (
+            <span className="text-md-text-muted text-xs">
+              Cliquez des blocs <strong>libres</strong> pour les regrouper, puis assignez-les à un
+              prospect.
+            </span>
+          ) : null}
+        </div>
+
         <Tabs value={view} onValueChange={(v) => setView(v as 'grid' | 'plan')}>
           <TabsList>
             <TabsTrigger value="grid">📊 Grid 2D</TabsTrigger>
@@ -220,6 +319,10 @@ export function EmplacementsClient({
               setDragOverId={setDragOverId}
               onDrop={handleDrop}
               onSelect={(s) => setSelectedStand(s)}
+              multiSelect={multiSelect}
+              selectedIds={selectedBooths}
+              onToggleSelect={toggleBoothSelect}
+              prospectCounts={prospectCounts}
             />
           </TabsContent>
           <TabsContent value="plan">
@@ -307,6 +410,42 @@ export function EmplacementsClient({
           ) : null}
         </SheetContent>
       </Sheet>
+
+      {/* P6.x.MultiBooths — barre flottante d'assignation groupée. */}
+      {multiSelect && selectedBooths.size > 0 ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4">
+          <div className="border-md-border flex w-full max-w-2xl flex-wrap items-center gap-3 rounded-xl border bg-white p-3 shadow-lg">
+            <span className="text-md-text text-sm font-semibold">
+              {selectedBooths.size} bloc{selectedBooths.size > 1 ? 's' : ''} sélectionné
+              {selectedBooths.size > 1 ? 's' : ''}
+            </span>
+            <span className="text-md-text-muted line-clamp-1 flex-1 text-xs">
+              {selectedNumbers
+                .slice()
+                .sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }))
+                .join(', ')}
+            </span>
+            <Button type="button" variant="outline" size="sm" onClick={clearSelection}>
+              Annuler
+            </Button>
+            <Button type="button" size="sm" onClick={() => setAssignOpen(true)}>
+              Assigner ces blocs
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      <AssignBoothsModal
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        boothIds={Array.from(selectedBooths)}
+        boothNumbers={selectedNumbers}
+        onAssigned={() => {
+          setAssignOpen(false);
+          exitMultiSelect();
+          router.refresh();
+        }}
+      />
     </div>
   );
 }
@@ -570,12 +709,20 @@ function PlanGrid({
   setDragOverId,
   onDrop,
   onSelect,
+  multiSelect,
+  selectedIds,
+  onToggleSelect,
+  prospectCounts,
 }: {
   stands: StandWithProspect[];
   dragOverId: string | null;
   setDragOverId: (id: string | null) => void;
   onDrop: (stand: StandWithProspect, prospectId: string) => void;
   onSelect: (stand: StandWithProspect) => void;
+  multiSelect: boolean;
+  selectedIds: Set<string>;
+  onToggleSelect: (stand: StandWithProspect) => void;
+  prospectCounts: Map<string, number>;
 }) {
   const byNumber = useMemo(() => {
     const m = new Map<string, StandWithProspect>();
@@ -627,8 +774,14 @@ function PlanGrid({
                   key={num}
                   stand={stand}
                   isDragTarget={dragOverId === stand.id}
+                  multiSelect={multiSelect}
+                  isSelected={selectedIds.has(stand.id)}
+                  prospectCount={
+                    stand.prospect_id ? (prospectCounts.get(stand.prospect_id) ?? 0) : 0
+                  }
                   onDragOver={(e) => {
                     if (
+                      !multiSelect &&
                       stand.status === 'libre' &&
                       e.dataTransfer.types.includes(PROSPECT_DRAG_TYPE)
                     ) {
@@ -641,9 +794,12 @@ function PlanGrid({
                     e.preventDefault();
                     setDragOverId(null);
                     const prospectId = e.dataTransfer.getData(PROSPECT_DRAG_TYPE);
-                    if (prospectId) onDrop(stand, prospectId);
+                    if (!multiSelect && prospectId) onDrop(stand, prospectId);
                   }}
-                  onClick={() => onSelect(stand)}
+                  onClick={() => {
+                    if (multiSelect && stand.status === 'libre') onToggleSelect(stand);
+                    else onSelect(stand);
+                  }}
                 />
               );
             })}
@@ -657,6 +813,9 @@ function PlanGrid({
 function StandCell({
   stand,
   isDragTarget,
+  multiSelect,
+  isSelected,
+  prospectCount,
   onDragOver,
   onDragLeave,
   onDrop,
@@ -664,6 +823,9 @@ function StandCell({
 }: {
   stand: StandWithProspect;
   isDragTarget: boolean;
+  multiSelect: boolean;
+  isSelected: boolean;
+  prospectCount: number;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: () => void;
   onDrop: (e: React.DragEvent) => void;
@@ -678,6 +840,9 @@ function StandCell({
     paye: 'border-red-500',
     bloque: 'border-slate-400',
   }[stand.status];
+  // P6.x.MultiBooths — couleur commune pour les blocs d'un même exposant.
+  const accent = stand.prospect_id ? prospectAccentColor(stand.prospect_id) : null;
+  const dimmed = multiSelect && stand.status !== 'libre';
   return (
     <button
       type="button"
@@ -688,18 +853,35 @@ function StandCell({
       data-stand-number={stand.number}
       data-stand-status={stand.status}
       data-pole-zone={stand.pole_recommended ?? ''}
+      aria-pressed={multiSelect ? isSelected : undefined}
       className={`relative flex aspect-square flex-col items-start gap-0.5 rounded border-2 p-1.5 text-left transition hover:shadow-md ${zoneBg} ${borderClass} ${
         isDragTarget ? 'ring-md-magenta scale-[1.04] ring-2' : ''
-      }`}
+      } ${isSelected ? 'ring-md-magenta scale-[1.04] ring-2' : ''} ${dimmed ? 'opacity-50' : ''}`}
       title={`${stand.number} — ${stand.taille_m2} m² — ${status.label}${
-        stand.prospect ? ` — ${stand.prospect.company_name}` : ''
+        stand.prospect
+          ? ` — ${stand.prospect.company_name}${prospectCount > 1 ? ` (${prospectCount} blocs)` : ''}`
+          : ''
       }`}
     >
+      {/* Pastille couleur exposant (haut-droite) pour repérer les regroupements. */}
+      {accent ? (
+        <span
+          className="absolute top-1 right-1 size-2 rounded-full ring-1 ring-black/20"
+          style={{ backgroundColor: accent }}
+          aria-hidden
+        />
+      ) : null}
+      {multiSelect && isSelected ? (
+        <span className="bg-md-magenta absolute top-1 left-1 flex size-3.5 items-center justify-center rounded-full text-[8px] font-bold text-white">
+          ✓
+        </span>
+      ) : null}
       <span className="text-md-blue-dark text-xs leading-none font-extrabold">{stand.number}</span>
       <span className="text-md-text-muted text-[9px] leading-none">{stand.taille_m2}m²</span>
       {stand.prospect ? (
         <span className="text-md-text mt-0.5 line-clamp-1 text-[9px] leading-tight font-semibold">
           {stand.prospect.company_name}
+          {prospectCount > 1 ? ` (${prospectCount})` : ''}
         </span>
       ) : null}
       {stand.status === 'bloque' ? (

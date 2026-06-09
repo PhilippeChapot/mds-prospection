@@ -55,47 +55,54 @@ function mockEnv() {
     getSupabaseServiceClient: () => ({
       from: (table: string) => {
         if (table === 'stands') {
+          // P6.x.MultiBooths : .eq() est désormais *awaitable* (recompute lit
+          // tous les stands d'un prospect) ET expose .maybeSingle() (lookup id).
+          const applyPatch = (id: string, patch: Record<string, unknown>) => {
+            const existing = state.stands.get(id);
+            if (existing) {
+              state.stands.set(id, {
+                ...existing,
+                ...(patch.status !== undefined
+                  ? { status: patch.status as StandRow['status'] }
+                  : {}),
+                ...(patch.prospect_id !== undefined
+                  ? { prospect_id: patch.prospect_id as string | null }
+                  : {}),
+              });
+            }
+            state.standUpdates.push({ id, patch });
+          };
           return {
             select: () => ({
-              eq: (col: string, val: string) => ({
-                maybeSingle: () => {
-                  if (col === 'id') {
-                    const row = state.stands.get(val);
-                    return Promise.resolve({ data: row ?? null, error: null });
-                  }
-                  if (col === 'prospect_id') {
-                    const row = Array.from(state.stands.values()).find(
-                      (s) => s.prospect_id === val,
-                    );
-                    return Promise.resolve({ data: row ?? null, error: null });
-                  }
-                  return Promise.resolve({ data: null, error: null });
-                },
-                neq: (_col2: string, otherId: string) => ({
-                  maybeSingle: () => {
-                    const row = Array.from(state.stands.values()).find(
-                      (s) => s.prospect_id === val && s.id !== otherId,
-                    );
-                    return Promise.resolve({ data: row ?? null, error: null });
-                  },
+              eq: (col: string, val: string) => {
+                const rows = Array.from(state.stands.values()).filter(
+                  (s) => (s as unknown as Record<string, unknown>)[col] === val,
+                );
+                const result = { data: rows, error: null };
+                return {
+                  // Awaitable : await ...eq() → { data: rows }
+                  then: (resolve: (v: typeof result) => unknown) => resolve(result),
+                  maybeSingle: () => Promise.resolve({ data: rows[0] ?? null, error: null }),
+                  in: (_c: string, ids: string[]) =>
+                    Promise.resolve({
+                      data: rows.filter((s) => ids.includes(s.id)),
+                      error: null,
+                    }),
+                };
+              },
+              in: (_col: string, ids: string[]) =>
+                Promise.resolve({
+                  data: Array.from(state.stands.values()).filter((s) => ids.includes(s.id)),
+                  error: null,
                 }),
-              }),
             }),
             update: (patch: Record<string, unknown>) => ({
               eq: (_col: string, id: string) => {
-                const existing = state.stands.get(id);
-                if (existing) {
-                  state.stands.set(id, {
-                    ...existing,
-                    ...(patch.status !== undefined
-                      ? { status: patch.status as StandRow['status'] }
-                      : {}),
-                    ...(patch.prospect_id !== undefined
-                      ? { prospect_id: patch.prospect_id as string | null }
-                      : {}),
-                  });
-                }
-                state.standUpdates.push({ id, patch });
+                applyPatch(id, patch);
+                return Promise.resolve({ error: null });
+              },
+              in: (_col: string, ids: string[]) => {
+                for (const id of ids) applyPatch(id, patch);
                 return Promise.resolve({ error: null });
               },
             }),
@@ -223,7 +230,7 @@ describe('assignStandToProspectAction (P6.x.2a)', () => {
     if (!r.ok) expect(r.error).toMatch(/déjà assigné/i);
   });
 
-  it('soft-réassignation : prospect déjà sur OTHER_STAND → libère ancien + assigne nouveau', async () => {
+  it('additif (P6.x.MultiBooths) : prospect déjà sur OTHER_STAND → garde les 2 stands', async () => {
     state.stands.set(OTHER_STAND_ID, {
       id: OTHER_STAND_ID,
       number: 'L05',
@@ -235,11 +242,12 @@ describe('assignStandToProspectAction (P6.x.2a)', () => {
     const { assignStandToProspectAction } = await import('./actions');
     const r = await assignStandToProspectAction({ stand_id: STAND_ID, prospect_id: PROSPECT_ID });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.data.previous_stand_id).toBe(OTHER_STAND_ID);
-    // L'ancien stand a été libéré
-    const oldUpd = state.standUpdates.find((u) => u.id === OTHER_STAND_ID);
-    expect(oldUpd?.patch.prospect_id).toBe(null);
-    expect(oldUpd?.patch.status).toBe('libre');
+    // L'ancien stand n'est PAS libéré (assignation additive).
+    expect(state.stands.get(OTHER_STAND_ID)?.prospect_id).toBe(PROSPECT_ID);
+    expect(state.stands.get(STAND_ID)?.prospect_id).toBe(PROSPECT_ID);
+    // booth_assignment recalculé = liste jointe triée des 2 numéros.
+    const prospUpd = state.prospectUpdates.find((u) => u.id === PROSPECT_ID);
+    expect(prospUpd?.patch.booth_assignment).toBe('L01, L05');
   });
 
   it("prospect status='perdu' → refus 'réactivez d'abord'", async () => {

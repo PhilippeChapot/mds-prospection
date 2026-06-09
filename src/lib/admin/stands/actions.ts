@@ -3,16 +3,27 @@
 /**
  * P6.x.2a — server actions stands (catalogue + assignation).
  *
+ * P6.x.MultiBooths — un prospect peut désormais détenir N stands (espace
+ * premium étendu). L'assignation est donc *additive* : assigner un stand
+ * ne libère plus l'éventuel stand déjà détenu par le prospect.
+ *
  * Workflow assignation :
  *   1. assignStandToProspectAction(stand_id, prospect_id) :
- *      - Si stand pas libre → erreur
- *      - Si prospect a déjà un stand → on retire d'abord l'ancien
+ *      - Si stand pas libre (et pas déjà à ce prospect) → erreur
  *      - UPDATE stand : prospect_id + status calculé selon prospect.status
- *      - UPDATE prospect : booth_assignment = stand.number + booth_assigned_at
- *   2. removeStandFromProspectAction(stand_id) : reset prospect_id + status='libre'
+ *      - Recalcul prospects.booth_assignment = liste jointe des numéros de
+ *        TOUS les stands du prospect (rétrocompat affichage P5.x.10).
+ *   2. removeStandFromProspectAction(stand_id) : reset prospect_id +
+ *      status='libre', puis recalcul booth_assignment depuis les stands restants.
+ *   3. setProspectBoothsAction (batch) : voir multi-booth-actions.ts.
+ *
+ * Le prix ne dépend PAS du nombre de stands (cf. migration 0046 :
+ * "pack du prospect = source du prix"). estimated_amount reste piloté par le
+ * QuoteBuilder — l'allocation physique est découplée du montant (décision Phil
+ * P6.x.MultiBooths : "Decouple").
  *
  * Sync statut prospect → stand : appelé par updateProspectStatusAction
- * (côté prospect actions.ts) via syncStandStatusFromProspectAction.
+ * (côté prospect actions.ts) via syncStandStatusFromProspect.
  */
 
 import { revalidatePath } from 'next/cache';
@@ -20,6 +31,7 @@ import { z } from 'zod';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { standStatusForProspectStatus } from './queries';
+import { recomputeBoothAssignment } from './booth-helpers';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 const LOG_PREFIX = '[admin/stands]';
@@ -44,7 +56,7 @@ const assignSchema = z.object({
 
 export async function assignStandToProspectAction(
   input: z.infer<typeof assignSchema>,
-): Promise<ActionResult<{ stand_id: string; previous_stand_id: string | null }>> {
+): Promise<ActionResult<{ stand_id: string }>> {
   const profile = await requireAdminProfile();
   if (!hasAdminAccess(profile.role) && profile.role !== 'sales') {
     return { ok: false, error: 'Forbidden' };
@@ -67,39 +79,14 @@ export async function assignStandToProspectAction(
     return { ok: false, error: 'Ce stand est déjà assigné à un autre prospect.' };
   }
 
-  // 2. Lookup prospect + détection éventuel stand déjà assigné
+  // 2. Lookup prospect. P6.x.MultiBooths : assignation ADDITIVE — on ne
+  // libère plus l'éventuel stand déjà détenu (un prospect peut avoir N stands).
   const { data: prospect, error: pErr } = await supabase
     .from('prospects')
     .select('id, status')
     .eq('id', prospect_id)
     .maybeSingle();
   if (pErr || !prospect) return { ok: false, error: 'Prospect introuvable.' };
-
-  // Détecte un éventuel stand déjà assigné à ce prospect (autre que stand_id)
-  let previousStandId: string | null = null;
-  const { data: existing } = await supabase
-    .from('stands')
-    .select('id')
-    .eq('prospect_id', prospect_id)
-    .neq('id', stand_id)
-    .maybeSingle();
-  if (existing) {
-    previousStandId = existing.id;
-    // Soft re-assignation : retire l'ancien stand
-    const { error: rErr } = await supabase
-      .from('stands')
-      .update({ prospect_id: null, status: 'libre', updated_at: new Date().toISOString() })
-      .eq('id', previousStandId);
-    if (rErr) {
-      console.error(
-        '%s release-previous-failed id=%s msg=%s',
-        LOG_PREFIX,
-        previousStandId,
-        rErr.message,
-      );
-      return { ok: false, error: 'Impossible de libérer le stand précédent.' };
-    }
-  }
 
   // 3. Statut stand selon statut prospect
   const computed = standStatusForProspectStatus(prospect.status);
@@ -121,11 +108,12 @@ export async function assignStandToProspectAction(
     return { ok: false, error: updErr.message };
   }
 
-  // 4. Sync prospects.booth_assignment pour rétrocompat (P5.x.10)
+  // 4. Recalcul prospects.booth_assignment (liste jointe de TOUS les stands).
+  const boothAssignment = await recomputeBoothAssignment(supabase, prospect_id);
   await supabase
     .from('prospects')
     .update({
-      booth_assignment: stand.number,
+      booth_assignment: boothAssignment,
       booth_assigned_at: now,
       booth_assigned_by: profile.id,
       last_activity_at: now,
@@ -133,13 +121,13 @@ export async function assignStandToProspectAction(
     .eq('id', prospect_id);
 
   console.log(
-    '%s assigned stand=%s number=%s prospect=%s status=%s previous=%s',
+    '%s assigned stand=%s number=%s prospect=%s status=%s booths=%s',
     LOG_PREFIX,
     stand_id,
     stand.number,
     prospect_id,
     newStatus,
-    previousStandId ?? '-',
+    boothAssignment ?? '-',
   );
 
   // P14.4 : audit_log pour timeline drawer auto-entry "stand attribue".
@@ -153,13 +141,12 @@ export async function assignStandToProspectAction(
       stand_id,
       stand_number: stand.number,
       stand_salle: stand.salle,
-      previous_stand_id: previousStandId,
     },
   });
 
   revalidatePath(`/admin/prospects/${prospect_id}`);
   revalidatePath('/admin/emplacements');
-  return { ok: true, data: { stand_id, previous_stand_id: previousStandId } };
+  return { ok: true, data: { stand_id } };
 }
 
 const removeSchema = z.object({ stand_id: z.string().uuid() });
@@ -191,14 +178,21 @@ export async function removeStandFromProspectAction(
   if (standErr) return { ok: false, error: standErr.message };
 
   if (previousProspectId) {
+    // P6.x.MultiBooths : le prospect peut détenir d'autres stands → recalcul
+    // de booth_assignment depuis les stands restants (null seulement si plus aucun).
+    const boothAssignment = await recomputeBoothAssignment(supabase, previousProspectId);
     await supabase
       .from('prospects')
-      .update({
-        booth_assignment: null,
-        booth_assigned_at: null,
-        booth_assigned_by: null,
-        last_activity_at: now,
-      })
+      .update(
+        boothAssignment
+          ? { booth_assignment: boothAssignment, last_activity_at: now }
+          : {
+              booth_assignment: null,
+              booth_assigned_at: null,
+              booth_assigned_by: null,
+              last_activity_at: now,
+            },
+      )
       .eq('id', previousProspectId);
     revalidatePath(`/admin/prospects/${previousProspectId}`);
   }
@@ -402,40 +396,41 @@ export async function syncStandStatusFromProspect(prospectId: string): Promise<v
     .maybeSingle();
   if (!prospect) return;
 
-  const { data: stand } = await supabase
+  // P6.x.MultiBooths : un prospect peut détenir N stands → on les traite tous
+  // (l'ancien `.maybeSingle()` levait une erreur dès le 2e stand).
+  const { data: stands } = await supabase
     .from('stands')
     .select('id, status, prospect_id')
-    .eq('prospect_id', prospectId)
-    .maybeSingle();
-  if (!stand) return;
+    .eq('prospect_id', prospectId);
+  if (!stands || stands.length === 0) return;
 
+  const now = new Date().toISOString();
   const computed = standStatusForProspectStatus(prospect.status);
+
   if (computed === 'release') {
-    // Prospect perdu → libère le stand
-    const now = new Date().toISOString();
+    // Prospect perdu → libère TOUS les stands
+    const ids = stands.map((s) => s.id);
     await supabase
       .from('stands')
       .update({ prospect_id: null, status: 'libre', updated_at: now })
-      .eq('id', stand.id);
+      .in('id', ids);
     await supabase
       .from('prospects')
       .update({ booth_assignment: null, booth_assigned_at: null, booth_assigned_by: null })
       .eq('id', prospectId);
-    console.log('%s released-on-perdu stand=%s prospect=%s', LOG_PREFIX, stand.id, prospectId);
+    console.log('%s released-on-perdu stands=%d prospect=%s', LOG_PREFIX, ids.length, prospectId);
     return;
   }
 
-  if (stand.status === computed) return; // déjà à jour
-  await supabase
-    .from('stands')
-    .update({ status: computed, updated_at: new Date().toISOString() })
-    .eq('id', stand.id);
+  // Aligne en une passe tous les stands dont le statut diverge.
+  const toUpdate = stands.filter((s) => s.status !== computed).map((s) => s.id);
+  if (toUpdate.length === 0) return; // déjà à jour
+  await supabase.from('stands').update({ status: computed, updated_at: now }).in('id', toUpdate);
   console.log(
-    '%s status-synced stand=%s prospect=%s status=%s→%s',
+    '%s status-synced stands=%d prospect=%s status→%s',
     LOG_PREFIX,
-    stand.id,
+    toUpdate.length,
     prospectId,
-    stand.status,
     computed,
   );
 }

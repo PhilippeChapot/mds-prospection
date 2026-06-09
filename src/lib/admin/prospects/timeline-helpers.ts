@@ -28,6 +28,7 @@ export type AutoEntryKind =
   | 'booth_assigned'
   | 'booth_cleared'
   | 'stand_assigned'
+  | 'prospect_booths_changed'
   | 'quote_emit_success'
   | 'stripe_payment_received'
   | 'signup_converted'
@@ -247,6 +248,15 @@ export function mapAuditLogToAutoEntry(row: AuditLogRow): {
     const num = (after as { stand_number?: string }).stand_number ?? '?';
     const salle = (after as { stand_salle?: string }).stand_salle ?? '';
     return { kind: 'stand_assigned', content: `Stand → ${num}${salle ? ` (${salle})` : ''}` };
+  }
+  if (kindHint === 'prospect_booths_changed') {
+    const count = (after as { total_count?: number }).total_count ?? 0;
+    const numbers = (after as { stand_numbers?: string[] }).stand_numbers ?? [];
+    const list = numbers.length > 0 ? ` · ${numbers.join(', ')}` : '';
+    return {
+      kind: 'prospect_booths_changed',
+      content: `${count} bloc${count > 1 ? 's' : ''} assigné${count > 1 ? 's' : ''}${list}`,
+    };
   }
   if (kindHint === 'stripe_payment_received') {
     const amt = (after as { amount_eur?: number }).amount_eur ?? 0;

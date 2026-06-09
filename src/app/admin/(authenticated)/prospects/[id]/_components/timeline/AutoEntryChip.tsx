@@ -25,6 +25,7 @@ const KIND_META: Record<AutoEntryKind, { emoji: string; bg: string; fg: string }
   booth_assigned: { emoji: '🏛️', bg: 'bg-amber-100', fg: 'text-amber-800' },
   booth_cleared: { emoji: '🚪', bg: 'bg-gray-100', fg: 'text-gray-700' },
   stand_assigned: { emoji: '🏛️', bg: 'bg-amber-100', fg: 'text-amber-800' },
+  prospect_booths_changed: { emoji: '🏛️', bg: 'bg-pink-100', fg: 'text-pink-800' },
   quote_emit_success: { emoji: '📄', bg: 'bg-md-magenta/10', fg: 'text-md-magenta' },
   stripe_payment_received: { emoji: '💳', bg: 'bg-green-100', fg: 'text-green-800' },
   signup_converted: { emoji: '🌐', bg: 'bg-md-blue-light', fg: 'text-md-blue-dark' },
