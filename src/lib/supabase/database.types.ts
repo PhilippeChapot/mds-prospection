@@ -584,6 +584,7 @@ export type Database = {
       };
       calendar_events: {
         Row: {
+          attendees: Json;
           created_at: string;
           created_by_user_id: string | null;
           description: string | null;
@@ -612,6 +613,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          attendees?: Json;
           created_at?: string;
           created_by_user_id?: string | null;
           description?: string | null;
@@ -640,6 +642,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          attendees?: Json;
           created_at?: string;
           created_by_user_id?: string | null;
           description?: string | null;
@@ -3531,6 +3534,7 @@ export type Database = {
       prospect_timeline_view: {
         Row: {
           actor_user_id: string | null;
+          attendees: Json | null;
           calendar_event_end: string | null;
           calendar_event_start: string | null;
           calendar_event_status: string | null;
@@ -3540,6 +3544,8 @@ export type Database = {
           entry_type: string | null;
           event_at: string | null;
           id: string | null;
+          meet_conference_id: string | null;
+          meet_url: string | null;
           prospect_id: string | null;
         };
         Relationships: [];

@@ -243,8 +243,12 @@ export function CalendarEventFormModal({
 
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-md">
-        <div className="border-md-border border-b p-4">
+      <SheetContent
+        side="right"
+        className="flex h-full w-full flex-col overflow-hidden sm:max-w-md"
+      >
+        {/* Header — shrink-0, ne scroll pas */}
+        <div className="border-md-border shrink-0 border-b p-4">
           <SheetTitle className="text-md-blue-dark text-lg font-bold">
             {mode === 'edit' ? "Modifier l'évènement" : 'Nouvel évènement'}
           </SheetTitle>
@@ -253,7 +257,8 @@ export function CalendarEventFormModal({
           </SheetDescription>
         </div>
 
-        <div className="space-y-4 p-4">
+        {/* Body — flex-1 + overflow-y-auto : tout le form scroll ici */}
+        <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {/* Type */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold">Type</Label>
@@ -463,41 +468,41 @@ export function CalendarEventFormModal({
               </Button>
             </div>
           )}
+        </div>
 
-          {/* Actions */}
-          <div className="flex justify-between gap-2 pt-2">
-            {mode === 'edit' && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleDelete}
-                disabled={pending}
-                className="text-red-600 hover:bg-red-50"
-              >
-                <Trash2 className="mr-1 size-3" /> Supprimer
-              </Button>
-            )}
-            <div className="flex-1" />
-            <Button type="button" variant="outline" size="sm" onClick={onClose}>
-              Annuler
-            </Button>
+        {/* Footer — shrink-0 sticky en bas, toujours visible */}
+        <div className="border-md-border flex shrink-0 justify-between gap-2 border-t p-4">
+          {mode === 'edit' && (
             <Button
               type="button"
+              variant="outline"
               size="sm"
-              onClick={() => handleSubmit(false)}
-              disabled={pending || !!dateRangeError}
-              className="bg-md-magenta hover:bg-md-magenta-soft"
-              title={
-                dateRangeError === 'end_before_or_equal_start'
-                  ? 'Corrige la date de fin avant de continuer'
-                  : undefined
-              }
+              onClick={handleDelete}
+              disabled={pending}
+              className="text-red-600 hover:bg-red-50"
             >
-              {pending && <Loader2 className="mr-1 size-3 animate-spin" />}
-              {mode === 'edit' ? 'Mettre à jour' : 'Créer'}
+              <Trash2 className="mr-1 size-3" /> Supprimer
             </Button>
-          </div>
+          )}
+          <div className="flex-1" />
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => handleSubmit(false)}
+            disabled={pending || !!dateRangeError}
+            className="bg-md-magenta hover:bg-md-magenta-soft"
+            title={
+              dateRangeError === 'end_before_or_equal_start'
+                ? 'Corrige la date de fin avant de continuer'
+                : undefined
+            }
+          >
+            {pending && <Loader2 className="mr-1 size-3 animate-spin" />}
+            {mode === 'edit' ? 'Mettre à jour' : 'Créer'}
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

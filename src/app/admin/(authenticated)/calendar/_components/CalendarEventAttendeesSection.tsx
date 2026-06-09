@@ -168,9 +168,9 @@ export function CalendarEventAttendeesSection({
     <div className="space-y-2">
       <label className="text-xs font-semibold text-inherit">{c.label}</label>
 
-      {/* Liste des invités courants */}
+      {/* Liste des invités courants — max-h-48 pour ne pas exploser la modal */}
       {attendees.length > 0 && (
-        <ul className="space-y-1">
+        <ul className="max-h-48 space-y-1 overflow-y-auto">
           {attendees.map((a) => (
             <li
               key={a.email}
