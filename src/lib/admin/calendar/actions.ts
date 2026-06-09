@@ -23,7 +23,22 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { checkOverlap, type CalendarEventRow, type CalendarEventStatus } from './helpers';
 import { pushEventBestEffort, deleteEventFromGoogle } from './google/push-sync';
 
+// ─── Types partagés ───
+
+export type ContactSuggestion = {
+  id: string | null;
+  email: string;
+  displayName: string;
+  isCompanyContact: boolean;
+};
+
 // ─── Schemas Zod ───
+
+const attendeeInputSchema = z.object({
+  email: z.string().email(),
+  displayName: z.string().trim().max(200).nullable().optional(),
+  contact_id: z.string().uuid().nullable().optional(),
+});
 
 const createSchema = z.object({
   event_type: z.enum(['call_relance', 'meeting', 'task']),
@@ -40,6 +55,8 @@ const createSchema = z.object({
   target_user_id: z.string().uuid().optional(),
   /** P14.2 — génère un lien Google Meet (meeting + Google connecté). */
   generate_meet: z.boolean().default(false),
+  /** P14.2 #9 — liste des invités (max 50). */
+  attendees: z.array(attendeeInputSchema).max(50).default([]),
 });
 
 const updateSchema = createSchema
@@ -195,6 +212,7 @@ export async function createCalendarEventAction(
       is_all_day: data.is_all_day,
       priority: data.priority,
       created_by_user_id: profile.id,
+      attendees: data.attendees ?? [],
     } as never)
     .select('*')
     .single();
@@ -334,6 +352,7 @@ export async function updateCalendarEventAction(
   if (data.status !== undefined) updates.status = data.status;
   if (data.outcome !== undefined) updates.outcome = data.outcome;
   if (data.prospect_id !== undefined) updates.prospect_id = data.prospect_id;
+  if (data.attendees !== undefined) updates.attendees = data.attendees;
 
   const { data: updated, error: updErr } = await supabase
     .from('calendar_events')
@@ -551,4 +570,95 @@ export async function markCalendarEventDoneAction(
   revalidatePath('/admin/calendar');
   if (current.prospect_id) revalidatePath(`/admin/prospects/${current.prospect_id}`);
   return { ok: true, event: updated as CalendarEventRow };
+}
+
+// ─── SEARCH CONTACTS (pour la section Invités) ───
+
+/**
+ * P14.2 #9 — cherche des contacts MDS à ajouter comme invités.
+ *
+ * Stratégie :
+ *   1. Si prospect_id fourni : charge d'abord les contacts de la company
+ *      du prospect (priorité + label isCompanyContact=true).
+ *   2. Si query >= 2 chars : appelle la RPC search_contacts_fuzzy.
+ *   3. Merge : company contacts (filtrés par query) + fuzzy (dédupliqués).
+ *   4. Filtre les exclude_emails (déjà sélectionnés).
+ */
+export async function searchContactsForCalendarAction(input: {
+  query: string;
+  prospect_id?: string | null;
+  exclude_emails?: string[];
+}): Promise<{ ok: true; data: ContactSuggestion[] } | { ok: false; error: string }> {
+  await requireAdminProfile();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabaseServiceClient() as any;
+
+  const q = (input.query ?? '').trim().toLowerCase();
+  const excludeSet = new Set((input.exclude_emails ?? []).map((e) => e.toLowerCase()));
+
+  // 1. Contacts de la company du prospect lié.
+  let companyContacts: ContactSuggestion[] = [];
+  if (input.prospect_id) {
+    const { data: prospect } = await supabase
+      .from('prospects')
+      .select('company_id')
+      .eq('id', input.prospect_id)
+      .maybeSingle();
+    if (prospect?.company_id) {
+      const { data: contacts } = await supabase
+        .from('contacts')
+        .select('id, email, first_name, last_name')
+        .eq('company_id', prospect.company_id)
+        .not('email', 'is', null)
+        .order('is_primary', { ascending: false })
+        .order('created_at', { ascending: true })
+        .limit(50);
+      type CRow = {
+        id: string;
+        email: string;
+        first_name: string | null;
+        last_name: string | null;
+      };
+      companyContacts = ((contacts ?? []) as CRow[])
+        .filter((c) => c.email)
+        .filter((c) => !excludeSet.has(c.email.toLowerCase()))
+        .filter(
+          (c) =>
+            !q ||
+            c.email.toLowerCase().includes(q) ||
+            [c.first_name, c.last_name].join(' ').toLowerCase().includes(q),
+        )
+        .map((c) => ({
+          id: c.id,
+          email: c.email,
+          displayName: [c.first_name, c.last_name].filter(Boolean).join(' ').trim() || c.email,
+          isCompanyContact: true,
+        }));
+    }
+  }
+
+  // 2. Fuzzy search RPC si query >= 2 chars.
+  let fuzzyContacts: ContactSuggestion[] = [];
+  if (q.length >= 2) {
+    const { data } = await supabase.rpc('search_contacts_fuzzy', {
+      p_query: q,
+      p_limit_exact: 10,
+      p_limit_fuzzy: 5,
+    });
+    type FRow = { id: string; email: string; first_name: string | null; last_name: string | null };
+    const companyIds = new Set(companyContacts.map((c) => c.id));
+    fuzzyContacts = ((data ?? []) as FRow[])
+      .filter((r) => r.email && !excludeSet.has(r.email.toLowerCase()))
+      .filter((r) => !companyIds.has(r.id))
+      .map((r) => ({
+        id: r.id,
+        email: r.email,
+        displayName: [r.first_name, r.last_name].filter(Boolean).join(' ').trim() || r.email,
+        isCompanyContact: false,
+      }));
+  }
+
+  // 3. Merge : company contacts en premier (max 20 total).
+  const merged = [...companyContacts, ...fuzzyContacts].slice(0, 20);
+  return { ok: true, data: merged };
 }

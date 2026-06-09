@@ -8,7 +8,7 @@
  * "marquer fait" plus tard).
  */
 
-import { Phone, Users, CheckSquare } from 'lucide-react';
+import { Phone, Users, CheckSquare, Video } from 'lucide-react';
 import { formatTimeAgo } from '@/lib/utils/format-time-ago';
 import { formatParisDateTime } from '@/lib/format/dates';
 import type { TimelineEntry } from '@/lib/admin/prospects/timeline-helpers';
@@ -72,6 +72,41 @@ export function CalendarEventEntry({ entry }: Props) {
             })}
           </p>
         ) : null}
+
+        {/* P14.2 #8+#9 — mini chips Meet + attendees */}
+        {(entry.meet_url || (entry.attendees && entry.attendees.length > 0)) && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {entry.meet_url && (
+              <a
+                href={entry.meet_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 transition hover:bg-emerald-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Video className="size-2.5" aria-hidden /> 🎥 Meet
+              </a>
+            )}
+            {entry.attendees &&
+              entry.attendees.length > 0 &&
+              (() => {
+                const accepted = entry.attendees.filter(
+                  (a) => a.responseStatus === 'accepted',
+                ).length;
+                const declined = entry.attendees.filter(
+                  (a) => a.responseStatus === 'declined',
+                ).length;
+                const total = entry.attendees.length;
+                return (
+                  <span className="inline-flex items-center gap-0.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">
+                    👥 {total}
+                    {accepted > 0 && <span className="ml-0.5">{accepted}✅</span>}
+                    {declined > 0 && <span className="ml-0.5">{declined}❌</span>}
+                  </span>
+                );
+              })()}
+          </div>
+        )}
       </div>
     </div>
   );

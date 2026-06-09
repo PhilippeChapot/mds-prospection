@@ -21,7 +21,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { getAuthenticatedClientForUser, calendarClient } from './oauth-client';
 import { getOAuthToken, updateOAuthToken } from './tokens-store';
 import type { calendar_v3 } from 'googleapis';
-import type { CalendarEventType } from '../helpers';
+import type { CalendarEventType, AttendeeRecord } from '../helpers';
 
 export interface PullStats {
   ok: boolean;
@@ -62,7 +62,7 @@ export async function reconcileGoogleEventToMds(
   // Cherche la row MDS déjà liée à cet event Google.
   const { data: existing } = await supabase
     .from('calendar_events')
-    .select('id, google_etag, user_id')
+    .select('id, google_etag, user_id, attendees')
     .eq('google_calendar_event_id', googleId)
     .maybeSingle();
 
@@ -91,6 +91,44 @@ export async function reconcileGoogleEventToMds(
   const meetUrl = g.hangoutLink ?? null;
   const meetConferenceId = g.conferenceData?.conferenceId ?? null;
 
+  // P14.2 #9 — synchronise les attendees depuis Google (responseStatus).
+  // On merge : pour chaque invité Google, on préserve le contact_id déjà
+  // stocké côté MDS si l'email matche ; on résout les nouveaux contacts.
+  const googleAttendees = g.attendees ?? [];
+  let attendees: AttendeeRecord[] = [];
+  if (googleAttendees.length > 0) {
+    const emails = googleAttendees.map((a) => a.email).filter((e): e is string => !!e);
+    const contactMap = new Map<string, string>(); // email.lower → contact_id
+    if (emails.length > 0) {
+      const { data: foundContacts } = await supabase
+        .from('contacts')
+        .select('id, email')
+        .in('email', emails);
+      type CR = { id: string; email: string };
+      for (const c of (foundContacts ?? []) as CR[]) {
+        if (c.email) contactMap.set(c.email.toLowerCase(), c.id);
+      }
+    }
+    // Préserve contact_id depuis la row MDS existante si disponible.
+    const existingAttendeesMap = new Map<string, string | null | undefined>();
+    const existingAttendees =
+      (existing as { attendees?: AttendeeRecord[] } | null)?.attendees ?? [];
+    for (const a of existingAttendees) {
+      existingAttendeesMap.set(a.email.toLowerCase(), a.contact_id);
+    }
+    attendees = googleAttendees
+      .filter((a) => !!a.email)
+      .map((a) => {
+        const emailLower = a.email!.toLowerCase();
+        return {
+          email: a.email!,
+          displayName: a.displayName ?? null,
+          responseStatus: (a.responseStatus as AttendeeRecord['responseStatus']) ?? 'needsAction',
+          contact_id: existingAttendeesMap.get(emailLower) ?? contactMap.get(emailLower) ?? null,
+        };
+      });
+  }
+
   const baseFields = {
     title: g.summary ?? '(sans titre)',
     description: g.description ?? null,
@@ -103,6 +141,7 @@ export async function reconcileGoogleEventToMds(
     sync_status: 'synced' as const,
     meet_url: meetUrl,
     meet_conference_id: meetConferenceId,
+    attendees,
   };
 
   // 4. Update si déjà lié.

@@ -23,6 +23,7 @@
 
 import { useState, useTransition } from 'react';
 import { Loader2, Trash2, Check, Video } from 'lucide-react';
+import { CalendarEventAttendeesSection } from './CalendarEventAttendeesSection';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,6 +43,7 @@ import {
   type CalendarEventRow,
   type CalendarEventType,
   type CalendarEventPriority,
+  type AttendeeRecord,
 } from '@/lib/admin/calendar/helpers';
 import {
   COMMON_OUTCOME_VALUES,
@@ -120,6 +122,8 @@ export function CalendarEventFormModal({
   const [outcome, setOutcome] = useState<string>('');
   // P14.2 — génération d'un lien Google Meet (création meeting + Google connecté).
   const [generateMeet, setGenerateMeet] = useState(false);
+  // P14.2 #9 — invités.
+  const [attendees, setAttendees] = useState<AttendeeRecord[]>(initialEvent?.attendees ?? []);
 
   // P14.1.HOTFIX-UX : track si l user a explicitement edite endAt. Si non,
   // un changement de startAt re-aligne endAt sur startAt + 30min (auto).
@@ -177,6 +181,7 @@ export function CalendarEventFormModal({
         priority,
         force_overlap: forceOverlap,
         generate_meet: isMeeting && generateMeet,
+        attendees,
       };
 
       const r =
@@ -376,6 +381,16 @@ export function CalendarEventFormModal({
                 Meet
               </span>
             </label>
+          )}
+
+          {/* P14.2 #9 — Invités (meeting ou call_relance) */}
+          {(isMeeting || eventType === 'call_relance') && (
+            <CalendarEventAttendeesSection
+              attendees={attendees}
+              onChange={setAttendees}
+              prospectId={defaultProspectId ?? initialEvent?.prospect_id ?? null}
+              locale="fr"
+            />
           )}
 
           {/* Priority */}

@@ -88,6 +88,9 @@ describe('getProspectTimeline (P14.3)', () => {
         calendar_event_status: null,
         calendar_event_start: null,
         calendar_event_end: null,
+        meet_url: null,
+        meet_conference_id: null,
+        attendees: null,
       },
     ];
     state.users = [{ id: 'u1', full_name: 'Phil Chapot', email: 'phil@mds.fr' }];
@@ -115,6 +118,9 @@ describe('getProspectTimeline (P14.3)', () => {
         calendar_event_status: null,
         calendar_event_start: null,
         calendar_event_end: null,
+        meet_url: null,
+        meet_conference_id: null,
+        attendees: null,
       },
     ];
     mockService();
@@ -138,6 +144,9 @@ describe('getProspectTimeline (P14.3)', () => {
         calendar_event_status: null,
         calendar_event_start: null,
         calendar_event_end: null,
+        meet_url: null,
+        meet_conference_id: null,
+        attendees: null,
       },
     ];
     state.contacts = [{ id: 'c2', first_name: null, last_name: null, email: 'no@name.fr' }];
@@ -161,6 +170,9 @@ describe('getProspectTimeline (P14.3)', () => {
         calendar_event_status: 'pending',
         calendar_event_start: '2026-06-10T09:00:00.000Z',
         calendar_event_end: '2026-06-10T09:30:00.000Z',
+        meet_url: null,
+        meet_conference_id: null,
+        attendees: null,
       },
     ];
     state.users = [{ id: 'u1', full_name: 'Phil', email: 'p@mds.fr' }];
@@ -171,6 +183,54 @@ describe('getProspectTimeline (P14.3)', () => {
     expect(r[0].calendar_event_type).toBe('call_relance');
     expect(r[0].calendar_event_status).toBe('pending');
     expect(r[0].calendar_event_start).toBe('2026-06-10T09:00:00.000Z');
+  });
+
+  it('P14.2 #8/#9 — calendar event avec meet_url + attendees propagés dans TimelineEntry', async () => {
+    state.viewRows = [
+      {
+        id: 'ce2',
+        prospect_id: 'p1',
+        entry_type: 'calendar_event',
+        event_at: '2026-06-15T14:00:00.000Z',
+        actor_user_id: 'u1',
+        contact_id: null,
+        content: 'Meeting avec Meet',
+        calendar_event_type: 'meeting',
+        calendar_event_status: 'pending',
+        calendar_event_start: '2026-06-15T14:00:00.000Z',
+        calendar_event_end: '2026-06-15T15:00:00.000Z',
+        meet_url: 'https://meet.google.com/abc-xyz',
+        meet_conference_id: 'conf-99',
+        attendees: [
+          {
+            email: 'alice@acme.com',
+            displayName: 'Alice',
+            responseStatus: 'accepted',
+            contact_id: 'c-1',
+          },
+          {
+            email: 'bob@acme.com',
+            displayName: 'Bob',
+            responseStatus: 'needsAction',
+            contact_id: null,
+          },
+        ],
+      },
+    ];
+    state.users = [{ id: 'u1', full_name: 'Phil', email: 'p@mds.fr' }];
+    mockService();
+    const { getProspectTimeline } = await import('./timeline-helpers');
+    const r = await getProspectTimeline('p1');
+    expect(r).toHaveLength(1);
+    const entry = r[0];
+    // meet_url exposé dans TimelineEntry.
+    expect(entry.meet_url).toBe('https://meet.google.com/abc-xyz');
+    // attendees exposés avec responseStatus.
+    expect(entry.attendees).toHaveLength(2);
+    expect(entry.attendees![0].email).toBe('alice@acme.com');
+    expect(entry.attendees![0].responseStatus).toBe('accepted');
+    expect(entry.attendees![0].contact_id).toBe('c-1');
+    expect(entry.attendees![1].email).toBe('bob@acme.com');
   });
 });
 

@@ -23,11 +23,12 @@ const PARIS_TZ = 'Europe/Paris';
  * - tasks sans end_at : Google exige un end → on met end = start (event
  *   ponctuel) avec une durée de 0 ; en pratique on pousse surtout
  *   call_relance / meeting qui ont un end_at.
+ * - attendees : mappés si présents (P14.2 #9).
  */
 function toGoogleEvent(event: CalendarEventRow): Record<string, unknown> {
   const start = event.start_at;
   const end = event.end_at ?? event.start_at;
-  return {
+  const body: Record<string, unknown> = {
     summary: event.title,
     description: event.description ?? undefined,
     location: event.location ?? undefined,
@@ -36,6 +37,14 @@ function toGoogleEvent(event: CalendarEventRow): Record<string, unknown> {
     // Statut Google : cancelled si l'event MDS est annulé.
     status: event.status === 'cancelled' ? 'cancelled' : 'confirmed',
   };
+  // P14.2 #9 — attendees (si présents).
+  if (event.attendees && event.attendees.length > 0) {
+    body.attendees = event.attendees.map((a) => ({
+      email: a.email,
+      displayName: a.displayName ?? undefined,
+    }));
+  }
+  return body;
 }
 
 export interface PushResult {
@@ -82,6 +91,10 @@ export async function pushEventToGoogle(
     };
   }
 
+  // sendUpdates='all' si au moins 1 invité → Google envoie les invitations.
+  const sendUpdates: 'all' | 'none' =
+    event.attendees && event.attendees.length > 0 ? 'all' : 'none';
+
   try {
     let googleEventId = event.google_calendar_event_id ?? undefined;
     let resp;
@@ -91,12 +104,14 @@ export async function pushEventToGoogle(
         eventId: googleEventId,
         requestBody,
         conferenceDataVersion: wantMeet ? 1 : undefined,
+        sendUpdates,
       });
     } else {
       resp = await cal.events.insert({
         calendarId,
         requestBody,
         conferenceDataVersion: wantMeet ? 1 : undefined,
+        sendUpdates,
       });
       googleEventId = resp.data.id ?? undefined;
     }

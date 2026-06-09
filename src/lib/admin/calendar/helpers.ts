@@ -17,6 +17,14 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 // ─── Types metier ───
 
 export type CalendarEventType = 'call_relance' | 'meeting' | 'task';
+
+/** P14.2 #9 — un invité sur un calendar_event. Stocké en JSONB. */
+export type AttendeeRecord = {
+  email: string;
+  displayName?: string | null;
+  responseStatus?: 'needsAction' | 'accepted' | 'declined' | 'tentative' | null;
+  contact_id?: string | null;
+};
 export type CalendarEventStatus = 'pending' | 'done' | 'cancelled' | 'missed';
 export type CalendarEventPriority = 'low' | 'normal' | 'high';
 
@@ -67,6 +75,8 @@ export type CalendarEventRow = {
   sync_status?: 'synced' | 'pending_push' | 'pending_delete' | 'error' | null;
   meet_url?: string | null;
   meet_conference_id?: string | null;
+  // P14.2 #9 — invités (migration 0091).
+  attendees?: AttendeeRecord[] | null;
 };
 
 // ─── Mappings UI (couleurs + icones) ───

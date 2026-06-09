@@ -14,6 +14,7 @@
  */
 
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import type { AttendeeRecord } from '@/lib/admin/calendar/helpers';
 
 export type TimelineEntryType = 'note' | 'calendar_event' | 'auto';
 
@@ -68,6 +69,10 @@ export type TimelineEntry = {
   auto_kind?: AutoEntryKind;
   /** P14.4 : payload brut audit_log.after pour AutoEntryChip (link ext, montant, etc.). */
   auto_payload?: Record<string, unknown> | null;
+  /** P14.2 #8 — lien Google Meet (si calendar_event avec meet_url). */
+  meet_url?: string | null;
+  /** P14.2 #9 — invités (si calendar_event avec attendees). */
+  attendees?: AttendeeRecord[] | null;
 };
 
 export type ProspectContactLite = {
@@ -111,6 +116,10 @@ export async function getProspectTimeline(prospectId: string): Promise<TimelineE
     calendar_event_status: 'pending' | 'done' | 'missed' | null;
     calendar_event_start: string | null;
     calendar_event_end: string | null;
+    // P14.2 #8/#9 — colonnes ajoutées en migration 0091.
+    meet_url: string | null;
+    meet_conference_id: string | null;
+    attendees: AttendeeRecord[] | null;
   };
   const rows = (viewRows ?? []) as ViewRow[];
   if (rows.length === 0) return [];
@@ -164,6 +173,8 @@ export async function getProspectTimeline(prospectId: string): Promise<TimelineE
     calendar_event_status: r.calendar_event_status,
     calendar_event_start: r.calendar_event_start,
     calendar_event_end: r.calendar_event_end,
+    meet_url: r.meet_url ?? null,
+    attendees: r.attendees ?? null,
   }));
 }
 

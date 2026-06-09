@@ -592,9 +592,12 @@ export type Database = {
           event_type: Database['public']['Enums']['calendar_event_type'];
           google_calendar_event_id: string | null;
           google_calendar_synced_at: string | null;
+          google_etag: string | null;
           id: string;
           is_all_day: boolean;
           location: string | null;
+          meet_conference_id: string | null;
+          meet_url: string | null;
           outcome: string | null;
           priority: Database['public']['Enums']['calendar_event_priority'];
           prospect_id: string | null;
@@ -603,6 +606,7 @@ export type Database = {
           reminder_24h_sent_at: string | null;
           start_at: string;
           status: Database['public']['Enums']['calendar_event_status'];
+          sync_status: string | null;
           title: string;
           updated_at: string;
           user_id: string;
@@ -616,9 +620,12 @@ export type Database = {
           event_type?: Database['public']['Enums']['calendar_event_type'];
           google_calendar_event_id?: string | null;
           google_calendar_synced_at?: string | null;
+          google_etag?: string | null;
           id?: string;
           is_all_day?: boolean;
           location?: string | null;
+          meet_conference_id?: string | null;
+          meet_url?: string | null;
           outcome?: string | null;
           priority?: Database['public']['Enums']['calendar_event_priority'];
           prospect_id?: string | null;
@@ -627,6 +634,7 @@ export type Database = {
           reminder_24h_sent_at?: string | null;
           start_at: string;
           status?: Database['public']['Enums']['calendar_event_status'];
+          sync_status?: string | null;
           title: string;
           updated_at?: string;
           user_id: string;
@@ -640,9 +648,12 @@ export type Database = {
           event_type?: Database['public']['Enums']['calendar_event_type'];
           google_calendar_event_id?: string | null;
           google_calendar_synced_at?: string | null;
+          google_etag?: string | null;
           id?: string;
           is_all_day?: boolean;
           location?: string | null;
+          meet_conference_id?: string | null;
+          meet_url?: string | null;
           outcome?: string | null;
           priority?: Database['public']['Enums']['calendar_event_priority'];
           prospect_id?: string | null;
@@ -651,6 +662,7 @@ export type Database = {
           reminder_24h_sent_at?: string | null;
           start_at?: string;
           status?: Database['public']['Enums']['calendar_event_status'];
+          sync_status?: string | null;
           title?: string;
           updated_at?: string;
           user_id?: string;
@@ -674,6 +686,68 @@ export type Database = {
             foreignKeyName: 'calendar_events_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      calendar_oauth_tokens: {
+        Row: {
+          created_at: string;
+          encrypted_refresh_token: string;
+          google_account_email: string | null;
+          google_calendar_id: string;
+          last_sync_error: string | null;
+          last_synced_at: string | null;
+          provider: string;
+          sync_enabled: boolean;
+          sync_token: string | null;
+          updated_at: string;
+          user_id: string;
+          webhook_channel_id: string | null;
+          webhook_expires_at: string | null;
+          webhook_resource_id: string | null;
+          webhook_token: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          encrypted_refresh_token: string;
+          google_account_email?: string | null;
+          google_calendar_id?: string;
+          last_sync_error?: string | null;
+          last_synced_at?: string | null;
+          provider?: string;
+          sync_enabled?: boolean;
+          sync_token?: string | null;
+          updated_at?: string;
+          user_id: string;
+          webhook_channel_id?: string | null;
+          webhook_expires_at?: string | null;
+          webhook_resource_id?: string | null;
+          webhook_token?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          encrypted_refresh_token?: string;
+          google_account_email?: string | null;
+          google_calendar_id?: string;
+          last_sync_error?: string | null;
+          last_synced_at?: string | null;
+          provider?: string;
+          sync_enabled?: boolean;
+          sync_token?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          webhook_channel_id?: string | null;
+          webhook_expires_at?: string | null;
+          webhook_resource_id?: string | null;
+          webhook_token?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_oauth_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -3491,6 +3565,10 @@ export type Database = {
       };
       is_admin: { Args: never; Returns: boolean };
       is_admin_or_sales: { Args: never; Returns: boolean };
+      merge_companies: {
+        Args: { p_actor_id: string; p_source_id: string; p_target_id: string };
+        Returns: Json;
+      };
       search_companies_fuzzy: {
         Args: {
           p_limit_exact?: number;
