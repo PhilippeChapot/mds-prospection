@@ -57,12 +57,25 @@ interface CaseBPayload {
   message?: string;
 }
 
+export interface ConvertOptions {
+  force?: boolean;
+  force_reason?: string;
+}
+
 export async function convertSignupToProspect(
   signupId: string,
+  options?: ConvertOptions,
 ): Promise<ActionResult<ConvertResult>> {
   const profile = await requireAdminProfile();
   if (!hasAdminAccess(profile.role)) {
     return { success: false, error: 'Réservé aux admins.' };
+  }
+
+  if (options?.force && (!options.force_reason || options.force_reason.trim().length < 3)) {
+    return {
+      success: false,
+      error: 'La raison de la conversion forcée est obligatoire (3 caractères min).',
+    };
   }
 
   const supabase = getSupabaseServiceClient();
@@ -86,10 +99,10 @@ export async function convertSignupToProspect(
       data: { prospectId: signup.converted_to_prospect_id },
     };
   }
-  if (signup.status !== 'step2_completed') {
+  if (!options?.force && signup.status !== 'step2_completed') {
     return {
       success: false,
-      error: `Conversion possible uniquement depuis status='step2_completed' (actuel : ${signup.status}).`,
+      error: `Conversion possible uniquement depuis status='step2_completed' (actuel : ${signup.status}). Utilisez la conversion forcée si nécessaire.`,
     };
   }
 
@@ -396,10 +409,16 @@ export async function convertSignupToProspect(
     entity_id: newProspect.id,
     action: 'create',
     after: {
-      kind: 'signup_converted',
+      kind: options?.force ? 'signup_force_converted' : 'signup_converted',
       signup_id: signup.id,
       email: signup.email,
       language: signup.language,
+      ...(options?.force
+        ? {
+            force_reason: options.force_reason,
+            status_at_conversion: signup.status,
+          }
+        : {}),
     },
   });
 

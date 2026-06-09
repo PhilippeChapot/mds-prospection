@@ -34,6 +34,7 @@ export type AutoEntryKind =
   | 'quote_emit_success'
   | 'stripe_payment_received'
   | 'signup_converted'
+  | 'signup_force_converted'
   // P6.x.SellsyDedupClient
   | 'sellsy_client_resolved'
   | 'company_sellsy_link_set'
@@ -282,6 +283,14 @@ export function mapAuditLogToAutoEntry(row: AuditLogRow): {
     return {
       kind: 'signup_converted',
       content: `Signup web converti${email ? ` · ${email}` : ''}`,
+    };
+  }
+  if (kindHint === 'signup_force_converted') {
+    const email = (after as { email?: string }).email ?? '';
+    const reason = (after as { force_reason?: string }).force_reason ?? '';
+    return {
+      kind: 'signup_force_converted',
+      content: `Signup converti (forcé)${email ? ` · ${email}` : ''}${reason ? ` — ${reason}` : ''}`,
     };
   }
   if (kindHint === 'quote_emit_success') {

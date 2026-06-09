@@ -9,6 +9,8 @@ import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { Step2PayloadView } from './Step2PayloadView';
 import { AdminActionsBar } from './AdminActionsBar';
+import { SignupSelectionRecap } from './SignupSelectionRecap';
+import { getSignupAddonsDetails } from '@/lib/signup/addon-details';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import {
   SIGNUP_STATUS_CLASS,
@@ -48,6 +50,12 @@ export default async function SignupDetailPage({ params }: PageProps) {
   const status = (SIGNUP_STATUSES as readonly string[]).includes(signup.status)
     ? (signup.status as SignupStatus)
     : ('awaiting_verification' as SignupStatus);
+
+  // Résolution addons (P5.x.SignupForceConversion — toujours, peu importe le status).
+  const step2Raw = signup.step2_payload as { mode?: string; addonIds?: string[] } | null;
+  const addonIds =
+    step2Raw?.mode === 'caseA' && Array.isArray(step2Raw.addonIds) ? step2Raw.addonIds : [];
+  const addonDetails = await getSignupAddonsDetails(addonIds);
 
   const ai = signup.ai_classification as {
     pole_code?: string;
@@ -252,6 +260,13 @@ export default async function SignupDetailPage({ params }: PageProps) {
           </p>
         )}
       </SectionCard>
+
+      {/* Sélection partenaire — P5.x : toujours visible si addonIds présents */}
+      {addonDetails.length > 0 || addonIds.length > 0 ? (
+        <SectionCard title="Sélection partenaire (addons)">
+          <SignupSelectionRecap payload={signup.step2_payload} addonDetails={addonDetails} />
+        </SectionCard>
+      ) : null}
 
       {/* Section Étape 2 */}
       {(status === 'step2_started' || status === 'step2_completed' || status === 'converted') && (

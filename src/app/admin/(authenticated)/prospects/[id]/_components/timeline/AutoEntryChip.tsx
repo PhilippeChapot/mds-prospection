@@ -31,6 +31,7 @@ const KIND_META: Record<AutoEntryKind, { emoji: string; bg: string; fg: string }
   quote_emit_success: { emoji: '📄', bg: 'bg-md-magenta/10', fg: 'text-md-magenta' },
   stripe_payment_received: { emoji: '💳', bg: 'bg-green-100', fg: 'text-green-800' },
   signup_converted: { emoji: '🌐', bg: 'bg-md-blue-light', fg: 'text-md-blue-dark' },
+  signup_force_converted: { emoji: '⚠️', bg: 'bg-amber-100', fg: 'text-amber-800' },
   sellsy_client_resolved: { emoji: '🔗', bg: 'bg-sky-100', fg: 'text-sky-800' },
   company_sellsy_link_set: { emoji: '🔗', bg: 'bg-emerald-100', fg: 'text-emerald-800' },
   company_sellsy_link_removed: { emoji: '🔓', bg: 'bg-gray-100', fg: 'text-gray-700' },
@@ -43,7 +44,7 @@ function getExternalLink(entry: TimelineEntry): string | null {
   if (kind === 'quote_emit_success') {
     return (payload as { public_url?: string }).public_url ?? null;
   }
-  if (kind === 'signup_converted') {
+  if (kind === 'signup_converted' || kind === 'signup_force_converted') {
     const signupId = (payload as { signup_id?: string }).signup_id;
     return signupId ? `/admin/signups/${signupId}` : null;
   }

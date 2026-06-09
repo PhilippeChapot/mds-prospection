@@ -3,11 +3,12 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { CheckCircle2, XCircle, Mail, Sparkles, Loader2 } from 'lucide-react';
+import { XCircle, Mail, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { convertSignupToProspect, rejectSignup, resendDoi, reclassifySignup } from './actions';
+import { rejectSignup, resendDoi, reclassifySignup } from './actions';
+import { SignupConvertActions } from './SignupConvertActions';
 import type { SignupStatus } from '../types';
 
 interface Props {
@@ -23,28 +24,8 @@ export function AdminActionsBar({ signupId, status, tokenExpired, hasProspect }:
   const [rejectMode, setRejectMode] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
-  const canConvert = status === 'step2_completed';
   const canReject = status !== 'converted' && status !== 'rejected';
   const canResend = status === 'awaiting_verification' || status === 'verified' || tokenExpired;
-
-  function handleConvert() {
-    if (
-      !confirm(
-        "Convertir cette inscription en prospect ?\n\nCette action :\n- Crée une company + contact si nécessaire\n- Insère un nouveau prospect (status=lead)\n- Vous attribue comme owner\n- Marque l'inscription comme converted",
-      )
-    ) {
-      return;
-    }
-    startTransition(async () => {
-      const result = await convertSignupToProspect(signupId);
-      if (result.success && result.data) {
-        toast.success('Prospect créé.');
-        router.push(`/admin/prospects/${result.data.prospectId}`);
-      } else {
-        toast.error(`Échec : ${'error' in result ? result.error : 'unknown'}`);
-      }
-    });
-  }
 
   function handleReject() {
     startTransition(async () => {
@@ -87,30 +68,12 @@ export function AdminActionsBar({ signupId, status, tokenExpired, hasProspect }:
   return (
     <Card className="border-md-border space-y-3 p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
-        {hasProspect ? (
-          <span className="text-md-success bg-md-success/10 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold">
-            <CheckCircle2 className="size-3.5" aria-hidden /> Déjà converti en prospect
-          </span>
-        ) : canConvert ? (
-          <Button
-            type="button"
-            onClick={handleConvert}
-            disabled={pending}
-            className="bg-md-success hover:bg-md-success/90"
-          >
-            {pending ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-            ) : (
-              <CheckCircle2 className="size-4" aria-hidden />
-            )}
-            Convertir en prospect
-          </Button>
-        ) : (
-          <Button type="button" disabled className="opacity-60">
-            <CheckCircle2 className="size-4" aria-hidden />
-            Convertir (étape 2 non finalisée)
-          </Button>
-        )}
+        <SignupConvertActions
+          signupId={signupId}
+          status={status}
+          hasProspect={hasProspect}
+          globalPending={pending}
+        />
 
         {canResend && (
           <Button type="button" variant="outline" onClick={handleResend} disabled={pending}>
