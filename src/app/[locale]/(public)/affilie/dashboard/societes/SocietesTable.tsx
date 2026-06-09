@@ -145,6 +145,11 @@ function SourceBadge({
       label: t('source.declaredByAffiliate'),
       className: 'bg-amber-100 text-amber-800',
     },
+    manual_admin: {
+      emoji: '🤝',
+      label: t('source.manualAdmin'),
+      className: 'bg-teal-100 text-teal-800',
+    },
   };
   const cfg = map[source];
   return (

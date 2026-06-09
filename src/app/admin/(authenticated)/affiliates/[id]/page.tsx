@@ -4,9 +4,12 @@ import { ArrowLeft, Archive, ArchiveRestore } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getAffiliateDetail } from '@/lib/affiliates/queries';
+import { listManualAttachmentsForAffiliate } from '@/lib/affiliate-claims/queries';
+import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { archiveAffiliateAction, unarchiveAffiliateAction } from '../actions';
 import { MarkPaidButton } from './MarkPaidButton';
 import { CopyButtonClient } from './CopyButtonClient';
+import { AffiliateManualAttachSection } from './AffiliateManualAttachSection';
 
 export const metadata = { title: 'Détail affilié' };
 export const dynamic = 'force-dynamic';
@@ -34,10 +37,15 @@ const fmtDate = (iso: string | null) =>
 
 export default async function AffiliateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const detail = await getAffiliateDetail(id);
+  const [detail, profile, attachments] = await Promise.all([
+    getAffiliateDetail(id),
+    requireAdminProfile(),
+    listManualAttachmentsForAffiliate(id),
+  ]);
   if (!detail) notFound();
 
   const { affiliate, prospects } = detail;
+  const isSuperAdmin = profile.role === 'super_admin';
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
   const trackingUrl = `${baseUrl}/fr/inscription-partenaire?ref=${affiliate.token}`;
 
@@ -127,6 +135,13 @@ export default async function AffiliateDetailPage({ params }: { params: Promise<
           tone={affiliate.commissionDueEur > 0 ? 'warning' : 'default'}
         />
       </section>
+
+      <AffiliateManualAttachSection
+        affiliateId={affiliate.id}
+        affiliateName={affiliate.displayName}
+        attachments={attachments}
+        isSuperAdmin={isSuperAdmin}
+      />
 
       <section>
         <h2 className="text-md-text-muted mb-2 text-[11px] font-bold tracking-widest uppercase">

@@ -264,7 +264,8 @@
         "source": {
           "cookieTracking": "Cookie tracking",
           "declaredByCompany": "Declared by company",
-          "declaredByAffiliate": "Declared by me"
+          "declaredByAffiliate": "Declared by me",
+          "manualAdmin": "Attached by the MDS team"
         },
         "status": {
           "pending": "Admin validation",

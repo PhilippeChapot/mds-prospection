@@ -29,6 +29,8 @@ export type AutoEntryKind =
   | 'booth_cleared'
   | 'stand_assigned'
   | 'prospect_booths_changed'
+  | 'affiliate_company_attached'
+  | 'affiliate_company_detached'
   | 'quote_emit_success'
   | 'stripe_payment_received'
   | 'signup_converted'
@@ -256,6 +258,17 @@ export function mapAuditLogToAutoEntry(row: AuditLogRow): {
     return {
       kind: 'prospect_booths_changed',
       content: `${count} bloc${count > 1 ? 's' : ''} assigné${count > 1 ? 's' : ''}${list}`,
+    };
+  }
+  if (kindHint === 'affiliate_company_attached') {
+    const name = (after as { affiliate_name?: string }).affiliate_name ?? '?';
+    return { kind: 'affiliate_company_attached', content: `Affilié attribué → ${name}` };
+  }
+  if (kindHint === 'affiliate_company_detached') {
+    const reason = (after as { reason?: string }).reason;
+    return {
+      kind: 'affiliate_company_detached',
+      content: `Société détachée d'un affilié${reason ? ` · ${reason}` : ''}`,
     };
   }
   if (kindHint === 'stripe_payment_received') {
