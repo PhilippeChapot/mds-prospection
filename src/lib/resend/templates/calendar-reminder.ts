@@ -34,6 +34,8 @@ export interface CalendarReminderParams {
   prospectUrl: string | null;
   /** URL absolue vers la fiche event sur /admin/calendar. */
   calendarUrl: string;
+  /** P14.2 — lien Google Meet si l'event en a un (CTA "Rejoindre le Meet"). */
+  meetUrl?: string | null;
   locale: AdminLocale;
 }
 
@@ -68,6 +70,7 @@ const COPY = {
     concerns: 'Concerne',
     notes: 'Notes',
     cta: 'Voir dans le calendrier MDS',
+    joinMeet: '🎥 Rejoindre le Meet',
     footer:
       "Rappel automatique du calendrier MDS Prospection. Pour ne plus recevoir ce rappel, marque l'évènement comme « fait » ou « annulé ».",
   },
@@ -86,6 +89,7 @@ const COPY = {
     concerns: 'Concerns',
     notes: 'Notes',
     cta: 'View in MDS calendar',
+    joinMeet: '🎥 Join the Meet',
     footer:
       'Automatic reminder from the MDS Prospection calendar. To stop receiving this reminder, mark the event as "done" or "cancelled".',
   },
@@ -168,7 +172,12 @@ export function renderCalendarReminder(params: CalendarReminderParams): Calendar
         ${rows.join('\n        ')}
       </table>
       <div style="margin-top:24px;text-align:center;">
-        <a href="${escapeHtml(params.calendarUrl)}" style="display:inline-block;padding:10px 20px;background:#e6007e;color:white;text-decoration:none;border-radius:6px;font-weight:bold;font-size:13px;">${c.cta}</a>
+        ${
+          params.meetUrl
+            ? `<a href="${escapeHtml(params.meetUrl)}" style="display:inline-block;margin:0 6px 8px;padding:10px 20px;background:#0b8043;color:white;text-decoration:none;border-radius:6px;font-weight:bold;font-size:13px;">${c.joinMeet}</a>`
+            : ''
+        }
+        <a href="${escapeHtml(params.calendarUrl)}" style="display:inline-block;margin:0 6px 8px;padding:10px 20px;background:#e6007e;color:white;text-decoration:none;border-radius:6px;font-weight:bold;font-size:13px;">${c.cta}</a>
       </div>
     </div>
     <div style="background:#f9fafb;padding:12px 24px;color:#6b7280;font-size:11px;line-height:1.4;border-top:1px solid #e5e7eb;">
@@ -192,6 +201,9 @@ export function renderCalendarReminder(params: CalendarReminderParams): Calendar
   }
   if (params.description) {
     textLines.push('', `${c.notes} :`, params.description);
+  }
+  if (params.meetUrl) {
+    textLines.push('', `${c.joinMeet} : ${params.meetUrl}`);
   }
   textLines.push('', `${c.cta} : ${params.calendarUrl}`, '', '---', c.footer);
 

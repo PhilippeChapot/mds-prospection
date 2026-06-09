@@ -62,6 +62,11 @@ export type CalendarEventRow = {
   created_by_user_id: string | null;
   google_calendar_event_id: string | null;
   google_calendar_synced_at: string | null;
+  // P14.2.SalesCalendarGoogleSync — colonnes sync (migration 0090).
+  google_etag?: string | null;
+  sync_status?: 'synced' | 'pending_push' | 'pending_delete' | 'error' | null;
+  meet_url?: string | null;
+  meet_conference_id?: string | null;
 };
 
 // ─── Mappings UI (couleurs + icones) ───

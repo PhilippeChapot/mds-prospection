@@ -36,6 +36,8 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 interface Props {
   currentUserId: string;
   currentUserRole: 'admin' | 'sales' | 'super_admin';
+  /** P14.2 — Google connecté + sync active (affiche la case "Générer un Meet"). */
+  googleConnected?: boolean;
 }
 
 type RbcEvent = {
@@ -55,7 +57,7 @@ const TYPE_OPTIONS: Array<{ value: CalendarEventType | ''; label: string }> = [
 
 const VIEWS: View[] = ['month', 'week', 'day', 'agenda'];
 
-export function CalendarShell({ currentUserId, currentUserRole }: Props) {
+export function CalendarShell({ currentUserId, currentUserRole, googleConnected = false }: Props) {
   const [view, setView] = useState<View>('week');
   const [date, setDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEventRow[]>([]);
@@ -238,6 +240,7 @@ export function CalendarShell({ currentUserId, currentUserRole }: Props) {
           initialEvent={modalState.mode === 'edit' ? modalState.event : undefined}
           initialSlot={modalState.mode === 'create' ? modalState.slot : undefined}
           currentUserRole={currentUserRole}
+          googleConnected={googleConnected}
           onClose={() => handleCloseModal(false)}
           onSaved={() => handleCloseModal(true)}
         />

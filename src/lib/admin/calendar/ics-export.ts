@@ -113,6 +113,7 @@ export function generateIcsCalendar(
 
     const descLines: string[] = [];
     if (e.description) descLines.push(e.description);
+    if (e.meet_url) descLines.push(`🎥 Google Meet : ${e.meet_url}`);
     if (e.outcome) descLines.push(`Résultat : ${e.outcome.replace(/_/g, ' ')}`);
     if (options.baseUrl) {
       descLines.push(`Détails : ${options.baseUrl}/admin/calendar`);

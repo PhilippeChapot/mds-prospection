@@ -21,6 +21,7 @@ import { revalidatePath } from 'next/cache';
 import { requireAdminProfile, type AdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { checkOverlap, type CalendarEventRow, type CalendarEventStatus } from './helpers';
+import { pushEventBestEffort, deleteEventFromGoogle } from './google/push-sync';
 
 // ─── Schemas Zod ───
 
@@ -37,6 +38,8 @@ const createSchema = z.object({
   force_overlap: z.boolean().default(false),
   /** Surcharge super_admin only — creer pour un autre user. */
   target_user_id: z.string().uuid().optional(),
+  /** P14.2 — génère un lien Google Meet (meeting + Google connecté). */
+  generate_meet: z.boolean().default(false),
 });
 
 const updateSchema = createSchema
@@ -233,6 +236,13 @@ export async function createCalendarEventAction(
     } as never,
   });
 
+  // P14.2 — push best-effort vers Google (awaité : meet_url dispo au refetch,
+  // le cron retry est le filet si l'API Google échoue). No-op si non connecté.
+  await pushEventBestEffort(
+    created as CalendarEventRow,
+    data.generate_meet === true && data.event_type === 'meeting',
+  );
+
   revalidatePath('/admin/calendar');
   if (data.prospect_id) revalidatePath(`/admin/prospects/${data.prospect_id}`);
   return { ok: true, event: created as CalendarEventRow };
@@ -361,6 +371,14 @@ export async function updateCalendarEventAction(
     } as never,
   });
 
+  // P14.2 — propage la modif vers Google (awaité best-effort). Si l'event a
+  // été lié (google_calendar_event_id présent dans `updated`), push fait un
+  // update Google ; sinon insert. Meet conservé via generate_meet.
+  await pushEventBestEffort(
+    updated as CalendarEventRow,
+    data.generate_meet === true && (updated as CalendarEventRow).event_type === 'meeting',
+  );
+
   revalidatePath('/admin/calendar');
   if (current.prospect_id) revalidatePath(`/admin/prospects/${current.prospect_id}`);
   return { ok: true, event: updated as CalendarEventRow };
@@ -380,7 +398,7 @@ export async function deleteCalendarEventAction(
 
   const { data: current } = await supabase
     .from('calendar_events')
-    .select('id, user_id, prospect_id')
+    .select('id, user_id, prospect_id, google_calendar_event_id')
     .eq('id', parsed.data.id)
     .maybeSingle();
   if (!current) return { ok: false, error: 'Event introuvable.', errorCode: 'not_found' };
@@ -391,6 +409,24 @@ export async function deleteCalendarEventAction(
       error: 'Reserve au proprietaire ou au super_admin.',
       errorCode: 'forbidden',
     };
+  }
+
+  // P14.2 — supprime d'abord côté Google (best-effort, 404/410 = déjà absent).
+  const googleEventId = (current as { google_calendar_event_id?: string | null })
+    .google_calendar_event_id;
+  if (googleEventId) {
+    try {
+      const r = await deleteEventFromGoogle(current.user_id, googleEventId);
+      if (!r.ok) {
+        console.warn('[calendar/delete] google-delete-failed event=%s err=%s', current.id, r.error);
+      }
+    } catch (err) {
+      console.warn(
+        '[calendar/delete] google-delete-error event=%s msg=%s',
+        current.id,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
   }
 
   const { error } = await supabase.from('calendar_events').delete().eq('id', parsed.data.id);

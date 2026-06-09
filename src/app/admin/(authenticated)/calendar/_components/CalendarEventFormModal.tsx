@@ -22,7 +22,7 @@
  */
 
 import { useState, useTransition } from 'react';
-import { Loader2, Trash2, Check } from 'lucide-react';
+import { Loader2, Trash2, Check, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,6 +58,8 @@ interface Props {
   defaultTitle?: string;
   defaultType?: CalendarEventType;
   currentUserRole: 'admin' | 'sales' | 'super_admin';
+  /** P14.2 — affiche la case "Générer un lien Meet" si Google est connecté. */
+  googleConnected?: boolean;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -82,6 +84,7 @@ export function CalendarEventFormModal({
   defaultTitle,
   defaultType,
   currentUserRole,
+  googleConnected = false,
   onClose,
   onSaved,
 }: Props) {
@@ -115,6 +118,8 @@ export function CalendarEventFormModal({
     start_at: string;
   } | null>(null);
   const [outcome, setOutcome] = useState<string>('');
+  // P14.2 — génération d'un lien Google Meet (création meeting + Google connecté).
+  const [generateMeet, setGenerateMeet] = useState(false);
 
   // P14.1.HOTFIX-UX : track si l user a explicitement edite endAt. Si non,
   // un changement de startAt re-aligne endAt sur startAt + 30min (auto).
@@ -171,6 +176,7 @@ export function CalendarEventFormModal({
         is_all_day: false,
         priority,
         force_overlap: forceOverlap,
+        generate_meet: isMeeting && generateMeet,
       };
 
       const r =
@@ -344,6 +350,32 @@ export function CalendarEventFormModal({
                 maxLength={500}
               />
             </div>
+          )}
+
+          {/* P14.2 — Google Meet (meeting + Google connecté) */}
+          {isMeeting && initialEvent?.meet_url && (
+            <a
+              href={initialEvent.meet_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            >
+              <Video className="size-4" aria-hidden /> 🎥 Rejoindre le Meet
+            </a>
+          )}
+          {isMeeting && googleConnected && !initialEvent?.meet_url && (
+            <label className="border-md-border flex items-center gap-2 rounded-md border bg-emerald-50/50 p-2.5 text-sm">
+              <input
+                type="checkbox"
+                checked={generateMeet}
+                onChange={(e) => setGenerateMeet(e.target.checked)}
+                className="size-4"
+              />
+              <span className="flex items-center gap-1.5">
+                <Video className="size-4 text-emerald-600" aria-hidden /> 🎥 Générer un lien Google
+                Meet
+              </span>
+            </label>
           )}
 
           {/* Priority */}

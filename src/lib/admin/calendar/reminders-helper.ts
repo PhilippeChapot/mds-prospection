@@ -87,6 +87,7 @@ export async function sendEventReminder(
     prospectCompanyName,
     prospectUrl,
     calendarUrl: `${BASE_URL}/admin/calendar`,
+    meetUrl: event.meet_url ?? null,
     locale,
   });
 

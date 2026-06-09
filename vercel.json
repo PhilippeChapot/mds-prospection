@@ -30,6 +30,14 @@
     {
       "path": "/api/cron/calendar-reminders",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/google-calendar-sync-retry",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/google-calendar-webhook-renewal",
+      "schedule": "0 3 * * *"
     }
   ]
 }
