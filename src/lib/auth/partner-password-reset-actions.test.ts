@@ -80,7 +80,7 @@ describe('requestPartnerPasswordResetAction (P11.x)', () => {
   it('retourne succès générique même si email inconnu (anti-enumeration)', async () => {
     vi.doMock('@/lib/supabase/service', () => ({
       getSupabaseServiceClient: () => ({
-        from() {
+        from(_?: string) {
           return {
             select: () => this.from(''),
             ilike: () => this.from(''),

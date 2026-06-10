@@ -34,15 +34,6 @@ function parseCategories(raw: string | string[] | undefined): TarifCategory[] {
   return arr.filter((c): c is TarifCategory => (TARIF_CATEGORIES as readonly string[]).includes(c));
 }
 
-function buildHref(base: string, params: Record<string, string | undefined>): string {
-  const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') sp.set(k, v);
-  }
-  const qs = sp.toString();
-  return qs ? `${base}?${qs}` : base;
-}
-
 export default async function TarifsPage({ searchParams }: { searchParams: SearchParams }) {
   // P5.x.1-quater (bug #2) — defense in depth : tarifs = admin+ only.
   const profile = await requireAdminProfile();
