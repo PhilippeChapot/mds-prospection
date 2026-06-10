@@ -6,7 +6,7 @@
  * requestPartnerPasswordResetAction  : email → token + email Resend
  * consumePartnerPasswordResetAction  : token + nouveau password → update
  *
- * Anti-enumeration : réponse générique même si l'email n'existe pas.
+ * Anti-enumeration : réponse générique si contact inexistant ou sans password.
  * Email via Resend (doctrine feedback_resend_for_transactional_not_brevo).
  * Token : 64 hex chars aléatoires, TTL 30 min, usage unique.
  */
@@ -16,6 +16,8 @@ import crypto from 'crypto';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
 import { hashPassword, validatePasswordStrength } from './partner-password';
+
+const LOG = '[partner-password-reset]';
 
 const GENERIC_OK = {
   ok: true as const,
@@ -40,15 +42,27 @@ export async function requestPartnerPasswordResetAction(
   const { email, locale } = parsed.data;
   const supabase = getSupabaseServiceClient();
 
-  const { data: contact } = await supabase
+  const { data: contact, error: selectError } = await supabase
     .from('contacts')
     .select('id, first_name, password_hash')
     .ilike('email', email)
     .limit(1)
     .maybeSingle();
 
-  // Anti-enumeration : retourner le même message générique même si inconnu.
+  // Log DB errors — révèle les problèmes de migration (colonne inexistante, etc.)
+  if (selectError) {
+    console.error('%s db-select-error email=%s err=%o', LOG, email, selectError);
+    return GENERIC_OK;
+  }
+
+  // Anti-enumeration : réponse générique si inconnu ou sans password configuré.
   if (!contact || !contact.password_hash) {
+    console.log(
+      '%s early-return email=%s reason=%s',
+      LOG,
+      email,
+      !contact ? 'contact_not_found' : 'no_password_set',
+    );
     return GENERIC_OK;
   }
 
@@ -56,11 +70,17 @@ export async function requestPartnerPasswordResetAction(
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
-  await supabase.from('partner_password_reset_tokens').insert({
+  const { error: insertError } = await supabase.from('partner_password_reset_tokens').insert({
     token,
     contact_id: contact.id,
     expires_at: expiresAt.toISOString(),
   });
+
+  if (insertError) {
+    // Table inexistante = migration 0092 non appliquée
+    console.error('%s token-insert-failed contact_id=%s err=%o', LOG, contact.id, insertError);
+    return GENERIC_OK;
+  }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
   const resetUrl = `${baseUrl}/${locale}/espace-partenaire/reinitialiser-mot-de-passe?token=${encodeURIComponent(token)}`;
@@ -95,22 +115,21 @@ export async function requestPartnerPasswordResetAction(
 <p style="font-size:12px;color:#666">Ce lien expire dans 30 minutes. Si vous n'avez pas fait cette demande, ignorez cet email.</p>
 `;
 
-  try {
-    await sendTransactionalEmailViaResend({
-      to: email,
-      toName: firstName,
-      subject,
-      html,
-      text: `${locale === 'en' ? 'Reset link' : 'Lien de réinitialisation'} : ${resetUrl}`,
-      tags: [
-        { name: 'category', value: 'partner_password_reset' },
-        { name: 'locale', value: locale },
-      ],
-    });
-  } catch (err) {
-    console.error('[partner-password-reset] send-failed email=%s err=%s', email, err);
-    // Non bloquant — retourner succès générique
-  }
+  // Pas de try/catch — on laisse propager pour visibilité dans Vercel logs.
+  // Une erreur Resend ici = vrai problème config/quota, pas anti-enumeration.
+  await sendTransactionalEmailViaResend({
+    to: email,
+    toName: firstName,
+    subject,
+    html,
+    text: `${locale === 'en' ? 'Reset link' : 'Lien de réinitialisation'} : ${resetUrl}`,
+    tags: [
+      { name: 'category', value: 'partner_password_reset' },
+      { name: 'locale', value: locale },
+    ],
+  });
+
+  console.log('%s email-sent contact_id=%s locale=%s', LOG, contact.id, locale);
 
   await supabase.from('audit_log').insert({
     action: 'partner_password_reset_requested',
@@ -144,11 +163,16 @@ export async function consumePartnerPasswordResetAction(
 
   const supabase = getSupabaseServiceClient();
 
-  const { data: tokenRow } = await supabase
+  const { data: tokenRow, error: tokenError } = await supabase
     .from('partner_password_reset_tokens')
     .select('*')
     .eq('token', parsed.data.token)
     .maybeSingle();
+
+  if (tokenError) {
+    console.error('%s consume-db-error err=%o', LOG, tokenError);
+    return { ok: false, error: 'server_error' };
+  }
 
   if (!tokenRow) return { ok: false, error: 'token_invalid' };
   if (tokenRow.used_at) return { ok: false, error: 'token_already_used' };
@@ -174,6 +198,8 @@ export async function consumePartnerPasswordResetAction(
     before: null,
     after: { triggered_by: 'self' },
   });
+
+  console.log('%s reset-consumed contact_id=%s', LOG, tokenRow.contact_id);
 
   return { ok: true };
 }

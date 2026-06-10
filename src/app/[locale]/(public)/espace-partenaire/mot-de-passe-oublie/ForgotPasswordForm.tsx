@@ -20,8 +20,12 @@ export function ForgotPasswordForm({ locale }: { locale: 'fr' | 'en' }) {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus('submitting');
-    const result = await requestPartnerPasswordResetAction({ email, locale });
-    setStatus(result.ok ? 'success' : 'error');
+    try {
+      const result = await requestPartnerPasswordResetAction({ email, locale });
+      setStatus(result.ok ? 'success' : 'error');
+    } catch {
+      setStatus('error');
+    }
   }
 
   if (status === 'success') {
