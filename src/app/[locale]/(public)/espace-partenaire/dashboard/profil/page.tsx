@@ -3,7 +3,9 @@ import { setRequestLocale } from 'next-intl/server';
 import type { Locale } from 'next-intl';
 import { requireContactSession } from '@/lib/espace-partenaire/session';
 import { detectUserProfile } from '@/lib/espace-partenaire/detect-profile';
+import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { ContactProfileForm } from './ContactProfileForm';
+import { SecuritySection } from './SecuritySection';
 
 export const metadata = { title: 'Mon profil' };
 export const dynamic = 'force-dynamic';
@@ -23,6 +25,14 @@ export default async function ContactProfilePage({ params }: PageProps) {
 
   const session = await requireContactSession(localeSafe);
   const profile = await detectUserProfile(session.contactId);
+
+  // P11.x — fetch password_set_at pour la section Sécurité
+  const supabase = getSupabaseServiceClient();
+  const { data: contactAuth } = (await supabase
+    .from('contacts')
+    .select('password_set_at')
+    .eq('id', session.contactId)
+    .maybeSingle()) as { data: { password_set_at: string | null } | null };
   if (!profile) {
     return (
       <p className="text-md-text-muted text-sm">
@@ -87,6 +97,9 @@ export default async function ContactProfilePage({ params }: PageProps) {
           />
         </div>
       </section>
+
+      {/* P11.x — section Sécurité */}
+      <SecuritySection locale={localeSafe} passwordSetAt={contactAuth?.password_set_at ?? null} />
 
       <section className="border-md-border bg-card space-y-2 rounded-xl border p-5 shadow-sm">
         <p className="text-md-text-muted text-[11px] font-bold tracking-wider uppercase">

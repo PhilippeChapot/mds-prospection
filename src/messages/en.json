@@ -616,6 +616,76 @@
         "templates": "Social announcement templates",
         "templatesComingSoon": "Available soon"
       }
+    },
+    "tabs": {
+      "magicLink": "🔗 Magic link",
+      "password": "🔑 Password"
+    },
+    "passwordLogin": {
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "submit": "Sign in",
+      "submitLoading": "Signing in…",
+      "forgotPassword": "Forgot password?",
+      "error": {
+        "invalid_credentials": "Incorrect email or password.",
+        "no_password": "No password set for this account. Use the magic link instead.",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "forgotPassword": {
+      "heading": "Forgot password",
+      "subheading": "Enter your email. If an account exists, you will receive a reset link valid for 30 minutes.",
+      "emailLabel": "Email address",
+      "submit": "Send reset link",
+      "submitLoading": "Sending…",
+      "success": "If an account with this email exists, a reset link has been sent.",
+      "backToLogin": "Back to sign in",
+      "error": {
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "resetPassword": {
+      "heading": "Set a new password",
+      "subheading": "Choose a password with at least 8 characters.",
+      "newPasswordLabel": "New password",
+      "confirmLabel": "Confirm password",
+      "submit": "Save password",
+      "submitLoading": "Saving…",
+      "success": "Password saved. You can now sign in.",
+      "goToLogin": "Go to sign in",
+      "error": {
+        "token_invalid": "Invalid or expired link. Request a new one.",
+        "token_expired": "This link has expired. Request a new one.",
+        "token_already_used": "This link has already been used.",
+        "passwords_mismatch": "Passwords do not match.",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "security": {
+      "title": "🔐 Security",
+      "magicLinkAlwaysActive": "Magic link: always active",
+      "noPassword": "No password set.",
+      "noPasswordDesc": "You sign in via magic links. You can set a password for faster access.",
+      "hasPassword": "Password set on {date}",
+      "definePassword": "Set a password",
+      "changePassword": "Change",
+      "removePassword": "Remove password",
+      "removePasswordConfirm": "Remove your password? You will need to use magic links to sign in.",
+      "currentPasswordLabel": "Current password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "successSet": "Password set.",
+      "successRemoved": "Password removed.",
+      "error": {
+        "current_password_required": "Enter your current password.",
+        "current_password_incorrect": "Current password is incorrect.",
+        "passwords_mismatch": "Passwords do not match.",
+        "generic": "Something went wrong. Please try again."
+      }
     }
   },
   "legal": {

@@ -616,6 +616,76 @@
         "templates": "Modèles d'annonce sociale",
         "templatesComingSoon": "Disponibles prochainement"
       }
+    },
+    "tabs": {
+      "magicLink": "🔗 Lien magique",
+      "password": "🔑 Mot de passe"
+    },
+    "passwordLogin": {
+      "emailLabel": "Adresse email",
+      "passwordLabel": "Mot de passe",
+      "submit": "Se connecter",
+      "submitLoading": "Connexion…",
+      "forgotPassword": "Mot de passe oublié ?",
+      "error": {
+        "invalid_credentials": "Email ou mot de passe incorrect.",
+        "no_password": "Aucun mot de passe configuré pour ce compte. Utilisez le lien magique.",
+        "generic": "Une erreur est survenue. Réessayez."
+      }
+    },
+    "forgotPassword": {
+      "heading": "Mot de passe oublié",
+      "subheading": "Saisissez votre email. Si un compte existe, vous recevrez un lien de réinitialisation valable 30 minutes.",
+      "emailLabel": "Adresse email",
+      "submit": "Envoyer le lien",
+      "submitLoading": "Envoi…",
+      "success": "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.",
+      "backToLogin": "Retour à la connexion",
+      "error": {
+        "generic": "Une erreur est survenue. Réessayez."
+      }
+    },
+    "resetPassword": {
+      "heading": "Nouveau mot de passe",
+      "subheading": "Choisissez un mot de passe d'au moins 8 caractères.",
+      "newPasswordLabel": "Nouveau mot de passe",
+      "confirmLabel": "Confirmer le mot de passe",
+      "submit": "Enregistrer le mot de passe",
+      "submitLoading": "Enregistrement…",
+      "success": "Mot de passe enregistré. Vous pouvez maintenant vous connecter.",
+      "goToLogin": "Aller à la connexion",
+      "error": {
+        "token_invalid": "Lien invalide ou expiré. Demandez un nouveau lien.",
+        "token_expired": "Ce lien a expiré. Demandez un nouveau lien.",
+        "token_already_used": "Ce lien a déjà été utilisé.",
+        "passwords_mismatch": "Les mots de passe ne correspondent pas.",
+        "generic": "Une erreur est survenue. Réessayez."
+      }
+    },
+    "security": {
+      "title": "🔐 Sécurité",
+      "magicLinkAlwaysActive": "Lien magique : toujours actif",
+      "noPassword": "Aucun mot de passe configuré.",
+      "noPasswordDesc": "Vous vous connectez via les liens magiques. Vous pouvez définir un mot de passe pour un accès plus rapide.",
+      "hasPassword": "Mot de passe configuré le {date}",
+      "definePassword": "Définir un mot de passe",
+      "changePassword": "Changer",
+      "removePassword": "Supprimer le mot de passe",
+      "removePasswordConfirm": "Supprimer votre mot de passe ? Vous devrez utiliser les liens magiques pour vous reconnecter.",
+      "currentPasswordLabel": "Mot de passe actuel",
+      "newPasswordLabel": "Nouveau mot de passe",
+      "confirmPasswordLabel": "Confirmer le nouveau mot de passe",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler",
+      "successSet": "Mot de passe configuré.",
+      "successRemoved": "Mot de passe supprimé.",
+      "error": {
+        "current_password_required": "Saisissez votre mot de passe actuel.",
+        "current_password_incorrect": "Mot de passe actuel incorrect.",
+        "passwords_mismatch": "Les mots de passe ne correspondent pas.",
+        "generic": "Une erreur est survenue. Réessayez."
+      }
     }
   },
   "legal": {

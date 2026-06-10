@@ -4,7 +4,22 @@ import { formatParisDateTime } from '@/lib/format/dates';
 
 export type AuditRow = {
   id: string;
-  action: 'create' | 'update' | 'delete' | 'login' | 'rgpd_rtbf' | 'rgpd_export' | 'sync_manual';
+  action:
+    | 'create'
+    | 'update'
+    | 'delete'
+    | 'login'
+    | 'rgpd_rtbf'
+    | 'rgpd_export'
+    | 'sync_manual'
+    | 'partner_password_login'
+    | 'partner_password_set'
+    | 'partner_password_removed'
+    | 'partner_password_reset_requested'
+    | 'partner_password_reset_consumed'
+    | 'admin_triggered_partner_magic_link'
+    | 'admin_triggered_partner_password_reset'
+    | 'admin_removed_partner_password';
   before: Record<string, unknown> | null;
   after: Record<string, unknown> | null;
   created_at: string;
@@ -74,6 +89,14 @@ const ACTION_LABEL: Record<AuditRow['action'], string> = {
   rgpd_rtbf: 'RGPD effacement',
   rgpd_export: 'RGPD export',
   sync_manual: 'Sync manuelle',
+  partner_password_login: 'Connexion mot de passe',
+  partner_password_set: 'Mot de passe défini',
+  partner_password_removed: 'Mot de passe supprimé',
+  partner_password_reset_requested: 'Reset demandé',
+  partner_password_reset_consumed: 'Reset consommé',
+  admin_triggered_partner_magic_link: 'Magic link admin',
+  admin_triggered_partner_password_reset: 'Reset admin',
+  admin_removed_partner_password: 'Suppression MDP admin',
 };
 
 function ActionIcon({ action }: { action: AuditRow['action'] }) {

@@ -26,6 +26,8 @@ import { SignJWT, jwtVerify, errors as joseErrors } from 'jose';
 const ALG = 'HS256';
 const MAGIC_TTL_SECONDS = 15 * 60;
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
+// P11.x — session longue durée pour login par mot de passe (30 jours).
+const SESSION_LONG_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 export type EspacePartenaireTokenType = 'magic' | 'session';
 
@@ -105,6 +107,13 @@ export async function signContactMagicToken(contactId: string): Promise<string> 
 export async function signContactSessionToken(contactId: string): Promise<string> {
   return signToken(contactId, 'session', SESSION_TTL_SECONDS, 'contact');
 }
+
+/** P11.x — session longue durée (30 j) pour login par mot de passe. */
+export async function signLongContactSessionToken(contactId: string): Promise<string> {
+  return signToken(contactId, 'session', SESSION_LONG_TTL_SECONDS, 'contact');
+}
+
+export const ESPACE_EXPOSANT_SESSION_LONG_MAX_AGE = SESSION_LONG_TTL_SECONDS;
 
 async function verifyToken(
   token: string,

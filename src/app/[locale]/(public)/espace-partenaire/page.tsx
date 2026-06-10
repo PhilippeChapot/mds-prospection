@@ -1,7 +1,7 @@
 import { setRequestLocale } from 'next-intl/server';
 import { useTranslations } from 'next-intl';
 import { AlertTriangle } from 'lucide-react';
-import { RequestMagicLinkForm } from './RequestMagicLinkForm';
+import { PartnerLoginTabs } from './PartnerLoginTabs';
 import type { Locale } from 'next-intl';
 
 export const metadata = {
@@ -61,7 +61,7 @@ function Content({
         </div>
       )}
 
-      <RequestMagicLinkForm locale={locale} />
+      <PartnerLoginTabs locale={locale} />
     </section>
   );
 }

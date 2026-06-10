@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { Lock } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { HeaderLogo } from '@/components/brand/HeaderLogo';
 import { LocaleSwitcher } from '@/components/public/LocaleSwitcher';
@@ -23,16 +23,13 @@ export function PublicTopbar() {
 
         <div className="flex items-center gap-2">
           <LocaleSwitcher />
-          <button
-            type="button"
-            disabled
-            aria-label={t('exhibitorSpaceComingSoon')}
-            title={t('exhibitorSpaceComingSoon')}
-            className="text-md-text-muted hidden cursor-not-allowed items-center gap-2 rounded-md px-3 py-1.5 text-sm opacity-50 sm:inline-flex"
+          <Link
+            href="/espace-partenaire"
+            className="text-md-blue hover:bg-md-blue/5 hidden items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition sm:inline-flex"
           >
-            <Lock className="h-3.5 w-3.5" aria-hidden />
+            <LogIn className="h-3.5 w-3.5" aria-hidden />
             <span>{t('exhibitorSpace')}</span>
-          </button>
+          </Link>
         </div>
       </div>
     </header>

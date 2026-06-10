@@ -14,6 +14,7 @@ import { MergeCompanyButton } from './MergeButton';
 import { updateCompanyNotesAction } from './actions';
 import { CompanyContactsSection } from './_components/CompanyContactsSection';
 import { SellsyClientLinkSection } from './_components/SellsyClientLinkSection';
+import { PartnerAuthSection, type PartnerAuthData } from './_components/PartnerAuthSection';
 import { listContactsForCompany } from '@/lib/contacts/admin-queries';
 import type { PoleCode } from '@/lib/design-tokens';
 import { hasAdminAccess, isSuperAdmin } from '@/lib/auth/role-helpers';
@@ -79,6 +80,26 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       created_at: p.created_at,
     };
   });
+
+  // P11.x — auth status du contact principal de la société
+  const primaryContact = companyContacts.find((c) => c.is_primary) ?? companyContacts[0] ?? null;
+  let partnerAuthData: PartnerAuthData | null = null;
+  if (primaryContact) {
+    const { data: contactAuth } = (await supabase
+      .from('contacts')
+      .select('id, email, password_set_at')
+      .eq('id', primaryContact.id)
+      .maybeSingle()) as {
+      data: { id: string; email: string; password_set_at: string | null } | null;
+    };
+    if (contactAuth) {
+      partnerAuthData = {
+        contact_id: contactAuth.id,
+        email: contactAuth.email,
+        password_set_at: contactAuth.password_set_at,
+      };
+    }
+  }
 
   // Audit
   const { data: auditData } = await supabase
@@ -287,6 +308,14 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       {/* Prospects lies */}
       <Section title="Prospects lies">
         <LinkedProspectsTable rows={linkedProspects} />
+      </Section>
+
+      {/* P11.x — Auth partenaire */}
+      <Section title="Authentification partenaire">
+        <PartnerAuthSection
+          partnerAuth={partnerAuthData}
+          isSuperAdmin={isSuperAdmin(profile.role)}
+        />
       </Section>
 
       {/* Audit */}

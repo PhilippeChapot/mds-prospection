@@ -43,6 +43,11 @@ export const PATHNAMES = {
     fr: '/politique-confidentialite',
     en: '/privacy-policy',
   },
+  // P11.x — espace partenaire (même slug FR/EN)
+  '/espace-partenaire': '/espace-partenaire',
+  '/espace-partenaire/mot-de-passe-oublie': '/espace-partenaire/mot-de-passe-oublie',
+  '/espace-partenaire/reinitialiser-mot-de-passe': '/espace-partenaire/reinitialiser-mot-de-passe',
+  '/espace-partenaire/dashboard': '/espace-partenaire/dashboard',
 } as const;
 
 export const routing = defineRouting({

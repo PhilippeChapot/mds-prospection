@@ -25,6 +25,14 @@ const ACTION_LABEL: Record<AuditAction, string> = {
   rgpd_rtbf: 'RGPD effacement',
   rgpd_export: 'RGPD export',
   sync_manual: 'Sync manuelle',
+  partner_password_login: 'Connexion mot de passe',
+  partner_password_set: 'Mot de passe défini',
+  partner_password_removed: 'Mot de passe supprimé',
+  partner_password_reset_requested: 'Reset demandé',
+  partner_password_reset_consumed: 'Reset consommé',
+  admin_triggered_partner_magic_link: 'Magic link admin',
+  admin_triggered_partner_password_reset: 'Reset admin',
+  admin_removed_partner_password: 'Suppression MDP admin',
 };
 
 const ENTITY_DETAIL_PATH: Record<string, string> = {
