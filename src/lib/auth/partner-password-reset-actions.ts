@@ -55,14 +55,11 @@ export async function requestPartnerPasswordResetAction(
     return GENERIC_OK;
   }
 
-  // Anti-enumeration : réponse générique si inconnu ou sans password configuré.
-  if (!contact || !contact.password_hash) {
-    console.log(
-      '%s early-return email=%s reason=%s',
-      LOG,
-      email,
-      !contact ? 'contact_not_found' : 'no_password_set',
-    );
+  // Anti-enumeration : réponse générique si contact inconnu seulement.
+  // Pas de check password_hash : un partenaire sans password peut aussi
+  // utiliser ce flow pour définir son premier mot de passe via lien email.
+  if (!contact) {
+    console.log('%s early-return email=%s reason=contact_not_found', LOG, email);
     return GENERIC_OK;
   }
 
@@ -89,27 +86,27 @@ export async function requestPartnerPasswordResetAction(
 
   const subject =
     locale === 'en'
-      ? 'Reset your MediaDays Solutions password'
-      : 'Réinitialisation de votre mot de passe MediaDays Solutions';
+      ? 'Set or reset your MediaDays Solutions password'
+      : 'Définir ou réinitialiser votre mot de passe MediaDays Solutions';
 
   const html =
     locale === 'en'
       ? `
 <p>Hello ${firstName},</p>
-<p>You requested a password reset for your MediaDays Solutions partner account.</p>
+<p>You requested to set or reset your password for your MediaDays Solutions partner account.</p>
 <p style="margin:24px 0">
   <a href="${resetUrl}" style="background:#031a56;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">
-    Set a new password
+    Choose a password
   </a>
 </p>
 <p style="font-size:12px;color:#666">This link expires in 30 minutes. If you did not make this request, you can safely ignore this email.</p>
 `
       : `
 <p>Bonjour ${firstName},</p>
-<p>Vous avez demandé la réinitialisation de votre mot de passe pour votre espace partenaire MediaDays Solutions.</p>
+<p>Vous avez demandé à définir ou réinitialiser votre mot de passe pour votre espace partenaire MediaDays Solutions.</p>
 <p style="margin:24px 0">
   <a href="${resetUrl}" style="background:#031a56;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">
-    Choisir un nouveau mot de passe
+    Choisir un mot de passe
   </a>
 </p>
 <p style="font-size:12px;color:#666">Ce lien expire dans 30 minutes. Si vous n'avez pas fait cette demande, ignorez cet email.</p>

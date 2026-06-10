@@ -81,14 +81,19 @@ describe('auth-admin-actions (P11.x)', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('adminTriggerPasswordResetAction : retourne ok:false si pas de password configuré', async () => {
+  it('adminTriggerPasswordResetAction : retourne ok:true même sans password configuré', async () => {
     state.passwordHash = null;
     vi.resetModules();
     mockAllDeps();
     const { adminTriggerPasswordResetAction } = await import('./auth-admin-actions');
     const result = await adminTriggerPasswordResetAction({ contact_id: state.contactId });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toBe('no_password_set');
+    expect(result.ok).toBe(true);
+  });
+
+  it('adminTriggerPasswordResetAction : retourne ok:true si password déjà configuré', async () => {
+    const { adminTriggerPasswordResetAction } = await import('./auth-admin-actions');
+    const result = await adminTriggerPasswordResetAction({ contact_id: state.contactId });
+    expect(result.ok).toBe(true);
   });
 
   it('adminRemovePartnerPasswordAction : retourne ok:true avec super_admin', async () => {

@@ -106,7 +106,6 @@ export async function adminTriggerPasswordResetAction(
   };
 
   if (!contact) return { ok: false, error: 'contact_not_found' };
-  if (!contact.password_hash) return { ok: false, error: 'no_password_set' };
 
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
@@ -124,10 +123,10 @@ export async function adminTriggerPasswordResetAction(
   await sendTransactionalEmailViaResend({
     to: contact.email,
     toName: contact.first_name ?? undefined,
-    subject: 'Réinitialisation de votre mot de passe MediaDays Solutions',
+    subject: 'Définir ou réinitialiser votre mot de passe MediaDays Solutions',
     html: `
 <p>Bonjour ${capitalizeName(firstName)},</p>
-<p>L'équipe MediaDays Solutions vous envoie un lien pour réinitialiser votre mot de passe.</p>
+<p>L'équipe MediaDays Solutions vous envoie un lien pour définir ou réinitialiser votre mot de passe.</p>
 <p style="margin:24px 0">
   <a href="${resetUrl}" style="background:#031a56;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">
     Choisir un nouveau mot de passe

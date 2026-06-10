@@ -66,7 +66,7 @@ describe('requestPartnerPasswordResetAction (P11.x)', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('retourne succès générique + envoie email si compte avec password', async () => {
+  it('envoie email si compte avec password déjà configuré', async () => {
     mockDeps();
     const { requestPartnerPasswordResetAction } = await import('./partner-password-reset-actions');
     const result = await requestPartnerPasswordResetAction({
@@ -75,6 +75,24 @@ describe('requestPartnerPasswordResetAction (P11.x)', () => {
     });
     expect(result.ok).toBe(true);
     expect('message' in result && result.message).toBeTruthy();
+  });
+
+  it('envoie email même si aucun password configuré (premier set)', async () => {
+    state.passwordHash = null;
+    const sendMock = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('@/lib/supabase/service', () => ({
+      getSupabaseServiceClient: () => makeClient(),
+    }));
+    vi.doMock('@/lib/resend/client', () => ({
+      sendTransactionalEmailViaResend: sendMock,
+    }));
+    const { requestPartnerPasswordResetAction } = await import('./partner-password-reset-actions');
+    const result = await requestPartnerPasswordResetAction({
+      email: state.contactEmail,
+      locale: 'fr',
+    });
+    expect(result.ok).toBe(true);
+    expect(sendMock).toHaveBeenCalledOnce();
   });
 
   it('retourne succès générique même si email inconnu (anti-enumeration)', async () => {
