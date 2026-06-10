@@ -15,6 +15,7 @@ import { getAffiliePitchsDownloadsAction } from '@/lib/affilie/pitchs-actions';
 import { getAffilieContent } from '@/content/affilie-pitchs/content';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { AffiliatePresentationsSection } from './_components/AffiliatePresentationsSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,6 +75,9 @@ export default async function AffiliePitchsPage({ params }: PageProps) {
           ))}
         </div>
       </Card>
+
+      {/* Canva presentations */}
+      <AffiliatePresentationsSection locale={safeLocale} />
 
       {/* Pitch 20s */}
       <Section title={content.pitch20s.title}>
