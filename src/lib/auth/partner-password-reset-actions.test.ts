@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const state = {
   contactId: '11111111-1111-1111-8111-111111111111',
   contactEmail: 'alice@acme.com',
-  passwordHash: '$2a$12$somehash',
+  passwordHash: '$2a$12$somehash' as string | null,
   tokenRow: null as {
     token: string;
     contact_id: string;
