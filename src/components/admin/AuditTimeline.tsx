@@ -19,7 +19,8 @@ export type AuditRow = {
     | 'partner_password_reset_consumed'
     | 'admin_triggered_partner_magic_link'
     | 'admin_triggered_partner_password_reset'
-    | 'admin_removed_partner_password';
+    | 'admin_removed_partner_password'
+    | 'event_assigned';
   before: Record<string, unknown> | null;
   after: Record<string, unknown> | null;
   created_at: string;
@@ -97,6 +98,7 @@ const ACTION_LABEL: Record<AuditRow['action'], string> = {
   admin_triggered_partner_magic_link: 'Magic link admin',
   admin_triggered_partner_password_reset: 'Reset admin',
   admin_removed_partner_password: 'Suppression MDP admin',
+  event_assigned: 'Évènement assigné',
 };
 
 function ActionIcon({ action }: { action: AuditRow['action'] }) {

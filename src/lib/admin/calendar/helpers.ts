@@ -77,6 +77,8 @@ export type CalendarEventRow = {
   meet_conference_id?: string | null;
   // P14.2 #9 — invités (migration 0091).
   attendees?: AttendeeRecord[] | null;
+  // P14.5 — assignataires (migration 0093).
+  assignee_user_ids?: string[] | null;
 };
 
 // ─── Mappings UI (couleurs + icones) ───

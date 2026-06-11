@@ -584,6 +584,7 @@ export type Database = {
       };
       calendar_events: {
         Row: {
+          assignee_user_ids: string[];
           attendees: Json;
           created_at: string;
           created_by_user_id: string | null;
@@ -613,6 +614,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          assignee_user_ids?: string[] | null;
           attendees?: Json;
           created_at?: string;
           created_by_user_id?: string | null;
@@ -642,6 +644,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          assignee_user_ids?: string[] | null;
           attendees?: Json;
           created_at?: string;
           created_by_user_id?: string | null;
@@ -1501,11 +1504,11 @@ export type Database = {
           lifecycle_emails_enabled: boolean;
           linkedin_url: string | null;
           marketing_consent: boolean;
+          password_hash: string | null;
+          password_set_at: string | null;
           phone: string | null;
           phone_mobile: string | null;
           phone_mobile_source: string | null;
-          password_hash: string | null;
-          password_set_at: string | null;
           role: string | null;
           sellsy_contact_id: string | null;
         };
@@ -1532,11 +1535,11 @@ export type Database = {
           lifecycle_emails_enabled?: boolean;
           linkedin_url?: string | null;
           marketing_consent?: boolean;
+          password_hash?: string | null;
+          password_set_at?: string | null;
           phone?: string | null;
           phone_mobile?: string | null;
           phone_mobile_source?: string | null;
-          password_hash?: string | null;
-          password_set_at?: string | null;
           role?: string | null;
           sellsy_contact_id?: string | null;
         };
@@ -2181,6 +2184,44 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      partner_password_reset_tokens: {
+        Row: {
+          contact_id: string;
+          created_at: string;
+          expires_at: string;
+          ip_address: string | null;
+          token: string;
+          used_at: string | null;
+          user_agent: string | null;
+        };
+        Insert: {
+          contact_id: string;
+          created_at?: string;
+          expires_at: string;
+          ip_address?: string | null;
+          token: string;
+          used_at?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          contact_id?: string;
+          created_at?: string;
+          expires_at?: string;
+          ip_address?: string | null;
+          token?: string;
+          used_at?: string | null;
+          user_agent?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'partner_password_reset_tokens_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
             referencedColumns: ['id'];
           },
         ];
@@ -3535,41 +3576,35 @@ export type Database = {
           },
         ];
       };
-      // P11.x — table générée par migration 0092 (pas encore appliquée)
-      partner_password_reset_tokens: {
+      user_calendar_visibility: {
         Row: {
-          token: string;
-          contact_id: string;
-          expires_at: string;
-          used_at: string | null;
           created_at: string;
-          ip_address: string | null;
-          user_agent: string | null;
+          user_id: string;
+          visible_user_id: string;
         };
         Insert: {
-          token: string;
-          contact_id: string;
-          expires_at: string;
-          used_at?: string | null;
           created_at?: string;
-          ip_address?: string | null;
-          user_agent?: string | null;
+          user_id: string;
+          visible_user_id: string;
         };
         Update: {
-          token?: string;
-          contact_id?: string;
-          expires_at?: string;
-          used_at?: string | null;
           created_at?: string;
-          ip_address?: string | null;
-          user_agent?: string | null;
+          user_id?: string;
+          visible_user_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'partner_password_reset_tokens_contact_id_fkey';
-            columns: ['contact_id'];
+            foreignKeyName: 'user_calendar_visibility_user_id_fkey';
+            columns: ['user_id'];
             isOneToOne: false;
-            referencedRelation: 'contacts';
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_calendar_visibility_visible_user_id_fkey';
+            columns: ['visible_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];

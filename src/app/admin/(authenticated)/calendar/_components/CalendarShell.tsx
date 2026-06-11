@@ -30,6 +30,7 @@ import {
   type CalendarEventType,
 } from '@/lib/admin/calendar/helpers';
 import { listCalendarEventsAction } from '@/lib/admin/calendar/actions';
+import type { AdminUserSummary } from '@/lib/admin/calendar/collaboration-actions';
 import { CalendarEventFormModal } from './CalendarEventFormModal';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
@@ -38,6 +39,8 @@ interface Props {
   currentUserRole: 'admin' | 'sales' | 'super_admin';
   /** P14.2 — Google connecté + sync active (affiche la case "Générer un Meet"). */
   googleConnected?: boolean;
+  /** P14.5 — liste des users admin/sales pour multi-select assignataires. */
+  allUsers?: AdminUserSummary[];
 }
 
 type RbcEvent = {
@@ -57,7 +60,12 @@ const TYPE_OPTIONS: Array<{ value: CalendarEventType | ''; label: string }> = [
 
 const VIEWS: View[] = ['month', 'week', 'day', 'agenda'];
 
-export function CalendarShell({ currentUserId, currentUserRole, googleConnected = false }: Props) {
+export function CalendarShell({
+  currentUserId,
+  currentUserRole,
+  googleConnected = false,
+  allUsers = [],
+}: Props) {
   const [view, setView] = useState<View>('week');
   const [date, setDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEventRow[]>([]);
@@ -241,6 +249,7 @@ export function CalendarShell({ currentUserId, currentUserRole, googleConnected 
           initialSlot={modalState.mode === 'create' ? modalState.slot : undefined}
           currentUserRole={currentUserRole}
           googleConnected={googleConnected}
+          allUsers={allUsers}
           onClose={() => handleCloseModal(false)}
           onSaved={() => handleCloseModal(true)}
         />

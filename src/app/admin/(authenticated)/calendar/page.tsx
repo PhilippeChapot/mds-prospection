@@ -7,6 +7,7 @@
 
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getOAuthToken } from '@/lib/admin/calendar/google/tokens-store';
+import { listAdminUsersForCalendarAction } from '@/lib/admin/calendar/collaboration-actions';
 import { CalendarShell } from './_components/CalendarShell';
 
 export const metadata = { title: 'Calendrier' };
@@ -14,8 +15,12 @@ export const dynamic = 'force-dynamic';
 
 export default async function CalendarPage() {
   const profile = await requireAdminProfile();
-  const googleToken = await getOAuthToken(profile.id);
+  const [googleToken, usersRes] = await Promise.all([
+    getOAuthToken(profile.id),
+    listAdminUsersForCalendarAction(),
+  ]);
   const googleConnected = !!googleToken && googleToken.sync_enabled;
+  const allUsers = usersRes.ok ? usersRes.users : [];
   return (
     <div className="space-y-4">
       <header>
@@ -31,6 +36,7 @@ export default async function CalendarPage() {
         currentUserId={profile.id}
         currentUserRole={profile.role}
         googleConnected={googleConnected}
+        allUsers={allUsers}
       />
     </div>
   );

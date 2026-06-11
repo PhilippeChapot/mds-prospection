@@ -22,7 +22,9 @@
  */
 
 import { useState, useTransition } from 'react';
-import { Loader2, Trash2, Check, Video } from 'lucide-react';
+import { Loader2, Trash2, Check, Video, Users } from 'lucide-react';
+import type { AdminUserSummary } from '@/lib/admin/calendar/collaboration-actions';
+import { assignEventToUsersAction } from '@/lib/admin/calendar/collaboration-actions';
 import { CalendarEventAttendeesSection } from './CalendarEventAttendeesSection';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -62,6 +64,8 @@ interface Props {
   currentUserRole: 'admin' | 'sales' | 'super_admin';
   /** P14.2 — affiche la case "Générer un lien Meet" si Google est connecté. */
   googleConnected?: boolean;
+  /** P14.5 — liste des users admin/sales (pour multi-select assignataires). */
+  allUsers?: AdminUserSummary[];
   onClose: () => void;
   onSaved: () => void;
 }
@@ -87,6 +91,7 @@ export function CalendarEventFormModal({
   defaultType,
   currentUserRole,
   googleConnected = false,
+  allUsers = [],
   onClose,
   onSaved,
 }: Props) {
@@ -124,6 +129,9 @@ export function CalendarEventFormModal({
   const [generateMeet, setGenerateMeet] = useState(false);
   // P14.2 #9 — invités.
   const [attendees, setAttendees] = useState<AttendeeRecord[]>(initialEvent?.attendees ?? []);
+  // P14.5 — assignataires.
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(initialEvent?.assignee_user_ids ?? []);
+  const [notifyUrgent, setNotifyUrgent] = useState(false);
 
   // P14.1.HOTFIX-UX : track si l user a explicitement edite endAt. Si non,
   // un changement de startAt re-aligne endAt sur startAt + 30min (auto).
@@ -185,6 +193,7 @@ export function CalendarEventFormModal({
         force_overlap: forceOverlap,
         generate_meet: isMeeting && generateMeet,
         attendees,
+        assignee_user_ids: assigneeIds,
       };
 
       const r =
@@ -209,6 +218,16 @@ export function CalendarEventFormModal({
         toast.error(r.error);
         return;
       }
+      // P14.5 — alerte urgente si demandée + assignataires sélectionnés.
+      const eventId = r.event?.id ?? (mode === 'edit' ? initialEvent?.id : undefined);
+      if (notifyUrgent && assigneeIds.length > 0 && eventId) {
+        await assignEventToUsersAction({
+          event_id: eventId,
+          assignee_user_ids: assigneeIds,
+          notify_urgent: true,
+        });
+      }
+
       toast.success(mode === 'edit' ? 'Évènement mis à jour.' : 'Évènement créé.');
       onSaved();
     });
@@ -399,6 +418,49 @@ export function CalendarEventFormModal({
               prospectId={defaultProspectId ?? initialEvent?.prospect_id ?? null}
               locale="fr"
             />
+          )}
+
+          {/* P14.5 — Assignataires (admin/super_admin only) */}
+          {currentUserRole !== 'sales' && allUsers.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs font-semibold">
+                <Users className="size-3.5" aria-hidden /> Assigné à
+              </Label>
+              <div className="border-md-border max-h-36 space-y-1 overflow-y-auto rounded-md border bg-white p-2">
+                {allUsers.map((u) => (
+                  <label
+                    key={u.id}
+                    className="flex cursor-pointer items-center gap-2 text-xs select-none"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={assigneeIds.includes(u.id)}
+                      onChange={(e) =>
+                        setAssigneeIds((prev) =>
+                          e.target.checked ? [...prev, u.id] : prev.filter((id) => id !== u.id),
+                        )
+                      }
+                      className="size-3.5"
+                    />
+                    <span className="text-md-text">
+                      {u.full_name ?? u.email}
+                      <span className="text-md-text-muted ml-1">({u.role})</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {assigneeIds.length > 0 && (
+                <label className="flex cursor-pointer items-center gap-2 rounded-md border border-red-200 bg-red-50 p-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={notifyUrgent}
+                    onChange={(e) => setNotifyUrgent(e.target.checked)}
+                    className="size-3.5"
+                  />
+                  <span className="font-medium text-red-800">🚨 Envoyer alerte email urgente</span>
+                </label>
+              )}
+            </div>
           )}
 
           {/* Priority */}

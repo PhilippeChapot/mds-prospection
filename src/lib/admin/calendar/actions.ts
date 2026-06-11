@@ -57,6 +57,8 @@ const createSchema = z.object({
   generate_meet: z.boolean().default(false),
   /** P14.2 #9 — liste des invités (max 50). */
   attendees: z.array(attendeeInputSchema).max(50).default([]),
+  /** P14.5 — assignataires (admin/super_admin seulement). */
+  assignee_user_ids: z.array(z.string().uuid()).max(20).default([]),
 });
 
 const updateSchema = createSchema
@@ -213,6 +215,7 @@ export async function createCalendarEventAction(
       priority: data.priority,
       created_by_user_id: profile.id,
       attendees: data.attendees ?? [],
+      assignee_user_ids: data.assignee_user_ids ?? [],
     } as never)
     .select('*')
     .single();
@@ -353,6 +356,7 @@ export async function updateCalendarEventAction(
   if (data.outcome !== undefined) updates.outcome = data.outcome;
   if (data.prospect_id !== undefined) updates.prospect_id = data.prospect_id;
   if (data.attendees !== undefined) updates.attendees = data.attendees;
+  if (data.assignee_user_ids !== undefined) updates.assignee_user_ids = data.assignee_user_ids;
 
   const { data: updated, error: updErr } = await supabase
     .from('calendar_events')
@@ -504,7 +508,10 @@ export async function listCalendarEventsAction(
     .lte('start_at', data.end_range)
     .order('start_at', { ascending: true });
 
-  if (targetUserId) query = query.eq('user_id', targetUserId);
+  // P14.5 : inclut les events dont l'utilisateur est assignataire.
+  if (targetUserId) {
+    query = query.or(`user_id.eq.${targetUserId},assignee_user_ids.cs.{${targetUserId}}`);
+  }
   if (data.event_type) query = query.eq('event_type', data.event_type);
   if (data.status) query = query.eq('status', data.status);
   if (data.prospect_id) query = query.eq('prospect_id', data.prospect_id);
