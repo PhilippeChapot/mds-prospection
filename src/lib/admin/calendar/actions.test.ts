@@ -638,6 +638,86 @@ describe('deleteCalendarEventAction (P14.1)', () => {
   });
 });
 
+describe('updateCalendarEventAction (P14.2)', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resetState();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('Met à jour un event status=done sans blocage → ok:true', async () => {
+    state.events.push({
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa2001',
+      user_id: 'u-self',
+      prospect_id: 'p-1',
+      event_type: 'call_relance',
+      status: 'done',
+      priority: 'normal',
+      title: 'Relance faite',
+      description: null,
+      location: null,
+      start_at: NOW,
+      end_at: PLUS30,
+      is_all_day: false,
+      duration_minutes: 30,
+      outcome: 'demo_booked',
+      reminder_15min_sent_at: null,
+      reminder_1h_sent_at: null,
+      reminder_24h_sent_at: null,
+      created_at: NOW,
+      updated_at: NOW,
+      created_by_user_id: 'u-self',
+      google_calendar_event_id: null,
+      google_calendar_synced_at: null,
+    });
+    mockEnv();
+    const { updateCalendarEventAction } = await import('./actions');
+    const r = await updateCalendarEventAction({
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa2001',
+      title: 'Relance faite (corrigé)',
+    });
+    expect(r.ok).toBe(true);
+    expect(state.events[0].title).toBe('Relance faite (corrigé)');
+  });
+
+  it('Reject update si pas owner (status=pending)', async () => {
+    state.events.push({
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa2002',
+      user_id: 'u-other',
+      prospect_id: null,
+      event_type: 'meeting',
+      status: 'pending',
+      priority: 'normal',
+      title: 'RDV autre',
+      description: null,
+      location: null,
+      start_at: NOW,
+      end_at: PLUS30,
+      is_all_day: false,
+      duration_minutes: 30,
+      outcome: null,
+      reminder_15min_sent_at: null,
+      reminder_1h_sent_at: null,
+      reminder_24h_sent_at: null,
+      created_at: NOW,
+      updated_at: NOW,
+      created_by_user_id: 'u-other',
+      google_calendar_event_id: null,
+      google_calendar_synced_at: null,
+    });
+    mockEnv();
+    const { updateCalendarEventAction } = await import('./actions');
+    const r = await updateCalendarEventAction({
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa2002',
+      title: 'Tenter de modifier',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errorCode).toBe('forbidden');
+  });
+});
+
 describe('listCalendarEventsAction (P14.1)', () => {
   beforeEach(() => {
     vi.resetModules();

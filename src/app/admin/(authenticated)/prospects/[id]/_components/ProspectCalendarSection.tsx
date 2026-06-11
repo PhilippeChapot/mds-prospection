@@ -29,11 +29,17 @@ interface Props {
   prospectId: string;
   companyName: string;
   currentUserRole: 'admin' | 'sales' | 'super_admin';
+  googleConnected?: boolean;
 }
 
 type Tab = 'upcoming' | 'history';
 
-export function ProspectCalendarSection({ prospectId, companyName, currentUserRole }: Props) {
+export function ProspectCalendarSection({
+  prospectId,
+  companyName,
+  currentUserRole,
+  googleConnected = false,
+}: Props) {
   const [tab, setTab] = useState<Tab>('upcoming');
   const [upcoming, setUpcoming] = useState<CalendarEventRow[]>([]);
   const [past, setPast] = useState<CalendarEventRow[]>([]);
@@ -167,6 +173,7 @@ export function ProspectCalendarSection({ prospectId, companyName, currentUserRo
           defaultTitle={modal.mode === 'create' ? `Relance ${companyName}` : undefined}
           defaultType={modal.mode === 'create' ? 'call_relance' : undefined}
           currentUserRole={currentUserRole}
+          googleConnected={googleConnected}
           onClose={() => setModal({ open: false })}
           onSaved={() => {
             setModal({ open: false });

@@ -150,9 +150,12 @@ export function CalendarEventFormModal({
     setHasUserEditedEnd(true);
   }
 
-  // Validation client-side end_at > start_at (sauf pour task).
+  // Validation client-side end_at > start_at (sauf pour task ou event déjà done).
+  const isDoneEvent = mode === 'edit' && initialEvent?.status === 'done';
   const dateRangeError =
-    !isTask && startAt && endAt ? validateDateRange(new Date(startAt), new Date(endAt)) : null;
+    !isTask && startAt && endAt && !isDoneEvent
+      ? validateDateRange(new Date(startAt), new Date(endAt))
+      : null;
 
   function handleSubmit(forceOverlap = false) {
     if (!title.trim()) {

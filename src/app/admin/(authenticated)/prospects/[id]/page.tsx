@@ -9,6 +9,7 @@ import { PoleBadge } from '@/components/admin/PoleBadge';
 import { StatusEditor } from '@/components/admin/StatusEditor';
 import { ActivitiesSection, type ActivityRow } from '@/components/admin/ActivitiesSection';
 import { ProspectCalendarSection } from './_components/ProspectCalendarSection';
+import { getOAuthToken } from '@/lib/admin/calendar/google/tokens-store';
 import { ProspectTimelineDrawer } from './_components/timeline/ProspectTimelineDrawer';
 import { ProspectMainSection } from './_components/timeline/ProspectMainSection';
 import {
@@ -189,10 +190,12 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
   const companyContacts = company ? await listContactsForCompany(company.id) : [];
 
   // P14.3 + P14.4 : Timeline drawer = notes + calendar + auto-entries (audit_log).
-  const [timelineEntries, timelineContacts] = await Promise.all([
+  const [timelineEntries, timelineContacts, googleToken] = await Promise.all([
     getProspectTimelineFull(id),
     getProspectContacts(id),
+    getOAuthToken(profile.id),
   ]);
+  const googleConnected = !!googleToken && googleToken.sync_enabled;
 
   // P5.x.23 — alerte SIREN ambigu pour ce prospect (si présente, non résolue)
   const { data: sirenAlertRaw } = await supabase
@@ -556,6 +559,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           prospectId={id}
           companyName={prospect.company?.name ?? 'ce prospect'}
           currentUserRole={profile.role}
+          googleConnected={googleConnected}
         />
       </Section>
 
