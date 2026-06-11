@@ -17,6 +17,8 @@ export type ContactListFilters = {
   brevoSync?: 'synced' | 'unsynced' | null;
   lifecycle?: 'enabled' | 'disabled' | null;
   marketing?: 'opted_in' | 'opted_out' | null;
+  /** P5.x.ProspectionIndicators */
+  prospectFilter?: 'prospect_only' | 'non_prospect' | null;
   page?: number;
   perPage?: number;
 };
@@ -43,6 +45,9 @@ export type ContactListRow = {
     pole_code: string | null;
     phone: string | null;
   };
+  /** P5.x.ProspectionIndicators */
+  is_prospect: boolean;
+  prospect_owner: { full_name: string | null } | null;
 };
 
 export type ContactsKpis = {
@@ -73,6 +78,19 @@ export async function listContactsPaginated(
     poleIdFilter = poleRow?.id ?? null;
   }
 
+  // P5.x.ProspectionIndicators — pre-query prospect contact IDs for filter
+  let prospectContactIdSet: Set<string> | null = null;
+  if (filters.prospectFilter === 'prospect_only' || filters.prospectFilter === 'non_prospect') {
+    const { data: pIds } = await supabase.from('prospects').select('primary_contact_id');
+    const ids = ((pIds ?? []) as Array<{ primary_contact_id: string | null }>)
+      .map((p) => p.primary_contact_id)
+      .filter(Boolean) as string[];
+    prospectContactIdSet = new Set(ids);
+  }
+  if (filters.prospectFilter === 'prospect_only' && prospectContactIdSet?.size === 0) {
+    return { rows: [], total: 0, page, perPage };
+  }
+
   let query = supabase
     .from('contacts')
     .select(
@@ -98,6 +116,20 @@ export async function listContactsPaginated(
   if (filters.marketing === 'opted_in') query = query.eq('marketing_consent', true);
   if (filters.marketing === 'opted_out') query = query.eq('marketing_consent', false);
   if (poleIdFilter) query = query.eq('company.pole_id', poleIdFilter);
+  if (
+    filters.prospectFilter === 'prospect_only' &&
+    prospectContactIdSet &&
+    prospectContactIdSet.size > 0
+  ) {
+    query = query.in('id', [...prospectContactIdSet]);
+  }
+  if (
+    filters.prospectFilter === 'non_prospect' &&
+    prospectContactIdSet &&
+    prospectContactIdSet.size > 0
+  ) {
+    query = query.not('id', 'in', `(${[...prospectContactIdSet].join(',')})`);
+  }
 
   const { data, error, count } = await query;
   if (error) {
@@ -106,11 +138,11 @@ export async function listContactsPaginated(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rows: ContactListRow[] = ((data ?? []) as any[]).map((r: any) => {
+  const baseRows = ((data ?? []) as any[]).map((r: any) => {
     const company = pickFirst(r.company);
     const pole = pickFirst(company?.pole);
     return {
-      id: r.id,
+      id: r.id as string,
       email: r.email,
       first_name: r.first_name,
       last_name: r.last_name,
@@ -133,6 +165,29 @@ export async function listContactsPaginated(
       },
     };
   });
+
+  // P5.x.ProspectionIndicators — post-enrich with prospect owner
+  const contactIds = baseRows.map((r) => r.id);
+  const prospectOwnerMap = new Map<string, { full_name: string | null }>();
+  if (contactIds.length > 0) {
+    const { data: pRows } = await supabase
+      .from('prospects')
+      .select('primary_contact_id, owner:users!prospects_owner_id_fkey(full_name)')
+      .in('primary_contact_id', contactIds);
+    for (const p of (pRows ?? []) as Array<{
+      primary_contact_id: string;
+      owner: { full_name: string | null } | Array<{ full_name: string | null }> | null;
+    }>) {
+      const owner = Array.isArray(p.owner) ? p.owner[0] : p.owner;
+      prospectOwnerMap.set(p.primary_contact_id, { full_name: owner?.full_name ?? null });
+    }
+  }
+
+  const rows: ContactListRow[] = baseRows.map((r) => ({
+    ...r,
+    is_prospect: prospectOwnerMap.has(r.id),
+    prospect_owner: prospectOwnerMap.get(r.id) ?? null,
+  }));
 
   return { rows, total: count ?? 0, page, perPage };
 }

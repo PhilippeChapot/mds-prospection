@@ -28,6 +28,7 @@ export function ContactsTable({ rows }: { rows: ContactListRow[] }) {
               <th className="px-4 py-3">Primary</th>
               <th className="px-4 py-3">Lifecycle</th>
               <th className="px-4 py-3">Brevo</th>
+              <th className="px-4 py-3">Prospect</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
@@ -105,6 +106,20 @@ export function ContactsTable({ rows }: { rows: ContactListRow[] }) {
                     <span className="text-emerald-600">✓ sync</span>
                   ) : (
                     <span className="text-amber-600">— not sync</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-xs">
+                  {row.is_prospect ? (
+                    <span className="inline-flex flex-col gap-0.5">
+                      <span className="font-semibold text-emerald-700">✅ Prospect</span>
+                      {row.prospect_owner?.full_name ? (
+                        <span className="text-[10px] text-emerald-600">
+                          {row.prospect_owner.full_name}
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : (
+                    <span className="text-md-text-muted">—</span>
                   )}
                 </td>
                 <td className="px-4 py-3">

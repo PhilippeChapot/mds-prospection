@@ -127,6 +127,8 @@ export async function listCompaniesPaginated(opts: {
   country?: string | null;
   /** P5.x.CompaniesAddressAndTags : filtre toggle adresse complete / manquante. */
   missingAddress?: boolean | null;
+  /** P5.x.ProspectionIndicators : masquer sociétés déjà prospectées. */
+  hideProspected?: boolean | null;
   page?: number;
   perPage?: number;
 }): Promise<{ rows: CompanyListItem[]; total: number; page: number; perPage: number }> {
@@ -145,6 +147,27 @@ export async function listCompaniesPaginated(opts: {
       .eq('code', opts.poleCode as Database['public']['Enums']['pole_code'])
       .maybeSingle();
     poleIdFilter = poleRow?.id ?? null;
+  }
+
+  // P5.x.ProspectionIndicators — pre-query prospected company IDs for hideProspected filter
+  let prospectedCompanyIdsAll: Set<string> | null = null;
+  if (opts.hideProspected === true) {
+    const { data: prospectData } = await supabase.from('prospects').select('primary_contact_id');
+    const prospectContactIds = (
+      (prospectData ?? []) as Array<{ primary_contact_id: string | null }>
+    )
+      .map((p) => p.primary_contact_id)
+      .filter(Boolean) as string[];
+    prospectedCompanyIdsAll = new Set<string>();
+    if (prospectContactIds.length > 0) {
+      const { data: contactData } = await supabase
+        .from('contacts')
+        .select('company_id')
+        .in('id', prospectContactIds);
+      for (const c of (contactData ?? []) as Array<{ company_id: string | null }>) {
+        if (c.company_id) prospectedCompanyIdsAll.add(c.company_id);
+      }
+    }
   }
 
   let query = supabase
@@ -170,11 +193,47 @@ export async function listCompaniesPaginated(opts: {
   } else if (opts.missingAddress === false) {
     query = query.not('city', 'is', null).not('postal_code', 'is', null);
   }
+  if (opts.hideProspected === true && prospectedCompanyIdsAll && prospectedCompanyIdsAll.size > 0) {
+    query = query.not('id', 'in', `(${[...prospectedCompanyIdsAll].join(',')})`);
+  }
 
   const { data, error, count } = await query;
   if (error) {
     console.error('[queries.listCompaniesPaginated]', error);
     return { rows: [], total: 0, page, perPage };
+  }
+
+  // P5.x.ProspectionIndicators — post-enrich with has_prospected_contact
+  const baseCompanyIds = (data ?? []).map((r) => r.id);
+  let prospectedIdsForPage: Set<string>;
+  if (prospectedCompanyIdsAll !== null) {
+    // Reuse pre-query data (hideProspected path)
+    prospectedIdsForPage = prospectedCompanyIdsAll;
+  } else if (baseCompanyIds.length > 0) {
+    const { data: contactsForPage } = await supabase
+      .from('contacts')
+      .select('id, company_id')
+      .in('company_id', baseCompanyIds);
+    const contactIdsForPage = (
+      (contactsForPage ?? []) as Array<{ id: string; company_id: string | null }>
+    ).map((c) => c.id);
+    prospectedIdsForPage = new Set<string>();
+    if (contactIdsForPage.length > 0) {
+      const { data: prospectRows } = await supabase
+        .from('prospects')
+        .select('primary_contact_id')
+        .in('primary_contact_id', contactIdsForPage);
+      const prospectedContactIds = new Set(
+        ((prospectRows ?? []) as Array<{ primary_contact_id: string }>).map(
+          (p) => p.primary_contact_id,
+        ),
+      );
+      for (const c of (contactsForPage ?? []) as Array<{ id: string; company_id: string | null }>) {
+        if (prospectedContactIds.has(c.id) && c.company_id) prospectedIdsForPage.add(c.company_id);
+      }
+    }
+  } else {
+    prospectedIdsForPage = new Set<string>();
   }
 
   const rows = (data ?? []).map((row) => ({
@@ -192,6 +251,7 @@ export async function listCompaniesPaginated(opts: {
     website: (row as { website?: string | null }).website ?? null,
     created_at: row.created_at,
     pole: pickFirst(row.pole),
+    has_prospected_contact: prospectedIdsForPage.has(row.id),
   }));
 
   return { rows, total: count ?? 0, page, perPage };

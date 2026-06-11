@@ -71,4 +71,6 @@ export type CompanyListItem = {
   website: string | null;
   created_at: string;
   pole: { code: string; name_fr: string } | null;
+  /** P5.x.ProspectionIndicators — au moins un contact de la société est prospect. */
+  has_prospected_contact: boolean;
 };

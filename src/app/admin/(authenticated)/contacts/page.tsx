@@ -25,6 +25,8 @@ type SearchParams = Promise<{
   lifecycle?: string;
   marketing?: string;
   companyId?: string;
+  /** P5.x.ProspectionIndicators */
+  prospect?: string;
   page?: string;
 }>;
 
@@ -43,6 +45,10 @@ export default async function AdminContactsPage({ searchParams }: { searchParams
   const marketing =
     params.marketing === 'opted_in' || params.marketing === 'opted_out' ? params.marketing : '';
   const companyId = params.companyId?.trim() ?? '';
+  const prospectFilter =
+    params.prospect === 'prospect_only' || params.prospect === 'non_prospect'
+      ? params.prospect
+      : '';
   const page = Math.max(1, Number(params.page ?? '1'));
 
   const filters: ContactListFilters = {
@@ -53,6 +59,10 @@ export default async function AdminContactsPage({ searchParams }: { searchParams
     lifecycle: lifecycle || null,
     marketing: marketing || null,
     companyId: companyId || null,
+    prospectFilter:
+      prospectFilter === 'prospect_only' || prospectFilter === 'non_prospect'
+        ? prospectFilter
+        : null,
     page,
     perPage: PER_PAGE,
   };
@@ -68,7 +78,14 @@ export default async function AdminContactsPage({ searchParams }: { searchParams
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
   const hasFilters = Boolean(
-    q || poleFilter || language || brevoSync || lifecycle || marketing || companyId,
+    q ||
+    poleFilter ||
+    language ||
+    brevoSync ||
+    lifecycle ||
+    marketing ||
+    companyId ||
+    prospectFilter,
   );
 
   return (
@@ -153,6 +170,17 @@ export default async function AdminContactsPage({ searchParams }: { searchParams
           <option value="">Marketing : tous</option>
           <option value="opted_in">Opt-in</option>
           <option value="opted_out">Opt-out</option>
+        </select>
+
+        {/* P5.x.ProspectionIndicators */}
+        <select
+          name="prospect"
+          defaultValue={prospectFilter}
+          className="border-md-border rounded-md border bg-white px-2.5 py-1.5 text-xs"
+        >
+          <option value="">Prospect : tous</option>
+          <option value="prospect_only">✅ Prospect uniquement</option>
+          <option value="non_prospect">— Non prospect</option>
         </select>
 
         <button

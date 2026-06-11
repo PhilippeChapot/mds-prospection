@@ -35,6 +35,7 @@ function makeMockSupabase(
       'ilike',
       'is',
       'or',
+      'in',
       'order',
       'range',
       'limit',
@@ -143,6 +144,107 @@ describe('admin-queries (P5.x.22)', () => {
     expect(kpis.marketingOptIn).toBe(10);
     expect(kpis.lifecycleEnabled).toBe(10);
     expect(kpis.withoutEmail).toBe(10);
+  });
+
+  // P5.x.ProspectionIndicators tests
+
+  it('listContactsPaginated enriches is_prospect=true and prospect_owner when contact is a prospect', async () => {
+    mockServerClient({
+      contacts: {
+        data: [
+          {
+            id: 'c-1',
+            email: 'prospect@acme.com',
+            first_name: 'Bob',
+            last_name: 'Prospect',
+            phone: null,
+            role: null,
+            is_primary: true,
+            language: 'FR',
+            marketing_consent: false,
+            lifecycle_emails_enabled: false,
+            email_deliverability_status: 'unknown',
+            brevo_contact_id: null,
+            last_synced_brevo_at: null,
+            created_at: '2026-05-14T00:00:00Z',
+            company: { id: 'co-1', name: 'Acme', pole_id: null, pole: null },
+          },
+        ],
+        count: 1,
+      },
+      prospects: {
+        data: [{ primary_contact_id: 'c-1', owner: [{ full_name: 'Alice Owner' }] }],
+        error: null,
+      },
+    });
+    const { listContactsPaginated } = await import('./admin-queries');
+    const result = await listContactsPaginated({});
+    expect(result.rows[0]?.is_prospect).toBe(true);
+    expect(result.rows[0]?.prospect_owner?.full_name).toBe('Alice Owner');
+  });
+
+  it('listContactsPaginated enriches is_prospect=false when no matching prospect', async () => {
+    mockServerClient({
+      contacts: {
+        data: [
+          {
+            id: 'c-2',
+            email: 'noprospect@acme.com',
+            first_name: 'Carol',
+            last_name: 'None',
+            phone: null,
+            role: null,
+            is_primary: false,
+            language: 'EN',
+            marketing_consent: false,
+            lifecycle_emails_enabled: false,
+            email_deliverability_status: 'unknown',
+            brevo_contact_id: null,
+            last_synced_brevo_at: null,
+            created_at: '2026-05-14T00:00:00Z',
+            company: { id: 'co-2', name: 'Beta', pole_id: null, pole: null },
+          },
+        ],
+        count: 1,
+      },
+      prospects: { data: [], error: null },
+    });
+    const { listContactsPaginated } = await import('./admin-queries');
+    const result = await listContactsPaginated({});
+    expect(result.rows[0]?.is_prospect).toBe(false);
+    expect(result.rows[0]?.prospect_owner).toBeNull();
+  });
+
+  it('listContactsPaginated with prospectFilter=prospect_only returns empty when no prospects exist', async () => {
+    mockServerClient({
+      contacts: {
+        data: [
+          {
+            id: 'c-3',
+            email: 'any@acme.com',
+            first_name: null,
+            last_name: null,
+            phone: null,
+            role: null,
+            is_primary: false,
+            language: 'FR',
+            marketing_consent: false,
+            lifecycle_emails_enabled: false,
+            email_deliverability_status: 'unknown',
+            brevo_contact_id: null,
+            last_synced_brevo_at: null,
+            created_at: '2026-05-14T00:00:00Z',
+            company: { id: 'co-3', name: 'Gamma', pole_id: null, pole: null },
+          },
+        ],
+        count: 1,
+      },
+      prospects: { data: [], error: null },
+    });
+    const { listContactsPaginated } = await import('./admin-queries');
+    const result = await listContactsPaginated({ prospectFilter: 'prospect_only' });
+    expect(result.rows).toEqual([]);
+    expect(result.total).toBe(0);
   });
 
   it('listContactsForCompany returns array sorted (server-side .order chain called)', async () => {

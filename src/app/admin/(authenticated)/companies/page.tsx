@@ -35,6 +35,8 @@ type SearchParams = Promise<{
   country?: string;
   /** P5.x.CompaniesAddressAndTags : 'missing' | 'complete' | undefined. */
   address?: string;
+  /** P5.x.ProspectionIndicators : '1' pour masquer les sociétés déjà prospectées. */
+  hideProspected?: string;
   page?: string;
 }>;
 
@@ -85,6 +87,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
   const countryFilter = params.country?.trim().toUpperCase() ?? '';
   const addressFilter: 'missing' | 'complete' | '' =
     params.address === 'missing' ? 'missing' : params.address === 'complete' ? 'complete' : '';
+  const hideProspected = params.hideProspected === '1';
   const page = Math.max(1, Number(params.page ?? '1'));
 
   const [{ rows, total }, countries, fuzzyResults] = await Promise.all([
@@ -95,6 +98,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
       country: countryFilter || null,
       missingAddress:
         addressFilter === 'missing' ? true : addressFilter === 'complete' ? false : null,
+      hideProspected: hideProspected || null,
       page,
       perPage: PER_PAGE,
     }),
@@ -105,7 +109,9 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
-  const hasFilters = Boolean(q || poleFilter || categoryFilter || countryFilter || addressFilter);
+  const hasFilters = Boolean(
+    q || poleFilter || categoryFilter || countryFilter || addressFilter || hideProspected,
+  );
 
   return (
     <div className="space-y-5">
@@ -210,6 +216,18 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
           <option value="complete">✓ Adresse complète</option>
         </select>
 
+        {/* P5.x.ProspectionIndicators */}
+        <label className="text-md-text-muted inline-flex cursor-pointer items-center gap-1.5 text-xs">
+          <input
+            type="checkbox"
+            name="hideProspected"
+            value="1"
+            defaultChecked={hideProspected}
+            className="size-3.5"
+          />
+          Masquer déjà prospectées
+        </label>
+
         <button
           type="submit"
           className="bg-md-blue rounded-md px-3 py-1.5 text-xs font-semibold text-white"
@@ -239,13 +257,14 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
                 <th className="px-4 py-3">Pays</th>
                 <th className="px-4 py-3">Categorie</th>
                 <th className="px-4 py-3">Import</th>
+                <th className="px-4 py-3">Prospecte</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-md-text-muted px-4 py-12 text-center text-sm">
+                  <td colSpan={9} className="text-md-text-muted px-4 py-12 text-center text-sm">
                     Aucune societe ne correspond aux filtres.
                   </td>
                 </tr>
@@ -307,6 +326,17 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
                     </td>
                     <td className="text-md-text-muted px-4 py-3 text-xs">
                       {formatDate(row.created_at)}
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      {row.has_prospected_contact ? (
+                        <span className="font-semibold whitespace-nowrap text-emerald-700">
+                          ✓ Prospecte
+                        </span>
+                      ) : (
+                        <span className="font-semibold whitespace-nowrap text-amber-600">
+                          ⚠ A prospecter
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link
