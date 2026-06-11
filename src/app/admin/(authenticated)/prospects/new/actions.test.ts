@@ -65,6 +65,75 @@ function mockEnv(state: State) {
   }));
 }
 
+describe('contact_role validation (P5.x.ProspectCreateForm-UX)', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.doMock('@/lib/supabase/auth-helpers', () => ({
+      requireAdminProfile: () =>
+        Promise.resolve({ id: 'admin-1', role: 'admin', email: 'admin@x', full_name: 'Admin' }),
+      getActiveSeasonId: () => Promise.resolve('season-1'),
+    }));
+    vi.doMock('@/lib/supabase/server', () => ({
+      createSupabaseServerClient: () =>
+        Promise.resolve({
+          from: () => ({
+            select: () => ({
+              eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+            }),
+            ilike: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+            insert: () => ({
+              select: () => ({
+                single: () => Promise.resolve({ data: { id: 'c-1' }, error: null }),
+              }),
+            }),
+          }),
+        }),
+    }));
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.resetModules();
+  });
+
+  function makeForm(fields: Record<string, string>) {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.set(k, v);
+    return fd;
+  }
+
+  const BASE = {
+    company_mode: 'new',
+    company_name: 'Acme',
+    company_category: 'standard',
+    company_pole_code: 'AUDIO_RADIO',
+    company_country: 'FR',
+    contact_email: 'frank@acme.com',
+    owner_id: '5402eb3e-f57d-41aa-b1ac-04a1ebc9f8af',
+  };
+
+  it('contact_role 80 chars → pas de fieldErrors.contact_role', async () => {
+    const { createProspectAction } = await import('./actions');
+    const r = await createProspectAction({}, makeForm({ ...BASE, contact_role: 'a'.repeat(80) }));
+    expect(r.fieldErrors?.contact_role).toBeUndefined();
+  });
+
+  it('contact_role 250 chars → pas de fieldErrors.contact_role (nouvelle limite)', async () => {
+    const { createProspectAction } = await import('./actions');
+    const r = await createProspectAction({}, makeForm({ ...BASE, contact_role: 'a'.repeat(250) }));
+    expect(r.fieldErrors?.contact_role).toBeUndefined();
+  });
+
+  it('contact_role 251 chars → fieldErrors.contact_role avec message clair', async () => {
+    const { createProspectAction } = await import('./actions');
+    const r = await createProspectAction({}, makeForm({ ...BASE, contact_role: 'a'.repeat(251) }));
+    expect(r.fieldErrors?.contact_role).toBeTruthy();
+    expect(r.fieldErrors?.contact_role).toMatch(/250|too big/i);
+  });
+});
+
 describe('createProspectAction with contact_id (P5.x.24)', () => {
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);

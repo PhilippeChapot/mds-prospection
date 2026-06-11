@@ -60,11 +60,11 @@ const InputSchema = z
     contact_id: z.string().uuid().optional().or(z.literal('')),
     contact_mode: z.enum(['existing', 'new']).optional().default('new'),
 
-    contact_first_name: z.string().trim().max(80).optional(),
-    contact_last_name: z.string().trim().max(80).optional(),
+    contact_first_name: z.string().trim().max(120).optional(),
+    contact_last_name: z.string().trim().max(120).optional(),
     contact_email: z.string().trim().toLowerCase().email(),
-    contact_phone: z.string().trim().max(30).optional(),
-    contact_role: z.string().trim().max(80).optional(),
+    contact_phone: z.string().trim().max(50).optional(),
+    contact_role: z.string().trim().max(250).optional(),
 
     pack_code: PackCodeSchema.default('A_DEFINIR'),
     status: StatusSchema.default('lead'),

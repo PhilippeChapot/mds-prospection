@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
@@ -42,6 +42,15 @@ export function NewProspectForm({
 }) {
   const [state, formAction] = useActionState(createProspectAction, initialState);
   const { errors, clear } = useFieldErrors(state.fieldErrors);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (!state.fieldErrors) return;
+    const form = formRef.current;
+    if (!form) return;
+    const firstError = form.querySelector<HTMLElement>('[data-field-error]');
+    firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [state.fieldErrors]);
 
   // Mode société : prefilled si on a un contact ou une company en query param.
   const initialCompanyId = prefillContact?.company_id ?? prefillCompany?.id ?? undefined;
@@ -63,7 +72,7 @@ export function NewProspectForm({
   }
 
   return (
-    <form action={formAction} onChange={handleAnyChange} className="space-y-6">
+    <form ref={formRef} action={formAction} onChange={handleAnyChange} className="space-y-6">
       {/* Edge case : contact deja prospect */}
       {prefillContact && alreadyProspectIds.length > 0 ? (
         <div className="border-md-warning/40 bg-md-warning/15 flex items-start gap-2 rounded-md border p-3 text-sm">
@@ -216,6 +225,12 @@ export function NewProspectForm({
             <input type="hidden" name="contact_last_name" value={selectedContact.last_name ?? ''} />
             <input type="hidden" name="contact_phone" value={selectedContact.phone ?? ''} />
             <input type="hidden" name="contact_role" value={selectedContact.role ?? ''} />
+            {errors.contact_role && (
+              <p className="text-md-danger text-xs" data-field-error>
+                Rôle du contact trop long ({selectedContact.role?.length ?? 0} chars) :{' '}
+                {errors.contact_role}
+              </p>
+            )}
           </div>
         )}
       </Section>
@@ -342,7 +357,11 @@ function Field({
         {required ? <span className="text-md-magenta ml-0.5">*</span> : null}
       </Label>
       {children}
-      {error ? <p className="text-md-danger text-xs">{error}</p> : null}
+      {error ? (
+        <p className="text-md-danger text-xs" data-field-error>
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

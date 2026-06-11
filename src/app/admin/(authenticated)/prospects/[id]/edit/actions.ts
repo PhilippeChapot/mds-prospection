@@ -35,11 +35,11 @@ const InputSchema = z.object({
   notes: z.string().trim().max(4000).optional(),
 
   contact_id: z.string().uuid().optional().or(z.literal('')),
-  contact_first_name: z.string().trim().max(80).optional(),
-  contact_last_name: z.string().trim().max(80).optional(),
+  contact_first_name: z.string().trim().max(120).optional(),
+  contact_last_name: z.string().trim().max(120).optional(),
   contact_email: z.string().trim().toLowerCase().email().optional(),
-  contact_phone: z.string().trim().max(30).optional(),
-  contact_role: z.string().trim().max(80).optional(),
+  contact_phone: z.string().trim().max(50).optional(),
+  contact_role: z.string().trim().max(250).optional(),
 });
 
 export type UpdateProspectState = {
