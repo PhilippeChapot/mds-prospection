@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useState, useTransition, useCallback } from 'react';
 import Link from 'next/link';
 import { Download, UserCog, Tag, Phone, Smartphone } from 'lucide-react';
+import { type ColumnDef } from '@tanstack/react-table';
 import { formatPhoneForDisplay } from '@/lib/utils/phone-format';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import { CompanyAvatar } from '@/components/admin/CompanyAvatar';
 import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { PoleBadge } from '@/components/admin/PoleBadge';
 import { StatusPill } from '@/components/admin/StatusPill';
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import { PACK_LABEL, type ProspectListItem, type ProspectStatus } from '@/lib/supabase/constants';
 import {
   bulkUpdateProspectsOwnerAction,
@@ -28,7 +30,6 @@ import {
   type ExportProspectsFilters,
 } from './bulk-actions';
 import type { PoleCode } from '@/lib/design-tokens';
-import { cn } from '@/lib/utils';
 
 type Owner = { id: string; label: string };
 
@@ -82,6 +83,138 @@ function downloadCsv(csv: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+// Static column definitions (no selection state needed).
+const STATIC_COLUMNS: ColumnDef<ProspectListItem>[] = [
+  {
+    id: 'company_contact',
+    header: 'Société / Contact',
+    size: 260,
+    minSize: 200,
+    cell: ({ row }) => {
+      const r = row.original;
+      const contactName = r.contact
+        ? [r.contact.first_name, r.contact.last_name].filter(Boolean).join(' ').trim()
+        : '';
+      const contactDisplay = contactName || r.contact?.email || '—';
+      return (
+        <Link href={`/admin/prospects/${r.id}`} className="flex items-center gap-3 hover:underline">
+          <CompanyAvatar initials={initialsOf(r.company?.name ?? '?')} />
+          <div className="min-w-0">
+            <div className="text-md-text flex items-center gap-1.5 truncate font-semibold">
+              <span className="truncate">{r.company?.name ?? 'Société inconnue'}</span>
+              {r.is_test && (
+                <span
+                  className="bg-md-warning/15 text-md-warning shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase"
+                  title="Mode test : syncs externes désactivées"
+                >
+                  TEST
+                </span>
+              )}
+              {r.company?.phone ? (
+                <a
+                  href={`tel:${r.company.phone}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-md-text-muted hover:text-md-blue ml-1 inline-flex shrink-0 items-center gap-1 text-[11px] font-normal"
+                  title="Appeler la société"
+                >
+                  <Phone className="size-3" aria-hidden />
+                  {formatPhoneForDisplay(r.company.phone)}
+                </a>
+              ) : null}
+            </div>
+            <div className="text-md-text-muted flex flex-wrap items-center gap-2 truncate text-xs">
+              <span className="truncate">{contactDisplay}</span>
+              {r.contact?.phone_mobile ? (
+                <a
+                  href={`tel:${r.contact.phone_mobile}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:text-md-blue inline-flex items-center gap-1 text-[11px]"
+                  title="Appeler le mobile"
+                >
+                  <Smartphone className="size-3" aria-hidden />
+                  {formatPhoneForDisplay(r.contact.phone_mobile)}
+                </a>
+              ) : null}
+            </div>
+            {r.company?.external_event_tags ? (
+              <div className="mt-1">
+                <ExternalEventBadges tags={r.company.external_event_tags} size="xs" />
+              </div>
+            ) : null}
+          </div>
+        </Link>
+      );
+    },
+  },
+  {
+    id: 'status',
+    header: 'Statut',
+    size: 110,
+    minSize: 80,
+    cell: ({ row }) => <StatusPill status={row.original.status} />,
+  },
+  {
+    id: 'pole',
+    header: 'Pôle',
+    size: 90,
+    minSize: 70,
+    cell: ({ row }) =>
+      row.original.company?.pole ? (
+        <PoleBadge code={row.original.company.pole.code as PoleCode} />
+      ) : (
+        <span className="text-md-text-muted text-xs">—</span>
+      ),
+  },
+  {
+    id: 'category',
+    header: 'Catégorie',
+    size: 100,
+    minSize: 80,
+    cell: ({ row }) => (
+      <span className="text-xs">
+        {row.original.company ? CATEGORY_LABEL[row.original.company.category] : '—'}
+      </span>
+    ),
+  },
+  {
+    id: 'pack',
+    header: 'Pack',
+    size: 85,
+    minSize: 65,
+    cell: ({ row }) =>
+      row.original.pack_code === 'A_DEFINIR' ? (
+        <span className="text-md-text-muted text-xs">—</span>
+      ) : (
+        <span className="text-md-text text-xs font-semibold">
+          {PACK_LABEL[row.original.pack_code]}
+        </span>
+      ),
+  },
+  {
+    id: 'owner',
+    header: 'Owner',
+    size: 120,
+    minSize: 90,
+    cell: ({ row }) => {
+      const r = row.original;
+      const ownerDisplay = r.owner?.full_name?.trim() || r.owner?.email || '—';
+      return <span className="text-md-text text-xs">{ownerDisplay}</span>;
+    },
+  },
+  {
+    id: 'amount',
+    header: '€ HT',
+    size: 90,
+    minSize: 70,
+    meta: { cellClassName: 'text-right px-4 py-3' },
+    cell: ({ row }) => (
+      <span className="text-md-text text-xs font-semibold">
+        {formatEur(row.original.estimated_amount)}
+      </span>
+    ),
+  },
+];
+
 export function ProspectsListClient({
   rows,
   owners,
@@ -100,35 +233,78 @@ export function ProspectsListClient({
   const [bulkOwner, setBulkOwner] = useState<string>(owners[0]?.id ?? '');
   const [pending, startTransition] = useTransition();
 
-  const allOnPage = rows.map((r) => r.id);
-  const allSelected = allOnPage.length > 0 && allOnPage.every((id) => selected.has(id));
   const someSelected = selected.size > 0;
+  const exportLabel = selected.size > 0 ? `Exporter selection (${selected.size})` : 'Exporter CSV';
 
-  function toggleAll() {
-    if (allSelected) {
-      const next = new Set(selected);
-      for (const id of allOnPage) next.delete(id);
-      setSelected(next);
-    } else {
-      const next = new Set(selected);
-      for (const id of allOnPage) next.add(id);
-      setSelected(next);
-    }
-  }
+  // Stable handlers via functional state updates (no deps on `selected`).
+  const toggleOne = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
-  function toggleOne(id: string) {
-    const next = new Set(selected);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setSelected(next);
-  }
+  const toggleAll = useCallback(() => {
+    setSelected((prev) => {
+      const allIds = rows.map((r) => r.id);
+      const next = new Set(prev);
+      const allChecked = allIds.length > 0 && allIds.every((id) => prev.has(id));
+      if (allChecked) {
+        for (const id of allIds) next.delete(id);
+      } else {
+        for (const id of allIds) next.add(id);
+      }
+      return next;
+    });
+  }, [rows]);
+
+  // Columns include the select column which captures selection state via closure.
+  const columns = useMemo<ColumnDef<ProspectListItem>[]>(() => {
+    const allIds = rows.map((r) => r.id);
+    const allChecked = allIds.length > 0 && allIds.every((id) => selected.has(id));
+
+    const selectCol: ColumnDef<ProspectListItem> = {
+      id: 'select',
+      enableHiding: false,
+      enableResizing: false,
+      size: 48,
+      minSize: 48,
+      maxSize: 48,
+      meta: { headerLabel: 'Sélection', cellClassName: 'px-3 py-3' },
+      header: () => (
+        <input
+          type="checkbox"
+          checked={allChecked}
+          onChange={toggleAll}
+          aria-label="Tout sélectionner"
+          className="size-3.5"
+        />
+      ),
+      cell: ({ row }) => {
+        const isChecked = selected.has(row.original.id);
+        return (
+          <input
+            type="checkbox"
+            checked={isChecked}
+            onChange={() => toggleOne(row.original.id)}
+            aria-label={`Sélectionner ${row.original.company?.name ?? 'prospect'}`}
+            className="size-3.5"
+          />
+        );
+      },
+    };
+
+    return [selectCol, ...STATIC_COLUMNS];
+  }, [selected, rows, toggleAll, toggleOne]);
 
   function handleApplyStatus() {
     const ids = [...selected];
     startTransition(async () => {
       try {
         const res = await bulkUpdateProspectsStatusAction(ids, bulkStatus);
-        toast.success(`${res.updated} prospect(s) mis a jour.`);
+        toast.success(`${res.updated} prospect(s) mis à jour.`);
         setSelected(new Set());
         setStatusOpen(false);
       } catch (err) {
@@ -142,7 +318,7 @@ export function ProspectsListClient({
     startTransition(async () => {
       try {
         const res = await bulkUpdateProspectsOwnerAction(ids, bulkOwner);
-        toast.success(`${res.updated} prospect(s) reassigne(s).`);
+        toast.success(`${res.updated} prospect(s) réassigné(s).`);
         setSelected(new Set());
         setOwnerOpen(false);
       } catch (err) {
@@ -158,17 +334,12 @@ export function ProspectsListClient({
           useSelection ? { ids: [...selected] } : filters,
         );
         downloadCsv(result.csv, result.filename);
-        toast.success(`Export telecharge : ${result.filename}`);
+        toast.success(`Export téléchargé : ${result.filename}`);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Erreur export');
       }
     });
   }
-
-  const exportLabel = useMemo(
-    () => (someSelected ? `Exporter selection (${selected.size})` : 'Exporter CSV'),
-    [someSelected, selected.size],
-  );
 
   return (
     <div className="space-y-3">
@@ -176,7 +347,7 @@ export function ProspectsListClient({
       <div className="flex flex-wrap items-center justify-end gap-2">
         {someSelected && (
           <span className="text-md-text mr-auto text-xs font-semibold">
-            {selected.size} prospect(s) selectionne(s)
+            {selected.size} prospect(s) sélectionné(s)
           </span>
         )}
 
@@ -199,7 +370,7 @@ export function ProspectsListClient({
                 disabled={pending}
               >
                 <UserCog className="size-4" aria-hidden />
-                Reassigner owner
+                Réassigner owner
               </Button>
             ) : null}
           </>
@@ -217,157 +388,13 @@ export function ProspectsListClient({
       </div>
 
       {/* Table */}
-      {rows.length === 0 ? (
-        <div className="bg-card border-md-border rounded-xl border p-12 text-center shadow-sm">
-          <p className="text-md-text font-semibold">Aucun prospect ne correspond aux filtres.</p>
-          <p className="text-md-text-muted mt-2 text-sm">
-            Modifiez vos filtres ou{' '}
-            <Link href="/admin/prospects/new" className="text-md-blue underline">
-              creez un premier prospect
-            </Link>
-            .
-          </p>
-        </div>
-      ) : (
-        <div className="bg-card border-md-border overflow-hidden rounded-xl border shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-muted/40 text-md-text-muted text-[11px] font-semibold tracking-wider uppercase">
-                <tr>
-                  <th className="px-3 py-3">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={toggleAll}
-                      aria-label="Tout selectionner"
-                      className="size-3.5"
-                    />
-                  </th>
-                  <th className="px-4 py-3">Societe / Contact</th>
-                  <th className="px-4 py-3">Statut</th>
-                  <th className="px-4 py-3">Pole</th>
-                  <th className="px-4 py-3">Categorie</th>
-                  <th className="px-4 py-3">Pack</th>
-                  <th className="px-4 py-3">Owner</th>
-                  <th className="px-4 py-3 text-right">€ HT</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => {
-                  const contactName = row.contact
-                    ? [row.contact.first_name, row.contact.last_name]
-                        .filter(Boolean)
-                        .join(' ')
-                        .trim()
-                    : '';
-                  const contactDisplay = contactName || row.contact?.email || '—';
-                  const ownerDisplay = row.owner?.full_name?.trim() || row.owner?.email || '—';
-                  const isChecked = selected.has(row.id);
-                  return (
-                    <tr
-                      key={row.id}
-                      className={cn(
-                        'border-md-border hover:bg-muted/30 border-t',
-                        isChecked && 'bg-md-magenta/5',
-                      )}
-                    >
-                      <td className="px-3 py-3">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleOne(row.id)}
-                          aria-label={`Selectionner ${row.company?.name ?? 'prospect'}`}
-                          className="size-3.5"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/admin/prospects/${row.id}`}
-                          className="flex items-center gap-3 hover:underline"
-                        >
-                          <CompanyAvatar initials={initialsOf(row.company?.name ?? '?')} />
-                          <div className="min-w-0">
-                            <div className="text-md-text flex items-center gap-1.5 truncate font-semibold">
-                              <span className="truncate">
-                                {row.company?.name ?? 'Societe inconnue'}
-                              </span>
-                              {row.is_test && (
-                                <span
-                                  className="bg-md-warning/15 text-md-warning shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase"
-                                  title="Mode test : syncs externes desactivees"
-                                >
-                                  TEST
-                                </span>
-                              )}
-                              {row.company?.phone ? (
-                                <a
-                                  href={`tel:${row.company.phone}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="text-md-text-muted hover:text-md-blue ml-1 inline-flex shrink-0 items-center gap-1 text-[11px] font-normal"
-                                  title="Appeler la société"
-                                >
-                                  <Phone className="size-3" aria-hidden />
-                                  {formatPhoneForDisplay(row.company.phone)}
-                                </a>
-                              ) : null}
-                            </div>
-                            <div className="text-md-text-muted flex flex-wrap items-center gap-2 truncate text-xs">
-                              <span className="truncate">{contactDisplay}</span>
-                              {row.contact?.phone_mobile ? (
-                                <a
-                                  href={`tel:${row.contact.phone_mobile}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="hover:text-md-blue inline-flex items-center gap-1 text-[11px]"
-                                  title="Appeler le mobile"
-                                >
-                                  <Smartphone className="size-3" aria-hidden />
-                                  {formatPhoneForDisplay(row.contact.phone_mobile)}
-                                </a>
-                              ) : null}
-                            </div>
-                            {row.company?.external_event_tags ? (
-                              <div className="mt-1">
-                                <ExternalEventBadges
-                                  tags={row.company.external_event_tags}
-                                  size="xs"
-                                />
-                              </div>
-                            ) : null}
-                          </div>
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusPill status={row.status} />
-                      </td>
-                      <td className="px-4 py-3">
-                        {row.company?.pole ? (
-                          <PoleBadge code={row.company.pole.code as PoleCode} />
-                        ) : (
-                          <span className="text-md-text-muted text-xs">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        {row.company ? CATEGORY_LABEL[row.company.category] : null}
-                      </td>
-                      <td className="text-md-text px-4 py-3 text-xs font-semibold">
-                        {row.pack_code === 'A_DEFINIR' ? (
-                          <span className="text-md-text-muted">—</span>
-                        ) : (
-                          PACK_LABEL[row.pack_code]
-                        )}
-                      </td>
-                      <td className="text-md-text px-4 py-3 text-xs">{ownerDisplay}</td>
-                      <td className="text-md-text px-4 py-3 text-right text-xs font-semibold">
-                        {formatEur(row.estimated_amount)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      <AdminDataTable
+        tableKey="prospects"
+        columns={columns}
+        data={rows}
+        emptyMessage="Aucun prospect ne correspond aux filtres."
+        getRowClassName={(row) => (selected.has(row.id) ? 'bg-md-magenta/5' : '')}
+      />
 
       {/* Dialog : changer statut */}
       <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
@@ -375,7 +402,7 @@ export function ProspectsListClient({
           <DialogHeader>
             <DialogTitle>Changer le statut</DialogTitle>
             <DialogDescription>
-              {selected.size} prospect(s) seront mis a jour. Operation tracee dans l&apos;audit log.
+              {selected.size} prospect(s) seront mis à jour. Opération tracée dans l&apos;audit log.
             </DialogDescription>
           </DialogHeader>
           <select
@@ -402,14 +429,14 @@ export function ProspectsListClient({
         </DialogContent>
       </Dialog>
 
-      {/* Dialog : reassigner owner (admin only) */}
+      {/* Dialog : réassigner owner (admin only) */}
       {hasAdminAccess(currentRole) && (
         <Dialog open={ownerOpen} onOpenChange={setOwnerOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Reassigner l&apos;owner</DialogTitle>
+              <DialogTitle>Réassigner l&apos;owner</DialogTitle>
               <DialogDescription>
-                {selected.size} prospect(s) seront reassignes a un autre commercial.
+                {selected.size} prospect(s) seront réassignés à un autre commercial.
               </DialogDescription>
             </DialogHeader>
             <select

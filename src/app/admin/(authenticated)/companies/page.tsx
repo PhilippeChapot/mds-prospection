@@ -1,10 +1,7 @@
 import Link from 'next/link';
-import { ArrowUpRight, Plus, Search, Upload } from 'lucide-react';
+import { Plus, Search, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PoleBadge } from '@/components/admin/PoleBadge';
-import { CompanyAvatar } from '@/components/admin/CompanyAvatar';
-import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { POLE_CODES, type PoleCode } from '@/lib/design-tokens';
 import { listCompaniesPaginated, listDistinctCountries } from '@/lib/supabase/queries';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
@@ -13,6 +10,7 @@ import { SearchSuggestions } from '@/components/admin/SearchSuggestions';
 import type { Database } from '@/lib/supabase/database.types';
 import { cn } from '@/lib/utils';
 import { CompaniesExportButton } from './CompaniesExportButton';
+import { CompaniesListClient } from './_components/CompaniesListClient';
 
 export const metadata = { title: 'Societes' };
 
@@ -39,30 +37,6 @@ type SearchParams = Promise<{
   hideProspected?: string;
   page?: string;
 }>;
-
-function initialsOf(name: string): string {
-  const parts = name
-    .replace(/[^A-Za-z0-9 ]/g, ' ')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-
-function formatDate(input: string | null): string {
-  if (!input) return '—';
-  try {
-    return new Date(input).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-  } catch {
-    return input.slice(0, 10);
-  }
-}
 
 function buildHref(params: Record<string, string | undefined>): string {
   const sp = new URLSearchParams();
@@ -245,115 +219,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
         )}
       </form>
 
-      <div className="bg-card border-md-border overflow-hidden rounded-xl border shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/40 text-md-text-muted text-[11px] font-semibold tracking-wider uppercase">
-              <tr>
-                <th className="px-4 py-3">Societe</th>
-                <th className="px-4 py-3">Pole</th>
-                <th className="px-4 py-3">Ville</th>
-                <th className="px-4 py-3">CP</th>
-                <th className="px-4 py-3">Pays</th>
-                <th className="px-4 py-3">Categorie</th>
-                <th className="px-4 py-3">Import</th>
-                <th className="px-4 py-3">Prospecte</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="text-md-text-muted px-4 py-12 text-center text-sm">
-                    Aucune societe ne correspond aux filtres.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((row) => (
-                  <tr key={row.id} className="border-md-border hover:bg-muted/30 border-t">
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/admin/companies/${row.id}`}
-                        className="flex items-center gap-3 hover:underline"
-                      >
-                        <CompanyAvatar initials={initialsOf(row.name)} />
-                        <div className="min-w-0">
-                          <div className="text-md-text truncate font-semibold">{row.name}</div>
-                          <ExternalEventBadges tags={row.external_event_tags} size="xs" />
-                          {row.primary_domain ? (
-                            <div className="text-md-text-muted truncate font-mono text-[10px]">
-                              {row.primary_domain}
-                            </div>
-                          ) : null}
-                        </div>
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">
-                      {row.pole ? (
-                        <PoleBadge code={row.pole.code as PoleCode} />
-                      ) : (
-                        <span className="text-md-text-muted text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {row.city ? (
-                        <span className="text-md-text">{row.city}</span>
-                      ) : (
-                        <span className="bg-md-warning/15 text-md-warning rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
-                          ⚠ Manquant
-                        </span>
-                      )}
-                    </td>
-                    <td className="text-md-text-muted px-4 py-3 font-mono text-xs">
-                      {row.postal_code ?? '—'}
-                    </td>
-                    <td className="text-md-text px-4 py-3 text-xs">
-                      {row.country ?? <span className="text-md-text-muted">—</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={cn(
-                          'rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap',
-                          row.category === 'prs_exhibitor'
-                            ? 'bg-md-magenta/10 text-md-magenta'
-                            : row.category === 'standard'
-                              ? 'bg-md-blue/10 text-md-blue'
-                              : 'bg-muted text-md-text-muted',
-                        )}
-                      >
-                        {CATEGORY_LABELS[row.category]}
-                      </span>
-                    </td>
-                    <td className="text-md-text-muted px-4 py-3 text-xs">
-                      {formatDate(row.created_at)}
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {row.has_prospected_contact ? (
-                        <span className="font-semibold whitespace-nowrap text-emerald-700">
-                          ✓ Prospecte
-                        </span>
-                      ) : (
-                        <span className="font-semibold whitespace-nowrap text-amber-600">
-                          ⚠ A prospecter
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/admin/companies/${row.id}`}
-                        className="text-md-blue inline-flex items-center gap-1 text-xs font-semibold hover:underline"
-                      >
-                        Voir
-                        <ArrowUpRight className="size-3.5" aria-hidden />
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <CompaniesListClient rows={rows} />
 
       {fuzzyResults.suggestions.length > 0 ? (
         <SearchSuggestions suggestions={fuzzyResults.suggestions} />
