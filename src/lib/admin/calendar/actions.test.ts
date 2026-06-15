@@ -76,6 +76,18 @@ function makeChain(table: string) {
           const arr = f.valArr as unknown[];
           if (arr.includes(v)) return false;
         }
+        if (f.op === 'or_str') {
+          // Handle "user_id.eq.UUID,assignee_user_ids.cs.{UUID}" (P14.5).
+          const str = String(f.val);
+          const eqMatch = str.match(/user_id\.eq\.([^,]+)/);
+          const targetId = eqMatch?.[1];
+          if (targetId) {
+            const rec = r as unknown as Record<string, unknown>;
+            const ownerId = rec['user_id'];
+            const assignees = (rec['assignee_user_ids'] as string[] | undefined) ?? [];
+            if (ownerId !== targetId && !assignees.includes(targetId)) return false;
+          }
+        }
       }
       return true;
     });
@@ -118,6 +130,11 @@ function makeChain(table: string) {
           .map((s) => s.trim());
         filters.push({ op: 'not_in', col, valArr: arr });
       }
+      return chain;
+    },
+    or: (filterStr: string) => {
+      // Parse "user_id.eq.UUID,assignee_user_ids.cs.{UUID}" for P14.5 list.
+      filters.push({ op: 'or_str', val: filterStr });
       return chain;
     },
     order: () => chain,
