@@ -24,6 +24,7 @@
     "locale_fr": "Français",
     "locale_en": "English",
     "exhibitorSpace": "Partner area",
+    "visitorSpace": "Visitor area",
     "exhibitorSpaceComingSoon": "Partner area — coming soon",
     "publisher": "Publisher",
     "legalSection": "Legal",
@@ -384,6 +385,135 @@
           "saving": "Saving…",
           "toastSuccess": "Bank details updated."
         }
+      }
+    }
+  },
+  "espaceVisiteur": {
+    "title": "Visitor Portal",
+    "login": {
+      "heading": "Access your Visitor Portal",
+      "subheading": "Get a magic link by email, or sign in with your password.",
+      "expired": "Your link has expired. Request a new one below.",
+      "invalid": "Invalid link. Request a new access link.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "tabs": {
+      "magicLink": "🔗 Magic link",
+      "password": "🔑 Password"
+    },
+    "requestLink": {
+      "emailLabel": "Your email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Get my access link",
+      "submitLoading": "Sending…",
+      "success": "If an account exists with this email, an access link has just been sent. Check your inbox.",
+      "error": {
+        "rateLimit": "Too many requests. Please wait an hour before retrying.",
+        "invalidEmail": "Invalid email.",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "passwordLogin": {
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "submit": "Sign in",
+      "submitLoading": "Signing in…",
+      "forgotPassword": "Forgot password?",
+      "error": {
+        "invalid_credentials": "Incorrect email or password.",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "forgotPassword": {
+      "heading": "Forgot password",
+      "subheading": "Enter your email: we'll send you a link to set a new password.",
+      "emailLabel": "Your email",
+      "submit": "Send link",
+      "submitLoading": "Sending…",
+      "success": "If an account exists with this email, a reset link has just been sent.",
+      "backToLogin": "Back to sign in",
+      "error": { "generic": "Something went wrong. Please try again." }
+    },
+    "resetPassword": {
+      "heading": "Set a password",
+      "subheading": "Choose a password (8 characters minimum).",
+      "newPasswordLabel": "New password",
+      "confirmLabel": "Confirm password",
+      "submit": "Save",
+      "submitLoading": "Saving…",
+      "success": "Your password has been saved. You can now sign in.",
+      "goToLogin": "Go to sign in →",
+      "error": {
+        "token_invalid": "Invalid link.",
+        "token_expired": "Link expired. Request a new one.",
+        "token_already_used": "Link already used. Request a new one.",
+        "passwords_mismatch": "Passwords do not match.",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "nav": {
+      "home": "Home",
+      "settings": "Settings",
+      "logout": "Log out"
+    },
+    "home": {
+      "welcome": "Welcome 👋",
+      "welcomeNamed": "Welcome {name} 👋",
+      "intro": "Your space to prepare your visit to MediaDays Solutions 2026.",
+      "badge": {
+        "title": "My badge & invitation",
+        "body": "Access your invitation page for the event.",
+        "cta": "View my invitation page",
+        "soon": "Your badge will be available here soon."
+      },
+      "infos": {
+        "title": "My information",
+        "email": "Email",
+        "company": "Company",
+        "pole": "Track"
+      },
+      "visa": {
+        "title": "Invitation letter / visa",
+        "body": "If you need an invitation letter for your visa, this section will let you request one soon."
+      }
+    },
+    "parametres": {
+      "title": "Settings",
+      "subtitle": "Your information and account security.",
+      "profil": {
+        "title": "Profile",
+        "name": "Name",
+        "phone": "Phone",
+        "email": "Email (login)",
+        "editHint": "Email stays fixed (your login). Contact us to change it."
+      },
+      "preferences": {
+        "title": "Email preferences",
+        "body": "Managing your content preferences is coming soon."
+      }
+    },
+    "security": {
+      "title": "Security",
+      "magicLinkAlwaysActive": "Magic-link sign-in always active.",
+      "noPassword": "No password set (magic-link sign-in only).",
+      "hasPassword": "Password set on {date}.",
+      "definePassword": "Set a password",
+      "changePassword": "Change password",
+      "removePassword": "Remove password",
+      "removePasswordConfirm": "Remove your password? You can still sign in via magic link.",
+      "currentPasswordLabel": "Current password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm password",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "successSet": "Password saved.",
+      "successRemoved": "Password removed.",
+      "error": {
+        "current_password_required": "Current password required.",
+        "current_password_incorrect": "Current password incorrect.",
+        "passwords_mismatch": "Passwords do not match.",
+        "generic": "Something went wrong. Please try again."
       }
     }
   },

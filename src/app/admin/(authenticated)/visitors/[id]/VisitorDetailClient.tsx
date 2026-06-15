@@ -31,6 +31,7 @@ import {
 } from '@/lib/visitors/constants';
 import { updateVisitorAction, deleteVisitorAction } from '@/lib/admin/visitors/mutate-actions';
 import { AudienceConverterMenu } from '@/components/admin/AudienceConverterMenu';
+import { VisitorAuthSection } from './VisitorAuthSection';
 
 export type VisitorDetail = {
   id: string;
@@ -380,24 +381,13 @@ export function VisitorDetailClient({
             )}
           </Card>
 
-          {/* Auth visiteur */}
+          {/* Auth visiteur (P15.3) */}
           <Card title="🔐 Authentification visiteur">
-            {visitor.visitor_account ? (
-              <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-                <Row label="Email compte">{visitor.visitor_account.email}</Row>
-                <Row label="Mot de passe">
-                  {visitor.visitor_account.password_set_at ? '✓ défini' : '— non défini'}
-                </Row>
-                <Row label="Dernière connexion">
-                  {fmtDate(visitor.visitor_account.last_login_at)}
-                </Row>
-              </dl>
-            ) : (
-              <p className="text-md-text-muted text-sm">
-                Aucun compte visiteur. La création de compte + l&apos;espace visiteur public
-                arrivent en P15.3.
-              </p>
-            )}
+            <VisitorAuthSection
+              visitorId={visitor.id}
+              account={visitor.visitor_account}
+              currentRole={currentRole}
+            />
           </Card>
         </TabsContent>
 

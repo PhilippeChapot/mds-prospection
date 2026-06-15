@@ -24,6 +24,7 @@
     "locale_fr": "Français",
     "locale_en": "English",
     "exhibitorSpace": "Espace Partenaire",
+    "visitorSpace": "Espace Visiteur",
     "exhibitorSpaceComingSoon": "Espace Partenaire — bientôt disponible",
     "publisher": "Éditeur",
     "legalSection": "Mentions légales",
@@ -384,6 +385,135 @@
           "saving": "Enregistrement…",
           "toastSuccess": "Coordonnées bancaires mises à jour."
         }
+      }
+    }
+  },
+  "espaceVisiteur": {
+    "title": "Espace Visiteur",
+    "login": {
+      "heading": "Accédez à votre Espace Visiteur",
+      "subheading": "Recevez un lien magique par email, ou connectez-vous avec votre mot de passe.",
+      "expired": "Votre lien a expiré. Demandez-en un nouveau ci-dessous.",
+      "invalid": "Lien invalide. Demandez un nouveau lien d'accès.",
+      "generic": "Une erreur est survenue. Réessayez."
+    },
+    "tabs": {
+      "magicLink": "🔗 Lien magique",
+      "password": "🔑 Mot de passe"
+    },
+    "requestLink": {
+      "emailLabel": "Votre email",
+      "emailPlaceholder": "vous@exemple.fr",
+      "submit": "Recevoir mon lien d'accès",
+      "submitLoading": "Envoi…",
+      "success": "Si un compte existe avec cet email, un lien d'accès vient d'être envoyé. Vérifiez votre boîte de réception.",
+      "error": {
+        "rateLimit": "Trop de demandes. Patientez une heure avant de réessayer.",
+        "invalidEmail": "Email invalide.",
+        "generic": "Une erreur est survenue. Réessayez."
+      }
+    },
+    "passwordLogin": {
+      "emailLabel": "Email",
+      "passwordLabel": "Mot de passe",
+      "submit": "Se connecter",
+      "submitLoading": "Connexion…",
+      "forgotPassword": "Mot de passe oublié ?",
+      "error": {
+        "invalid_credentials": "Email ou mot de passe incorrect.",
+        "generic": "Une erreur est survenue. Réessayez."
+      }
+    },
+    "forgotPassword": {
+      "heading": "Mot de passe oublié",
+      "subheading": "Saisissez votre email : nous vous enverrons un lien pour définir un nouveau mot de passe.",
+      "emailLabel": "Votre email",
+      "submit": "Envoyer le lien",
+      "submitLoading": "Envoi…",
+      "success": "Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé.",
+      "backToLogin": "Retour à la connexion",
+      "error": { "generic": "Une erreur est survenue. Réessayez." }
+    },
+    "resetPassword": {
+      "heading": "Définir un mot de passe",
+      "subheading": "Choisissez un mot de passe (8 caractères minimum).",
+      "newPasswordLabel": "Nouveau mot de passe",
+      "confirmLabel": "Confirmez le mot de passe",
+      "submit": "Enregistrer",
+      "submitLoading": "Enregistrement…",
+      "success": "Votre mot de passe a été enregistré. Vous pouvez maintenant vous connecter.",
+      "goToLogin": "Aller à la connexion →",
+      "error": {
+        "token_invalid": "Lien invalide.",
+        "token_expired": "Lien expiré. Demandez-en un nouveau.",
+        "token_already_used": "Lien déjà utilisé. Demandez-en un nouveau.",
+        "passwords_mismatch": "Les mots de passe ne correspondent pas.",
+        "generic": "Une erreur est survenue. Réessayez."
+      }
+    },
+    "nav": {
+      "home": "Accueil",
+      "settings": "Paramètres",
+      "logout": "Déconnexion"
+    },
+    "home": {
+      "welcome": "Bienvenue 👋",
+      "welcomeNamed": "Bienvenue {name} 👋",
+      "intro": "Votre espace pour préparer votre venue au salon MediaDays Solutions 2026.",
+      "badge": {
+        "title": "Mon badge & invitation",
+        "body": "Accédez à votre page d'invitation pour le salon.",
+        "cta": "Voir ma page d'invitation",
+        "soon": "Votre badge sera disponible ici prochainement."
+      },
+      "infos": {
+        "title": "Mes informations",
+        "email": "Email",
+        "company": "Société",
+        "pole": "Pôle"
+      },
+      "visa": {
+        "title": "Lettre d'invitation / visa",
+        "body": "Si vous avez besoin d'une lettre d'invitation pour votre visa, cette section vous permettra de la demander prochainement."
+      }
+    },
+    "parametres": {
+      "title": "Paramètres",
+      "subtitle": "Vos informations et la sécurité de votre compte.",
+      "profil": {
+        "title": "Profil",
+        "name": "Nom",
+        "phone": "Téléphone",
+        "email": "Email (identifiant)",
+        "editHint": "L'email reste fixe (identifiant de connexion). Contactez-nous pour le modifier."
+      },
+      "preferences": {
+        "title": "Préférences email",
+        "body": "La gestion de vos préférences de contenu arrivera prochainement."
+      }
+    },
+    "security": {
+      "title": "Sécurité",
+      "magicLinkAlwaysActive": "Connexion par lien magique toujours active.",
+      "noPassword": "Aucun mot de passe défini (connexion par lien magique uniquement).",
+      "hasPassword": "Mot de passe défini le {date}.",
+      "definePassword": "Définir un mot de passe",
+      "changePassword": "Changer le mot de passe",
+      "removePassword": "Supprimer le mot de passe",
+      "removePasswordConfirm": "Supprimer votre mot de passe ? Vous pourrez toujours vous connecter par lien magique.",
+      "currentPasswordLabel": "Mot de passe actuel",
+      "newPasswordLabel": "Nouveau mot de passe",
+      "confirmPasswordLabel": "Confirmez le mot de passe",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler",
+      "successSet": "Mot de passe enregistré.",
+      "successRemoved": "Mot de passe supprimé.",
+      "error": {
+        "current_password_required": "Mot de passe actuel requis.",
+        "current_password_incorrect": "Mot de passe actuel incorrect.",
+        "passwords_mismatch": "Les mots de passe ne correspondent pas.",
+        "generic": "Une erreur est survenue. Réessayez."
       }
     }
   },

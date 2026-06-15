@@ -48,6 +48,12 @@ export const PATHNAMES = {
   '/espace-partenaire/mot-de-passe-oublie': '/espace-partenaire/mot-de-passe-oublie',
   '/espace-partenaire/reinitialiser-mot-de-passe': '/espace-partenaire/reinitialiser-mot-de-passe',
   '/espace-partenaire/dashboard': '/espace-partenaire/dashboard',
+  // P15.3 — espace visiteur (même slug FR/EN)
+  '/espace-visiteur': '/espace-visiteur',
+  '/espace-visiteur/mot-de-passe-oublie': '/espace-visiteur/mot-de-passe-oublie',
+  '/espace-visiteur/reinitialiser-mot-de-passe': '/espace-visiteur/reinitialiser-mot-de-passe',
+  '/espace-visiteur/accueil': '/espace-visiteur/accueil',
+  '/espace-visiteur/parametres': '/espace-visiteur/parametres',
 } as const;
 
 export const routing = defineRouting({

@@ -24,6 +24,13 @@ export function PublicTopbar() {
         <div className="flex items-center gap-2">
           <LocaleSwitcher />
           <Link
+            href="/espace-visiteur"
+            className="text-md-magenta hover:bg-md-magenta/5 hidden items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition sm:inline-flex"
+          >
+            <LogIn className="h-3.5 w-3.5" aria-hidden />
+            <span>{t('visitorSpace')}</span>
+          </Link>
+          <Link
             href="/espace-partenaire"
             className="text-md-blue hover:bg-md-blue/5 hidden items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition sm:inline-flex"
           >
