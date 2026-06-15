@@ -42,11 +42,13 @@ describe('filterNavSectionsForRole (P5.x.1-quater bug #2)', () => {
     expect(allHrefs).toContain('/admin/audit-log');
   });
 
-  it('sales voit EXACTEMENT 11 items (P14.1 + Calendrier)', () => {
+  it('sales voit EXACTEMENT 14 items (P14.1 + Calendrier + P15.1 Visiteurs/Speakers/Conférences)', () => {
     // P9.1-natif : +Messages (visitor messages) accessibles a tous les
     // admin/sales/super_admin.
     // P8.3 : +Campagnes (sales peut creer un brouillon, pas envoyer).
     // P14.1 : +Calendrier (visible tous les roles, scoping par RBAC cote action).
+    // P15.1 : +Visiteurs (visible tous roles) + placeholders Speakers/Conférences
+    //         (grisés, enabled:false, mais non filtrés par role -> présents).
     const filtered = filterNavSectionsForRole(ADMIN_NAV_SECTIONS, 'sales');
     const hrefs = filtered.flatMap((s) => s.items.map((i) => i.href));
     expect(hrefs).toEqual([
@@ -54,6 +56,9 @@ describe('filterNavSectionsForRole (P5.x.1-quater bug #2)', () => {
       '/admin/prospects',
       '/admin/companies',
       '/admin/contacts',
+      '/admin/visitors',
+      '/admin/speakers',
+      '/admin/conferences',
       '/admin/contacts/quick-add',
       '/admin/messages',
       '/admin/signups',
@@ -62,7 +67,7 @@ describe('filterNavSectionsForRole (P5.x.1-quater bug #2)', () => {
       '/admin/sellsy-products',
       '/admin/campaigns',
     ]);
-    expect(hrefs).toHaveLength(11);
+    expect(hrefs).toHaveLength(14);
   });
 
   it('sales NE voit AUCUN item masque (Sync Brevo, Tarifs, Affilies, Preferences, Users, Logs sync, Audit, MCP, Styleguide, Saisons, Profils, Ressources, Claims)', () => {

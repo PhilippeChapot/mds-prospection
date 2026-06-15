@@ -18,7 +18,7 @@ export type AdminNavItem = {
   label: string;
   emoji: string;
   enabled: boolean;
-  phase?: 'P2' | 'P3' | 'P4' | 'P5';
+  phase?: 'P2' | 'P3' | 'P4' | 'P5' | 'P6' | 'P15' | 'P16';
   badge?: string;
   /** Si present, item visible uniquement pour ces roles. */
   roles_allowed?: readonly UserRole[];
@@ -41,6 +41,16 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: '/admin/prospects', label: 'Prospects', emoji: '👥', enabled: true },
       { href: '/admin/companies', label: 'Societes', emoji: '🏢', enabled: true },
       { href: '/admin/contacts', label: 'Contacts', emoji: '📞', enabled: true },
+      { href: '/admin/visitors', label: 'Visiteurs', emoji: '👥', enabled: true },
+      // P16 roadmap (shells créés en P15.1, UI à venir) — placeholders grisés.
+      { href: '/admin/speakers', label: 'Speakers', emoji: '🎤', enabled: false, phase: 'P16' },
+      {
+        href: '/admin/conferences',
+        label: 'Conférences',
+        emoji: '📅',
+        enabled: false,
+        phase: 'P16',
+      },
       { href: '/admin/contacts/quick-add', label: 'Smart Add', emoji: '✨', enabled: true },
       {
         href: '/admin/messages',

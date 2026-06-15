@@ -3609,6 +3609,417 @@ export type Database = {
           },
         ];
       };
+      visitors: {
+        Row: {
+          id: string;
+          contact_id: string;
+          company_id: string | null;
+          pole: string | null;
+          visitor_type: string | null;
+          is_vip: boolean;
+          source: string;
+          status: string;
+          former_prospect_id: string | null;
+          language: string;
+          owner_user_id: string | null;
+          brevo_synced_at: string | null;
+          brevo_list_id: string | null;
+          notes: string | null;
+          is_big_company: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          contact_id: string;
+          company_id?: string | null;
+          pole?: string | null;
+          visitor_type?: string | null;
+          is_vip?: boolean;
+          source?: string;
+          status?: string;
+          former_prospect_id?: string | null;
+          language?: string;
+          owner_user_id?: string | null;
+          brevo_synced_at?: string | null;
+          brevo_list_id?: string | null;
+          notes?: string | null;
+          is_big_company?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          contact_id?: string;
+          company_id?: string | null;
+          pole?: string | null;
+          visitor_type?: string | null;
+          is_vip?: boolean;
+          source?: string;
+          status?: string;
+          former_prospect_id?: string | null;
+          language?: string;
+          owner_user_id?: string | null;
+          brevo_synced_at?: string | null;
+          brevo_list_id?: string | null;
+          notes?: string | null;
+          is_big_company?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'visitors_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: true;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'visitors_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'visitors_former_prospect_id_fkey';
+            columns: ['former_prospect_id'];
+            isOneToOne: false;
+            referencedRelation: 'prospects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'visitors_owner_user_id_fkey';
+            columns: ['owner_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      visitor_invitation_data: {
+        Row: {
+          id: string;
+          visitor_id: string;
+          passport_number: string | null;
+          passport_country: string | null;
+          passport_expiry: string | null;
+          birth_date: string | null;
+          birth_place: string | null;
+          arrival_date: string | null;
+          departure_date: string | null;
+          flight_in: string | null;
+          flight_out: string | null;
+          hotel_name: string | null;
+          hotel_address: string | null;
+          pdf_storage_path: string | null;
+          pdf_generated_at: string | null;
+          pdf_generated_by: string | null;
+          visa_status: string | null;
+          approval_status: string | null;
+          approved_by: string | null;
+          approved_at: string | null;
+          rejection_reason: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          visitor_id: string;
+          passport_number?: string | null;
+          passport_country?: string | null;
+          passport_expiry?: string | null;
+          birth_date?: string | null;
+          birth_place?: string | null;
+          arrival_date?: string | null;
+          departure_date?: string | null;
+          flight_in?: string | null;
+          flight_out?: string | null;
+          hotel_name?: string | null;
+          hotel_address?: string | null;
+          pdf_storage_path?: string | null;
+          pdf_generated_at?: string | null;
+          pdf_generated_by?: string | null;
+          visa_status?: string | null;
+          approval_status?: string | null;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          rejection_reason?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          visitor_id?: string;
+          passport_number?: string | null;
+          passport_country?: string | null;
+          passport_expiry?: string | null;
+          birth_date?: string | null;
+          birth_place?: string | null;
+          arrival_date?: string | null;
+          departure_date?: string | null;
+          flight_in?: string | null;
+          flight_out?: string | null;
+          hotel_name?: string | null;
+          hotel_address?: string | null;
+          pdf_storage_path?: string | null;
+          pdf_generated_at?: string | null;
+          pdf_generated_by?: string | null;
+          visa_status?: string | null;
+          approval_status?: string | null;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          rejection_reason?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'visitor_invitation_data_visitor_id_fkey';
+            columns: ['visitor_id'];
+            isOneToOne: true;
+            referencedRelation: 'visitors';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      visitor_accounts: {
+        Row: {
+          id: string;
+          visitor_id: string;
+          email: string;
+          password_hash: string | null;
+          password_set_at: string | null;
+          last_login_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          visitor_id: string;
+          email: string;
+          password_hash?: string | null;
+          password_set_at?: string | null;
+          last_login_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          visitor_id?: string;
+          email?: string;
+          password_hash?: string | null;
+          password_set_at?: string | null;
+          last_login_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'visitor_accounts_visitor_id_fkey';
+            columns: ['visitor_id'];
+            isOneToOne: true;
+            referencedRelation: 'visitors';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      visitor_password_reset_tokens: {
+        Row: {
+          token: string;
+          visitor_account_id: string;
+          expires_at: string;
+          used_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          token: string;
+          visitor_account_id: string;
+          expires_at: string;
+          used_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          token?: string;
+          visitor_account_id?: string;
+          expires_at?: string;
+          used_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'visitor_password_reset_tokens_visitor_account_id_fkey';
+            columns: ['visitor_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'visitor_accounts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      speakers: {
+        Row: {
+          id: string;
+          contact_id: string;
+          company_id: string | null;
+          speaker_type: string | null;
+          status: string;
+          bio_short: string | null;
+          topics: string[] | null;
+          language: string;
+          owner_user_id: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          contact_id: string;
+          company_id?: string | null;
+          speaker_type?: string | null;
+          status?: string;
+          bio_short?: string | null;
+          topics?: string[] | null;
+          language?: string;
+          owner_user_id?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          contact_id?: string;
+          company_id?: string | null;
+          speaker_type?: string | null;
+          status?: string;
+          bio_short?: string | null;
+          topics?: string[] | null;
+          language?: string;
+          owner_user_id?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'speakers_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: true;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'speakers_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'speakers_owner_user_id_fkey';
+            columns: ['owner_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      conferences: {
+        Row: {
+          id: string;
+          title_fr: string;
+          title_en: string | null;
+          description_fr: string | null;
+          description_en: string | null;
+          conference_type: string | null;
+          start_at: string | null;
+          end_at: string | null;
+          room: string | null;
+          city: string | null;
+          capacity: number | null;
+          is_published: boolean;
+          poles: string[] | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title_fr: string;
+          title_en?: string | null;
+          description_fr?: string | null;
+          description_en?: string | null;
+          conference_type?: string | null;
+          start_at?: string | null;
+          end_at?: string | null;
+          room?: string | null;
+          city?: string | null;
+          capacity?: number | null;
+          is_published?: boolean;
+          poles?: string[] | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title_fr?: string;
+          title_en?: string | null;
+          description_fr?: string | null;
+          description_en?: string | null;
+          conference_type?: string | null;
+          start_at?: string | null;
+          end_at?: string | null;
+          room?: string | null;
+          city?: string | null;
+          capacity?: number | null;
+          is_published?: boolean;
+          poles?: string[] | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      conference_speakers: {
+        Row: {
+          conference_id: string;
+          speaker_id: string;
+          role: string | null;
+          speaking_order: number | null;
+          created_at: string;
+        };
+        Insert: {
+          conference_id: string;
+          speaker_id: string;
+          role?: string | null;
+          speaking_order?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          conference_id?: string;
+          speaker_id?: string;
+          role?: string | null;
+          speaking_order?: number | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'conference_speakers_conference_id_fkey';
+            columns: ['conference_id'];
+            isOneToOne: false;
+            referencedRelation: 'conferences';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'conference_speakers_speaker_id_fkey';
+            columns: ['speaker_id'];
+            isOneToOne: false;
+            referencedRelation: 'speakers';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       prospect_timeline_view: {
