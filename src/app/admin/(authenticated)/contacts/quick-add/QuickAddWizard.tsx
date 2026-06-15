@@ -11,6 +11,27 @@ import { extractEmailDomain } from '@/lib/utils/domain';
 import type { ParsedSmartAdd } from '@/lib/smart-add/parse-with-ai';
 import type { FuzzyMatchedCompany, ExistingContactMatch } from '@/lib/smart-add/orchestrator';
 import type { AutoMatchResult, SireneEtablissement } from '@/lib/insee/sirene';
+import { VisitorFieldsStep } from './_components/VisitorFieldsStep';
+import { SpeakerFieldsStep } from './_components/SpeakerFieldsStep';
+
+/** P15.2 — Smart Add 3-way : ce qu'on crée au bout du flow. */
+type Audience = 'prospect' | 'visitor' | 'speaker';
+
+const AUDIENCE_OPTIONS: { value: Audience; icon: string; title: string; desc: string }[] = [
+  {
+    value: 'prospect',
+    icon: '🏢',
+    title: 'Prospect partenaire',
+    desc: 'Exposant potentiel (pack, owner…)',
+  },
+  {
+    value: 'visitor',
+    icon: '👥',
+    title: 'Visiteur MDS',
+    desc: 'Visiteur du salon (pro/presse/VIP…)',
+  },
+  { value: 'speaker', icon: '🎤', title: 'Speaker MDS', desc: 'Intervenant (SHELL, fiche P16)' },
+];
 
 type ParseResponse =
   | {
@@ -96,6 +117,14 @@ export function QuickAddWizard() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [parsePending, startParse] = useTransition();
   const [confirmPending, startConfirm] = useTransition();
+
+  // P15.2 — audience choisie (étape 0) + résultat de la création contact/société.
+  const [audience, setAudience] = useState<Audience>('prospect');
+  const [created, setCreated] = useState<{
+    companyId: string | null;
+    contactId: string;
+    contactName: string;
+  } | null>(null);
 
   // P5.x.23-quinquies : détection auto-suggestion alternate_domain.
   //   1. mode='existing' (sinon le primary du nouveau est saisi à la main)
@@ -256,16 +285,81 @@ export function QuickAddWizard() {
         if (!res.ok || !json.ok) {
           throw new Error(json.error ?? 'Confirm échoué');
         }
-        toast.success(`Ajouté ! Brevo: ${json.brevoKind}. Redirection vers la fiche société…`);
-        router.push(`/admin/companies/${json.companyId}`);
+        // P15.2 — branche selon l'audience choisie à l'étape 0.
+        const contactName =
+          [form.contactFirstName, form.contactLastName].filter(Boolean).join(' ').trim() ||
+          form.contactEmail;
+        if (audience === 'prospect') {
+          toast.success(`Contact prêt (Brevo: ${json.brevoKind}). Finalise le prospect…`);
+          const qp = new URLSearchParams();
+          if (json.contactId) qp.set('contact_id', json.contactId);
+          else if (json.companyId) qp.set('company_id', json.companyId);
+          router.push(`/admin/prospects/new?${qp.toString()}`);
+        } else if (json.contactId) {
+          toast.success(`Contact créé (Brevo: ${json.brevoKind}). Complète les infos.`);
+          setCreated({
+            companyId: json.companyId ?? null,
+            contactId: json.contactId,
+            contactName,
+          });
+        } else {
+          throw new Error('Contact non créé (id manquant).');
+        }
       } catch (err) {
         toast.error(`Échec : ${(err as Error).message}`);
       }
     });
   }
 
+  // P15.2 — une fois le contact créé pour un visiteur/speaker, on affiche
+  // l'étape de champs spécifiques (le prospect, lui, redirige vers son form).
+  if (created && audience === 'visitor') {
+    return (
+      <VisitorFieldsStep
+        contactId={created.contactId}
+        companyId={created.companyId}
+        contactName={created.contactName}
+      />
+    );
+  }
+  if (created && audience === 'speaker') {
+    return <SpeakerFieldsStep contactId={created.contactId} contactName={created.contactName} />;
+  }
+
   return (
     <div className="space-y-5">
+      {/* Step 0 : audience (P15.2) */}
+      <section className="bg-card border-md-border space-y-3 rounded-xl border p-5 shadow-sm">
+        <h2 className="text-md-blue-dark text-sm font-bold tracking-wide uppercase">
+          0. Que veux-tu ajouter ?
+        </h2>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {AUDIENCE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setAudience(opt.value)}
+              className={`rounded-lg border p-3 text-left transition ${
+                audience === opt.value
+                  ? 'border-md-blue ring-md-blue/30 border-2 ring-2'
+                  : 'border-md-border hover:bg-muted'
+              }`}
+            >
+              <div className="flex items-center gap-2 font-semibold">
+                <span className="text-lg">{opt.icon}</span>
+                {opt.title}
+              </div>
+              <p className="text-md-text-muted mt-1 text-xs">{opt.desc}</p>
+            </button>
+          ))}
+        </div>
+        <p className="text-md-text-muted text-xs">
+          L&apos;enrichissement et la création contact/société sont communs. La fin du flow crée la
+          row{' '}
+          {audience === 'prospect' ? 'prospect' : audience === 'visitor' ? 'visiteur' : 'speaker'}.
+        </p>
+      </section>
+
       {/* Step 1 : input + parse */}
       <section className="bg-card border-md-border space-y-3 rounded-xl border p-5 shadow-sm">
         <h2 className="text-md-blue-dark text-sm font-bold tracking-wide uppercase">
@@ -648,7 +742,11 @@ export function QuickAddWizard() {
               ) : (
                 <Check className="size-3.5" aria-hidden />
               )}
-              Ajouter et synchroniser Brevo
+              {audience === 'prospect'
+                ? 'Ajouter → finaliser le prospect'
+                : audience === 'visitor'
+                  ? 'Ajouter → détails visiteur'
+                  : 'Ajouter → détails speaker'}
             </Button>
           </div>
         </>

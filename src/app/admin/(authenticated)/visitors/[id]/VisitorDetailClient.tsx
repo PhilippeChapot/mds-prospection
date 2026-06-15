@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -30,6 +30,7 @@ import {
   type VisaStatus,
 } from '@/lib/visitors/constants';
 import { updateVisitorAction, deleteVisitorAction } from '@/lib/admin/visitors/mutate-actions';
+import { AudienceConverterMenu } from '@/components/admin/AudienceConverterMenu';
 
 export type VisitorDetail = {
   id: string;
@@ -116,11 +117,13 @@ export function VisitorDetailClient({
   timeline,
   owners,
   currentRole,
+  alreadySpeaker,
 }: {
   visitor: VisitorDetail;
   timeline: VisitorTimelineEntry[];
   owners: Owner[];
   currentRole: 'admin' | 'sales' | 'super_admin';
+  alreadySpeaker?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -191,12 +194,11 @@ export function VisitorDetailClient({
         </div>
         <div className="flex flex-wrap gap-2">
           {visitor.contact ? (
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/admin/prospects/new?contact_id=${visitor.contact.id}`}>
-                <ArrowRight className="size-4" aria-hidden />
-                Convertir en prospect
-              </Link>
-            </Button>
+            <AudienceConverterMenu
+              source="visitor"
+              sourceId={visitor.id}
+              alreadySpeaker={alreadySpeaker}
+            />
           ) : null}
           {!editing ? (
             <Button variant="outline" size="sm" onClick={() => setEditing(true)} disabled={pending}>

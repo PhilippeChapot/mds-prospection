@@ -23,6 +23,7 @@ import {
   VISITOR_SOURCES,
   VISITOR_LANGUAGES,
 } from '@/lib/visitors/constants';
+import { isBigCompany, notifyBigCoVisitor } from '@/lib/admin/notifications/big-co-alert';
 
 const NewContactSchema = z.object({
   first_name: z.string().trim().min(1).max(80),
@@ -186,6 +187,33 @@ export async function createVisitorAction(
       source: parsed.source,
     },
   });
+
+  // ── Alerte Big Co (P15.2) ────────────────────────────────────────────────
+  // Si la société (enrichie Apollo) dépasse le seuil employés → flag + email
+  // super_admin. Best-effort : n'échoue jamais la création du visiteur.
+  if (companyId) {
+    try {
+      const { data: company } = await supabase
+        .from('companies')
+        .select('id, name, employee_count, industry')
+        .eq('id', companyId)
+        .maybeSingle();
+      if (company && isBigCompany(company.employee_count)) {
+        await notifyBigCoVisitor(
+          newVisitor.id,
+          {
+            id: company.id,
+            name: company.name,
+            employee_count: company.employee_count,
+            industry: company.industry,
+          },
+          supabase,
+        );
+      }
+    } catch {
+      // ignore : l'alerte Big Co ne doit pas bloquer la création.
+    }
+  }
 
   revalidatePath('/admin/visitors');
   return { success: true, visitor_id: newVisitor.id };

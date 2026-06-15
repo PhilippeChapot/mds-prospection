@@ -11,6 +11,12 @@ import { POLE_CODES, type PoleCode } from '@/lib/design-tokens';
 export const VISITOR_POLES = POLE_CODES;
 export type VisitorPole = PoleCode;
 
+/**
+ * P15.2 — seuil "Big Company" (employés Apollo). Client-safe (utilisé par le
+ * wizard côté client ET par l'alerte serveur). Arbitraire V1 = 1000.
+ */
+export const BIG_CO_EMPLOYEE_THRESHOLD = 1000;
+
 // ─── Type de visiteur ─────────────────────────────────────────────────────
 export const VISITOR_TYPES = [
   'professional',

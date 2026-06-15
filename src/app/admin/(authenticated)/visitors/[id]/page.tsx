@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { getVisitorByIdAction } from '@/lib/admin/visitors/list-actions';
+import { existsAsSpeaker } from '@/lib/admin/conversions/exists-helpers';
 import {
   VisitorDetailClient,
   type VisitorDetail,
@@ -58,12 +59,16 @@ export default async function VisitorDetailPage({ params }: { params: Params }) 
     label: `${o.full_name?.trim() || o.email} · ${o.role}`,
   }));
 
+  const contactId = (visitor.contact as { id?: string } | null)?.id;
+  const alreadySpeaker = contactId ? await existsAsSpeaker(contactId) : false;
+
   return (
     <VisitorDetailClient
       visitor={visitor}
       timeline={timeline}
       owners={ownersOptions}
       currentRole={profile.role}
+      alreadySpeaker={alreadySpeaker}
     />
   );
 }

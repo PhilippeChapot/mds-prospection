@@ -33,6 +33,8 @@ import { PACK_LABEL } from '@/lib/supabase/queries';
 import type { PoleCode } from '@/lib/design-tokens';
 import type { Database } from '@/lib/supabase/database.types';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
+import { AudienceConverterMenu } from '@/components/admin/AudienceConverterMenu';
+import { existsAsVisitor, existsAsSpeaker } from '@/lib/admin/conversions/exists-helpers';
 import { ProspectForbiddenPage } from '@/components/admin/prospects/ProspectForbiddenPage';
 import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { canViewProspectDetail } from '@/lib/prospects/access';
@@ -122,6 +124,12 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
   const contact = pickFirst(prospect.contact);
   const owner = pickFirst(prospect.owner);
   const pole = pickFirst(company?.pole ?? null);
+
+  // P15.2 : conversions croisées — désactiver les audiences déjà existantes.
+  const prospectContactId = (contact as { id?: string } | null)?.id ?? null;
+  const [alreadyVisitor, alreadySpeaker] = prospectContactId
+    ? await Promise.all([existsAsVisitor(prospectContactId), existsAsSpeaker(prospectContactId)])
+    : [false, false];
 
   // P5.x.1-quater-bis (bug #3) — la lecture passe par le service-role
   // (bypass RLS) ; ici on decide manuellement si l'utilisateur peut voir
@@ -282,6 +290,14 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
               Editer
             </Link>
           </Button>
+          {prospectContactId ? (
+            <AudienceConverterMenu
+              source="prospect"
+              sourceId={id}
+              alreadyVisitor={alreadyVisitor}
+              alreadySpeaker={alreadySpeaker}
+            />
+          ) : null}
           {hasAdminAccess(profile.role) ? <DeleteProspectButton prospectId={id} /> : null}
         </div>
       </div>
