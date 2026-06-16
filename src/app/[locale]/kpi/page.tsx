@@ -224,7 +224,7 @@ const FR: Content = {
     ],
   ),
   footHtml:
-    "<b>Sources & méthodologie.</b> Paris Radio Show 2025 : chiffres officiels (parisradioshow.com, édition La Bellevilloise). MediaDays « Classic » by Havas : données presse des éditions précédentes (≈ 2 000 visiteurs / 600 annonceurs / 120 keynotes sur la tournée ; ≈ 1 000 participants par étape, Lyon 2025). Pôles, sous-secteurs et familles de visiteurs : plateforme mediadays.solutions. La fourchette 3 000–5 000 visiteurs est une projection pour l'édition XXL de Paris (Carrousel du Louvre, 6 000 m²), à partir de la fréquentation du Paris Radio Show et de l'élargissement du format — l'événement n'a jamais eu lieu sous ce format. La répartition par famille est un mix d'audience cible, exprimé en part du public attendu.<br><br>Organisé par Editions HF (Brive-la-Gaillarde), co-organisé avec Havas Media. Page privée — non indexée, à usage commercial. Juin 2026.",
+    "<b>Sources & méthodologie.</b> Paris Radio Show 2025 : chiffres officiels (parisradioshow.com, édition La Bellevilloise). MediaDays « Classic » by Havas : données presse des éditions précédentes (≈ 2 000 visiteurs / 600 annonceurs / 120 keynotes sur la tournée ; ≈ 1 000 participants par étape, Lyon 2025). Pôles, sous-secteurs et familles de visiteurs : plateforme mediadays.solutions. La fourchette 3 000–5 000 visiteurs est une projection pour l'édition XXL de Paris (Carrousel du Louvre, 6 000 m²), à partir de la fréquentation du Paris Radio Show et de l'élargissement du format — l'événement n'a jamais eu lieu sous ce format. La répartition par famille est un mix d'audience cible, exprimé en part du public attendu.",
 };
 
 const EN: Content = {
@@ -376,7 +376,7 @@ const EN: Content = {
     ],
   ),
   footHtml:
-    '<b>Sources & methodology.</b> Paris Radio Show 2025: official figures (parisradioshow.com, La Bellevilloise edition). MediaDays "Classic" by Havas: press data from previous editions (≈ 2,000 visitors / 600 advertisers / 120 keynotes across the tour; ≈ 1,000 attendees per stop, Lyon 2025). Hubs, sub-sectors and visitor families: mediadays.solutions platform. The 3,000–5,000 visitor range is a projection for the Paris XXL edition (Carrousel du Louvre, 6,000 m²), based on the Paris Radio Show attendance and the larger format — the event has never taken place in this format. The per-family breakdown is a target audience mix, expressed as a share of the expected audience.<br><br>Organised by Editions HF (Brive-la-Gaillarde), co-organised with Havas Media. Private page — not indexed, for commercial use. June 2026.',
+    '<b>Sources & methodology.</b> Paris Radio Show 2025: official figures (parisradioshow.com, La Bellevilloise edition). MediaDays "Classic" by Havas: press data from previous editions (≈ 2,000 visitors / 600 advertisers / 120 keynotes across the tour; ≈ 1,000 attendees per stop, Lyon 2025). Hubs, sub-sectors and visitor families: mediadays.solutions platform. The 3,000–5,000 visitor range is a projection for the Paris XXL edition (Carrousel du Louvre, 6,000 m²), based on the Paris Radio Show attendance and the larger format — the event has never taken place in this format. The per-family breakdown is a target audience mix, expressed as a share of the expected audience.',
 };
 
 function pick(locale: string): Content {
