@@ -474,7 +474,41 @@
       },
       "visa": {
         "title": "Lettre d'invitation / visa",
-        "body": "Si vous avez besoin d'une lettre d'invitation pour votre visa, cette section vous permettra de la demander prochainement."
+        "body": "Si vous avez besoin d'une lettre d'invitation officielle pour votre demande de visa, demandez-la ici.",
+        "request": "Demander ma lettre d'invitation",
+        "ready": "Votre lettre d'invitation officielle est disponible.",
+        "download": "Télécharger ma lettre PDF",
+        "pending": "Votre demande est en cours de validation (délai estimé : 48h ouvrées).",
+        "rejected": "Votre demande a été refusée.",
+        "rejectedReason": "Motif :"
+      }
+    },
+    "invitation": {
+      "title": "Lettre d'invitation officielle",
+      "subtitle": "Renseignez vos informations pour générer votre lettre d'invitation visa. Les champs proviennent de votre passeport.",
+      "section": { "identity": "Identité & passeport", "company": "Coordonnées société" },
+      "fields": {
+        "nationality": "Nationalité",
+        "profession": "Profession",
+        "birthDate": "Date de naissance",
+        "birthPlace": "Lieu de naissance",
+        "passportNumber": "Numéro de passeport",
+        "passportCountry": "Pays du passeport (ISO 2)",
+        "passportIssue": "Date de délivrance",
+        "passportExpiry": "Date d'expiration",
+        "companyName": "Nom de la société",
+        "companyAddress": "Adresse complète de la société",
+        "postalCode": "Code postal",
+        "city": "Ville",
+        "country": "Pays"
+      },
+      "passportCountryHint": "Code ISO 2 lettres (ex : FR, US, MA). Selon le pays, la lettre est générée automatiquement ou validée manuellement.",
+      "submit": "Soumettre ma demande",
+      "submitLoading": "Envoi…",
+      "result": {
+        "auto": "✅ Votre lettre a été générée et envoyée par email. Vous pouvez aussi la télécharger depuis votre accueil.",
+        "pending": "📋 Votre demande est en cours de traitement. Délai estimé : 48h ouvrées. Vous recevrez un email à validation.",
+        "backHome": "Retour à l'accueil"
       }
     },
     "parametres": {

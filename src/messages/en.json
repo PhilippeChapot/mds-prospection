@@ -474,7 +474,41 @@
       },
       "visa": {
         "title": "Invitation letter / visa",
-        "body": "If you need an invitation letter for your visa, this section will let you request one soon."
+        "body": "If you need an official invitation letter for your visa application, request it here.",
+        "request": "Request my invitation letter",
+        "ready": "Your official invitation letter is available.",
+        "download": "Download my PDF letter",
+        "pending": "Your request is being validated (estimated time: 48 business hours).",
+        "rejected": "Your request was declined.",
+        "rejectedReason": "Reason:"
+      }
+    },
+    "invitation": {
+      "title": "Official invitation letter",
+      "subtitle": "Fill in your details to generate your visa invitation letter. Fields come from your passport.",
+      "section": { "identity": "Identity & passport", "company": "Company details" },
+      "fields": {
+        "nationality": "Nationality",
+        "profession": "Profession",
+        "birthDate": "Date of birth",
+        "birthPlace": "Place of birth",
+        "passportNumber": "Passport number",
+        "passportCountry": "Passport country (ISO 2)",
+        "passportIssue": "Issue date",
+        "passportExpiry": "Expiry date",
+        "companyName": "Company name",
+        "companyAddress": "Full company address",
+        "postalCode": "Postal code",
+        "city": "City",
+        "country": "Country"
+      },
+      "passportCountryHint": "2-letter ISO code (e.g. FR, US, MA). Depending on the country, the letter is generated automatically or validated manually.",
+      "submit": "Submit my request",
+      "submitLoading": "Sending…",
+      "result": {
+        "auto": "✅ Your letter has been generated and emailed to you. You can also download it from your home page.",
+        "pending": "📋 Your request is being processed. Estimated time: 48 business hours. You'll get an email once validated.",
+        "backHome": "Back to home"
       }
     },
     "parametres": {

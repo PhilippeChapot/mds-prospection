@@ -54,6 +54,7 @@ export const PATHNAMES = {
   '/espace-visiteur/reinitialiser-mot-de-passe': '/espace-visiteur/reinitialiser-mot-de-passe',
   '/espace-visiteur/accueil': '/espace-visiteur/accueil',
   '/espace-visiteur/parametres': '/espace-visiteur/parametres',
+  '/espace-visiteur/invitation': '/espace-visiteur/invitation',
 } as const;
 
 export const routing = defineRouting({

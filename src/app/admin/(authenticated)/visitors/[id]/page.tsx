@@ -3,6 +3,7 @@ import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { getVisitorByIdAction } from '@/lib/admin/visitors/list-actions';
 import { existsAsSpeaker } from '@/lib/admin/conversions/exists-helpers';
+import { getInvitationPdfSignedUrl } from '@/lib/storage/visitor-invitations';
 import {
   VisitorDetailClient,
   type VisitorDetail,
@@ -62,6 +63,18 @@ export default async function VisitorDetailPage({ params }: { params: Params }) 
   const contactId = (visitor.contact as { id?: string } | null)?.id;
   const alreadySpeaker = contactId ? await existsAsSpeaker(contactId) : false;
 
+  // P15.4 — signed URL du PDF lettre d'invitation (si généré).
+  const invData = (visitor as { invitation_data?: { pdf_storage_path?: string | null } | null })
+    .invitation_data;
+  let invitationPdfUrl: string | null = null;
+  if (invData?.pdf_storage_path) {
+    try {
+      invitationPdfUrl = await getInvitationPdfSignedUrl(invData.pdf_storage_path, 3600);
+    } catch {
+      invitationPdfUrl = null;
+    }
+  }
+
   return (
     <VisitorDetailClient
       visitor={visitor}
@@ -69,6 +82,7 @@ export default async function VisitorDetailPage({ params }: { params: Params }) 
       owners={ownersOptions}
       currentRole={profile.role}
       alreadySpeaker={alreadySpeaker}
+      invitationPdfUrl={invitationPdfUrl}
     />
   );
 }

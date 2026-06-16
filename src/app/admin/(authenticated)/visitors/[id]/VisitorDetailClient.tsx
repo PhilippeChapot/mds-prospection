@@ -22,16 +22,32 @@ import {
   VISITOR_LANGUAGES,
   VISITOR_LANGUAGE_LABEL,
   VISITOR_SOURCE_LABEL,
-  VISA_STATUS_LABEL,
   type VisitorStatus,
   type VisitorType,
   type VisitorLanguage,
   type VisitorSource,
-  type VisaStatus,
 } from '@/lib/visitors/constants';
 import { updateVisitorAction, deleteVisitorAction } from '@/lib/admin/visitors/mutate-actions';
 import { AudienceConverterMenu } from '@/components/admin/AudienceConverterMenu';
 import { VisitorAuthSection } from './VisitorAuthSection';
+import { VisitorVisaActions } from './VisitorVisaActions';
+
+const APPROVAL_BADGE: Record<string, { label: string; cls: string }> = {
+  auto_approved: { label: '✅ Auto-approuvée', cls: 'bg-md-success/15 text-md-success' },
+  approved: { label: '✅ Approuvée', cls: 'bg-md-success/15 text-md-success' },
+  pending: { label: '⏳ En attente', cls: 'bg-md-warning/15 text-md-warning' },
+  rejected: { label: '❌ Refusée', cls: 'bg-md-danger/15 text-md-danger' },
+};
+
+function ApprovalBadge({ status }: { status: string | null }) {
+  const b = status ? APPROVAL_BADGE[status] : null;
+  if (!b) return <span className="text-md-text-muted text-xs">—</span>;
+  return (
+    <span className={cn('rounded-full px-2.5 py-1 text-[11px] font-semibold', b.cls)}>
+      {b.label}
+    </span>
+  );
+}
 
 export type VisitorDetail = {
   id: string;
@@ -60,12 +76,23 @@ export type VisitorDetail = {
   invitation_data: {
     passport_number: string | null;
     passport_country: string | null;
+    passport_issue_date: string | null;
     passport_expiry: string | null;
+    nationality: string | null;
+    profession: string | null;
+    birth_date: string | null;
+    birth_place: string | null;
+    company_name: string | null;
+    company_full_address: string | null;
+    postal_code: string | null;
+    city: string | null;
+    country: string | null;
     arrival_date: string | null;
     departure_date: string | null;
     hotel_name: string | null;
     visa_status: string | null;
     approval_status: string | null;
+    rejection_reason: string | null;
     pdf_storage_path: string | null;
   } | null;
   visitor_account: {
@@ -119,12 +146,14 @@ export function VisitorDetailClient({
   owners,
   currentRole,
   alreadySpeaker,
+  invitationPdfUrl,
 }: {
   visitor: VisitorDetail;
   timeline: VisitorTimelineEntry[];
   owners: Owner[];
   currentRole: 'admin' | 'sales' | 'super_admin';
   alreadySpeaker?: boolean;
+  invitationPdfUrl?: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -391,31 +420,74 @@ export function VisitorDetailClient({
           </Card>
         </TabsContent>
 
-        {/* ── INVITATION VISA ── */}
+        {/* ── INVITATION VISA (P15.4) ── */}
         <TabsContent value="visa">
           <Card title="🛂 Invitation visa">
             {visitor.invitation_data ? (
-              <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-                <Row label="Passeport n°">{visitor.invitation_data.passport_number ?? '—'}</Row>
-                <Row label="Pays passeport">{visitor.invitation_data.passport_country ?? '—'}</Row>
-                <Row label="Expiration">{visitor.invitation_data.passport_expiry ?? '—'}</Row>
-                <Row label="Arrivée">{visitor.invitation_data.arrival_date ?? '—'}</Row>
-                <Row label="Départ">{visitor.invitation_data.departure_date ?? '—'}</Row>
-                <Row label="Hôtel">{visitor.invitation_data.hotel_name ?? '—'}</Row>
-                <Row label="Statut visa">
-                  {visitor.invitation_data.visa_status
-                    ? (VISA_STATUS_LABEL[visitor.invitation_data.visa_status as VisaStatus] ??
-                      visitor.invitation_data.visa_status)
-                    : '—'}
-                </Row>
-                <Row label="Lettre PDF">
-                  {visitor.invitation_data.pdf_storage_path ? 'Générée' : '— pas encore'}
-                </Row>
-              </dl>
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-md-text-muted text-[11px] font-bold tracking-wider uppercase">
+                    Statut
+                  </span>
+                  <ApprovalBadge status={visitor.invitation_data.approval_status} />
+                </div>
+
+                <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                  <Row label="Nationalité">{visitor.invitation_data.nationality ?? '—'}</Row>
+                  <Row label="Profession">{visitor.invitation_data.profession ?? '—'}</Row>
+                  <Row label="Naissance">
+                    {visitor.invitation_data.birth_date ?? '—'}
+                    {visitor.invitation_data.birth_place
+                      ? ` (${visitor.invitation_data.birth_place})`
+                      : ''}
+                  </Row>
+                  <Row label="Passeport n°">{visitor.invitation_data.passport_number ?? '—'}</Row>
+                  <Row label="Pays passeport">
+                    {visitor.invitation_data.passport_country ?? '—'}
+                  </Row>
+                  <Row label="Délivré le">{visitor.invitation_data.passport_issue_date ?? '—'}</Row>
+                  <Row label="Expire le">{visitor.invitation_data.passport_expiry ?? '—'}</Row>
+                  <Row label="Société">{visitor.invitation_data.company_name ?? '—'}</Row>
+                  <Row label="Adresse" full>
+                    {[
+                      visitor.invitation_data.company_full_address,
+                      visitor.invitation_data.postal_code,
+                      visitor.invitation_data.city,
+                      visitor.invitation_data.country,
+                    ]
+                      .filter(Boolean)
+                      .join(', ') || '—'}
+                  </Row>
+                  {visitor.invitation_data.rejection_reason ? (
+                    <Row label="Motif du refus" full>
+                      {visitor.invitation_data.rejection_reason}
+                    </Row>
+                  ) : null}
+                </dl>
+
+                {invitationPdfUrl ? (
+                  <a
+                    href={invitationPdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-md-blue inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+                  >
+                    📄 Télécharger le PDF
+                  </a>
+                ) : (
+                  <p className="text-md-text-muted text-xs">PDF pas encore généré.</p>
+                )}
+
+                <VisitorVisaActions
+                  visitorId={visitor.id}
+                  status={visitor.invitation_data.approval_status}
+                  currentRole={currentRole}
+                />
+              </div>
             ) : (
               <p className="text-md-text-muted text-sm">
-                Aucune demande de lettre d&apos;invitation. Le visiteur pourra la faire depuis son
-                espace (P15.3). La génération PDF + workflow d&apos;approbation arrivent en P15.4.
+                Aucune demande de lettre d&apos;invitation. Le visiteur peut la faire depuis son
+                espace visiteur (onglet « Lettre d&apos;invitation »).
               </p>
             )}
           </Card>
