@@ -42,15 +42,9 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: '/admin/companies', label: 'Societes', emoji: '🏢', enabled: true },
       { href: '/admin/contacts', label: 'Contacts', emoji: '📞', enabled: true },
       { href: '/admin/visitors', label: 'Visiteurs', emoji: '👥', enabled: true },
-      // P16 roadmap (shells créés en P15.1, UI à venir) — placeholders grisés.
-      { href: '/admin/speakers', label: 'Speakers', emoji: '🎤', enabled: false, phase: 'P16' },
-      {
-        href: '/admin/conferences',
-        label: 'Conférences',
-        emoji: '📅',
-        enabled: false,
-        phase: 'P16',
-      },
+      // P16.1 + P16.3 — admin speakers + conférences.
+      { href: '/admin/speakers', label: 'Speakers', emoji: '🎤', enabled: true },
+      { href: '/admin/conferences', label: 'Conférences', emoji: '📅', enabled: true },
       { href: '/admin/contacts/quick-add', label: 'Smart Add', emoji: '✨', enabled: true },
       {
         href: '/admin/messages',

@@ -1204,10 +1204,12 @@ export type Database = {
           description_en: string | null;
           description_fr: string | null;
           end_at: string | null;
+          featured: boolean;
           id: string;
           is_published: boolean;
           poles: string[] | null;
           room: string | null;
+          slug: string | null;
           start_at: string | null;
           title_en: string | null;
           title_fr: string;
@@ -1221,10 +1223,12 @@ export type Database = {
           description_en?: string | null;
           description_fr?: string | null;
           end_at?: string | null;
+          featured?: boolean;
           id?: string;
           is_published?: boolean;
           poles?: string[] | null;
           room?: string | null;
+          slug?: string | null;
           start_at?: string | null;
           title_en?: string | null;
           title_fr: string;
@@ -1238,10 +1242,12 @@ export type Database = {
           description_en?: string | null;
           description_fr?: string | null;
           end_at?: string | null;
+          featured?: boolean;
           id?: string;
           is_published?: boolean;
           poles?: string[] | null;
           room?: string | null;
+          slug?: string | null;
           start_at?: string | null;
           title_en?: string | null;
           title_fr?: string;
@@ -3190,45 +3196,60 @@ export type Database = {
       };
       speakers: {
         Row: {
+          bio_long: string | null;
           bio_short: string | null;
           company_id: string | null;
+          confirmed_at: string | null;
           contact_id: string;
           created_at: string;
           id: string;
           language: string;
+          linkedin_url: string | null;
           notes: string | null;
           owner_user_id: string | null;
+          photo_url: string | null;
           speaker_type: string | null;
           status: string;
           topics: string[] | null;
+          twitter_handle: string | null;
           updated_at: string;
         };
         Insert: {
+          bio_long?: string | null;
           bio_short?: string | null;
           company_id?: string | null;
+          confirmed_at?: string | null;
           contact_id: string;
           created_at?: string;
           id?: string;
           language?: string;
+          linkedin_url?: string | null;
           notes?: string | null;
           owner_user_id?: string | null;
+          photo_url?: string | null;
           speaker_type?: string | null;
           status?: string;
           topics?: string[] | null;
+          twitter_handle?: string | null;
           updated_at?: string;
         };
         Update: {
+          bio_long?: string | null;
           bio_short?: string | null;
           company_id?: string | null;
+          confirmed_at?: string | null;
           contact_id?: string;
           created_at?: string;
           id?: string;
           language?: string;
+          linkedin_url?: string | null;
           notes?: string | null;
           owner_user_id?: string | null;
+          photo_url?: string | null;
           speaker_type?: string | null;
           status?: string;
           topics?: string[] | null;
+          twitter_handle?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -3706,13 +3727,12 @@ export type Database = {
           departure_date?: string | null;
           edited_at?: string | null;
           edited_by?: string | null;
-          locale?: string | null;
-          regenerated_count?: number;
           flight_in?: string | null;
           flight_out?: string | null;
           hotel_address?: string | null;
           hotel_name?: string | null;
           id?: string;
+          locale?: string | null;
           nationality?: string | null;
           notes?: string | null;
           passport_country?: string | null;
@@ -3724,6 +3744,7 @@ export type Database = {
           pdf_storage_path?: string | null;
           postal_code?: string | null;
           profession?: string | null;
+          regenerated_count?: number;
           rejection_reason?: string | null;
           updated_at?: string;
           visa_status?: string | null;
@@ -3744,13 +3765,12 @@ export type Database = {
           departure_date?: string | null;
           edited_at?: string | null;
           edited_by?: string | null;
-          locale?: string | null;
-          regenerated_count?: number;
           flight_in?: string | null;
           flight_out?: string | null;
           hotel_address?: string | null;
           hotel_name?: string | null;
           id?: string;
+          locale?: string | null;
           nationality?: string | null;
           notes?: string | null;
           passport_country?: string | null;
@@ -3762,6 +3782,7 @@ export type Database = {
           pdf_storage_path?: string | null;
           postal_code?: string | null;
           profession?: string | null;
+          regenerated_count?: number;
           rejection_reason?: string | null;
           updated_at?: string;
           visa_status?: string | null;
@@ -3771,6 +3792,13 @@ export type Database = {
           {
             foreignKeyName: 'visitor_invitation_data_approved_by_fkey';
             columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'visitor_invitation_data_edited_by_fkey';
+            columns: ['edited_by'];
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
