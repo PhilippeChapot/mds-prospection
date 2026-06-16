@@ -55,6 +55,8 @@ export const PATHNAMES = {
   '/espace-visiteur/accueil': '/espace-visiteur/accueil',
   '/espace-visiteur/parametres': '/espace-visiteur/parametres',
   '/espace-visiteur/invitation': '/espace-visiteur/invitation',
+  // Page KPI privée (noindex, non liée) — même slug FR/EN.
+  '/kpi': '/kpi',
 } as const;
 
 export const routing = defineRouting({

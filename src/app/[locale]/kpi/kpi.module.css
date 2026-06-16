@@ -42,6 +42,29 @@
 .hero .wrap {
   padding-bottom: 0;
 }
+.langSwitch {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.langLink {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #d7ddf2;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 30px;
+  padding: 4px 12px;
+}
+.langLink.langActive {
+  background: var(--magenta);
+  border-color: var(--magenta);
+  color: #fff;
+}
+
 .kicker {
   text-transform: uppercase;
   letter-spacing: 2px;

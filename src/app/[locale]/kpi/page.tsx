@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import type { Locale } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import styles from './kpi.module.css';
 
 /**
@@ -405,6 +406,24 @@ export default async function KpiPage({ params }: { params: Promise<{ locale: Lo
     <div className={styles.page}>
       <header className={styles.hero}>
         <div className={styles.wrap}>
+          <div className={styles.langSwitch}>
+            <Link
+              href="/kpi"
+              locale="fr"
+              hrefLang="fr"
+              className={`${styles.langLink} ${locale === 'fr' ? styles.langActive : ''}`}
+            >
+              FR
+            </Link>
+            <Link
+              href="/kpi"
+              locale="en"
+              hrefLang="en"
+              className={`${styles.langLink} ${locale === 'en' ? styles.langActive : ''}`}
+            >
+              EN
+            </Link>
+          </div>
           <div className={styles.kicker}>{c.kicker}</div>
           <h1>
             MediaDays Solutions <span className={styles.show}>&amp; Paris Radio Show</span>
