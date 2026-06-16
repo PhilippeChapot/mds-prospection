@@ -24,7 +24,7 @@
     "locale_fr": "Français",
     "locale_en": "English",
     "exhibitorSpace": "Partner area",
-    "visitorSpace": "Visitor area",
+    "visitorSpace": "Invitation (Visa)",
     "exhibitorSpaceComingSoon": "Partner area — coming soon",
     "publisher": "Publisher",
     "legalSection": "Legal",
@@ -389,7 +389,7 @@
     }
   },
   "espaceVisiteur": {
-    "title": "Visitor Portal",
+    "title": "Invitation (Visa)",
     "login": {
       "heading": "Access your Visitor Portal",
       "subheading": "Get a magic link by email, or sign in with your password.",
@@ -432,7 +432,9 @@
       "submitLoading": "Sending…",
       "success": "If an account exists with this email, a reset link has just been sent.",
       "backToLogin": "Back to sign in",
-      "error": { "generic": "Something went wrong. Please try again." }
+      "error": {
+        "generic": "Something went wrong. Please try again."
+      }
     },
     "resetPassword": {
       "heading": "Set a password",
@@ -486,7 +488,10 @@
     "invitation": {
       "title": "Official invitation letter",
       "subtitle": "Fill in your details to generate your visa invitation letter. Fields come from your passport.",
-      "section": { "identity": "Identity & passport", "company": "Company details" },
+      "section": {
+        "identity": "Identity & passport",
+        "company": "Company details"
+      },
       "fields": {
         "nationality": "Nationality",
         "profession": "Profession",
@@ -500,7 +505,8 @@
         "companyAddress": "Full company address",
         "postalCode": "Postal code",
         "city": "City",
-        "country": "Country"
+        "country": "Country",
+        "letterLanguage": "Letter language"
       },
       "passportCountryHint": "2-letter ISO code (e.g. FR, US, MA). Depending on the country, the letter is generated automatically or validated manually.",
       "submit": "Submit my request",
@@ -549,6 +555,17 @@
         "passwords_mismatch": "Passwords do not match.",
         "generic": "Something went wrong. Please try again."
       }
+    },
+    "chat": {
+      "title": "A question? Chat with us",
+      "body": "Our team replies quickly. Your message reaches us with your contact details.",
+      "message": "Your message",
+      "placeholder": "Hello, I would like…",
+      "phone": "Phone",
+      "send": "Send",
+      "sending": "Sending…",
+      "success": "Message sent! Our team will reply by email.",
+      "error": "Sending failed. Please try again."
     }
   },
   "espacePartenaire": {

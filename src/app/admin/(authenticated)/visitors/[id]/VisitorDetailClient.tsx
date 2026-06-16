@@ -31,6 +31,7 @@ import { updateVisitorAction, deleteVisitorAction } from '@/lib/admin/visitors/m
 import { AudienceConverterMenu } from '@/components/admin/AudienceConverterMenu';
 import { VisitorAuthSection } from './VisitorAuthSection';
 import { VisitorVisaActions } from './VisitorVisaActions';
+import { VisitorVisaAdminTools } from './VisitorVisaAdminTools';
 
 const APPROVAL_BADGE: Record<string, { label: string; cls: string }> = {
   auto_approved: { label: '✅ Auto-approuvée', cls: 'bg-md-success/15 text-md-success' },
@@ -94,6 +95,7 @@ export type VisitorDetail = {
     approval_status: string | null;
     rejection_reason: string | null;
     pdf_storage_path: string | null;
+    locale: string | null;
   } | null;
   visitor_account: {
     id: string;
@@ -482,6 +484,27 @@ export function VisitorDetailClient({
                   visitorId={visitor.id}
                   status={visitor.invitation_data.approval_status}
                   currentRole={currentRole}
+                />
+
+                <VisitorVisaAdminTools
+                  visitorId={visitor.id}
+                  currentRole={currentRole}
+                  initial={{
+                    nationality: visitor.invitation_data.nationality,
+                    profession: visitor.invitation_data.profession,
+                    birth_date: visitor.invitation_data.birth_date,
+                    birth_place: visitor.invitation_data.birth_place,
+                    passport_number: visitor.invitation_data.passport_number,
+                    passport_country: visitor.invitation_data.passport_country,
+                    passport_issue_date: visitor.invitation_data.passport_issue_date,
+                    passport_expiry: visitor.invitation_data.passport_expiry,
+                    company_name: visitor.invitation_data.company_name,
+                    company_full_address: visitor.invitation_data.company_full_address,
+                    postal_code: visitor.invitation_data.postal_code,
+                    city: visitor.invitation_data.city,
+                    country: visitor.invitation_data.country,
+                    locale: visitor.invitation_data.locale,
+                  }}
                 />
               </div>
             ) : (

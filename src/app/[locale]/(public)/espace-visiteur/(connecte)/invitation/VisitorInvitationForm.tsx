@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { CountryAutocomplete } from '@/components/admin/CountryAutocomplete';
 import {
   submitVisitorInvitationRequestAction,
   type SubmitInvitationInput,
@@ -44,6 +45,7 @@ export function VisitorInvitationForm({
     postal_code: '',
     city: defaults.city,
     country: defaults.country,
+    locale, // langue de la lettre, défaut = locale de l'UI
   });
 
   function set<K extends keyof SubmitInvitationInput>(key: K, value: SubmitInvitationInput[K]) {
@@ -135,12 +137,12 @@ export function VisitorInvitationForm({
             />
           </Field>
           <Field label={t('fields.passportCountry')} required>
-            <Input
+            <CountryAutocomplete
               value={form.passport_country}
-              onChange={(e) => set('passport_country', e.target.value.toUpperCase().slice(0, 2))}
-              placeholder="FR"
-              maxLength={2}
-              required
+              onChange={(v) => set('passport_country', v)}
+              locale={locale}
+              valueMode="code"
+              placeholder={t('fields.passportCountry')}
             />
           </Field>
           <Field label={t('fields.passportIssue')} required>
@@ -190,7 +192,23 @@ export function VisitorInvitationForm({
             <Input value={form.city} onChange={(e) => set('city', e.target.value)} />
           </Field>
           <Field label={t('fields.country')}>
-            <Input value={form.country} onChange={(e) => set('country', e.target.value)} />
+            <CountryAutocomplete
+              value={form.country}
+              onChange={(v) => set('country', v)}
+              locale={locale}
+              valueMode="name"
+              placeholder={t('fields.country')}
+            />
+          </Field>
+          <Field label={t('fields.letterLanguage')}>
+            <select
+              value={form.locale}
+              onChange={(e) => set('locale', e.target.value as 'fr' | 'en')}
+              className="border-md-border h-9 w-full rounded-md border bg-white px-2 text-sm"
+            >
+              <option value="fr">Français</option>
+              <option value="en">English</option>
+            </select>
           </Field>
         </div>
       </section>

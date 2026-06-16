@@ -13,7 +13,8 @@ const emails: Array<{ to: string; category?: string }> = [];
 const inserts: Array<{ table: string; row: Record<string, unknown> }> = [];
 const updates: Array<{ table: string; row: Record<string, unknown> }> = [];
 const upserts: Array<{ table: string; row: Record<string, unknown> }> = [];
-const generateCalls: number[] = [];
+const deletes: Array<{ table: string }> = [];
+const generateCalls: string[] = [];
 
 const scenario = {
   visitorRow: {
@@ -29,6 +30,7 @@ function reset() {
   inserts.length = 0;
   updates.length = 0;
   upserts.length = 0;
+  deletes.length = 0;
   generateCalls.length = 0;
   scenario.visitorRow = {
     language: 'fr',
@@ -71,6 +73,14 @@ function makeFrom(table: string) {
       inserts.push({ table, row });
       return Promise.resolve({ error: null });
     },
+    delete() {
+      return {
+        eq: async () => {
+          deletes.push({ table });
+          return { error: null };
+        },
+      };
+    },
   };
 }
 
@@ -86,8 +96,8 @@ function mockEnv() {
     getSupabaseServiceClient: () => ({ from: (t: string) => makeFrom(t) }),
   }));
   vi.doMock('@/lib/pdf/generate-invitation', () => ({
-    generateInvitationPdf: vi.fn(async () => {
-      generateCalls.push(1);
+    generateInvitationPdf: vi.fn(async (input: { locale?: string }) => {
+      generateCalls.push(input?.locale ?? '?');
       return Buffer.from('%PDF-fake');
     }),
   }));
@@ -207,5 +217,114 @@ describe('adminRejectInvitationAction (P15.4)', () => {
     );
     expect(upd?.row.rejection_reason).toBe('Documents insuffisants');
     expect(emails.some((e) => e.category === 'visitor_invitation_rejected')).toBe(true);
+  });
+});
+
+// ─── P15.4-bis ─────────────────────────────────────────────────────────────
+describe('submit — locale lettre (P15.4-bis)', () => {
+  it('locale="en" → PDF généré en EN + locale stockée dans l’upsert', async () => {
+    const { submitVisitorInvitationRequestAction } = await load();
+    await submitVisitorInvitationRequestAction('fr', {
+      ...baseInput,
+      passport_country: 'US',
+      locale: 'en',
+    });
+    expect(generateCalls).toContain('en');
+    const up = upserts.find((u) => u.table === 'visitor_invitation_data');
+    expect((up?.row as Record<string, unknown>).locale).toBe('en');
+  });
+});
+
+describe('adminEditInvitationDataAction (P15.4-bis)', () => {
+  it('met à jour les données + edited_by + audit', async () => {
+    scenario.invRow = { id: 'inv-1', approval_status: 'pending' };
+    const { adminEditInvitationDataAction } = await load();
+    const res = await adminEditInvitationDataAction({
+      visitor_id: VISITOR_ID,
+      data: { ...baseInput, passport_country: 'TN', profession: 'Réalisateur', locale: 'fr' },
+    });
+    expect(res).toEqual({ success: true });
+    const upd = updates.find(
+      (u) => u.table === 'visitor_invitation_data' && u.row.edited_by === ADMIN_ID,
+    );
+    expect(upd?.row.profession).toBe('Réalisateur');
+    const audit = inserts.find((i) => i.table === 'audit_log');
+    expect((audit?.row.after as Record<string, unknown>).kind).toBe(
+      'invitation_data_edited_by_admin',
+    );
+  });
+});
+
+describe('adminRegenerateInvitationPdfAction (P15.4-bis)', () => {
+  it('régénère le PDF (locale stockée), incrémente le compteur, sans email', async () => {
+    scenario.invRow = {
+      id: 'inv-1',
+      approval_status: 'approved',
+      ...baseInput,
+      passport_country: 'TN',
+      locale: 'en',
+      regenerated_count: 2,
+    };
+    const { adminRegenerateInvitationPdfAction } = await load();
+    const res = await adminRegenerateInvitationPdfAction({ visitor_id: VISITOR_ID });
+    expect(res).toEqual({ success: true });
+    expect(generateCalls).toContain('en');
+    expect(emails).toHaveLength(0); // notify=false
+    const counter = updates.find(
+      (u) => u.table === 'visitor_invitation_data' && 'regenerated_count' in u.row,
+    );
+    expect(counter?.row.regenerated_count).toBe(3);
+    const audit = inserts.find((i) => i.table === 'audit_log');
+    expect((audit?.row.after as Record<string, unknown>).kind).toBe('invitation_pdf_regenerated');
+  });
+});
+
+describe('adminDeleteInvitationAction (P15.4-bis)', () => {
+  it('supprime la demande + audit (action delete)', async () => {
+    const { adminDeleteInvitationAction } = await load();
+    const res = await adminDeleteInvitationAction({ visitor_id: VISITOR_ID });
+    expect(res).toEqual({ success: true });
+    expect(deletes.some((d) => d.table === 'visitor_invitation_data')).toBe(true);
+    const audit = inserts.find((i) => i.table === 'audit_log');
+    expect(audit?.row.action).toBe('delete');
+    expect((audit?.row.after as Record<string, unknown>).kind).toBe('invitation_deleted_by_admin');
+  });
+
+  it('ne génère aucun PDF lors de la suppression', async () => {
+    const { adminDeleteInvitationAction } = await load();
+    await adminDeleteInvitationAction({ visitor_id: VISITOR_ID });
+    expect(generateCalls).toHaveLength(0);
+  });
+
+  it('ID invalide → throw', async () => {
+    const { adminDeleteInvitationAction } = await load();
+    await expect(adminDeleteInvitationAction({ visitor_id: 'not-a-uuid' })).rejects.toThrow();
+  });
+});
+
+describe('garde-fous P15.4-bis', () => {
+  it('submit sans locale → défaut fr (PDF en fr)', async () => {
+    const { submitVisitorInvitationRequestAction } = await load();
+    await submitVisitorInvitationRequestAction('fr', { ...baseInput, passport_country: 'US' });
+    expect(generateCalls).toContain('fr');
+  });
+
+  it('regenerate sans demande existante → throw', async () => {
+    scenario.invRow = null;
+    const { adminRegenerateInvitationPdfAction } = await load();
+    await expect(adminRegenerateInvitationPdfAction({ visitor_id: VISITOR_ID })).rejects.toThrow(
+      /introuvable/,
+    );
+  });
+
+  it('edit sans demande existante → throw', async () => {
+    scenario.invRow = null;
+    const { adminEditInvitationDataAction } = await load();
+    await expect(
+      adminEditInvitationDataAction({
+        visitor_id: VISITOR_ID,
+        data: { ...baseInput, passport_country: 'TN', locale: 'fr' },
+      }),
+    ).rejects.toThrow(/introuvable/);
   });
 });

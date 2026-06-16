@@ -3666,11 +3666,14 @@ export type Database = {
           country: string | null;
           created_at: string;
           departure_date: string | null;
+          edited_at: string | null;
+          edited_by: string | null;
           flight_in: string | null;
           flight_out: string | null;
           hotel_address: string | null;
           hotel_name: string | null;
           id: string;
+          locale: string | null;
           nationality: string | null;
           notes: string | null;
           passport_country: string | null;
@@ -3682,6 +3685,7 @@ export type Database = {
           pdf_storage_path: string | null;
           postal_code: string | null;
           profession: string | null;
+          regenerated_count: number;
           rejection_reason: string | null;
           updated_at: string;
           visa_status: string | null;
@@ -3700,6 +3704,10 @@ export type Database = {
           country?: string | null;
           created_at?: string;
           departure_date?: string | null;
+          edited_at?: string | null;
+          edited_by?: string | null;
+          locale?: string | null;
+          regenerated_count?: number;
           flight_in?: string | null;
           flight_out?: string | null;
           hotel_address?: string | null;
@@ -3734,6 +3742,10 @@ export type Database = {
           country?: string | null;
           created_at?: string;
           departure_date?: string | null;
+          edited_at?: string | null;
+          edited_by?: string | null;
+          locale?: string | null;
+          regenerated_count?: number;
           flight_in?: string | null;
           flight_out?: string | null;
           hotel_address?: string | null;

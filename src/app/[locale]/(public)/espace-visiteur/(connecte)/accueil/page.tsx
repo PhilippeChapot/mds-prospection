@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import type { Locale } from 'next-intl';
-import { Ticket, BadgeCheck, FileText, Info, Download } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { loadVisitorData } from '@/lib/espace-visiteur/session';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { getInvitationPdfSignedUrl } from '@/lib/storage/visitor-invitations';
-import { PoleBadge } from '@/components/admin/PoleBadge';
-import type { PoleCode } from '@/lib/design-tokens';
+import { VisitorChatSection } from '../_components/VisitorChatSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,57 +69,7 @@ export default async function VisitorHomePage({ params }: PageProps) {
         <p className="text-md-text-muted text-sm">{t('intro')}</p>
       </section>
 
-      {/* 2. Mon badge / invitation */}
-      <section className="border-md-border bg-card space-y-3 rounded-xl border p-5 shadow-sm sm:p-6">
-        <div className="flex items-center gap-2">
-          <BadgeCheck className="text-md-blue size-4 shrink-0" aria-hidden />
-          <h2 className="text-md-text font-semibold">{t('badge.title')}</h2>
-        </div>
-        <p className="text-md-text-muted text-sm">{t('badge.body')}</p>
-        {data.company ? (
-          <a
-            href={`/i/${data.company.id}`}
-            className="bg-md-magenta hover:bg-md-magenta-soft inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white"
-          >
-            <Ticket className="size-4" aria-hidden />
-            {t('badge.cta')}
-          </a>
-        ) : (
-          <p className="text-md-text-muted text-xs italic">{t('badge.soon')}</p>
-        )}
-      </section>
-
-      {/* 3. Mes informations */}
-      <section className="border-md-border bg-card space-y-3 rounded-xl border p-5 shadow-sm sm:p-6">
-        <div className="flex items-center gap-2">
-          <Info className="text-md-blue size-4 shrink-0" aria-hidden />
-          <h2 className="text-md-text font-semibold">{t('infos.title')}</h2>
-        </div>
-        <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-md-text-muted text-[11px] font-bold tracking-wider uppercase">
-              {t('infos.email')}
-            </dt>
-            <dd className="text-md-text font-mono">{data.contact?.email ?? '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-md-text-muted text-[11px] font-bold tracking-wider uppercase">
-              {t('infos.company')}
-            </dt>
-            <dd className="text-md-text">{data.company?.name ?? '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-md-text-muted text-[11px] font-bold tracking-wider uppercase">
-              {t('infos.pole')}
-            </dt>
-            <dd className="text-md-text mt-0.5">
-              {data.visitor.pole ? <PoleBadge code={data.visitor.pole as PoleCode} /> : '—'}
-            </dd>
-          </div>
-        </dl>
-      </section>
-
-      {/* 4. Lettre d'invitation / visa (P15.4) */}
+      {/* 2. Lettre d'invitation / visa (P15.4) */}
       <section className="border-md-border bg-card space-y-3 rounded-xl border p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-2">
           <FileText className="text-md-blue size-4 shrink-0" aria-hidden />
@@ -166,6 +115,18 @@ export default async function VisitorHomePage({ params }: PageProps) {
           </div>
         ) : null}
       </section>
+
+      {/* 3. Chat (widget P9.1-natif réutilisé) */}
+      <VisitorChatSection
+        locale={safeLocale}
+        prefill={{
+          firstName: data.contact?.first_name ?? '',
+          lastName: data.contact?.last_name ?? '',
+          email: data.contact?.email ?? '',
+          company: data.company?.name ?? '',
+          phone: data.contact?.phone_mobile ?? '',
+        }}
+      />
     </div>
   );
 }

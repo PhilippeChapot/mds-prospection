@@ -40,6 +40,8 @@ const submitSchema = z.object({
   postal_code: z.string().trim().max(20),
   city: z.string().trim().max(100),
   country: z.string().trim().max(80),
+  // P15.4-bis : langue de la lettre (dropdown form/admin).
+  locale: z.enum(['fr', 'en']).default('fr'),
 });
 
 export type SubmitInvitationInput = z.input<typeof submitSchema>;
@@ -78,6 +80,7 @@ async function generateAndStorePdf(
   fields: z.infer<typeof submitSchema>,
   locale: 'fr' | 'en',
   contact: ContactLite,
+  opts?: { notify?: boolean },
 ): Promise<void> {
   const supabase = getSupabaseServiceClient();
 
@@ -93,6 +96,9 @@ async function generateAndStorePdf(
     .from('visitor_invitation_data')
     .update({ pdf_storage_path: storagePath, pdf_generated_at: new Date().toISOString() })
     .eq('id', invitationDataId);
+
+  // Régénération admin sans renvoi d'email (notify=false).
+  if (opts?.notify === false) return;
 
   const signedUrl = await getInvitationPdfSignedUrl(storagePath, SIGNED_URL_TTL);
   const firstName = contact.first_name ?? '';
@@ -176,7 +182,8 @@ export async function submitVisitorInvitationRequestAction(
 
   const visitor = await loadVisitorWithContact(session.visitorId);
   if (!visitor?.contact) throw new Error('Visiteur introuvable.');
-  const letterLocale: 'fr' | 'en' = visitor.language === 'en' ? 'en' : 'fr';
+  // P15.4-bis : langue de la lettre choisie dans le form (fallback visitor.language).
+  const letterLocale: 'fr' | 'en' = parsed.locale ?? (visitor.language === 'en' ? 'en' : 'fr');
 
   const lowRisk = isLowRiskCountry(parsed.passport_country);
   const approvalStatus: 'auto_approved' | 'pending' = lowRisk ? 'auto_approved' : 'pending';
@@ -266,7 +273,14 @@ export async function adminApproveInvitationAction(input: {
 
   const visitor = await loadVisitorWithContact(input.visitor_id);
   if (!visitor?.contact) throw new Error('Visiteur introuvable.');
-  const letterLocale: 'fr' | 'en' = visitor.language === 'en' ? 'en' : 'fr';
+  const letterLocale: 'fr' | 'en' =
+    inv.locale === 'en'
+      ? 'en'
+      : inv.locale === 'fr'
+        ? 'fr'
+        : visitor.language === 'en'
+          ? 'en'
+          : 'fr';
 
   await supabase
     .from('visitor_invitation_data')
@@ -355,6 +369,123 @@ export async function adminRejectInvitationAction(input: {
     entity_id: input.visitor_id,
     before: null,
     after: { kind: 'invitation_rejected_by_admin', reason },
+  });
+
+  revalidatePath(`/admin/visitors/${input.visitor_id}`);
+  return { success: true };
+}
+
+// ─── ADMIN : éditer les données (super_admin) ──────────────────────────────
+export async function adminEditInvitationDataAction(input: {
+  visitor_id: string;
+  data: SubmitInvitationInput;
+}): Promise<{ success: true }> {
+  const admin = await requireSuperAdmin();
+  if (!/^[0-9a-f-]{36}$/i.test(input.visitor_id)) throw new Error('ID visiteur invalide.');
+  const parsed = submitSchema.parse(input.data);
+  const supabase = getSupabaseServiceClient();
+
+  const { data: inv } = await supabase
+    .from('visitor_invitation_data')
+    .select('id')
+    .eq('visitor_id', input.visitor_id)
+    .maybeSingle();
+  if (!inv) throw new Error("Demande d'invitation introuvable.");
+
+  await supabase
+    .from('visitor_invitation_data')
+    .update({
+      ...parsed,
+      edited_at: new Date().toISOString(),
+      edited_by: admin.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', inv.id);
+
+  await supabase.from('audit_log').insert({
+    user_id: admin.id,
+    action: 'update',
+    entity_type: 'visitors',
+    entity_id: input.visitor_id,
+    before: null,
+    after: { kind: 'invitation_data_edited_by_admin' },
+  });
+
+  revalidatePath(`/admin/visitors/${input.visitor_id}`);
+  return { success: true };
+}
+
+// ─── ADMIN : régénérer le PDF (super_admin) ────────────────────────────────
+export async function adminRegenerateInvitationPdfAction(input: {
+  visitor_id: string;
+}): Promise<{ success: true }> {
+  const admin = await requireSuperAdmin();
+  if (!/^[0-9a-f-]{36}$/i.test(input.visitor_id)) throw new Error('ID visiteur invalide.');
+  const supabase = getSupabaseServiceClient();
+
+  const { data: inv } = await supabase
+    .from('visitor_invitation_data')
+    .select('*')
+    .eq('visitor_id', input.visitor_id)
+    .maybeSingle();
+  if (!inv) throw new Error("Demande d'invitation introuvable.");
+
+  const visitor = await loadVisitorWithContact(input.visitor_id);
+  if (!visitor?.contact) throw new Error('Visiteur introuvable.');
+  const letterLocale: 'fr' | 'en' =
+    inv.locale === 'en'
+      ? 'en'
+      : inv.locale === 'fr'
+        ? 'fr'
+        : visitor.language === 'en'
+          ? 'en'
+          : 'fr';
+
+  // Régénère le PDF sans renvoyer d'email (notify=false).
+  await generateAndStorePdf(
+    inv.id,
+    input.visitor_id,
+    inv as unknown as z.infer<typeof submitSchema>,
+    letterLocale,
+    visitor.contact,
+    { notify: false },
+  );
+
+  await supabase
+    .from('visitor_invitation_data')
+    .update({ regenerated_count: (inv.regenerated_count ?? 0) + 1 })
+    .eq('id', inv.id);
+
+  await supabase.from('audit_log').insert({
+    user_id: admin.id,
+    action: 'update',
+    entity_type: 'visitors',
+    entity_id: input.visitor_id,
+    before: null,
+    after: { kind: 'invitation_pdf_regenerated' },
+  });
+
+  revalidatePath(`/admin/visitors/${input.visitor_id}`);
+  return { success: true };
+}
+
+// ─── ADMIN : supprimer la demande (super_admin) ────────────────────────────
+export async function adminDeleteInvitationAction(input: {
+  visitor_id: string;
+}): Promise<{ success: true }> {
+  const admin = await requireSuperAdmin();
+  if (!/^[0-9a-f-]{36}$/i.test(input.visitor_id)) throw new Error('ID visiteur invalide.');
+  const supabase = getSupabaseServiceClient();
+
+  await supabase.from('visitor_invitation_data').delete().eq('visitor_id', input.visitor_id);
+
+  await supabase.from('audit_log').insert({
+    user_id: admin.id,
+    action: 'delete',
+    entity_type: 'visitors',
+    entity_id: input.visitor_id,
+    before: null,
+    after: { kind: 'invitation_deleted_by_admin' },
   });
 
   revalidatePath(`/admin/visitors/${input.visitor_id}`);

@@ -24,7 +24,7 @@
     "locale_fr": "Français",
     "locale_en": "English",
     "exhibitorSpace": "Espace Partenaire",
-    "visitorSpace": "Espace Visiteur",
+    "visitorSpace": "Invitation (Visa)",
     "exhibitorSpaceComingSoon": "Espace Partenaire — bientôt disponible",
     "publisher": "Éditeur",
     "legalSection": "Mentions légales",
@@ -389,7 +389,7 @@
     }
   },
   "espaceVisiteur": {
-    "title": "Espace Visiteur",
+    "title": "Invitation (Visa)",
     "login": {
       "heading": "Accédez à votre Espace Visiteur",
       "subheading": "Recevez un lien magique par email, ou connectez-vous avec votre mot de passe.",
@@ -432,7 +432,9 @@
       "submitLoading": "Envoi…",
       "success": "Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé.",
       "backToLogin": "Retour à la connexion",
-      "error": { "generic": "Une erreur est survenue. Réessayez." }
+      "error": {
+        "generic": "Une erreur est survenue. Réessayez."
+      }
     },
     "resetPassword": {
       "heading": "Définir un mot de passe",
@@ -486,7 +488,10 @@
     "invitation": {
       "title": "Lettre d'invitation officielle",
       "subtitle": "Renseignez vos informations pour générer votre lettre d'invitation visa. Les champs proviennent de votre passeport.",
-      "section": { "identity": "Identité & passeport", "company": "Coordonnées société" },
+      "section": {
+        "identity": "Identité & passeport",
+        "company": "Coordonnées société"
+      },
       "fields": {
         "nationality": "Nationalité",
         "profession": "Profession",
@@ -500,7 +505,8 @@
         "companyAddress": "Adresse complète de la société",
         "postalCode": "Code postal",
         "city": "Ville",
-        "country": "Pays"
+        "country": "Pays",
+        "letterLanguage": "Langue de la lettre"
       },
       "passportCountryHint": "Code ISO 2 lettres (ex : FR, US, MA). Selon le pays, la lettre est générée automatiquement ou validée manuellement.",
       "submit": "Soumettre ma demande",
@@ -549,6 +555,17 @@
         "passwords_mismatch": "Les mots de passe ne correspondent pas.",
         "generic": "Une erreur est survenue. Réessayez."
       }
+    },
+    "chat": {
+      "title": "Une question ? Discutez avec nous",
+      "body": "Notre équipe vous répond rapidement. Votre message nous arrive avec vos coordonnées.",
+      "message": "Votre message",
+      "placeholder": "Bonjour, je souhaite…",
+      "phone": "Téléphone",
+      "send": "Envoyer",
+      "sending": "Envoi…",
+      "success": "Message envoyé ! Notre équipe vous répondra par email.",
+      "error": "Échec de l envoi. Réessayez."
     }
   },
   "espacePartenaire": {

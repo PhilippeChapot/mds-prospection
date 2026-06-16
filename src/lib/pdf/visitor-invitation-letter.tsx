@@ -3,10 +3,24 @@
  * Contenu fourni par Phil (2026-06-15), reproduit fidèlement. Signature texte
  * (V1) : « Philippe Chapot, Directeur du Paris Radio Show », émise depuis BRIVE.
  */
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer';
+
+const NAVY = '#1E3A8A';
 
 const styles = StyleSheet.create({
-  page: { padding: 50, fontSize: 11, fontFamily: 'Helvetica', color: '#111' },
+  page: { fontSize: 11, fontFamily: 'Helvetica', color: '#111' },
+  // Bandeau d'en-tête bleu marine plein cadre + logos blancs.
+  headerBand: {
+    backgroundColor: NAVY,
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLogo: { height: 26, objectFit: 'contain' },
+  headerFallback: { color: '#fff', fontFamily: 'Helvetica-Bold', fontSize: 12 },
+  content: { paddingHorizontal: 50, paddingTop: 24, paddingBottom: 70 },
   header: { fontSize: 10, textAlign: 'right', marginBottom: 24 },
   recipientBlock: { marginBottom: 24 },
   recipientLine: { marginBottom: 3 },
@@ -17,10 +31,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 24,
     textTransform: 'uppercase',
+    color: NAVY,
   },
   paragraph: { marginBottom: 12, lineHeight: 1.5, textAlign: 'justify' },
   signature: { marginTop: 32 },
   signatureName: { fontFamily: 'Helvetica-Bold' },
+  watermark: {
+    position: 'absolute',
+    top: 320,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    color: '#1E3A8A',
+    opacity: 0.05,
+    fontSize: 54,
+    fontFamily: 'Helvetica-Bold',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 22,
+    left: 40,
+    right: 40,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e4ee',
+    paddingTop: 8,
+    fontSize: 7.5,
+    color: '#5c6b85',
+    textAlign: 'center',
+  },
 });
 
 export type InvitationRecipient = {
@@ -42,6 +80,8 @@ export type InvitationLetterProps = {
   locale: 'fr' | 'en';
   generatedDate: string;
   recipient: InvitationRecipient;
+  /** Logos blancs (data URI PNG) pour le bandeau marine. Optionnels (fallback texte). */
+  logos?: { mds?: string | null; prs?: string | null };
 };
 
 const TEXTS_FR = {
@@ -75,6 +115,8 @@ const TEXTS_FR = {
     title: 'Directeur du Paris Radio Show',
     phone: '05 55 18 03 61',
   },
+  footer:
+    'Éditions HF · Paris Radio Show / MediaDays Solutions · Brive-la-Gaillarde, France · www.mediadays.net',
 };
 
 const TEXTS_EN = {
@@ -108,12 +150,15 @@ const TEXTS_EN = {
     title: 'Director of the Paris Radio Show',
     phone: '+33 5 55 18 03 61',
   },
+  footer:
+    'Éditions HF · Paris Radio Show / MediaDays Solutions · Brive-la-Gaillarde, France · www.mediadays.net',
 };
 
 export function InvitationLetterDocument({
   locale,
   generatedDate,
   recipient,
+  logos,
 }: InvitationLetterProps) {
   const t = locale === 'fr' ? TEXTS_FR : TEXTS_EN;
   const birth = recipient.birth_place
@@ -123,60 +168,86 @@ export function InvitationLetterDocument({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>{t.header(generatedDate)}</Text>
-
-        <View style={styles.recipientBlock}>
-          <Text style={styles.attention}>{t.attention}</Text>
-          <Text style={styles.recipientLine}>
-            {t.labels.company} {recipient.company_name}
-          </Text>
-          <Text style={styles.recipientLine}>
-            {t.labels.address} {recipient.company_full_address}
-          </Text>
-          <Text style={styles.recipientLine}>
-            {t.labels.postal_code} {recipient.postal_code}
-          </Text>
-          <Text style={styles.recipientLine}>
-            {t.labels.city} {recipient.city}
-          </Text>
-          <Text style={styles.recipientLine}>
-            {t.labels.country} {recipient.country}
-          </Text>
-          <Text style={styles.recipientLine}>
-            {t.labels.nationality} {recipient.nationality}
-          </Text>
-          <Text style={styles.recipientLine}>
-            {t.labels.birth_date} {birth}
-          </Text>
-          <Text style={styles.recipientLine}>
-            {t.labels.profession} {recipient.profession}
-          </Text>
-          <Text style={styles.recipientLine}>
-            {t.labels.passport_number} {recipient.passport_number}
-          </Text>
-          <Text style={styles.recipientLine}>
-            {t.labels.passport_issue} {recipient.passport_issue_date}
-          </Text>
-          <Text style={styles.recipientLine}>
-            {t.labels.passport_expiry} {recipient.passport_expiry}
-          </Text>
+        {/* Bandeau marine + logos blancs (fallback texte si logos absents) */}
+        <View style={styles.headerBand} fixed>
+          {logos?.mds ? (
+            // eslint-disable-next-line jsx-a11y/alt-text
+            <Image src={logos.mds} style={styles.headerLogo} />
+          ) : (
+            <Text style={styles.headerFallback}>MediaDays Solutions</Text>
+          )}
+          {logos?.prs ? (
+            // eslint-disable-next-line jsx-a11y/alt-text
+            <Image src={logos.prs} style={styles.headerLogo} />
+          ) : (
+            <Text style={styles.headerFallback}>Paris Radio Show</Text>
+          )}
         </View>
 
-        <Text style={styles.title}>{t.title}</Text>
+        {/* Watermark + footer répétés sur chaque page (fixed) */}
+        <Text style={styles.watermark} fixed>
+          MEDIADAYS 2026
+        </Text>
+        <Text style={styles.footer} fixed>
+          {t.footer}
+        </Text>
 
-        <Text style={styles.paragraph}>{t.greeting}</Text>
-        {t.paragraphs.map((p, i) => (
-          <Text key={i} style={styles.paragraph}>
-            {p}
-          </Text>
-        ))}
+        <View style={styles.content}>
+          <Text style={styles.header}>{t.header(generatedDate)}</Text>
 
-        <Text style={styles.paragraph}>{t.closing}</Text>
+          <View style={styles.recipientBlock}>
+            <Text style={styles.attention}>{t.attention}</Text>
+            <Text style={styles.recipientLine}>
+              {t.labels.company} {recipient.company_name}
+            </Text>
+            <Text style={styles.recipientLine}>
+              {t.labels.address} {recipient.company_full_address}
+            </Text>
+            <Text style={styles.recipientLine}>
+              {t.labels.postal_code} {recipient.postal_code}
+            </Text>
+            <Text style={styles.recipientLine}>
+              {t.labels.city} {recipient.city}
+            </Text>
+            <Text style={styles.recipientLine}>
+              {t.labels.country} {recipient.country}
+            </Text>
+            <Text style={styles.recipientLine}>
+              {t.labels.nationality} {recipient.nationality}
+            </Text>
+            <Text style={styles.recipientLine}>
+              {t.labels.birth_date} {birth}
+            </Text>
+            <Text style={styles.recipientLine}>
+              {t.labels.profession} {recipient.profession}
+            </Text>
+            <Text style={styles.recipientLine}>
+              {t.labels.passport_number} {recipient.passport_number}
+            </Text>
+            <Text style={styles.recipientLine}>
+              {t.labels.passport_issue} {recipient.passport_issue_date}
+            </Text>
+            <Text style={styles.recipientLine}>
+              {t.labels.passport_expiry} {recipient.passport_expiry}
+            </Text>
+          </View>
 
-        <View style={styles.signature}>
-          <Text style={styles.signatureName}>{t.signature.name}</Text>
-          <Text>{t.signature.title}</Text>
-          <Text>{t.signature.phone}</Text>
+          <Text style={styles.title}>{t.title}</Text>
+
+          <Text style={styles.paragraph}>{t.greeting}</Text>
+          {t.paragraphs.map((p, i) => (
+            <Text key={i} style={styles.paragraph}>
+              {p}
+            </Text>
+          ))}
+
+          <Text style={styles.paragraph}>{t.closing}</Text>
+
+          <View style={styles.signature}>
+            <Text style={styles.signatureName}>{t.signature.name}</Text>
+            <Text>{t.signature.title}</Text>
+            <Text>{t.signature.phone}</Text>
+          </View>
         </View>
       </Page>
     </Document>
