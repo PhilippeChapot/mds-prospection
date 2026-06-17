@@ -30,6 +30,8 @@ import {
   declineSpeakerAction,
   deleteSpeakerAction,
 } from '@/lib/admin/speakers/mutate-actions';
+import { validateSpeakerAction } from '@/lib/admin/programs/validation-actions';
+import { formatParisDate } from '@/lib/format/dates';
 
 type ContactObj = {
   id: string;
@@ -53,6 +55,8 @@ export type SpeakerDetail = {
   linkedin_url: string | null;
   twitter_handle: string | null;
   topics: string[] | null;
+  is_validated: boolean;
+  imported_at: string | null;
   created_at: string;
   contact: ContactObj;
   company: { id: string; name: string; website: string | null; city: string | null } | null;
@@ -203,9 +207,25 @@ export function SpeakerDetailClient({
               {speaker.contact?.email}
               {speaker.company ? <> · {speaker.company.name}</> : null}
             </p>
+            {!speaker.is_validated ? (
+              <span className="bg-md-warning/15 text-md-warning mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold">
+                ⚠️ Importé non validé
+                {speaker.imported_at ? ` · ${formatParisDate(speaker.imported_at)}` : ''}
+              </span>
+            ) : null}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          {!speaker.is_validated ? (
+            <Button
+              size="sm"
+              disabled={pending}
+              onClick={() => runStatus(() => validateSpeakerAction(speaker.id), 'Speaker validé.')}
+            >
+              <Check className="size-4" aria-hidden />
+              Valider
+            </Button>
+          ) : null}
           {!editing ? (
             <Button variant="outline" size="sm" onClick={() => setEditing(true)} disabled={pending}>
               <Pencil className="size-4" aria-hidden />

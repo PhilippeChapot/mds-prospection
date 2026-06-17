@@ -87,6 +87,8 @@ export default async function ConferenceDetailPage({ params }: { params: Params 
     is_published: Boolean(conf.is_published),
     featured: Boolean(conf.featured),
     slug: (conf.slug as string | null) ?? null,
+    is_validated: Boolean(conf.is_validated),
+    imported_at: (conf.imported_at as string | null) ?? null,
   };
 
   return (

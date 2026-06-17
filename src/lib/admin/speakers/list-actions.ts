@@ -10,7 +10,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import type { SpeakerListItem } from '@/lib/speakers/constants';
 
 const LIST_SELECT = `
-  id, speaker_type, status, topics, language, photo_url, confirmed_at, created_at,
+  id, speaker_type, status, topics, language, photo_url, confirmed_at, is_validated, imported_at, created_at,
   contact:contacts!speakers_contact_id_fkey(id, first_name, last_name, email, phone_mobile),
   company:companies(id, name),
   owner:users!speakers_owner_user_id_fkey(id, full_name),
@@ -22,6 +22,8 @@ export type ListSpeakersInput = {
   status?: string | null;
   speakerType?: string | null;
   language?: string | null;
+  /** P16.x : 'validated' | 'unvalidated' */
+  validation?: 'validated' | 'unvalidated' | null;
   page?: number;
   perPage?: number;
 };
@@ -61,6 +63,8 @@ export async function listSpeakersAction(
   if (input.status) query = query.eq('status', input.status);
   if (input.speakerType) query = query.eq('speaker_type', input.speakerType);
   if (input.language) query = query.eq('language', input.language);
+  if (input.validation === 'validated') query = query.eq('is_validated', true);
+  if (input.validation === 'unvalidated') query = query.eq('is_validated', false);
   if (contactIdFilter) query = query.in('contact_id', contactIdFilter);
 
   query = query.range((page - 1) * perPage, page * perPage - 1);
@@ -79,6 +83,8 @@ export async function listSpeakersAction(
       language: row.language as string,
       photo_url: (row.photo_url as string | null) ?? null,
       confirmed_at: (row.confirmed_at as string | null) ?? null,
+      is_validated: Boolean(row.is_validated),
+      imported_at: (row.imported_at as string | null) ?? null,
       created_at: row.created_at as string,
       contact: one(row.contact as SpeakerListItem['contact']),
       company: one(row.company as SpeakerListItem['company']),
@@ -92,25 +98,20 @@ export async function listSpeakersAction(
 
 export async function getSpeakerStatsAction(): Promise<{
   total: number;
-  confirmed: number;
-  proposed: number;
-  contacted: number;
+  validated: number;
+  unvalidated: number;
 }> {
   await requireAdminProfile();
   const supabase = getSupabaseServiceClient();
   const head = () => supabase.from('speakers').select('id', { count: 'exact', head: true });
-  const [{ count: total }, { count: confirmed }, { count: proposed }, { count: contacted }] =
-    await Promise.all([
-      head(),
-      head().eq('status', 'confirmed'),
-      head().eq('status', 'proposed'),
-      head().eq('status', 'contacted'),
-    ]);
+  const [{ count: total }, { count: unvalidated }] = await Promise.all([
+    head(),
+    head().eq('is_validated', false),
+  ]);
   return {
     total: total ?? 0,
-    confirmed: confirmed ?? 0,
-    proposed: proposed ?? 0,
-    contacted: contacted ?? 0,
+    validated: (total ?? 0) - (unvalidated ?? 0),
+    unvalidated: unvalidated ?? 0,
   };
 }
 

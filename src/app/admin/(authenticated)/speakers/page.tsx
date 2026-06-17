@@ -20,6 +20,7 @@ type SearchParams = Promise<{
   status?: string;
   type?: string;
   language?: string;
+  validation?: string;
 }>;
 
 export default async function SpeakersPage({ searchParams }: { searchParams: SearchParams }) {
@@ -37,6 +38,10 @@ export default async function SpeakersPage({ searchParams }: { searchParams: Sea
     params.language && (VISITOR_LANGUAGES as readonly string[]).includes(params.language)
       ? params.language
       : '';
+  const validation =
+    params.validation === 'validated' || params.validation === 'unvalidated'
+      ? params.validation
+      : '';
 
   const [{ rows }, stats] = await Promise.all([
     listSpeakersAction({
@@ -44,11 +49,12 @@ export default async function SpeakersPage({ searchParams }: { searchParams: Sea
       status: status || null,
       speakerType: type || null,
       language: language || null,
+      validation: validation || null,
     }),
     getSpeakerStatsAction(),
   ]);
 
-  const hasFilters = Boolean(q || status || type || language);
+  const hasFilters = Boolean(q || status || type || language || validation);
 
   return (
     <div className="space-y-5">
@@ -67,11 +73,10 @@ export default async function SpeakersPage({ searchParams }: { searchParams: Sea
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-3">
         <StatCard label="Total" value={stats.total} />
-        <StatCard label="Confirmés" value={stats.confirmed} emoji="🟢" />
-        <StatCard label="En attente" value={stats.proposed} emoji="🟡" />
-        <StatCard label="Contactés" value={stats.contacted} emoji="🔵" />
+        <StatCard label="Validés" value={stats.validated} emoji="🟢" />
+        <StatCard label="Non validés" value={stats.unvalidated} emoji="⚠️" />
       </div>
 
       <form
@@ -125,6 +130,15 @@ export default async function SpeakersPage({ searchParams }: { searchParams: Sea
               {VISITOR_LANGUAGE_LABEL[l]}
             </option>
           ))}
+        </select>
+        <select
+          name="validation"
+          defaultValue={validation}
+          className="border-md-border rounded-md border bg-white px-2.5 py-1.5 text-xs"
+        >
+          <option value="">Tous</option>
+          <option value="validated">Validés</option>
+          <option value="unvalidated">⚠️ Non validés ({stats.unvalidated})</option>
         </select>
         <button
           type="submit"

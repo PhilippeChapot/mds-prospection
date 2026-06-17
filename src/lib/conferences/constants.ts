@@ -52,5 +52,7 @@ export type ConferenceListItem = {
   poles: string[] | null;
   is_published: boolean;
   featured: boolean;
+  is_validated: boolean;
+  imported_at: string | null;
   speaker_count: number;
 };

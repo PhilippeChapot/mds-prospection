@@ -1,14 +1,15 @@
 'use client';
 
-import { useMemo, useTransition, useState } from 'react';
+import { useMemo, useTransition, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowUpRight, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { ArrowUpRight, Eye, EyeOff, Trash2, BadgeCheck } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
+import { Button } from '@/components/ui/button';
 import { isSuperAdmin } from '@/lib/auth/role-helpers';
-import { formatParisDateTime } from '@/lib/format/dates';
+import { formatParisDateTime, formatParisDate } from '@/lib/format/dates';
 import {
   CONFERENCE_TYPE_LABEL,
   type ConferenceListItem,
@@ -18,6 +19,7 @@ import {
   publishConferenceAction,
   deleteConferenceAction,
 } from '@/lib/admin/conferences/crud-actions';
+import { bulkValidateConferencesAction } from '@/lib/admin/programs/validation-actions';
 
 export function ConferencesListClient({
   rows,
@@ -29,6 +31,8 @@ export function ConferencesListClient({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const canBulk = isSuperAdmin(currentRole);
 
   function run(id: string, fn: () => Promise<unknown>, okMsg: string) {
     setBusyId(id);
@@ -45,13 +49,83 @@ export function ConferencesListClient({
     });
   }
 
-  const columns = useMemo<ColumnDef<ConferenceListItem>[]>(
-    () => [
+  const toggleOne = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const unvalidatedIds = useMemo(
+    () => rows.filter((r) => !r.is_validated).map((r) => r.id),
+    [rows],
+  );
+  const toggleAll = useCallback(() => {
+    setSelected((prev) => {
+      const allChecked = unvalidatedIds.length > 0 && unvalidatedIds.every((id) => prev.has(id));
+      return allChecked ? new Set() : new Set(unvalidatedIds);
+    });
+  }, [unvalidatedIds]);
+
+  function bulkValidate() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    startTransition(async () => {
+      try {
+        const res = await bulkValidateConferencesAction(ids);
+        toast.success(`${res.updated} conférence(s) validée(s).`);
+        setSelected(new Set());
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erreur');
+      }
+    });
+  }
+
+  const columns = useMemo<ColumnDef<ConferenceListItem>[]>(() => {
+    const cols: ColumnDef<ConferenceListItem>[] = [];
+
+    if (canBulk) {
+      const allChecked =
+        unvalidatedIds.length > 0 && unvalidatedIds.every((id) => selected.has(id));
+      cols.push({
+        id: 'select',
+        enableHiding: false,
+        enableResizing: false,
+        size: 44,
+        minSize: 44,
+        maxSize: 44,
+        meta: { headerLabel: 'Sélection' },
+        header: () => (
+          <input
+            type="checkbox"
+            checked={allChecked}
+            onChange={toggleAll}
+            aria-label="Tout sélectionner (non validées)"
+            className="size-3.5"
+          />
+        ),
+        cell: ({ row }) =>
+          row.original.is_validated ? null : (
+            <input
+              type="checkbox"
+              checked={selected.has(row.original.id)}
+              onChange={() => toggleOne(row.original.id)}
+              aria-label="Sélectionner"
+              className="size-3.5"
+            />
+          ),
+      });
+    }
+
+    cols.push(
       {
         id: 'title',
         header: 'Titre',
-        size: 260,
-        minSize: 180,
+        size: 240,
+        minSize: 160,
         cell: ({ row }) => {
           const r = row.original;
           return (
@@ -68,10 +142,27 @@ export function ConferencesListClient({
         },
       },
       {
+        id: 'validation',
+        header: 'Import',
+        size: 180,
+        minSize: 110,
+        cell: ({ row }) =>
+          row.original.is_validated ? (
+            <span className="text-md-text-muted inline-flex items-center gap-1 text-xs">
+              <BadgeCheck className="size-3.5 text-emerald-600" aria-hidden /> Validée
+            </span>
+          ) : (
+            <span className="bg-md-warning/15 text-md-warning inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap">
+              ⚠️ Importé non validé
+              {row.original.imported_at ? ` · ${formatParisDate(row.original.imported_at)}` : ''}
+            </span>
+          ),
+      },
+      {
         id: 'type',
         header: 'Type',
-        size: 100,
-        minSize: 80,
+        size: 90,
+        minSize: 70,
         cell: ({ row }) => (
           <span className="text-md-text text-xs">
             {row.original.conference_type
@@ -84,8 +175,8 @@ export function ConferencesListClient({
       {
         id: 'slot',
         header: 'Date & heure',
-        size: 160,
-        minSize: 120,
+        size: 150,
+        minSize: 110,
         cell: ({ row }) => (
           <span className="text-md-text-muted text-xs">
             {row.original.start_at
@@ -98,41 +189,25 @@ export function ConferencesListClient({
         ),
       },
       {
-        id: 'room',
-        header: 'Salle',
-        size: 110,
-        minSize: 70,
-        cell: ({ row }) => <span className="text-md-text text-xs">{row.original.room ?? '—'}</span>,
-      },
-      {
         id: 'city',
         header: 'Ville',
-        size: 100,
-        minSize: 70,
+        size: 90,
+        minSize: 60,
         cell: ({ row }) => <span className="text-md-text text-xs">{row.original.city ?? '—'}</span>,
       },
       {
         id: 'speakers',
         header: 'Speakers',
-        size: 80,
-        minSize: 60,
+        size: 70,
+        minSize: 55,
         cell: ({ row }) => (
           <span className="text-md-text text-xs font-semibold">{row.original.speaker_count}</span>
         ),
       },
       {
-        id: 'capacity',
-        header: 'Capacité',
-        size: 80,
-        minSize: 60,
-        cell: ({ row }) => (
-          <span className="text-md-text-muted text-xs">{row.original.capacity ?? '—'}</span>
-        ),
-      },
-      {
         id: 'status',
         header: 'Statut',
-        size: 100,
+        size: 90,
         minSize: 80,
         cell: ({ row }) =>
           row.original.is_published ? (
@@ -140,7 +215,7 @@ export function ConferencesListClient({
               Publiée
             </span>
           ) : (
-            <span className="bg-md-warning/15 text-md-warning rounded-full px-2.5 py-1 text-[11px] font-semibold">
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
               Brouillon
             </span>
           ),
@@ -149,8 +224,8 @@ export function ConferencesListClient({
         id: 'actions',
         header: '',
         meta: { headerLabel: 'Actions', cellClassName: 'text-right' },
-        size: 150,
-        minSize: 120,
+        size: 140,
+        minSize: 110,
         enableResizing: false,
         cell: ({ row }) => {
           const r = row.original;
@@ -199,17 +274,28 @@ export function ConferencesListClient({
           );
         },
       },
-    ],
+    );
+    return cols;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pending, busyId, currentRole],
-  );
+  }, [pending, busyId, currentRole, selected, unvalidatedIds, canBulk, toggleAll, toggleOne]);
 
   return (
-    <AdminDataTable
-      tableKey="conferences"
-      columns={columns}
-      data={rows}
-      emptyMessage="Aucune conférence ne correspond aux filtres."
-    />
+    <div className="space-y-3">
+      <AdminDataTable
+        tableKey="conferences"
+        columns={columns}
+        data={rows}
+        emptyMessage="Aucune conférence ne correspond aux filtres."
+        getRowClassName={(r) => (!r.is_validated ? 'bg-md-warning/[0.04]' : '')}
+      />
+      {canBulk && selected.size > 0 ? (
+        <div className="sticky bottom-4 z-20 flex justify-center">
+          <Button onClick={bulkValidate} disabled={pending} className="shadow-lg">
+            <BadgeCheck className="size-4" aria-hidden />
+            Valider la sélection ({selected.size})
+          </Button>
+        </div>
+      ) : null}
+    </div>
   );
 }

@@ -20,6 +20,7 @@ type SearchParams = Promise<{
   type?: string;
   published?: string;
   featured?: string;
+  validation?: string;
 }>;
 
 export default async function ConferencesPage({ searchParams }: { searchParams: SearchParams }) {
@@ -34,6 +35,10 @@ export default async function ConferencesPage({ searchParams }: { searchParams: 
     params.type && (CONFERENCE_TYPES as readonly string[]).includes(params.type) ? params.type : '';
   const published = params.published === '1' ? true : params.published === '0' ? false : null;
   const featured = params.featured === '1' ? true : null;
+  const validation =
+    params.validation === 'validated' || params.validation === 'unvalidated'
+      ? params.validation
+      : '';
 
   const [rows, stats] = await Promise.all([
     listConferencesAction({
@@ -41,11 +46,12 @@ export default async function ConferencesPage({ searchParams }: { searchParams: 
       conferenceType: type || null,
       isPublished: published,
       featured,
+      validation: validation || null,
     }),
     getConferenceStatsAction(),
   ]);
 
-  const hasFilters = Boolean(city || type || params.published || featured);
+  const hasFilters = Boolean(city || type || params.published || featured || validation);
 
   return (
     <div className="space-y-5">
@@ -66,13 +72,10 @@ export default async function ConferencesPage({ searchParams }: { searchParams: 
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-3 gap-3">
         <StatCard label="Total" value={stats.total} />
-        <StatCard label="Publiées" value={stats.published} emoji="🟢" />
-        <StatCard label="Featured" value={stats.featured} emoji="⭐" />
-        {CONFERENCE_CITIES.map((c) => (
-          <StatCard key={c} label={c} value={stats.byCity[c] ?? 0} />
-        ))}
+        <StatCard label="Validées" value={stats.validated} emoji="🟢" />
+        <StatCard label="Non validées" value={stats.unvalidated} emoji="⚠️" />
       </div>
 
       <form
@@ -111,6 +114,15 @@ export default async function ConferencesPage({ searchParams }: { searchParams: 
           <option value="">Tous statuts</option>
           <option value="1">Publiées</option>
           <option value="0">Brouillons</option>
+        </select>
+        <select
+          name="validation"
+          defaultValue={validation}
+          className="border-md-border rounded-md border bg-white px-2.5 py-1.5 text-xs"
+        >
+          <option value="">Tous</option>
+          <option value="validated">Validées</option>
+          <option value="unvalidated">⚠️ Non validées ({stats.unvalidated})</option>
         </select>
         <label className="text-md-text-muted inline-flex cursor-pointer items-center gap-1.5 text-xs">
           <input

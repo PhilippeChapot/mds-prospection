@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pencil, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Pencil, Eye, EyeOff, Trash2, BadgeCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { isSuperAdmin } from '@/lib/auth/role-helpers';
-import { formatParisDateTime } from '@/lib/format/dates';
+import { formatParisDateTime, formatParisDate } from '@/lib/format/dates';
 import { POLE_CODES, type PoleCode } from '@/lib/design-tokens';
 import {
   CONFERENCE_TYPES,
@@ -26,6 +26,7 @@ import {
   type ConferenceInput,
 } from '@/lib/admin/conferences/crud-actions';
 import { ConferenceSpeakersManager, type ManagedSpeaker } from './ConferenceSpeakersManager';
+import { validateConferenceAction } from '@/lib/admin/programs/validation-actions';
 
 export type AttachedSpeaker = ManagedSpeaker;
 
@@ -45,6 +46,8 @@ export type ConferenceDetail = {
   is_published: boolean;
   featured: boolean;
   slug: string | null;
+  is_validated: boolean;
+  imported_at: string | null;
 };
 
 export type TimelineEntry = {
@@ -174,8 +177,26 @@ export function ConferenceDetailClient({
             {conference.room ? ` · ${conference.room}` : ''}
             {conference.city ? ` · ${conference.city}` : ''}
           </p>
+          {!conference.is_validated ? (
+            <span className="bg-md-warning/15 text-md-warning mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold">
+              ⚠️ Importé non validé
+              {conference.imported_at ? ` · ${formatParisDate(conference.imported_at)}` : ''}
+            </span>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
+          {!conference.is_validated ? (
+            <Button
+              size="sm"
+              disabled={pending}
+              onClick={() =>
+                runStatus(() => validateConferenceAction(conference.id), 'Conférence validée.')
+              }
+            >
+              <BadgeCheck className="size-4" aria-hidden />
+              Valider
+            </Button>
+          ) : null}
           {!editing ? (
             <Button variant="outline" size="sm" onClick={() => setEditing(true)} disabled={pending}>
               <Pencil className="size-4" aria-hidden />

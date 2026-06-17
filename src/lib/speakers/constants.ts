@@ -47,6 +47,8 @@ export type SpeakerListItem = {
   language: string;
   photo_url: string | null;
   confirmed_at: string | null;
+  is_validated: boolean;
+  imported_at: string | null;
   created_at: string;
   contact: {
     id: string;

@@ -207,6 +207,7 @@ export type ListConferencesInput = {
   conferenceType?: string | null;
   isPublished?: boolean | null;
   featured?: boolean | null;
+  validation?: 'validated' | 'unvalidated' | null;
 };
 
 export async function listConferencesAction(
@@ -219,7 +220,7 @@ export async function listConferencesAction(
     .from('conferences')
     .select(
       `id, title_fr, title_en, conference_type, start_at, end_at, room, city, capacity,
-       poles, is_published, featured, conference_speakers(count)`,
+       poles, is_published, featured, is_validated, imported_at, conference_speakers(count)`,
     )
     .order('start_at', { ascending: true, nullsFirst: false });
 
@@ -227,6 +228,8 @@ export async function listConferencesAction(
   if (input.conferenceType) q = q.eq('conference_type', input.conferenceType);
   if (input.isPublished != null) q = q.eq('is_published', input.isPublished);
   if (input.featured != null) q = q.eq('featured', input.featured);
+  if (input.validation === 'validated') q = q.eq('is_validated', true);
+  if (input.validation === 'unvalidated') q = q.eq('is_validated', false);
 
   const { data, error } = await q;
   if (error) throw new Error(`listConferencesAction: ${error.message}`);
@@ -247,6 +250,8 @@ export async function listConferencesAction(
       poles: (row.poles as string[] | null) ?? null,
       is_published: Boolean(row.is_published),
       featured: Boolean(row.featured),
+      is_validated: Boolean(row.is_validated),
+      imported_at: (row.imported_at as string | null) ?? null,
       speaker_count: cs?.[0]?.count ?? 0,
     };
   });
@@ -254,30 +259,20 @@ export async function listConferencesAction(
 
 export async function getConferenceStatsAction(): Promise<{
   total: number;
-  published: number;
-  featured: number;
-  byCity: Record<string, number>;
+  validated: number;
+  unvalidated: number;
 }> {
   await requireAdminProfile();
   const supabase = getSupabaseServiceClient();
   const head = () => supabase.from('conferences').select('id', { count: 'exact', head: true });
-  const [{ count: total }, { count: published }, { count: featured }] = await Promise.all([
+  const [{ count: total }, { count: unvalidated }] = await Promise.all([
     head(),
-    head().eq('is_published', true),
-    head().eq('featured', true),
+    head().eq('is_validated', false),
   ]);
-  const cityCounts = await Promise.all(
-    CONFERENCE_CITIES.map((c) =>
-      head()
-        .eq('city', c)
-        .then((r) => [c, r.count ?? 0] as const),
-    ),
-  );
   return {
     total: total ?? 0,
-    published: published ?? 0,
-    featured: featured ?? 0,
-    byCity: Object.fromEntries(cityCounts),
+    validated: (total ?? 0) - (unvalidated ?? 0),
+    unvalidated: unvalidated ?? 0,
   };
 }
 

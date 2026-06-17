@@ -1,15 +1,17 @@
 'use client';
 
-import { useMemo, useTransition, useState } from 'react';
+import { useMemo, useTransition, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowUpRight, Check, Trash2 } from 'lucide-react';
+import { ArrowUpRight, Check, Trash2, BadgeCheck } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
+import { Button } from '@/components/ui/button';
 import { CompanyAvatar } from '@/components/admin/CompanyAvatar';
 import { cn } from '@/lib/utils';
 import { isSuperAdmin } from '@/lib/auth/role-helpers';
+import { formatParisDate } from '@/lib/format/dates';
 import {
   SPEAKER_TYPE_LABEL,
   SPEAKER_STATUS_LABEL,
@@ -19,6 +21,7 @@ import {
   type SpeakerStatus,
 } from '@/lib/speakers/constants';
 import { confirmSpeakerAction, deleteSpeakerAction } from '@/lib/admin/speakers/mutate-actions';
+import { bulkValidateSpeakersAction } from '@/lib/admin/programs/validation-actions';
 
 function initialsOf(name: string): string {
   const parts = name
@@ -54,6 +57,8 @@ export function SpeakersListClient({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const canBulk = isSuperAdmin(currentRole);
 
   function run(id: string, fn: () => Promise<unknown>, okMsg: string) {
     setBusyId(id);
@@ -70,8 +75,78 @@ export function SpeakersListClient({
     });
   }
 
-  const columns = useMemo<ColumnDef<SpeakerListItem>[]>(
-    () => [
+  const toggleOne = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const unvalidatedIds = useMemo(
+    () => rows.filter((r) => !r.is_validated).map((r) => r.id),
+    [rows],
+  );
+  const toggleAll = useCallback(() => {
+    setSelected((prev) => {
+      const allChecked = unvalidatedIds.length > 0 && unvalidatedIds.every((id) => prev.has(id));
+      return allChecked ? new Set() : new Set(unvalidatedIds);
+    });
+  }, [unvalidatedIds]);
+
+  function bulkValidate() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    startTransition(async () => {
+      try {
+        const res = await bulkValidateSpeakersAction(ids);
+        toast.success(`${res.updated} speaker(s) validé(s).`);
+        setSelected(new Set());
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erreur');
+      }
+    });
+  }
+
+  const columns = useMemo<ColumnDef<SpeakerListItem>[]>(() => {
+    const cols: ColumnDef<SpeakerListItem>[] = [];
+
+    if (canBulk) {
+      const allChecked =
+        unvalidatedIds.length > 0 && unvalidatedIds.every((id) => selected.has(id));
+      cols.push({
+        id: 'select',
+        enableHiding: false,
+        enableResizing: false,
+        size: 44,
+        minSize: 44,
+        maxSize: 44,
+        meta: { headerLabel: 'Sélection' },
+        header: () => (
+          <input
+            type="checkbox"
+            checked={allChecked}
+            onChange={toggleAll}
+            aria-label="Tout sélectionner (non validés)"
+            className="size-3.5"
+          />
+        ),
+        cell: ({ row }) =>
+          row.original.is_validated ? null : (
+            <input
+              type="checkbox"
+              checked={selected.has(row.original.id)}
+              onChange={() => toggleOne(row.original.id)}
+              aria-label="Sélectionner"
+              className="size-3.5"
+            />
+          ),
+      });
+    }
+
+    cols.push(
       {
         id: 'speaker',
         header: 'Speaker',
@@ -105,18 +180,30 @@ export function SpeakersListClient({
         },
       },
       {
+        id: 'validation',
+        header: 'Import',
+        size: 190,
+        minSize: 120,
+        cell: ({ row }) =>
+          row.original.is_validated ? (
+            <span className="text-md-text-muted inline-flex items-center gap-1 text-xs">
+              <BadgeCheck className="size-3.5 text-emerald-600" aria-hidden /> Validé
+            </span>
+          ) : (
+            <span className="bg-md-warning/15 text-md-warning inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap">
+              ⚠️ Importé non validé
+              {row.original.imported_at ? ` · ${formatParisDate(row.original.imported_at)}` : ''}
+            </span>
+          ),
+      },
+      {
         id: 'company',
         header: 'Société',
-        size: 160,
-        minSize: 110,
+        size: 150,
+        minSize: 100,
         cell: ({ row }) =>
           row.original.company ? (
-            <Link
-              href={`/admin/companies/${row.original.company.id}`}
-              className="text-md-blue truncate text-xs font-medium hover:underline"
-            >
-              {row.original.company.name}
-            </Link>
+            <span className="text-md-text truncate text-xs">{row.original.company.name}</span>
           ) : (
             <span className="text-md-text-muted text-xs">—</span>
           ),
@@ -124,7 +211,7 @@ export function SpeakersListClient({
       {
         id: 'type',
         header: 'Type',
-        size: 110,
+        size: 100,
         minSize: 80,
         cell: ({ row }) => (
           <span className="text-md-text text-xs">
@@ -138,32 +225,15 @@ export function SpeakersListClient({
       {
         id: 'status',
         header: 'Statut',
-        size: 110,
+        size: 100,
         minSize: 90,
         cell: ({ row }) => <StatusBadge status={row.original.status} />,
       },
       {
-        id: 'topics',
-        header: 'Topics',
-        size: 180,
-        minSize: 120,
-        cell: ({ row }) => {
-          const ts = row.original.topics ?? [];
-          if (ts.length === 0) return <span className="text-md-text-muted text-xs">—</span>;
-          const shown = ts.slice(0, 2);
-          return (
-            <span className="text-md-text-muted text-xs">
-              {shown.join(', ')}
-              {ts.length > 2 ? ` +${ts.length - 2}` : ''}
-            </span>
-          );
-        },
-      },
-      {
         id: 'conferences',
         header: 'Conf.',
-        size: 70,
-        minSize: 55,
+        size: 60,
+        minSize: 50,
         cell: ({ row }) => (
           <span className="text-md-text text-xs font-semibold">
             {row.original.conference_count}
@@ -171,20 +241,11 @@ export function SpeakersListClient({
         ),
       },
       {
-        id: 'owner',
-        header: 'Owner',
-        size: 120,
-        minSize: 90,
-        cell: ({ row }) => (
-          <span className="text-md-text text-xs">{row.original.owner?.full_name ?? '—'}</span>
-        ),
-      },
-      {
         id: 'actions',
         header: '',
         meta: { headerLabel: 'Actions', cellClassName: 'text-right' },
-        size: 150,
-        minSize: 120,
+        size: 130,
+        minSize: 100,
         enableResizing: false,
         cell: ({ row }) => {
           const r = row.original;
@@ -225,17 +286,28 @@ export function SpeakersListClient({
           );
         },
       },
-    ],
+    );
+    return cols;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pending, busyId, currentRole],
-  );
+  }, [pending, busyId, currentRole, selected, unvalidatedIds, canBulk, toggleAll, toggleOne]);
 
   return (
-    <AdminDataTable
-      tableKey="speakers"
-      columns={columns}
-      data={rows}
-      emptyMessage="Aucun speaker ne correspond aux filtres."
-    />
+    <div className="space-y-3">
+      <AdminDataTable
+        tableKey="speakers"
+        columns={columns}
+        data={rows}
+        emptyMessage="Aucun speaker ne correspond aux filtres."
+        getRowClassName={(r) => (!r.is_validated ? 'bg-md-warning/[0.04]' : '')}
+      />
+      {canBulk && selected.size > 0 ? (
+        <div className="sticky bottom-4 z-20 flex justify-center">
+          <Button onClick={bulkValidate} disabled={pending} className="shadow-lg">
+            <BadgeCheck className="size-4" aria-hidden />
+            Valider la sélection ({selected.size})
+          </Button>
+        </div>
+      ) : null}
+    </div>
   );
 }
