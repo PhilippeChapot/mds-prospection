@@ -38,6 +38,8 @@ import { existsAsVisitor, existsAsSpeaker } from '@/lib/admin/conversions/exists
 import { ProspectForbiddenPage } from '@/components/admin/prospects/ProspectForbiddenPage';
 import { ExternalEventBadges } from '@/components/admin/ExternalEventBadges';
 import { canViewProspectDetail } from '@/lib/prospects/access';
+import { ProspectAffiliateSection } from './_components/ProspectAffiliateSection';
+import type { AffiliatePickerItem } from '@/components/admin/affiliate-claims/AddAffiliateClaimModal';
 
 export const metadata = { title: 'Fiche prospect' };
 
@@ -83,7 +85,8 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
       company:companies(id, name, primary_domain, country, category, sellsy_id, was_prs_2026_exhibitor, external_event_tags, siren, siret, siren_verified_at, siren_source, pole:poles(code, name_fr)),
       contact:contacts(id, first_name, last_name, email, phone, role),
       owner:users!prospects_owner_id_fkey(id, full_name, email, role),
-      booth_assignee:users!prospects_booth_assigned_by_fkey(full_name, email)
+      booth_assignee:users!prospects_booth_assigned_by_fkey(full_name, email),
+      affiliate:affiliates(id, display_name, commission_percent)
     `,
     )
     .eq('id', id)
@@ -124,6 +127,28 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
   const contact = pickFirst(prospect.contact);
   const owner = pickFirst(prospect.owner);
   const pole = pickFirst(company?.pole ?? null);
+  const affiliateRaw = pickFirst(
+    prospect.affiliate as
+      | { id: string; display_name: string; commission_percent: number }
+      | { id: string; display_name: string; commission_percent: number }[]
+      | null,
+  );
+
+  // Picker affiliés pour le bouton "Lier un apporteur" (si pas encore lié).
+  const affiliatesForPicker: AffiliatePickerItem[] = prospect.affiliate_id
+    ? []
+    : await getSupabaseServiceClient()
+        .from('affiliates')
+        .select('id, display_name, commission_percent')
+        .eq('is_active', true)
+        .order('display_name', { ascending: true })
+        .then(({ data }) =>
+          (data ?? []).map((a) => ({
+            id: a.id,
+            displayName: a.display_name,
+            commissionPercent: Number(a.commission_percent),
+          })),
+        );
 
   // P15.2 : conversions croisées — désactiver les audiences déjà existantes.
   const prospectContactId = (contact as { id?: string } | null)?.id ?? null;
@@ -516,11 +541,18 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
                 <span className="text-md-text-muted">Non assigne</span>
               )}
             </DefRow>
-            <DefRow label="Affilie">
-              <span className="text-md-text-muted">
-                {prospect.affiliate_id ? prospect.affiliate_id : '—'}{' '}
-                <span className="text-xs">(P3 ajoutera l&apos;affichage du nom)</span>
-              </span>
+            <DefRow label="Apporteur">
+              <ProspectAffiliateSection
+                affiliateId={prospect.affiliate_id}
+                affiliateName={affiliateRaw?.display_name ?? null}
+                affiliateCommission={
+                  affiliateRaw?.commission_percent != null
+                    ? Number(affiliateRaw.commission_percent)
+                    : null
+                }
+                prospectId={id}
+                affiliates={affiliatesForPicker}
+              />
             </DefRow>
           </dl>
         </Section>

@@ -15,7 +15,10 @@ import { updateCompanyNotesAction } from './actions';
 import { CompanyContactsSection } from './_components/CompanyContactsSection';
 import { SellsyClientLinkSection } from './_components/SellsyClientLinkSection';
 import { PartnerAuthSection, type PartnerAuthData } from './_components/PartnerAuthSection';
+import { AffiliateClaimsSection, type CompanyClaimRow } from './_components/AffiliateClaimsSection';
 import { listContactsForCompany } from '@/lib/contacts/admin-queries';
+import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import type { AffiliatePickerItem } from '@/components/admin/affiliate-claims/AddAffiliateClaimModal';
 import type { PoleCode } from '@/lib/design-tokens';
 import { hasAdminAccess, isSuperAdmin } from '@/lib/auth/role-helpers';
 
@@ -80,6 +83,42 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       created_at: p.created_at,
     };
   });
+
+  // Apporteurs affiliés (claims active + pending sur cette société)
+  const svcClient = getSupabaseServiceClient();
+  const { data: claimsRaw } = await svcClient
+    .from('affiliate_claims')
+    .select(
+      `id, affiliate_id, source, status, validated_at, notes_admin,
+       affiliate:affiliates(display_name)`,
+    )
+    .eq('company_id', id)
+    .in('status', ['active', 'pending'])
+    .order('validated_at', { ascending: false });
+
+  const affiliateClaims: CompanyClaimRow[] = (claimsRaw ?? []).map((r) => {
+    const aff = Array.isArray(r.affiliate) ? r.affiliate[0] : r.affiliate;
+    return {
+      id: r.id,
+      affiliateId: r.affiliate_id,
+      affiliateName: (aff as { display_name?: string } | null)?.display_name ?? '—',
+      source: r.source,
+      status: r.status as 'active' | 'pending',
+      validatedAt: r.validated_at,
+      notesAdmin: r.notes_admin,
+    };
+  });
+
+  const { data: affiliatesRaw } = await svcClient
+    .from('affiliates')
+    .select('id, display_name, commission_percent')
+    .eq('is_active', true)
+    .order('display_name', { ascending: true });
+  const affiliatesForPicker: AffiliatePickerItem[] = (affiliatesRaw ?? []).map((a) => ({
+    id: a.id,
+    displayName: a.display_name,
+    commissionPercent: Number(a.commission_percent),
+  }));
 
   // P11.x — auth status du contact principal de la société
   const primaryContact = companyContacts.find((c) => c.is_primary) ?? companyContacts[0] ?? null;
@@ -315,6 +354,15 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         <PartnerAuthSection
           partnerAuth={partnerAuthData}
           isSuperAdmin={isSuperAdmin(profile.role)}
+        />
+      </Section>
+
+      {/* Apporteurs affiliés */}
+      <Section title="Apporteur(s) affilié(s)">
+        <AffiliateClaimsSection
+          companyId={id}
+          claims={affiliateClaims}
+          affiliates={affiliatesForPicker}
         />
       </Section>
 
