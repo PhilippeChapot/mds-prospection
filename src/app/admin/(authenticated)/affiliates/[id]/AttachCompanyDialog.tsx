@@ -20,10 +20,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  attachCompanyToAffiliateAction,
   searchAvailableCompaniesAction,
   type CompanySearchHit,
 } from '@/lib/affiliate-claims/manual-attach-actions';
+import { createManualAffiliateClaimAction } from '@/lib/admin/affiliate-claims/manual-create-action';
 
 export function AttachCompanyDialog({
   affiliateId,
@@ -66,7 +66,7 @@ export function AttachCompanyDialog({
   function handleAttach() {
     if (!selected) return;
     startSubmit(async () => {
-      const r = await attachCompanyToAffiliateAction({
+      const r = await createManualAffiliateClaimAction({
         affiliate_id: affiliateId,
         company_id: selected.id,
       });

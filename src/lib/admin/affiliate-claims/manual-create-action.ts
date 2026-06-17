@@ -57,6 +57,23 @@ export async function createManualAffiliateClaimAction(
     };
   }
 
+  // Conflit cross-affilié : une société ne peut être active que chez un seul affilié.
+  if (company_id) {
+    const { data: conflict } = await supabase
+      .from('affiliate_claims')
+      .select('id')
+      .eq('company_id', company_id)
+      .eq('status', 'active')
+      .neq('affiliate_id', affiliate_id)
+      .maybeSingle();
+    if (conflict) {
+      return {
+        ok: false,
+        error: 'Cette société est déjà attribuée à un autre affilié (claim actif).',
+      };
+    }
+  }
+
   // Propage affiliate_id au prospect si pas encore set.
   if (prospect_id) {
     const { data: prospect } = await supabase
@@ -110,6 +127,7 @@ export async function createManualAffiliateClaimAction(
 
   if (company_id) revalidatePath(`/admin/companies/${company_id}`);
   if (prospect_id) revalidatePath(`/admin/prospects/${prospect_id}`);
+  revalidatePath(`/admin/affiliates/${affiliate_id}`);
   revalidatePath('/admin/affiliate-claims');
 
   return { ok: true, claim_id: newClaim.id };

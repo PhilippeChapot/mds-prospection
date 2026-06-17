@@ -24,13 +24,20 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { detachCompanyFromAffiliateAction } from '@/lib/affiliate-claims/manual-attach-actions';
-import type { ManualAttachRow } from '@/lib/affiliate-claims/queries';
+import type { ManualAttachRow, ClaimSource } from '@/lib/affiliate-claims/queries';
 import { AttachCompanyDialog } from './AttachCompanyDialog';
 
 const fmtDate = (iso: string) =>
   new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(
     new Date(iso),
   );
+
+const SOURCE_LABEL: Record<ClaimSource, string> = {
+  cookie_tracking: '🍪 Tracking',
+  declared_by_affiliate: '👤 Affilié',
+  declared_by_company: '🏢 Société',
+  manual_admin: '🔧 Admin',
+};
 
 export function AffiliateManualAttachSection({
   affiliateId,
@@ -71,7 +78,7 @@ export function AffiliateManualAttachSection({
     <Card className="border-md-border space-y-3 p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-md-text-muted text-[10px] font-bold tracking-widest uppercase">
-          Sociétés attachées manuellement ({attachments.length})
+          Sociétés liées ({attachments.length})
         </h2>
         {isSuperAdmin ? (
           <AttachCompanyDialog affiliateId={affiliateId} affiliateName={affiliateName} />
@@ -80,7 +87,7 @@ export function AffiliateManualAttachSection({
 
       {attachments.length === 0 ? (
         <p className="text-md-text-muted text-sm">
-          Aucune société attachée manuellement.
+          Aucune société liée.
           {!isSuperAdmin ? ' (Attachement réservé aux super_admin.)' : ''}
         </p>
       ) : (
@@ -90,11 +97,11 @@ export function AffiliateManualAttachSection({
               <div className="min-w-0">
                 <div className="text-md-text font-semibold">{a.companyName}</div>
                 <div className="text-md-text-muted text-xs">
-                  Attachée le {fmtDate(a.attachedAt)}
+                  {SOURCE_LABEL[a.source] ?? a.source} · {fmtDate(a.attachedAt)}
                   {a.attachedByName ? ` · par ${a.attachedByName}` : ''}
                 </div>
               </div>
-              {isSuperAdmin ? (
+              {isSuperAdmin && a.source === 'manual_admin' ? (
                 <Button
                   type="button"
                   variant="ghost"

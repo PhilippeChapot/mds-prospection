@@ -180,10 +180,11 @@ export async function listClaimsForAdmin(filterStatus?: ClaimStatus): Promise<Ad
 
 export interface ManualAttachRow {
   claimId: string;
-  companyId: string | null;
+  companyId: string;
   companyName: string;
+  source: ClaimSource;
   attachedAt: string;
-  /** Nom (ou email) du super_admin qui a attaché — null si non résolu. */
+  /** Nom (ou email) de l'admin qui a créé le claim — null si non résolu. */
   attachedByName: string | null;
 }
 
@@ -194,12 +195,12 @@ export async function listManualAttachmentsForAffiliate(
   const { data, error } = await supabase
     .from('affiliate_claims')
     .select(
-      `id, company_id, declared_company_name, validated_at, validated_by, created_at,
+      `id, company_id, declared_company_name, source, validated_at, validated_by, created_at,
        company:companies(name)`,
     )
     .eq('affiliate_id', affiliateId)
-    .eq('source', 'manual_admin')
     .eq('status', 'active')
+    .not('company_id', 'is', null)
     .order('validated_at', { ascending: false });
   if (error || !data) {
     console.warn(
@@ -226,8 +227,9 @@ export async function listManualAttachmentsForAffiliate(
     const company = Array.isArray(r.company) ? r.company[0] : r.company;
     return {
       claimId: r.id,
-      companyId: r.company_id,
+      companyId: r.company_id!,
       companyName: company?.name ?? r.declared_company_name ?? '(société inconnue)',
+      source: r.source as ClaimSource,
       attachedAt: r.validated_at ?? r.created_at,
       attachedByName: r.validated_by ? (namesById.get(r.validated_by) ?? null) : null,
     } satisfies ManualAttachRow;
