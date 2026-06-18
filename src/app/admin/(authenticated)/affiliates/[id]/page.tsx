@@ -10,6 +10,7 @@ import { archiveAffiliateAction, unarchiveAffiliateAction } from '../actions';
 import { MarkPaidButton } from './MarkPaidButton';
 import { CopyButtonClient } from './CopyButtonClient';
 import { AffiliateManualAttachSection } from './AffiliateManualAttachSection';
+import { ResendInvitationModal } from './ResendInvitationModal';
 
 export const metadata = { title: 'Détail affilié' };
 export const dynamic = 'force-dynamic';
@@ -73,6 +74,11 @@ export default async function AffiliateDetailPage({ params }: { params: Promise<
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <ResendInvitationModal
+            affiliateId={affiliate.id}
+            affiliateName={affiliate.displayName}
+            contactEmail={affiliate.contactEmail}
+          />
           {affiliate.isActive ? (
             <form
               action={async () => {

@@ -88,11 +88,54 @@ export async function createAffiliateAction(formData: FormData) {
       created_by_user_id: profile.id,
       is_active: true,
     })
-    .select('id')
+    .select('id, token, display_name, commission_percent')
     .single();
 
   if (error || !created) {
     throw new Error(`INSERT affiliate: ${error?.message ?? 'unknown'}`);
+  }
+
+  // Invitation email — best-effort (ne bloque pas la création si Resend rate).
+  if (data.contactEmail) {
+    try {
+      const { buildAffiliateInvitationEmail } =
+        await import('@/lib/resend/templates/affilie-invitation');
+      const { sendTransactionalEmailViaResend } = await import('@/lib/resend/client');
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
+      const tpl = buildAffiliateInvitationEmail({
+        displayName: created.display_name,
+        token: created.token,
+        commissionPercent: Number(created.commission_percent),
+        trackingUrl: `${baseUrl}/fr/inscription-partenaire?ref=${created.token}`,
+        espaceLoginUrl: `${baseUrl}/fr/affilie`,
+        locale: 'fr',
+      });
+      await sendTransactionalEmailViaResend({
+        to: data.contactEmail,
+        toName: created.display_name,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        tags: [{ name: 'category', value: 'affiliate_invitation' }],
+      });
+      await supabase.from('audit_log').insert({
+        user_id: profile.id,
+        action: 'create',
+        entity_type: 'affiliates',
+        entity_id: created.id,
+        after: {
+          kind: 'affiliate_invitation_sent',
+          to: data.contactEmail,
+          locale: 'fr',
+        } as never,
+      });
+    } catch (err) {
+      console.warn(
+        '[createAffiliateAction] invitation email failed affiliate=%s msg=%s',
+        created.id,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
   }
 
   revalidatePath('/admin/affiliates');
@@ -221,4 +264,86 @@ export async function markCommissionPaidAction(
   revalidatePath(`/admin/affiliates/${prospect.affiliate_id}`);
   revalidatePath('/admin/affiliates');
   revalidatePath(`/admin/prospects/${prospectId}`);
+}
+
+// ---------------------------------------------------------------------------
+// resendAffiliateInvitationAction
+// ---------------------------------------------------------------------------
+
+export type ResendInvitationResult = { ok: true } | { ok: false; error: string };
+
+export async function resendAffiliateInvitationAction(
+  affiliateId: string,
+): Promise<ResendInvitationResult> {
+  let actorId: string;
+  try {
+    const profile = await requireAdminProfile();
+    if (!hasAdminAccess(profile.role)) throw new Error('Réservé aux admins.');
+    actorId = profile.id;
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Forbidden' };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: affiliate } = await supabase
+    .from('affiliates')
+    .select('id, display_name, token, commission_percent, contact_email')
+    .eq('id', affiliateId)
+    .maybeSingle();
+
+  if (!affiliate) return { ok: false, error: 'Affilié introuvable.' };
+  if (!affiliate.contact_email) {
+    return {
+      ok: false,
+      error: "Pas d'email enregistré pour cet affilié. Éditez la fiche pour en ajouter un.",
+    };
+  }
+
+  try {
+    const { buildAffiliateInvitationEmail } =
+      await import('@/lib/resend/templates/affilie-invitation');
+    const { sendTransactionalEmailViaResend } = await import('@/lib/resend/client');
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
+    const tpl = buildAffiliateInvitationEmail({
+      displayName: affiliate.display_name,
+      token: affiliate.token,
+      commissionPercent: Number(affiliate.commission_percent),
+      trackingUrl: `${baseUrl}/fr/inscription-partenaire?ref=${affiliate.token}`,
+      espaceLoginUrl: `${baseUrl}/fr/affilie`,
+      locale: 'fr',
+    });
+    await sendTransactionalEmailViaResend({
+      to: affiliate.contact_email,
+      toName: affiliate.display_name,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      tags: [{ name: 'category', value: 'affiliate_invitation' }],
+    });
+    await supabase.from('audit_log').insert({
+      user_id: actorId,
+      action: 'create',
+      entity_type: 'affiliates',
+      entity_id: affiliateId,
+      after: {
+        kind: 'affiliate_invitation_resent',
+        to: affiliate.contact_email,
+        locale: 'fr',
+      } as never,
+    });
+    console.log(
+      '[admin/affiliates] invitation-resent affiliate=%s to=%s by=%s',
+      affiliateId,
+      affiliate.contact_email,
+      actorId,
+    );
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : 'Échec envoi email.',
+    };
+  }
+
+  revalidatePath(`/admin/affiliates/${affiliateId}`);
+  return { ok: true };
 }
