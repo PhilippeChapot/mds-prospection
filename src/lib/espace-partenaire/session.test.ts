@@ -73,19 +73,46 @@ let contactLookupResult: { id: string; prospects: Array<{ id: string; status: st
   id: 'contact-uuid-1',
   prospects: [],
 };
+// P11.x.MultiPartnerContentResolution — résolution par company via grants.
+let grantResult: { company_id: string } | null = null;
+let seasonResult: { id: string } | null = { id: 'season-1' };
+let companyProspectResult: { id: string } | null = null;
+let primaryProspectResult: { id: string } | null = null;
 
 vi.mock('@/lib/supabase/service', () => ({
   getSupabaseServiceClient: () => ({
     from: (table: string) => {
+      const filters: Record<string, unknown> = {};
       const chain: Record<string, unknown> = {
         select: () => chain,
-        eq: () => chain,
+        eq: (col: string, val: unknown) => {
+          filters[col] = val;
+          return chain;
+        },
+        is: () => chain,
+        in: () => chain,
+        order: () => chain,
+        limit: () => chain,
         maybeSingle: () => {
-          if (table === 'prospects') {
-            return Promise.resolve({ data: prospectLookupResult, error: null });
+          if (table === 'partner_access_grants') {
+            return Promise.resolve({ data: grantResult, error: null });
+          }
+          if (table === 'seasons') {
+            return Promise.resolve({ data: seasonResult, error: null });
           }
           if (table === 'contacts') {
             return Promise.resolve({ data: contactLookupResult, error: null });
+          }
+          if (table === 'prospects') {
+            // Legacy (kind=prospect) : lookup par id.
+            if (filters.id) return Promise.resolve({ data: prospectLookupResult, error: null });
+            // P11.x : prospect de la company (grant).
+            if (filters.company_id)
+              return Promise.resolve({ data: companyProspectResult, error: null });
+            // Fallback legacy : prospect dont le contact est primary.
+            if (filters.primary_contact_id)
+              return Promise.resolve({ data: primaryProspectResult, error: null });
+            return Promise.resolve({ data: null, error: null });
           }
           return Promise.resolve({ data: null, error: null });
         },
@@ -101,6 +128,10 @@ beforeEach(() => {
   jwtKind = 'prospect';
   prospectLookupResult = { id: 'prospect-uuid-1', primary_contact_id: 'contact-uuid-1' };
   contactLookupResult = { id: 'contact-uuid-1', prospects: [] };
+  grantResult = null;
+  seasonResult = { id: 'season-1' };
+  companyProspectResult = null;
+  primaryProspectResult = null;
   redirectSpy.mockClear();
 });
 
@@ -175,6 +206,21 @@ describe('requireContactSession (P8.2-redirect-loop)', () => {
     const result = await requireContactSession('fr');
     expect(result.contactId).toBe('contact-uuid-1');
     expect(result.prospectId).toBeNull();
+    expect(redirectSpy).not.toHaveBeenCalled();
+  });
+
+  it('P11.x : contact secondaire avec grant company -> résout le prospect de la company', async () => {
+    // Sophie = contact secondaire (PAS primary_contact), mais grant actif sur
+    // la company qui a un prospect visible -> elle voit le prospect du dossier.
+    jwtKind = 'contact'; // sub = 'contact-uuid-1' (Sophie), pas le primary du prospect
+    contactLookupResult = { id: 'contact-uuid-1', prospects: [] };
+    grantResult = { company_id: 'company-winmedia' };
+    companyProspectResult = { id: 'prospect-winmedia' };
+    primaryProspectResult = { id: 'ne-doit-pas-etre-utilise' };
+    const { requireContactSession } = await import('./session');
+    const result = await requireContactSession('fr');
+    expect(result.contactId).toBe('contact-uuid-1');
+    expect(result.prospectId).toBe('prospect-winmedia');
     expect(redirectSpy).not.toHaveBeenCalled();
   });
 });

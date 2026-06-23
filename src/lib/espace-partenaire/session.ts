@@ -22,12 +22,14 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { type SupabaseClient } from '@supabase/supabase-js';
 import {
   verifySessionToken,
   ESPACE_EXPOSANT_SESSION_COOKIE,
   EspacePartenaireTokenError,
 } from './jwt';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { resolveActiveProspectIdForContact } from './resolve-prospect';
 
 const LOG_PREFIX = '[espace-partenaire/session]';
 
@@ -172,26 +174,26 @@ export async function requireContactSession(
   const supabase = getSupabaseServiceClient();
 
   if (claims.kind === 'contact') {
-    // P8.2 : sub = contact_id. Resolve prospect actif eventuel
-    // (le contact peut etre primary_contact_id d'un prospect — ou non).
+    // P8.2 : sub = contact_id.
+    const contactId = claims.prospectId; // sub stocke contact_id pour kind=contact
     const { data: contact } = await supabase
       .from('contacts')
-      .select('id, prospects:prospects!primary_contact_id(id, status)')
-      .eq('id', claims.prospectId) // sub stocke contact_id pour kind=contact
+      .select('id')
+      .eq('id', contactId)
       .maybeSingle();
     if (!contact) {
-      console.warn('%s contact-not-found id=%s', LOG_PREFIX, claims.prospectId);
+      console.warn('%s contact-not-found id=%s', LOG_PREFIX, contactId);
       redirect(`/${locale}/espace-partenaire?error=invalid`);
     }
-    type ProspectRel = { id: string; status: string };
-    const prospects = (contact?.prospects ?? []) as ProspectRel[];
-    const active = Array.isArray(prospects)
-      ? (prospects.find((p) => p.status !== 'lost') ?? null)
-      : null;
-    return {
-      contactId: claims.prospectId,
-      prospectId: active?.id ?? null,
-    };
+    // P11.x.MultiPartnerContentResolution : on résout le prospect par
+    // company (partner_access_grants) et non plus par primary_contact_id —
+    // un contact secondaire d'une société voit le dossier de la société.
+    // Fallback legacy primary_contact_id intégré dans le helper.
+    const prospectId = await resolveActiveProspectIdForContact(
+      supabase as unknown as SupabaseClient,
+      contactId,
+    );
+    return { contactId, prospectId };
   }
 
   // Legacy : sub = prospect_id. Resolve primary_contact_id pour contactId.
