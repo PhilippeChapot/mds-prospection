@@ -13,6 +13,7 @@ import type { FuzzyMatchedCompany, ExistingContactMatch } from '@/lib/smart-add/
 import type { AutoMatchResult, SireneEtablissement } from '@/lib/insee/sirene';
 import { VisitorFieldsStep } from './_components/VisitorFieldsStep';
 import { SpeakerFieldsStep } from './_components/SpeakerFieldsStep';
+import { ApolloDecisionMakersBanner } from '@/components/admin/apollo/ApolloDecisionMakersBanner';
 
 /** P15.2 — Smart Add 3-way : ce qu'on crée au bout du flow. */
 type Audience = 'prospect' | 'visitor' | 'speaker';
@@ -110,7 +111,7 @@ const emptyForm: FormState = {
   addAlternateDomain: true,
 };
 
-export function QuickAddWizard() {
+export function QuickAddWizard({ apolloEnabled = false }: { apolloEnabled?: boolean }) {
   const router = useRouter();
   const [rawInput, setRawInput] = useState('');
   const [parseResp, setParseResp] = useState<ParseResponse | null>(null);
@@ -290,11 +291,15 @@ export function QuickAddWizard() {
           [form.contactFirstName, form.contactLastName].filter(Boolean).join(' ').trim() ||
           form.contactEmail;
         if (audience === 'prospect') {
-          toast.success(`Contact prêt (Brevo: ${json.brevoKind}). Finalise le prospect…`);
-          const qp = new URLSearchParams();
-          if (json.contactId) qp.set('contact_id', json.contactId);
-          else if (json.companyId) qp.set('company_id', json.companyId);
-          router.push(`/admin/prospects/new?${qp.toString()}`);
+          // P5.x.SmartAddApolloEnrichment : on n'enchaîne plus directement vers
+          // le formulaire prospect. On affiche un panneau post-confirm offrant
+          // l'enrichissement « décideurs » Apollo avant de continuer.
+          toast.success(`Contact prêt (Brevo: ${json.brevoKind}).`);
+          setCreated({
+            companyId: json.companyId ?? null,
+            contactId: json.contactId ?? '',
+            contactName,
+          });
         } else if (json.contactId) {
           toast.success(`Contact créé (Brevo: ${json.brevoKind}). Complète les infos.`);
           setCreated({
@@ -311,8 +316,37 @@ export function QuickAddWizard() {
     });
   }
 
+  // P5.x.SmartAddApolloEnrichment — panneau post-confirm prospect : propose
+  // d'enrichir la société avec d'autres décideurs (Apollo) avant de finaliser.
+  if (created && audience === 'prospect') {
+    const qp = new URLSearchParams();
+    if (created.contactId) qp.set('contact_id', created.contactId);
+    else if (created.companyId) qp.set('company_id', created.companyId);
+    const continueHref = `/admin/prospects/new?${qp.toString()}`;
+    return (
+      <div className="space-y-5">
+        <section className="border-md-success/40 bg-md-success/5 rounded-xl border p-5">
+          <h2 className="text-md-text flex items-center gap-2 text-base font-semibold">
+            <Check className="text-md-success size-5" aria-hidden /> Contact créé
+            {created.contactName ? ` — ${created.contactName}` : ''}
+          </h2>
+        </section>
+
+        {apolloEnabled && created.companyId ? (
+          <ApolloDecisionMakersBanner companyId={created.companyId} />
+        ) : null}
+
+        <div className="flex justify-end">
+          <Button type="button" onClick={() => router.push(continueHref)}>
+            Continuer vers le prospect →
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // P15.2 — une fois le contact créé pour un visiteur/speaker, on affiche
-  // l'étape de champs spécifiques (le prospect, lui, redirige vers son form).
+  // l'étape de champs spécifiques.
   if (created && audience === 'visitor') {
     return (
       <VisitorFieldsStep

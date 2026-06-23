@@ -27,7 +27,7 @@ export default async function QuickAddPage() {
       {/* P5.x.Apollo — section "Enrichir avec Apollo" (visible si configuré). */}
       {apolloEnabled ? <ApolloEnrichSection /> : null}
 
-      <QuickAddWizard />
+      <QuickAddWizard apolloEnabled={apolloEnabled} />
     </div>
   );
 }

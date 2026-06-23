@@ -119,6 +119,81 @@ export async function apolloOrganizationEnrich(domain: string): Promise<ApolloOr
   return org ?? null;
 }
 
+export interface ApolloPerson {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  name?: string | null;
+  title?: string | null;
+  linkedin_url?: string | null;
+  photo_url?: string | null;
+  email?: string | null;
+  email_status?: string | null;
+  organization?: { id?: string | null; name?: string | null } | null;
+  [key: string]: unknown;
+}
+
+/**
+ * POST /v1/mixed_people/search — recherche de personnes par titres au sein
+ * d'une organisation (P5.x.SmartAddApolloEnrichment — décideurs).
+ *
+ * Cible par `organization_ids` si on connaît l'apollo_organization_id,
+ * sinon par `q_organization_domains`. `person_locations` permet de
+ * prioriser la France. Renvoie le tableau `people` (vide si aucun match).
+ * Throw ApolloError sur HTTP error ou clé manquante.
+ */
+export async function apolloPeopleSearch(input: {
+  organizationId?: string | null;
+  domain?: string | null;
+  titles: string[];
+  locations?: string[];
+  perPage?: number;
+}): Promise<ApolloPerson[]> {
+  const apiKey = await getApolloApiKey();
+  if (!apiKey) {
+    throw new ApolloError(
+      'Apollo non configuré : ajoutez `apollo_api_key` dans Préférences > Intégrations.',
+      0,
+      null,
+    );
+  }
+
+  const body: Record<string, unknown> = {
+    page: 1,
+    per_page: input.perPage ?? 10,
+    person_titles: input.titles,
+  };
+  if (input.organizationId) body.organization_ids = [input.organizationId];
+  else if (input.domain) body.q_organization_domains = input.domain.trim().toLowerCase();
+  if (input.locations && input.locations.length > 0) body.person_locations = input.locations;
+
+  const res = await fetch(`${APOLLO_API_BASE}/mixed_people/search`, {
+    method: 'POST',
+    headers: {
+      'X-Api-Key': apiKey,
+      'Content-Type': 'application/json',
+      accept: 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  let parsed: unknown = null;
+  try {
+    parsed = await res.json();
+  } catch {
+    parsed = null;
+  }
+
+  if (!res.ok) {
+    const msg =
+      (parsed as { error_message?: string } | null)?.error_message ?? `Apollo HTTP ${res.status}`;
+    throw new ApolloError(`Apollo /mixed_people/search failed: ${msg}`, res.status, parsed);
+  }
+
+  const people = (parsed as { people?: ApolloPerson[] } | null)?.people;
+  return Array.isArray(people) ? people : [];
+}
+
 /**
  * GET /v1/usage_stats/credit_usage_stats — gratuit (ne consomme pas).
  * Renvoie le compteur (used/granted/remaining) pour afficher le badge UI.
