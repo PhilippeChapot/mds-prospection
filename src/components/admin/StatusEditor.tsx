@@ -17,9 +17,17 @@ import type { ProspectStatus } from '@/lib/supabase/constants';
 export function StatusEditor({
   prospectId,
   currentStatus,
+  onPaymentStatus,
 }: {
   prospectId: string;
   currentStatus: ProspectStatus;
+  /**
+   * P5.x.ManualPaymentRecording : si fourni, sélectionner 'acompte_paye' ou
+   * 'paye_integral' n'appelle PAS updateProspectStatusAction directement mais
+   * délègue (ex: ouvrir la modale d'enregistrement de paiement). Les autres
+   * statuts gardent le comportement normal.
+   */
+  onPaymentStatus?: (status: 'acompte_paye' | 'paye_integral') => void;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -39,6 +47,12 @@ export function StatusEditor({
             disabled={s === currentStatus}
             onSelect={(event) => {
               event.preventDefault();
+              // P5.x : acompte_paye / paye_integral → délègue à la modale
+              // paiement (si handler fourni) au lieu de changer le statut sec.
+              if (onPaymentStatus && (s === 'acompte_paye' || s === 'paye_integral')) {
+                onPaymentStatus(s);
+                return;
+              }
               startTransition(async () => {
                 try {
                   await updateProspectStatusAction(prospectId, s);

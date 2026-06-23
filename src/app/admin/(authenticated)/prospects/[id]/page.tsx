@@ -6,7 +6,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { PoleBadge } from '@/components/admin/PoleBadge';
-import { StatusEditor } from '@/components/admin/StatusEditor';
+import { ProspectStatusAndPayment } from './ProspectStatusAndPayment';
 import { ActivitiesSection, type ActivityRow } from '@/components/admin/ActivitiesSection';
 import { ProspectCalendarSection } from './_components/ProspectCalendarSection';
 import { getOAuthToken } from '@/lib/admin/calendar/google/tokens-store';
@@ -77,6 +77,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
     .select(
       `
       id, status, pack_code, payment_path, estimated_amount, notes, owner_id, affiliate_id,
+      acompte_amount_eur, acompte_paid_at, sellsy_devis_total_ttc,
       quote_items, promo_reason,
       is_test, last_synced_sellsy_at, last_synced_brevo_at, last_synced_stripe_at,
       last_sync_error_message, last_sync_error_provider, last_sync_error_at,
@@ -336,7 +337,10 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           <div className="text-md-text-muted mb-1 text-[10px] font-bold tracking-widest uppercase">
             Statut
           </div>
-          <StatusEditor prospectId={id} currentStatus={prospect.status as ProspectStatus} />
+          <ProspectStatusAndPayment
+            prospectId={id}
+            currentStatus={prospect.status as ProspectStatus}
+          />
         </div>
         <Divider />
         <div>
@@ -496,6 +500,18 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
         prospectId={id}
         isTest={prospect.is_test}
         requests={await listPendingDocumentRequests(id)}
+      />
+
+      {/* P5.x.ManualPaymentRecording — récap paiements (source: prospect, synchro Sellsy) */}
+      <PaymentsSummary
+        paidTtc={prospect.acompte_amount_eur}
+        totalTtc={prospect.sellsy_devis_total_ttc}
+        paidAt={prospect.acompte_paid_at}
+        hasSellsyDoc={
+          !!prospect.sellsy_invoice_id ||
+          !!prospect.sellsy_proforma_id ||
+          !!prospect.sellsy_devis_id
+        }
       />
 
       {/* P6.x.2a — Attribution de stand (catalogue relationnel) */}
@@ -752,5 +768,70 @@ async function renderStandPickerSection(prospectId: string) {
         prospect_id: s.prospect_id,
       }))}
     />
+  );
+}
+
+/**
+ * P5.x.ManualPaymentRecording — récap paiements (montants TTC). Source : champs
+ * prospect tenus à jour par recordManualPaymentAction + webhook Sellsy
+ * `docslog.paymentadd`. Le détail ligne-à-ligne reste consultable dans Sellsy.
+ */
+function PaymentsSummary({
+  paidTtc,
+  totalTtc,
+  paidAt,
+  hasSellsyDoc,
+}: {
+  paidTtc: number | null;
+  totalTtc: number | null;
+  paidAt: string | null;
+  hasSellsyDoc: boolean;
+}) {
+  if (!hasSellsyDoc) return null;
+  const paid = Number(paidTtc ?? 0);
+  const total = totalTtc != null ? Number(totalTtc) : null;
+  const remaining = total != null ? Math.max(0, Math.round((total - paid) * 100) / 100) : null;
+  const fmt = (n: number) => `${n.toLocaleString('fr-FR')} € TTC`;
+  return (
+    <div className="bg-card border-md-border space-y-2 rounded-xl border p-4 shadow-sm">
+      <h2 className="text-md-text-muted text-[10px] font-bold tracking-widest uppercase">
+        💰 Paiements
+      </h2>
+      <div className="flex flex-wrap gap-6 text-sm">
+        <div>
+          <div className="text-md-text-muted text-xs">Total versé</div>
+          <div className="text-md-text font-semibold">{fmt(paid)}</div>
+        </div>
+        {total != null && (
+          <div>
+            <div className="text-md-text-muted text-xs">Total document</div>
+            <div className="text-md-text font-semibold">{fmt(total)}</div>
+          </div>
+        )}
+        {remaining != null && (
+          <div>
+            <div className="text-md-text-muted text-xs">Solde restant</div>
+            <div
+              className={
+                remaining === 0 ? 'text-md-success font-semibold' : 'text-md-text font-semibold'
+              }
+            >
+              {fmt(remaining)}
+            </div>
+          </div>
+        )}
+        {paidAt && (
+          <div>
+            <div className="text-md-text-muted text-xs">Dernier paiement</div>
+            <div className="text-md-text font-semibold">{paidAt.slice(0, 10)}</div>
+          </div>
+        )}
+      </div>
+      {paid === 0 && (
+        <p className="text-md-text-muted text-xs italic">
+          Aucun paiement enregistré. Utilise « Enregistrer un paiement » en haut de la fiche.
+        </p>
+      )}
+    </div>
   );
 }

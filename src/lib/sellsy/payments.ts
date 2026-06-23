@@ -33,8 +33,19 @@ export interface NotifyPaymentInput {
   documentId: number;
   documentType: 'invoice' | 'estimate' | 'proforma';
   amountEur: number;
-  paymentMethod: 'stripe';
+  /** Libelle libre (ex: 'stripe', 'virement', 'cheque') pour la note Sellsy. */
+  paymentMethod: string;
+  /**
+   * P5.x.ManualPaymentRecording — id Sellsy de la methode de paiement.
+   * Si absent, fallback sur SELLSY_PAYMENT_METHOD_ID_STRIPE (chemin Stripe
+   * webhook historique).
+   */
+  paymentMethodId?: number;
   reference?: string;
+  /** Date du paiement (ISO). Defaut: maintenant. */
+  paidAt?: string;
+  /** Note Sellsy libre. Defaut: derivee de paymentMethod + reference. */
+  note?: string;
 }
 
 export async function notifySellsyPaymentReceived(
@@ -49,11 +60,12 @@ export async function notifySellsyPaymentReceived(
     input.amountEur,
   );
 
-  // 1. Resoudre le payment_method_id Sellsy (env requis).
+  // 1. Resoudre le payment_method_id Sellsy : override explicite (paiement
+  //    manuel) ou fallback env Stripe (webhook historique).
   const rawMethod = process.env.SELLSY_PAYMENT_METHOD_ID_STRIPE;
-  const paymentMethodId = rawMethod ? Number(rawMethod) : NaN;
+  const paymentMethodId = input.paymentMethodId ?? (rawMethod ? Number(rawMethod) : NaN);
   if (!Number.isFinite(paymentMethodId) || paymentMethodId <= 0) {
-    const msg = 'SELLSY_PAYMENT_METHOD_ID_STRIPE manquant ou invalide en env';
+    const msg = 'payment_method_id Sellsy manquant ou invalide (SELLSY_PAYMENT_METHOD_ID_STRIPE ?)';
     console.warn('%s skip-no-payment-method-id %s', LOG_PREFIX, msg);
     return { paymentId: null, error: msg };
   }
@@ -78,11 +90,11 @@ export async function notifySellsyPaymentReceived(
   try {
     const createPayload = {
       type: 'credit' as const,
-      paid_at: new Date().toISOString(),
+      paid_at: input.paidAt ?? new Date().toISOString(),
       payment_method_id: paymentMethodId,
       amount: { value: input.amountEur.toFixed(2), currency: 'EUR' as const },
-      number: input.reference ?? `stripe-${Date.now()}`,
-      note: `Stripe ${input.paymentMethod} ${input.reference ?? ''}`.trim(),
+      number: input.reference ?? `${input.paymentMethod}-${Date.now()}`,
+      note: input.note ?? `${input.paymentMethod} ${input.reference ?? ''}`.trim(),
     };
     const res = await sellsyFetch<{ id?: number; data?: { id?: number } }>(
       `/companies/${companyId}/payments`,
