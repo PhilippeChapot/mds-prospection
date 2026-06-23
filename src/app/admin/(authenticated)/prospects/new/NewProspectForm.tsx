@@ -259,9 +259,9 @@ export function NewProspectForm({
             >
               <option value="lead">Lead</option>
               <option value="contact">En contact</option>
-              <option value="devis_envoye">Devis envoye</option>
-              <option value="acompte_paye">Acompte paye</option>
-              <option value="signe">Signe</option>
+              <option value="devis_envoye">Devis envoyé</option>
+              <option value="signe">Devis signé</option>
+              <option value="acompte_paye">Acompte payé</option>
               <option value="perdu">Perdu</option>
             </select>
           </Field>

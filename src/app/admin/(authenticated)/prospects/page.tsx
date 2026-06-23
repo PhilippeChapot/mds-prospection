@@ -9,6 +9,7 @@ import { searchProspectsFuzzy } from '@/lib/admin/search/fuzzy-search';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import {
   PROSPECT_STATUSES,
+  PROSPECT_STATUS_LABEL_FR,
   listProspectsPaginated,
   type ProspectStatus,
 } from '@/lib/supabase/queries';
@@ -18,16 +19,6 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { cn } from '@/lib/utils';
 
 export const metadata = { title: 'Prospects' };
-
-const STATUS_LABEL: Record<ProspectStatus, string> = {
-  lead: 'Lead',
-  contact: 'En contact',
-  devis_envoye: 'Devis envoye',
-  acompte_paye: 'Acompte paye',
-  paye_integral: 'Paye integral',
-  signe: 'Signe',
-  perdu: 'Perdu',
-};
 
 const PER_PAGE = 25;
 
@@ -125,7 +116,7 @@ export default async function ProspectsListPage({ searchParams }: { searchParams
           <option value="">Tous statuts</option>
           {PROSPECT_STATUSES.map((s) => (
             <option key={s} value={s}>
-              {STATUS_LABEL[s]}
+              {PROSPECT_STATUS_LABEL_FR[s]}
             </option>
           ))}
         </select>

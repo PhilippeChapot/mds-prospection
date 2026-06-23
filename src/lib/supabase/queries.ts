@@ -12,7 +12,10 @@
 import { createSupabaseServerClient } from './server';
 import type { Database } from './database.types';
 import {
+  PIPELINE_ORDER,
   PROSPECT_STATUSES,
+  PROSPECT_STATUS_LABEL_FR,
+  PROSPECT_STATUS_LABEL_EN,
   PACK_CODES,
   PACK_LABEL,
   type ProspectStatus,
@@ -23,7 +26,10 @@ import {
 } from './constants';
 
 export {
+  PIPELINE_ORDER,
   PROSPECT_STATUSES,
+  PROSPECT_STATUS_LABEL_FR,
+  PROSPECT_STATUS_LABEL_EN,
   PACK_CODES,
   PACK_LABEL,
   type ProspectStatus,

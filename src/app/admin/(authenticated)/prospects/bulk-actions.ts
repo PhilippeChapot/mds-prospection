@@ -5,7 +5,11 @@ import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { csvFileName, serializeCsv } from '@/lib/csv';
-import { listProspectsPaginated, PROSPECT_STATUSES } from '@/lib/supabase/queries';
+import {
+  listProspectsPaginated,
+  PROSPECT_STATUSES,
+  PROSPECT_STATUS_LABEL_FR,
+} from '@/lib/supabase/queries';
 import { POLE_CODES } from '@/lib/design-tokens';
 import type { Database } from '@/lib/supabase/database.types';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
@@ -75,15 +79,7 @@ const PACK_LABEL_FR: Record<Database['public']['Enums']['pack_code'], string> = 
   A_DEFINIR: 'A definir',
 };
 
-const STATUS_LABEL_FR: Record<ProspectStatus, string> = {
-  lead: 'Lead',
-  contact: 'En contact',
-  devis_envoye: 'Devis envoye',
-  acompte_paye: 'Acompte paye',
-  paye_integral: 'Paye integral',
-  signe: 'Signe',
-  perdu: 'Perdu',
-};
+const STATUS_LABEL_FR = PROSPECT_STATUS_LABEL_FR;
 
 const CATEGORY_LABEL_FR: Record<Database['public']['Enums']['category_tarif'], string> = {
   prs_exhibitor: 'PRS partenaire',

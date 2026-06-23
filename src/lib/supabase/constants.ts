@@ -8,15 +8,37 @@ export type ProspectStatus = Database['public']['Enums']['prospect_status'];
 export type PackCode = Database['public']['Enums']['pack_code'];
 export type CategoryTarif = Database['public']['Enums']['category_tarif'];
 
-export const PROSPECT_STATUSES: ProspectStatus[] = [
+export const PIPELINE_ORDER: ProspectStatus[] = [
   'lead',
   'contact',
   'devis_envoye',
+  'signe',
   'acompte_paye',
   'paye_integral',
-  'signe',
   'perdu',
 ];
+
+export const PROSPECT_STATUSES: ProspectStatus[] = PIPELINE_ORDER;
+
+export const PROSPECT_STATUS_LABEL_FR: Record<ProspectStatus, string> = {
+  lead: 'Lead',
+  contact: 'En contact',
+  devis_envoye: 'Devis envoyé',
+  signe: 'Devis signé',
+  acompte_paye: 'Acompte payé',
+  paye_integral: 'Payé intégral',
+  perdu: 'Perdu',
+};
+
+export const PROSPECT_STATUS_LABEL_EN: Record<ProspectStatus, string> = {
+  lead: 'Lead',
+  contact: 'In contact',
+  devis_envoye: 'Quote sent',
+  signe: 'Quote signed',
+  acompte_paye: 'Deposit paid',
+  paye_integral: 'Fully paid',
+  perdu: 'Lost',
+};
 
 export const PACK_CODES: PackCode[] = ['ACCESS', 'CLASSIC', 'PREMIUM', 'A_DEFINIR'];
 

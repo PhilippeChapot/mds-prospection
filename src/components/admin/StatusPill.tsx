@@ -1,15 +1,6 @@
 import { cn } from '@/lib/utils';
 import type { ProspectStatus } from '@/lib/mock/dashboard-data';
-
-const STATUS_LABEL: Record<ProspectStatus, string> = {
-  lead: 'Lead',
-  contact: 'En contact',
-  devis_envoye: 'Devis envoye',
-  acompte_paye: 'Acompte paye',
-  paye_integral: 'Paye integral',
-  signe: 'Signe',
-  perdu: 'Perdu',
-};
+import { PROSPECT_STATUS_LABEL_FR } from '@/lib/supabase/constants';
 
 const STATUS_CLASS: Record<ProspectStatus, string> = {
   lead: 'bg-slate-100 text-slate-700',
@@ -31,7 +22,7 @@ export function StatusPill({ status, className }: { status: ProspectStatus; clas
       )}
     >
       <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
-      {STATUS_LABEL[status]}
+      {PROSPECT_STATUS_LABEL_FR[status]}
     </span>
   );
 }

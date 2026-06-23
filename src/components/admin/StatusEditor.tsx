@@ -11,34 +11,15 @@ import {
 import { StatusPill } from './StatusPill';
 import { updateProspectStatusAction } from '@/app/admin/(authenticated)/prospects/[id]/actions';
 import { toast } from 'sonner';
-
-const STATUSES = [
-  'lead',
-  'contact',
-  'devis_envoye',
-  'acompte_paye',
-  'paye_integral',
-  'signe',
-  'perdu',
-] as const;
-type Status = (typeof STATUSES)[number];
-
-const LABEL: Record<Status, string> = {
-  lead: 'Lead',
-  contact: 'En contact',
-  devis_envoye: 'Devis envoye',
-  acompte_paye: 'Acompte paye',
-  paye_integral: 'Paye integral',
-  signe: 'Signe',
-  perdu: 'Perdu',
-};
+import { PIPELINE_ORDER, PROSPECT_STATUS_LABEL_FR } from '@/lib/supabase/constants';
+import type { ProspectStatus } from '@/lib/supabase/constants';
 
 export function StatusEditor({
   prospectId,
   currentStatus,
 }: {
   prospectId: string;
-  currentStatus: Status;
+  currentStatus: ProspectStatus;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -52,7 +33,7 @@ export function StatusEditor({
         <ChevronDown className="text-md-text-muted size-3.5" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {STATUSES.map((s) => (
+        {PIPELINE_ORDER.map((s) => (
           <DropdownMenuItem
             key={s}
             disabled={s === currentStatus}
@@ -61,7 +42,7 @@ export function StatusEditor({
               startTransition(async () => {
                 try {
                   await updateProspectStatusAction(prospectId, s);
-                  toast.success(`Statut: ${LABEL[s]}`);
+                  toast.success(`Statut: ${PROSPECT_STATUS_LABEL_FR[s]}`);
                 } catch (err) {
                   toast.error(`Erreur: ${err instanceof Error ? err.message : 'inconnue'}`);
                 }
