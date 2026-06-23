@@ -23,6 +23,7 @@ const messages = {
     stand_company_hidden: 'Confidentiel',
     stand_status_libre: 'Disponible',
     stand_status_reserve: 'Réservé',
+    stand_status_reserve_signe: 'Réservé signé',
     stand_status_paye: 'Confirmé ✓',
     stand_status_bloque: 'Bloqué',
   },

@@ -31,7 +31,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const SALLE_VALUES = ['delorme', 'gabriel', 'le_notre', 'foyer', 'mezzanine', 'soufflot'] as const;
-const STATUS_VALUES = ['libre', 'reserve', 'paye', 'bloque'] as const;
+const STATUS_VALUES = ['libre', 'reserve', 'reserve_signe', 'paye', 'bloque'] as const;
 const POLE_VALUES = [
   'REGIES_RETAIL_MEDIA',
   'AUDIO_RADIO',

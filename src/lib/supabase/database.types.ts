@@ -2313,6 +2313,80 @@ export type Database = {
           },
         ];
       };
+      partner_access_grants: {
+        Row: {
+          company_id: string;
+          contact_id: string;
+          created_at: string;
+          granted_at: string;
+          granted_by_user_id: string | null;
+          id: string;
+          last_login_at: string | null;
+          notes: string | null;
+          revoked_at: string | null;
+          revoked_by_user_id: string | null;
+          role: string;
+          updated_at: string;
+        };
+        Insert: {
+          company_id: string;
+          contact_id: string;
+          created_at?: string;
+          granted_at?: string;
+          granted_by_user_id?: string | null;
+          id?: string;
+          last_login_at?: string | null;
+          notes?: string | null;
+          revoked_at?: string | null;
+          revoked_by_user_id?: string | null;
+          role?: string;
+          updated_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          contact_id?: string;
+          created_at?: string;
+          granted_at?: string;
+          granted_by_user_id?: string | null;
+          id?: string;
+          last_login_at?: string | null;
+          notes?: string | null;
+          revoked_at?: string | null;
+          revoked_by_user_id?: string | null;
+          role?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'partner_access_grants_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'partner_access_grants_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'partner_access_grants_granted_by_user_id_fkey';
+            columns: ['granted_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'partner_access_grants_revoked_by_user_id_fkey';
+            columns: ['revoked_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       partner_password_reset_tokens: {
         Row: {
           contact_id: string;

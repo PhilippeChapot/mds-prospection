@@ -1,7 +1,7 @@
 /**
  * @vitest-environment node
  *
- * P6.x.2a — pure unit tests pour standStatusForProspectStatus.
+ * P6.x.2a + P5.x.StandStatusReserveSigne — pure unit tests pour standStatusForProspectStatus.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -14,13 +14,16 @@ describe('standStatusForProspectStatus', () => {
     expect(standStatusForProspectStatus('devis_envoye')).toBe('reserve');
   });
 
-  it('acompte_paye / paye_integral / signe → paye (engagement financier acté)', () => {
-    expect(standStatusForProspectStatus('acompte_paye')).toBe('paye');
-    expect(standStatusForProspectStatus('paye_integral')).toBe('paye');
-    expect(standStatusForProspectStatus('signe')).toBe('paye');
+  it('signe → reserve_signe (contrat signé, acompte pas encore reçu)', () => {
+    expect(standStatusForProspectStatus('signe')).toBe('reserve_signe');
   });
 
-  it('perdu → release (caller doit retirer l’assignation)', () => {
+  it('acompte_paye / paye_integral → paye (engagement financier réel)', () => {
+    expect(standStatusForProspectStatus('acompte_paye')).toBe('paye');
+    expect(standStatusForProspectStatus('paye_integral')).toBe('paye');
+  });
+
+  it("perdu → release (caller doit retirer l'assignation)", () => {
     expect(standStatusForProspectStatus('perdu')).toBe('release');
   });
 

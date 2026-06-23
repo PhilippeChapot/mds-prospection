@@ -26,7 +26,7 @@ interface StandRow {
   id: string;
   number: string;
   salle: string;
-  status: 'libre' | 'reserve' | 'paye' | 'bloque';
+  status: 'libre' | 'reserve' | 'reserve_signe' | 'paye' | 'bloque';
   prospect_id: string | null;
 }
 
@@ -292,7 +292,7 @@ describe('removeStandFromProspectAction (P6.x.2a)', () => {
   });
 });
 
-describe('syncStandStatusFromProspect (P6.x.2a)', () => {
+describe('syncStandStatusFromProspect (P6.x.2a + P5.x.StandStatusReserveSigne)', () => {
   beforeEach(() => {
     resetState();
     state.prospects.set(PROSPECT_ID, { id: PROSPECT_ID, status: 'acompte_paye' });
@@ -312,12 +312,55 @@ describe('syncStandStatusFromProspect (P6.x.2a)', () => {
     vi.resetModules();
   });
 
-  it("met à jour le stand 'reserve' → 'paye' quand prospect passe 'acompte_paye'", async () => {
+  it("prospect 'signe' → stand devient 'reserve_signe' (PAS 'paye')", async () => {
+    state.prospects.set(PROSPECT_ID, { id: PROSPECT_ID, status: 'signe' });
+    mockEnv();
+    const { syncStandStatusFromProspect } = await import('./actions');
+    await syncStandStatusFromProspect(PROSPECT_ID);
+    const standUpd = state.standUpdates.find((u) => u.id === STAND_ID);
+    expect(standUpd?.patch.status).toBe('reserve_signe');
+  });
+
+  it("prospect 'acompte_paye' → stand devient 'paye'", async () => {
     mockEnv();
     const { syncStandStatusFromProspect } = await import('./actions');
     await syncStandStatusFromProspect(PROSPECT_ID);
     const standUpd = state.standUpdates.find((u) => u.id === STAND_ID);
     expect(standUpd?.patch.status).toBe('paye');
+  });
+
+  it("prospect 'paye_integral' → stand reste 'paye'", async () => {
+    state.prospects.set(PROSPECT_ID, { id: PROSPECT_ID, status: 'paye_integral' });
+    state.stands.set(STAND_ID, {
+      id: STAND_ID,
+      number: 'L01',
+      salle: 'le_notre',
+      status: 'paye',
+      prospect_id: PROSPECT_ID,
+    });
+    mockEnv();
+    const { syncStandStatusFromProspect } = await import('./actions');
+    await syncStandStatusFromProspect(PROSPECT_ID);
+    const standUpd = state.standUpdates.find((u) => u.id === STAND_ID);
+    // Déjà à jour → aucun update
+    expect(standUpd).toBeUndefined();
+  });
+
+  it("prospect 'devis_envoye' → stand passe/reste 'reserve'", async () => {
+    // Stand démarre en libre pour forcer un update observable
+    state.stands.set(STAND_ID, {
+      id: STAND_ID,
+      number: 'L01',
+      salle: 'le_notre',
+      status: 'libre',
+      prospect_id: PROSPECT_ID,
+    });
+    state.prospects.set(PROSPECT_ID, { id: PROSPECT_ID, status: 'devis_envoye' });
+    mockEnv();
+    const { syncStandStatusFromProspect } = await import('./actions');
+    await syncStandStatusFromProspect(PROSPECT_ID);
+    const standUpd = state.standUpdates.find((u) => u.id === STAND_ID);
+    expect(standUpd?.patch.status).toBe('reserve');
   });
 
   it("libère le stand quand prospect passe 'perdu'", async () => {
@@ -328,9 +371,25 @@ describe('syncStandStatusFromProspect (P6.x.2a)', () => {
     const standUpd = state.standUpdates.find((u) => u.id === STAND_ID);
     expect(standUpd?.patch.prospect_id).toBe(null);
     expect(standUpd?.patch.status).toBe('libre');
-    // Prospect aussi reset
     const prospUpd = state.prospectUpdates.find((u) => u.id === PROSPECT_ID);
     expect(prospUpd?.patch.booth_assignment).toBe(null);
+  });
+
+  it('idempotence : double sync ne produit pas 2 updates si statut déjà aligné', async () => {
+    state.prospects.set(PROSPECT_ID, { id: PROSPECT_ID, status: 'signe' });
+    state.stands.set(STAND_ID, {
+      id: STAND_ID,
+      number: 'L01',
+      salle: 'le_notre',
+      status: 'reserve_signe',
+      prospect_id: PROSPECT_ID,
+    });
+    mockEnv();
+    const { syncStandStatusFromProspect } = await import('./actions');
+    await syncStandStatusFromProspect(PROSPECT_ID);
+    await syncStandStatusFromProspect(PROSPECT_ID);
+    const standUpdates = state.standUpdates.filter((u) => u.id === STAND_ID);
+    expect(standUpdates).toHaveLength(0);
   });
 });
 

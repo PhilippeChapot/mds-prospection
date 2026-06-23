@@ -41,6 +41,7 @@ interface Props {
 const STATUS_OVERLAY: Record<string, string> = {
   libre: 'bg-emerald-400/40 hover:bg-emerald-400/60 border-emerald-600',
   reserve: 'bg-orange-400/50 hover:bg-orange-400/70 border-orange-600',
+  reserve_signe: 'bg-amber-500/50 hover:bg-amber-500/70 border-amber-700',
   paye: 'bg-red-400/50 hover:bg-red-400/70 border-red-600',
   bloque: 'bg-slate-400/40 border-slate-500 cursor-not-allowed',
 };
@@ -48,6 +49,7 @@ const STATUS_OVERLAY: Record<string, string> = {
 const STATUS_LABEL: Record<string, string> = {
   libre: 'Libre',
   reserve: 'Réservé',
+  reserve_signe: 'Réservé signé',
   paye: 'Payé',
   bloque: 'Bloqué',
 };

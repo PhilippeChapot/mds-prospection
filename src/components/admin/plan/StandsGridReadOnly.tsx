@@ -95,6 +95,7 @@ function StandCellReadOnly({
   const borderClass = {
     libre: 'border-emerald-500 bg-emerald-50',
     reserve: 'border-orange-500 bg-orange-50',
+    reserve_signe: 'border-amber-500 bg-amber-50',
     paye: 'border-red-500 bg-red-50',
     bloque: 'border-slate-400 bg-slate-100',
   }[stand.status];

@@ -44,6 +44,7 @@ const SALLE_LABEL: Record<string, string> = {
 const STATUS_BADGE: Record<string, { className: string; label: string }> = {
   libre: { className: 'bg-emerald-100 text-emerald-800', label: 'Libre' },
   reserve: { className: 'bg-orange-100 text-orange-800', label: 'Réservé' },
+  reserve_signe: { className: 'bg-amber-100 text-amber-900', label: 'Réservé signé' },
   paye: { className: 'bg-red-100 text-red-800', label: 'Payé' },
   bloque: { className: 'bg-slate-300 text-slate-800', label: 'Bloqué' },
 };

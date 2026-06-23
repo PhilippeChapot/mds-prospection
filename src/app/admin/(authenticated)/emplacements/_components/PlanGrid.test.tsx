@@ -70,7 +70,7 @@ const SAMPLE: StandWithProspect[] = [
   makeStand({ number: 'H9', pole_recommended: 'VIDEO_CTV' }),
 ];
 
-const KPIS = { total: 7, libre: 5, reserve: 1, paye: 1, bloque: 0 };
+const KPIS = { total: 8, libre: 4, reserve: 1, reserve_signe: 2, paye: 1, bloque: 0 };
 
 describe('PlanGrid 2D (P6.x.2a-ter)', () => {
   it('background pôle correct selon zone (zone backgrounds par pôle)', () => {

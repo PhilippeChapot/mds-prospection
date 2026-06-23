@@ -42,14 +42,20 @@ const SALLE_LABEL: Record<string, string> = {
   soufflot: 'Salle Soufflot',
 };
 
-// P6.x.2a-bis : couleurs alignées sur le plan Canva officiel.
-//   libre  = vert  (emerald)  — stand commercialisable
-//   reserve = orange           — engagement en cours (devis envoyé / lead)
-//   paye   = rouge             — engagement financier acté (acompte/signé/intégral)
-//   bloque = gris foncé        — hors-vente (couloirs, scènes, zones techniques)
+// P6.x.2a-bis + P5.x.StandStatusReserveSigne : couleurs alignées sur le plan Canva officiel.
+//   libre         = vert   (emerald) — stand commercialisable
+//   reserve       = orange           — engagement en cours (devis envoyé / lead)
+//   reserve_signe = ambre            — contrat signé, acompte pas encore reçu
+//   paye          = rouge            — engagement financier acté (acompte reçu)
+//   bloque        = gris foncé       — hors-vente (couloirs, scènes, zones techniques)
 export const STATUS_COLOR: Record<string, { bg: string; ring: string; label: string }> = {
   libre: { bg: 'bg-emerald-50 hover:bg-emerald-100', ring: 'ring-emerald-300', label: 'Libre' },
   reserve: { bg: 'bg-orange-100 hover:bg-orange-200', ring: 'ring-orange-400', label: 'Réservé' },
+  reserve_signe: {
+    bg: 'bg-amber-100 hover:bg-amber-200',
+    ring: 'ring-amber-500',
+    label: 'Réservé signé',
+  },
   paye: { bg: 'bg-red-100 hover:bg-red-200', ring: 'ring-red-400', label: 'Payé' },
   bloque: { bg: 'bg-slate-300', ring: 'ring-slate-500', label: 'Bloqué' },
 };
@@ -111,9 +117,9 @@ export function EmplacementsClient({
   initialProspects: ProspectWithoutStand[];
 }) {
   const router = useRouter();
-  const [filterStatus, setFilterStatus] = useState<'all' | 'libre' | 'reserve' | 'paye' | 'bloque'>(
-    'all',
-  );
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'libre' | 'reserve' | 'reserve_signe' | 'paye' | 'bloque'
+  >('all');
   const [filterTaille, setFilterTaille] = useState<'all' | '6' | '9' | 'other'>('all');
   const [selectedStand, setSelectedStand] = useState<StandWithProspect | null>(null);
   const [, startTx] = useTransition();
@@ -227,11 +233,12 @@ export function EmplacementsClient({
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
       <div className="space-y-6">
-        {/* KPIs — couleurs alignées sur les status (P6.x.2a-bis) */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* KPIs — couleurs alignées sur les status (P6.x.2a-bis + P5.x) */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <Kpi label="Total" value={initialKpis.total} accent="default" />
           <Kpi label="Libres" value={initialKpis.libre} accent="emerald" />
           <Kpi label="Réservés" value={initialKpis.reserve} accent="orange" />
+          <Kpi label="Signés" value={initialKpis.reserve_signe} accent="amber" />
           <Kpi label="Payés" value={initialKpis.paye} accent="red" />
         </div>
 
@@ -243,6 +250,7 @@ export function EmplacementsClient({
               { value: 'all', label: 'Tous' },
               { value: 'libre', label: 'Libres' },
               { value: 'reserve', label: 'Réservés' },
+              { value: 'reserve_signe', label: 'Réservés signés' },
               { value: 'paye', label: 'Payés' },
               { value: 'bloque', label: 'Bloqués' },
             ]}
@@ -457,12 +465,13 @@ function Kpi({
 }: {
   label: string;
   value: number;
-  accent: 'default' | 'emerald' | 'orange' | 'red';
+  accent: 'default' | 'emerald' | 'orange' | 'amber' | 'red';
 }) {
   const accentClass = {
     default: 'text-md-text',
     emerald: 'text-emerald-700',
     orange: 'text-orange-700',
+    amber: 'text-amber-700',
     red: 'text-red-700',
   }[accent];
   return (
@@ -642,7 +651,9 @@ function StandDetail({
             Retirer l’assignation
           </Button>
         ) : null}
-        {stand.status !== 'paye' && stand.status !== 'reserve' ? (
+        {stand.status !== 'paye' &&
+        stand.status !== 'reserve' &&
+        stand.status !== 'reserve_signe' ? (
           <Button type="button" variant="outline" onClick={onToggleBloque} className="w-full">
             <Lock className="mr-1.5 size-3.5" aria-hidden />
             {stand.status === 'bloque' ? 'Débloquer' : 'Bloquer (hors-vente)'}
@@ -837,6 +848,7 @@ function StandCell({
   const borderClass = {
     libre: 'border-emerald-500',
     reserve: 'border-orange-500',
+    reserve_signe: 'border-amber-500',
     paye: 'border-red-500',
     bloque: 'border-slate-400',
   }[stand.status];

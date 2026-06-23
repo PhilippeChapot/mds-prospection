@@ -8,7 +8,7 @@
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 
 export type Salle = 'delorme' | 'gabriel' | 'le_notre' | 'foyer' | 'mezzanine' | 'soufflot';
-export type StandStatus = 'libre' | 'reserve' | 'paye' | 'bloque';
+export type StandStatus = 'libre' | 'reserve' | 'reserve_signe' | 'paye' | 'bloque';
 export type PoleCode =
   | 'REGIES_RETAIL_MEDIA'
   | 'AUDIO_RADIO'
@@ -139,6 +139,7 @@ export interface StandKpis {
   total: number;
   libre: number;
   reserve: number;
+  reserve_signe: number;
   paye: number;
   bloque: number;
 }
@@ -150,9 +151,16 @@ export async function getStandKpis(salle?: Salle): Promise<StandKpis> {
   const { data, error } = await query;
   if (error || !data) {
     console.warn('[stands/queries] getStandKpis failed: %s', error?.message ?? 'unknown');
-    return { total: 0, libre: 0, reserve: 0, paye: 0, bloque: 0 };
+    return { total: 0, libre: 0, reserve: 0, reserve_signe: 0, paye: 0, bloque: 0 };
   }
-  const counts: StandKpis = { total: data.length, libre: 0, reserve: 0, paye: 0, bloque: 0 };
+  const counts: StandKpis = {
+    total: data.length,
+    libre: 0,
+    reserve: 0,
+    reserve_signe: 0,
+    paye: 0,
+    bloque: 0,
+  };
   for (const r of data) {
     if (r.status in counts) {
       counts[r.status as keyof StandKpis]++;
@@ -162,19 +170,21 @@ export async function getStandKpis(salle?: Salle): Promise<StandKpis> {
 }
 
 /**
- * P6.x.2a — mappe le statut prospect au statut stand correspondant.
+ * P6.x.2a + P5.x.StandStatusReserveSigne — mappe le statut prospect au statut stand.
  * Doctrine :
  *   - lead / contact / devis_envoye → 'reserve' (stand bloqué pour ce prospect)
- *   - acompte_paye / paye_integral / signe → 'paye' (engagement financier acté)
+ *   - signe → 'reserve_signe' (contrat signé, acompte pas encore reçu)
+ *   - acompte_paye / paye_integral → 'paye' (engagement financier réel)
  *   - perdu → on retire l'assignation (caller responsibility)
  */
 export function standStatusForProspectStatus(
   prospectStatus: string,
-): 'reserve' | 'paye' | 'release' {
+): 'reserve' | 'reserve_signe' | 'paye' | 'release' {
   switch (prospectStatus) {
+    case 'signe':
+      return 'reserve_signe';
     case 'acompte_paye':
     case 'paye_integral':
-    case 'signe':
       return 'paye';
     case 'perdu':
       return 'release';

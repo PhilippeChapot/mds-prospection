@@ -39,7 +39,7 @@ const LOG_PREFIX = '[admin/stands]';
 export type ActionResult<T = unknown> = { ok: true; data: T } | { ok: false; error: string };
 
 const SALLE_VALUES = ['delorme', 'gabriel', 'le_notre', 'foyer', 'mezzanine', 'soufflot'] as const;
-const STATUS_VALUES = ['libre', 'reserve', 'paye', 'bloque'] as const;
+const STATUS_VALUES = ['libre', 'reserve', 'reserve_signe', 'paye', 'bloque'] as const;
 const POLE_VALUES = [
   'REGIES_RETAIL_MEDIA',
   'AUDIO_RADIO',
@@ -96,7 +96,7 @@ export async function assignStandToProspectAction(
       error: "Impossible d'assigner un stand à un prospect 'perdu'. Réactivez-le d'abord.",
     };
   }
-  const newStatus: 'reserve' | 'paye' = computed;
+  const newStatus: 'reserve' | 'reserve_signe' | 'paye' = computed;
 
   const now = new Date().toISOString();
   const { error: updErr } = await supabase

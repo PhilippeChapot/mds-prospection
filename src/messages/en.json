@@ -1107,6 +1107,7 @@
     "stand_company_hidden": "Private",
     "stand_status_libre": "Available",
     "stand_status_reserve": "Reserved",
+    "stand_status_reserve_signe": "Reserved (signed)",
     "stand_status_paye": "Confirmed ✓",
     "stand_status_bloque": "Blocked"
   },
