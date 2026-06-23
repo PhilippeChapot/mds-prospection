@@ -32,6 +32,7 @@ import {
 // P5.x.Apollo fix : types importés depuis apollo-mapping (pas apollo-actions
 // qui est 'use server' et ne doit ré-exporter QUE des async functions).
 import type { EnrichApolloResult } from '@/lib/admin/smart-add/apollo-mapping';
+import { ApolloDecisionMakersBanner } from '@/components/admin/apollo/ApolloDecisionMakersBanner';
 
 const POLE_OPTIONS = [
   'AUDIO_RADIO',
@@ -64,6 +65,10 @@ export function ApolloEnrichSection() {
   const [contactRole, setContactRole] = useState('');
   const [pole, setPole] = useState<Pole>('INCONNU');
   const [category, setCategory] = useState<Category>('standard');
+  // P5.x.SmartAddApolloEnrichment fix : après création, on n'enchaîne plus
+  // directement vers la fiche prospect — on propose l'enrichissement
+  // « décideurs » Apollo avant de continuer.
+  const [created, setCreated] = useState<{ prospectId: string; companyId: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,9 +146,30 @@ export function ApolloEnrichSection() {
         toast.error(r.error);
         return;
       }
-      toast.success('Prospect créé via Apollo. Redirection…');
-      router.push(`/admin/prospects/${r.prospect_id}`);
+      toast.success('Prospect créé via Apollo.');
+      setCreated({ prospectId: r.prospect_id, companyId: r.company_id });
     });
+  }
+
+  // Panneau post-création : enrichissement décideurs avant de continuer.
+  if (created) {
+    return (
+      <section
+        className="border-md-success/40 bg-md-success/5 space-y-4 rounded-xl border p-5 shadow-sm"
+        data-testid="apollo-section-created"
+      >
+        <h2 className="text-md-text text-base font-semibold">✅ Prospect créé via Apollo</h2>
+        <ApolloDecisionMakersBanner companyId={created.companyId} />
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            onClick={() => router.push(`/admin/prospects/${created.prospectId}`)}
+          >
+            Continuer vers le prospect →
+          </Button>
+        </div>
+      </section>
+    );
   }
 
   return (
