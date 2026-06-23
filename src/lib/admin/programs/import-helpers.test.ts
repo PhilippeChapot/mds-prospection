@@ -3,8 +3,8 @@
  *
  * P16.x.ImportPrograms — tests ensureContactForSpeaker (personne vs org) + slug.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
-import { ensureContactForSpeaker, slugifyEmailPart } from './import-helpers';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { ensureContactForSpeaker, slugifyEmailPart, normalizeImportedRole } from './import-helpers';
 import type { ParsedSpeaker } from './parse-program';
 
 const inserts: Array<{ table: string; row: Record<string, unknown> }> = [];
@@ -37,6 +37,50 @@ function makeSupabase() {
 
 beforeEach(() => {
   inserts.length = 0;
+});
+
+describe('normalizeImportedRole (P16.x)', () => {
+  it('Modérateur → moderator', () => {
+    expect(normalizeImportedRole('Modérateur')).toBe('moderator');
+  });
+
+  it('Animateur / Facilit* → moderator', () => {
+    expect(normalizeImportedRole('Animateur de salle')).toBe('moderator');
+    expect(normalizeImportedRole('Facilitateur')).toBe('moderator');
+  });
+
+  it('Intervenant / Speaker / vide → panelist', () => {
+    expect(normalizeImportedRole('Intervenant')).toBe('panelist');
+    expect(normalizeImportedRole('Speaker')).toBe('panelist');
+    expect(normalizeImportedRole('')).toBeNull();
+    expect(normalizeImportedRole(null)).toBeNull();
+  });
+
+  it('valeur brute inconnue → panelist + warn', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const result = normalizeImportedRole('Invité surprise');
+      expect(result).toBe('panelist');
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('normalizeImportedRole'),
+        'Invité surprise',
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('valeurs bien mappées → pas de warn', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      expect(normalizeImportedRole('Keynote')).toBe('keynote_speaker');
+      expect(normalizeImportedRole('expert')).toBe('expert');
+      expect(normalizeImportedRole('Host')).toBe('host');
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
 });
 
 describe('slugifyEmailPart (P16.x)', () => {

@@ -174,6 +174,36 @@ export async function ensureConference(
   return { conferenceId: created.id, created: true };
 }
 
+/**
+ * Normalise une valeur de rôle brute (DOCX) vers les valeurs autorisées par
+ * conference_speakers_role_check : keynote_speaker | panelist | moderator |
+ * expert | host | null.
+ *
+ * Règles (ordre de priorité) :
+ *   - "moder*" / "anim*" / "facilit*"       → moderator
+ *   - "keynote*" / "intervenant principal"   → keynote_speaker
+ *   - "expert*"                              → expert
+ *   - "host" / "présentateur" / "animateur de salle" → host
+ *   - tout le reste (intervenant, speaker, ∅, …) → panelist
+ */
+export function normalizeImportedRole(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const s = raw.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  if (!s) return null;
+
+  if (/^(moder|anim|facilit)/.test(s)) return 'moderator';
+  if (/^keynote/.test(s) || s.includes('intervenant principal')) return 'keynote_speaker';
+  if (/^expert/.test(s)) return 'expert';
+  if (/^host/.test(s) || /^presentateur/.test(s) || s === 'animateur de salle') return 'host';
+
+  if (
+    !['intervenant', 'panelist', 'paneliste', 'speaker', 'participant'].some((k) => s.includes(k))
+  ) {
+    console.warn('[normalizeImportedRole] rôle non mappé → panelist', raw);
+  }
+  return 'panelist';
+}
+
 /** Rattache un speaker à une conférence (idempotent). */
 export async function attachImportedSpeaker(
   supabase: Client,
@@ -194,7 +224,7 @@ export async function attachImportedSpeaker(
     conference_id: conferenceId,
     speaker_id: speakerId,
     speaking_order: speakingOrder,
-    role: role ? role.slice(0, 80) : null,
+    role: normalizeImportedRole(role),
   });
   if (error) throw new Error(`attachImportedSpeaker: ${error.message}`);
   return { attached: true };
