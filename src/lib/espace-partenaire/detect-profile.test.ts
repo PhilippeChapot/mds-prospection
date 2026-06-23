@@ -10,6 +10,7 @@ const state = {
   contacts: [] as Record<string, unknown>[],
   prospects: [] as Record<string, unknown>[],
   affiliates: [] as Record<string, unknown>[],
+  grants: [] as Record<string, unknown>[],
 };
 
 function mockEnv() {
@@ -35,12 +36,16 @@ function makeChain(table: string) {
     }
     return true;
   };
+  const nullCols: string[] = [];
   const data = (): Record<string, unknown>[] => {
     if (table === 'contacts') return state.contacts;
     if (table === 'prospects') return state.prospects;
     if (table === 'affiliates') return state.affiliates;
+    if (table === 'partner_access_grants') return state.grants;
     return [];
   };
+  const matchWithNulls = (row: Record<string, unknown>): boolean =>
+    matchRow(row) && nullCols.every((col) => row[col] === null || row[col] === undefined);
   const chain: Record<string, unknown> = {
     select: () => chain,
     eq: (col: string, val: unknown) => {
@@ -51,9 +56,15 @@ function makeChain(table: string) {
       filters.push({ col, val, op: 'ilike' });
       return chain;
     },
+    is: (col: string, val: unknown) => {
+      if (val === null) nullCols.push(col);
+      return chain;
+    },
+    update: () => ({ eq: () => ({ then: () => Promise.resolve({ error: null }) }) }),
     order: () => chain,
     limit: () => chain,
-    maybeSingle: () => Promise.resolve({ data: data().filter(matchRow)[0] ?? null, error: null }),
+    maybeSingle: () =>
+      Promise.resolve({ data: data().filter(matchWithNulls)[0] ?? null, error: null }),
     then: (onfulfilled: (v: { error: null; data: unknown[] }) => unknown) =>
       Promise.resolve({ error: null, data: data().filter(matchRow) }).then(onfulfilled),
   };
@@ -64,6 +75,7 @@ function resetState() {
   state.contacts = [];
   state.prospects = [];
   state.affiliates = [];
+  state.grants = [];
 }
 
 const C_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
@@ -213,6 +225,78 @@ describe('detectUserProfile (P8.2)', () => {
     const { detectUserProfile } = await import('./detect-profile');
     const r = await detectUserProfile('00000000-0000-4000-8000-000000000000');
     expect(r).toBeNull();
+  });
+
+  // ── P11.x.MultiPartnerAccess ──────────────────────────────────────────────
+
+  it('11. grant actif (sans prospect) -> is_partenaire=true', async () => {
+    state.contacts = [
+      {
+        id: C_ID,
+        email: 'sophie@winmedia.fr',
+        first_name: 'Sophie',
+        last_name: 'Martin',
+        language: 'FR',
+        company_id: 'co-win',
+        company: { name: 'Winmedia' },
+      },
+    ];
+    // pas de prospect, mais un grant actif (revoked_at = null)
+    state.grants = [{ id: 'gr1', contact_id: C_ID, revoked_at: null }];
+    mockEnv();
+    const { detectUserProfile } = await import('./detect-profile');
+    const r = await detectUserProfile(C_ID);
+    expect(r?.is_partenaire).toBe(true);
+    expect(r?.active_prospect_id).toBeNull();
+  });
+
+  it('12. pas de grant, prospect signe (fallback legacy) -> is_partenaire=true', async () => {
+    state.contacts = [
+      {
+        id: C_ID,
+        email: 'contact@legacy.fr',
+        first_name: 'Contact',
+        last_name: 'Legacy',
+        language: 'FR',
+        company_id: 'co-leg',
+        company: { name: 'LegacyCo' },
+      },
+    ];
+    state.prospects = [
+      {
+        id: 'p-leg',
+        primary_contact_id: C_ID,
+        status: 'signe',
+        signed_at: '2026-01-15',
+        booth_assignment: null,
+        selected_booth_id: null,
+      },
+    ];
+    // grants vide → fallback prospects
+    mockEnv();
+    const { detectUserProfile } = await import('./detect-profile');
+    const r = await detectUserProfile(C_ID);
+    expect(r?.is_partenaire).toBe(true);
+    expect(r?.active_prospect_id).toBe('p-leg');
+  });
+
+  it('13. pas de grant ni prospect signe -> is_partenaire=false', async () => {
+    state.contacts = [
+      {
+        id: C_ID,
+        email: 'lead@x.fr',
+        first_name: 'Lead',
+        last_name: null,
+        language: 'FR',
+        company_id: null,
+        company: null,
+      },
+    ];
+    // pas de grants, pas de prospects signés
+    mockEnv();
+    const { detectUserProfile } = await import('./detect-profile');
+    const r = await detectUserProfile(C_ID);
+    expect(r?.is_partenaire).toBe(false);
   });
 });
 

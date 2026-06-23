@@ -28,7 +28,11 @@
  * adaptatif mais la sidebar restait figee a 'Espace Partenaire'.
  */
 
+import { type SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+
+const asDb = (c: ReturnType<typeof getSupabaseServiceClient>): SupabaseClient =>
+  c as unknown as SupabaseClient;
 
 /**
  * Label adaptatif de l'espace contact. Logique cohérente avec le titre
@@ -92,7 +96,28 @@ export async function detectUserProfile(contactId: string): Promise<ContactProfi
     ? contact.company[0]
     : (contact.company as { name?: string } | null);
 
-  // 2. Prospects lies (via primary_contact_id).
+  // 2a. Nouveau chemin : grant actif dans partner_access_grants (P11.x.MultiPartnerAccess).
+  let hasActiveGrant = false;
+  try {
+    const { data: grant } = (await asDb(supabase)
+      .from('partner_access_grants')
+      .select('id')
+      .eq('contact_id', contactId)
+      .is('revoked_at', null)
+      .maybeSingle()) as { data: { id: string } | null; error: unknown };
+    if (grant) {
+      hasActiveGrant = true;
+      // Mise à jour last_login_at fire-and-forget
+      void asDb(supabase)
+        .from('partner_access_grants')
+        .update({ last_login_at: new Date().toISOString() })
+        .eq('id', grant.id);
+    }
+  } catch (err) {
+    console.warn('%s grant-query-failed contact=%s msg=%s', LOG_PREFIX, contactId, err);
+  }
+
+  // 2b. Fallback : prospects lies (via primary_contact_id).
   let isExpo = false;
   let isLead = false;
   let hasStand = false;
@@ -149,7 +174,7 @@ export async function detectUserProfile(contactId: string): Promise<ContactProfi
     language: (contact.language as 'FR' | 'EN') ?? 'FR',
     company_id: contact.company_id,
     company_name: company?.name ?? null,
-    is_partenaire: isExpo,
+    is_partenaire: isExpo || hasActiveGrant,
     is_lead: isLead,
     is_affiliate: isAffiliate,
     is_partner: false, // V2

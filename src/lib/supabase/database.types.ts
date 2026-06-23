@@ -1241,10 +1241,10 @@ export type Database = {
           slug?: string | null;
           start_at?: string | null;
           title_en?: string | null;
-          validated_at?: string | null;
-          validated_by?: string | null;
           title_fr: string;
           updated_at?: string;
+          validated_at?: string | null;
+          validated_by?: string | null;
         };
         Update: {
           capacity?: number | null;
@@ -1266,12 +1266,20 @@ export type Database = {
           slug?: string | null;
           start_at?: string | null;
           title_en?: string | null;
-          validated_at?: string | null;
-          validated_by?: string | null;
           title_fr?: string;
           updated_at?: string;
+          validated_at?: string | null;
+          validated_by?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'conferences_validated_by_fkey';
+            columns: ['validated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       connectonair_directory: {
         Row: {
@@ -3226,17 +3234,17 @@ export type Database = {
           is_validated: boolean;
           language: string;
           linkedin_url: string | null;
-          program_track: string | null;
-          validated_at: string | null;
-          validated_by: string | null;
           notes: string | null;
           owner_user_id: string | null;
           photo_url: string | null;
+          program_track: string | null;
           speaker_type: string | null;
           status: string;
           topics: string[] | null;
           twitter_handle: string | null;
           updated_at: string;
+          validated_at: string | null;
+          validated_by: string | null;
         };
         Insert: {
           bio_long?: string | null;
@@ -3251,17 +3259,17 @@ export type Database = {
           is_validated?: boolean;
           language?: string;
           linkedin_url?: string | null;
-          program_track?: string | null;
-          validated_at?: string | null;
-          validated_by?: string | null;
           notes?: string | null;
           owner_user_id?: string | null;
           photo_url?: string | null;
+          program_track?: string | null;
           speaker_type?: string | null;
           status?: string;
           topics?: string[] | null;
           twitter_handle?: string | null;
           updated_at?: string;
+          validated_at?: string | null;
+          validated_by?: string | null;
         };
         Update: {
           bio_long?: string | null;
@@ -3276,17 +3284,17 @@ export type Database = {
           is_validated?: boolean;
           language?: string;
           linkedin_url?: string | null;
-          program_track?: string | null;
-          validated_at?: string | null;
-          validated_by?: string | null;
           notes?: string | null;
           owner_user_id?: string | null;
           photo_url?: string | null;
+          program_track?: string | null;
           speaker_type?: string | null;
           status?: string;
           topics?: string[] | null;
           twitter_handle?: string | null;
           updated_at?: string;
+          validated_at?: string | null;
+          validated_by?: string | null;
         };
         Relationships: [
           {
@@ -3306,6 +3314,13 @@ export type Database = {
           {
             foreignKeyName: 'speakers_owner_user_id_fkey';
             columns: ['owner_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'speakers_validated_by_fkey';
+            columns: ['validated_by'];
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];

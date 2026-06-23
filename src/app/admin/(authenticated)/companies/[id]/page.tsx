@@ -14,7 +14,7 @@ import { MergeCompanyButton } from './MergeButton';
 import { updateCompanyNotesAction } from './actions';
 import { CompanyContactsSection } from './_components/CompanyContactsSection';
 import { SellsyClientLinkSection } from './_components/SellsyClientLinkSection';
-import { PartnerAuthSection, type PartnerAuthData } from './_components/PartnerAuthSection';
+import { PartnerAccessSection } from './_components/PartnerAccessSection';
 import { AffiliateClaimsSection, type CompanyClaimRow } from './_components/AffiliateClaimsSection';
 import { listContactsForCompany } from '@/lib/contacts/admin-queries';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
@@ -120,25 +120,13 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     commissionPercent: Number(a.commission_percent),
   }));
 
-  // P11.x — auth status du contact principal de la société
-  const primaryContact = companyContacts.find((c) => c.is_primary) ?? companyContacts[0] ?? null;
-  let partnerAuthData: PartnerAuthData | null = null;
-  if (primaryContact) {
-    const { data: contactAuth } = (await supabase
-      .from('contacts')
-      .select('id, email, password_set_at')
-      .eq('id', primaryContact.id)
-      .maybeSingle()) as {
-      data: { id: string; email: string; password_set_at: string | null } | null;
-    };
-    if (contactAuth) {
-      partnerAuthData = {
-        contact_id: contactAuth.id,
-        email: contactAuth.email,
-        password_set_at: contactAuth.password_set_at,
-      };
-    }
-  }
+  // P11.x.MultiPartnerAccess — contacts pour le picker du modal grant
+  const contactsForGrantPicker = companyContacts.map((c) => ({
+    id: c.id,
+    first_name: c.first_name ?? null,
+    last_name: c.last_name ?? null,
+    email: c.email,
+  }));
 
   // Audit
   const { data: auditData } = await supabase
@@ -349,11 +337,12 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         <LinkedProspectsTable rows={linkedProspects} />
       </Section>
 
-      {/* P11.x — Auth partenaire */}
-      <Section title="Authentification partenaire">
-        <PartnerAuthSection
-          partnerAuth={partnerAuthData}
-          isSuperAdmin={isSuperAdmin(profile.role)}
+      {/* P11.x.MultiPartnerAccess — Accès espace partenaire */}
+      <Section title="Accès espace partenaire">
+        <PartnerAccessSection
+          companyId={id}
+          allContacts={contactsForGrantPicker}
+          adminRole={profile.role}
         />
       </Section>
 
