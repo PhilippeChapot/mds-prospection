@@ -66,7 +66,7 @@ export async function listStands(filters: ListStandsFilters = {}): Promise<Stand
        created_at, updated_at,
        prospect:prospects(id, status,
          company:companies(name, public_visibility),
-         contact:contacts(email))`,
+         contact:contacts!primary_contact_id(email))`,
     )
     .order('salle', { ascending: true })
     .order('number', { ascending: true });
@@ -249,7 +249,7 @@ export async function listProspectsWithoutStand(): Promise<ProspectWithoutStand[
     .select(
       `id, status, pack_code, estimated_amount, is_test,
        company:companies(name),
-       contact:contacts(email)`,
+       contact:contacts!primary_contact_id(email)`,
     )
     .eq('is_test', false)
     .in('status', ['devis_envoye', 'acompte_paye', 'signe', 'paye_integral'])

@@ -303,7 +303,7 @@ async function runCaseAFlowLocked(prospectId: string): Promise<void> {
   const { data: prospect } = await supabase
     .from('prospects')
     .select(
-      'id, is_test, payment_path, sellsy_devis_id, sellsy_proforma_id, sellsy_invoice_id, last_sync_error_provider, company:companies!inner(sellsy_id), contact:contacts(email, first_name, language)',
+      'id, is_test, payment_path, sellsy_devis_id, sellsy_proforma_id, sellsy_invoice_id, last_sync_error_provider, company:companies!inner(sellsy_id), contact:contacts!primary_contact_id(email, first_name, language)',
     )
     .eq('id', prospectId)
     .maybeSingle();
@@ -659,7 +659,7 @@ async function notifyAdminSignupConverted(prospectId: string, isCasB: boolean): 
         `
         id, pack_code, payment_path, estimated_amount, selected_addon_ids,
         company:companies!inner(name, category, pole:poles(code)),
-        contact:contacts(email, first_name, last_name, language)
+        contact:contacts!primary_contact_id(email, first_name, last_name, language)
         `,
       )
       .eq('id', prospectId)

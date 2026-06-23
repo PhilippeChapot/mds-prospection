@@ -73,7 +73,7 @@ export async function createCheckoutSession(
       id, is_test, estimated_amount, payment_path,
       sellsy_devis_id, sellsy_devis_number,
       stripe_checkout_session_id,
-      contact:contacts(email, first_name, language)
+      contact:contacts!primary_contact_id(email, first_name, language)
       `,
     )
     .eq('id', prospectId)

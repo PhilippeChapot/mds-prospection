@@ -299,7 +299,9 @@ async function sendAdminEmail(input: AdminEmailInput): Promise<void> {
     const supabase = getSupabaseServiceClient();
     const { data: prospect } = await supabase
       .from('prospects')
-      .select('sellsy_devis_number, company:companies!inner(name), contact:contacts(email)')
+      .select(
+        'sellsy_devis_number, company:companies!inner(name), contact:contacts!primary_contact_id(email)',
+      )
       .eq('id', input.prospectId)
       .maybeSingle();
 

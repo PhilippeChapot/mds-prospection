@@ -62,7 +62,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     .select(
       `
       id, status, pack_code, estimated_amount, created_at,
-      contact:contacts(email),
+      contact:contacts!primary_contact_id(email),
       owner:users!prospects_owner_id_fkey(full_name, email)
     `,
     )

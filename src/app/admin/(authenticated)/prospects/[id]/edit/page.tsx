@@ -16,7 +16,7 @@ export default async function EditProspectPage({ params }: { params: Promise<{ i
       `
       id, status, pack_code, estimated_amount, notes, owner_id,
       company:companies!inner(id, name),
-      contact:contacts(id, first_name, last_name, email, phone, role)
+      contact:contacts!primary_contact_id(id, first_name, last_name, email, phone, role)
     `,
     )
     .eq('id', id)

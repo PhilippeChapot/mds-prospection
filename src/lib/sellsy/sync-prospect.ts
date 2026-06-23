@@ -131,7 +131,7 @@ export async function syncProspectToSellsy(prospectId: string): Promise<void> {
       `
       id, is_test, estimated_amount, source_detail, sellsy_opportunity_id,
       company:companies!inner(id, name, primary_domain, sellsy_id, siren),
-      contact:contacts(id, first_name, last_name, email, phone, sellsy_contact_id)
+      contact:contacts!primary_contact_id(id, first_name, last_name, email, phone, sellsy_contact_id)
       `,
     )
     .eq('id', prospectId)

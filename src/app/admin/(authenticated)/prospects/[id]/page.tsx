@@ -86,7 +86,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
       booth_assignment, booth_assigned_at, booth_assigned_by,
       created_at, updated_at, last_activity_at,
       company:companies(id, name, primary_domain, country, category, sellsy_id, was_prs_2026_exhibitor, external_event_tags, siren, siret, siren_verified_at, siren_source, pole:poles(code, name_fr)),
-      contact:contacts(id, first_name, last_name, email, phone, role),
+      contact:contacts!primary_contact_id(id, first_name, last_name, email, phone, role),
       owner:users!prospects_owner_id_fkey(id, full_name, email, role),
       booth_assignee:users!prospects_booth_assigned_by_fkey(full_name, email),
       affiliate:affiliates(id, display_name, commission_percent)

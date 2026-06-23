@@ -179,7 +179,7 @@ async function handleDocslogStep(event: SellsyWebhookEvent): Promise<void> {
       id, company_id, signed_at,
       sellsy_devis_id, sellsy_proforma_id, sellsy_invoice_id,
       sellsy_devis_number, sellsy_devis_public_url,
-      contact:contacts(brevo_contact_id),
+      contact:contacts!primary_contact_id(brevo_contact_id),
       company:companies!inner(name)
       `,
     )

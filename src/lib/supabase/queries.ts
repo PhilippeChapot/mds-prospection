@@ -42,7 +42,7 @@ export {
 const PROSPECT_LIST_SELECT = `
   id, status, pack_code, estimated_amount, owner_id, affiliate_id, is_test, created_at, last_activity_at,
   company:companies!inner(id, name, category, was_prs_2026_exhibitor, external_event_tags, phone, pole:poles(code, name_fr)),
-  contact:contacts(id, first_name, last_name, email, phone_mobile),
+  contact:contacts!primary_contact_id(id, first_name, last_name, email, phone_mobile),
   owner:users!prospects_owner_id_fkey(id, full_name, email)
 `;
 

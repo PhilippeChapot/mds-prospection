@@ -234,7 +234,7 @@ export async function resyncProspectAction(prospectId: string) {
         `
         id, is_test,
         company:companies!inner(name, category, pole:poles(code)),
-        contact:contacts(email, first_name, last_name, language, marketing_consent)
+        contact:contacts!primary_contact_id(email, first_name, last_name, language, marketing_consent)
         `,
       )
       .eq('id', prospectId)

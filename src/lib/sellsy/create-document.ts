@@ -92,7 +92,7 @@ export async function createSellsyDocument(
       `
       id, is_test, pack_code, selected_addon_ids, payment_path,
       company:companies!inner(name, sellsy_id, vat_country, vat_verified),
-      contact:contacts(sellsy_contact_id)
+      contact:contacts!primary_contact_id(sellsy_contact_id)
       `,
     )
     .eq('id', prospectId)

@@ -161,7 +161,7 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
       `id, quote_items, promo_reason, sellsy_devis_id, sellsy_devis_number,
        acompte_payment_link_id, is_test,
        company:companies!inner(id, name, sellsy_id),
-       contact:contacts(sellsy_contact_id, email, first_name, language)`,
+       contact:contacts!primary_contact_id(sellsy_contact_id, email, first_name, language)`,
     )
     .eq('id', parsed.data.prospect_id)
     .maybeSingle();

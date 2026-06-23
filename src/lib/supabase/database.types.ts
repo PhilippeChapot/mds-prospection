@@ -1744,6 +1744,95 @@ export type Database = {
           },
         ];
       };
+      document_requests: {
+        Row: {
+          contact_id: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by_user_id: string | null;
+          decided_note: string | null;
+          document_type: string;
+          id: string;
+          prospect_id: string;
+          purchase_order_number: string | null;
+          requested_at: string;
+          requested_billing_contact_id: string | null;
+          requested_billing_email: string | null;
+          requested_note: string | null;
+          requires_purchase_order: boolean;
+          sellsy_document_id: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          contact_id: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by_user_id?: string | null;
+          decided_note?: string | null;
+          document_type: string;
+          id?: string;
+          prospect_id: string;
+          purchase_order_number?: string | null;
+          requested_at?: string;
+          requested_billing_contact_id?: string | null;
+          requested_billing_email?: string | null;
+          requested_note?: string | null;
+          requires_purchase_order?: boolean;
+          sellsy_document_id?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          contact_id?: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by_user_id?: string | null;
+          decided_note?: string | null;
+          document_type?: string;
+          id?: string;
+          prospect_id?: string;
+          purchase_order_number?: string | null;
+          requested_at?: string;
+          requested_billing_contact_id?: string | null;
+          requested_billing_email?: string | null;
+          requested_note?: string | null;
+          requires_purchase_order?: boolean;
+          sellsy_document_id?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'document_requests_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'document_requests_decided_by_user_id_fkey';
+            columns: ['decided_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'document_requests_prospect_id_fkey';
+            columns: ['prospect_id'];
+            isOneToOne: false;
+            referencedRelation: 'prospects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'document_requests_requested_billing_contact_id_fkey';
+            columns: ['requested_billing_contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       email_campaigns: {
         Row: {
           attachments_urls: string[];
@@ -2612,6 +2701,8 @@ export type Database = {
           acompte_payment_link_url: string | null;
           acompte_status: Database['public']['Enums']['acompte_status'];
           affiliate_id: string | null;
+          billing_contact_id: string | null;
+          billing_email_override: string | null;
           booth_assigned_at: string | null;
           booth_assigned_by: string | null;
           booth_assignment: string | null;
@@ -2641,6 +2732,7 @@ export type Database = {
           primary_contact_id: string | null;
           probability: number | null;
           promo_reason: string | null;
+          purchase_order_number: string | null;
           quote_items: Json;
           recap_pdf_generated_at: string | null;
           recap_pdf_url: string | null;
@@ -2678,6 +2770,8 @@ export type Database = {
           acompte_payment_link_url?: string | null;
           acompte_status?: Database['public']['Enums']['acompte_status'];
           affiliate_id?: string | null;
+          billing_contact_id?: string | null;
+          billing_email_override?: string | null;
           booth_assigned_at?: string | null;
           booth_assigned_by?: string | null;
           booth_assignment?: string | null;
@@ -2707,6 +2801,7 @@ export type Database = {
           primary_contact_id?: string | null;
           probability?: number | null;
           promo_reason?: string | null;
+          purchase_order_number?: string | null;
           quote_items?: Json;
           recap_pdf_generated_at?: string | null;
           recap_pdf_url?: string | null;
@@ -2744,6 +2839,8 @@ export type Database = {
           acompte_payment_link_url?: string | null;
           acompte_status?: Database['public']['Enums']['acompte_status'];
           affiliate_id?: string | null;
+          billing_contact_id?: string | null;
+          billing_email_override?: string | null;
           booth_assigned_at?: string | null;
           booth_assigned_by?: string | null;
           booth_assignment?: string | null;
@@ -2773,6 +2870,7 @@ export type Database = {
           primary_contact_id?: string | null;
           probability?: number | null;
           promo_reason?: string | null;
+          purchase_order_number?: string | null;
           quote_items?: Json;
           recap_pdf_generated_at?: string | null;
           recap_pdf_url?: string | null;
@@ -2808,6 +2906,13 @@ export type Database = {
             columns: ['affiliate_id'];
             isOneToOne: false;
             referencedRelation: 'affiliates';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'prospects_billing_contact_id_fkey';
+            columns: ['billing_contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
             referencedColumns: ['id'];
           },
           {
