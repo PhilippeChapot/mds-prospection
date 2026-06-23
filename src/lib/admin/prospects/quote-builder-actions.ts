@@ -17,15 +17,27 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { type SupabaseClient } from '@supabase/supabase-js';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { sellsyFetch } from '@/lib/sellsy/client';
 import { syncProspectToSellsy } from '@/lib/sellsy/sync-prospect';
-import { endpointForDocumentType } from '@/lib/sellsy/create-document';
+import { endpointForDocumentType, type SellsyDocumentType } from '@/lib/sellsy/create-document';
 import { SellsyError } from '@/lib/sellsy/client';
 import { logSellsyCall } from '@/lib/sellsy/sync-logger';
 import { calculateQuoteTotals, clampDiscountForItem, type QuoteItem } from './quote-calc';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
+
+/**
+ * P5.x.SellsyDocumentsFlow — escape hatch typage : billing_contact_id /
+ * billing_email_override / purchase_order_number sur prospects + table
+ * document_requests ne sont pas encore dans database.types.ts (générés
+ * après `pnpm db:push` de la migration 0103). On caste donc le service
+ * client en SupabaseClient (Database=any) pour ces opérations untypées.
+ * Même pattern que P11.x.MultiPartnerAccess.
+ */
+const asAnyDb = (c: ReturnType<typeof getSupabaseServiceClient>): SupabaseClient =>
+  c as unknown as SupabaseClient;
 
 const LOG_PREFIX = '[admin/quote-builder]';
 const VAT_RATE_DEFAULT = 20;
@@ -395,6 +407,343 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
     ok: true,
     sellsy_devis_id: String(documentId),
     sellsy_devis_number: devisNumber,
+    total_ht: totals.total_ht,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// P5.x.SellsyDocumentsFlow — émission pro-forma / facture
+// ---------------------------------------------------------------------------
+
+const emitTypedSchema = z.object({
+  prospect_id: z.string().uuid(),
+  document_type: z.enum(['proforma', 'invoice']),
+  purchase_order_number: z.string().trim().max(100).nullable().optional(),
+  billing_contact_id: z.string().uuid().nullable().optional(),
+  billing_email_override: z.string().email().nullable().optional(),
+  /** Si l'émission vient d'une demande partenaire (document_requests). */
+  request_id: z.string().uuid().nullable().optional(),
+});
+
+export type EmitTypedInput = z.infer<typeof emitTypedSchema>;
+export type EmitTypedResult =
+  | {
+      ok: true;
+      sellsy_document_id: string;
+      sellsy_document_number: string | null;
+      public_url: string | null;
+      total_ht: number;
+    }
+  | { ok: false; error: string };
+
+/** Famille de colonnes prospect selon le type de document. */
+function columnsForType(type: 'proforma' | 'invoice'): {
+  id: string;
+  number: string;
+  publicUrl: string;
+  emittedAt: string;
+} {
+  if (type === 'proforma') {
+    return {
+      id: 'sellsy_proforma_id',
+      number: 'sellsy_proforma_number',
+      publicUrl: 'sellsy_proforma_public_url',
+      emittedAt: 'sellsy_proforma_emitted_at',
+    };
+  }
+  return {
+    id: 'sellsy_invoice_id',
+    number: 'sellsy_invoice_number',
+    publicUrl: 'sellsy_invoice_public_url',
+    emittedAt: 'sellsy_invoice_emitted_at',
+  };
+}
+
+/**
+ * Émet une pro-forma ou une facture Sellsy à partir des `quote_items` du
+ * prospect (même source de vérité que le devis). Parallèle à
+ * `emitSellsyDevisFromQuoteBuilderAction` (qui gère le devis + sa
+ * ré-émission spécifique) — ici PAS de cleanup ré-émission : une pro-forma
+ * ou une facture ne se ré-émettent pas silencieusement (anti-doublon strict
+ * par type).
+ *
+ * Le numéro de bon de commande (facture) et le contact de facturation sont
+ * transmis à Sellsy :
+ *   - PO → mention dans la `note` du document (champ Sellsy V2 confirmé).
+ *   - billing contact → `contact_id` Sellsy si le contact a un
+ *     sellsy_contact_id ; email externe → mention dans la note.
+ *
+ * MDS Prospection crée le document + pré-remplit le destinataire ; l'envoi
+ * du PDF reste manuel côté Sellsy (décision Phil — Sellsy gère tracking +
+ * relances natives).
+ */
+export async function emitSellsyTypedDocumentAction(
+  input: EmitTypedInput,
+): Promise<EmitTypedResult> {
+  const profile = await requireAdminProfile();
+  if (!hasAdminAccess(profile.role)) {
+    return { ok: false, error: 'Seul un admin peut émettre un document Sellsy.' };
+  }
+  const parsed = emitTypedSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Paramètres invalides' };
+  }
+  const { prospect_id, document_type } = parsed.data;
+  const po = parsed.data.purchase_order_number?.trim() || null;
+
+  const supabase = getSupabaseServiceClient();
+  const cols = columnsForType(document_type);
+
+  // 1. Fetch prospect + quote_items + company + contacts + colonnes billing.
+  //    Lecture via client casté (any) car billing_* / colonne cible ne sont
+  //    pas encore dans les types générés.
+  const { data: prospect, error: pErr } = await asAnyDb(supabase)
+    .from('prospects')
+    .select(
+      `id, quote_items, promo_reason, is_test, billing_contact_id, billing_email_override,
+       sellsy_proforma_id, sellsy_invoice_id,
+       company:companies!inner(id, name, sellsy_id),
+       contact:contacts!primary_contact_id(sellsy_contact_id)`,
+    )
+    .eq('id', prospect_id)
+    .maybeSingle();
+
+  if (pErr || !prospect) {
+    return { ok: false, error: 'Prospect introuvable' };
+  }
+
+  // 2. Anti-doublon : un seul document de ce type par prospect.
+  const existingDocId = (prospect as Record<string, unknown>)[cols.id] as string | null;
+  if (existingDocId) {
+    const label = document_type === 'proforma' ? 'pro-forma' : 'facture';
+    return {
+      ok: false,
+      error: `Une ${label} a déjà été émise (Sellsy #${existingDocId}). Annule-la dans Sellsy avant d'en réémettre une.`,
+    };
+  }
+
+  const items = (prospect.quote_items ?? []) as unknown as QuoteItem[];
+  if (!Array.isArray(items) || items.length === 0) {
+    return {
+      ok: false,
+      error: 'Aucun produit dans le Devis Builder — ajoute des produits avant d’émettre.',
+    };
+  }
+
+  // 3. Sync company Sellsy (find-or-create) puis relit sellsy_id.
+  await syncProspectToSellsy(prospect_id);
+  const companyId = (Array.isArray(prospect.company) ? prospect.company[0] : prospect.company)?.id;
+  const { data: companyRow } = await supabase
+    .from('companies')
+    .select('sellsy_id')
+    .eq('id', companyId)
+    .maybeSingle();
+  const sellsyCompanyId = companyRow?.sellsy_id;
+  if (!sellsyCompanyId) {
+    return { ok: false, error: 'Sync Sellsy company échoué — sellsy_id absent.' };
+  }
+
+  // 4. Build rows (identique au devis : discount par ligne, PREMIUM clampé).
+  const rows: SellsyRowPayload[] = items.map((it) => {
+    const pct = clampDiscountForItem(it);
+    const row: SellsyRowPayload = {
+      type: 'catalog',
+      quantity: String(it.qty),
+      related: { id: it.sellsy_product_id, type: 'product' },
+      unit_amount: Number(it.unit_price_ht).toFixed(2),
+    };
+    if (pct > 0) row.discount = { type: 'percent', value: pct.toString() };
+    return row;
+  });
+
+  // 5. Résolution du contact de facturation.
+  //    Priorité : billing_contact_id passé > billing_contact_id du prospect
+  //    > contact principal. L'email externe (override) n'a pas de
+  //    sellsy_contact_id → mentionné dans la note.
+  const billingContactId =
+    parsed.data.billing_contact_id ??
+    ((prospect as Record<string, unknown>).billing_contact_id as string | null) ??
+    null;
+  const billingEmailOverride =
+    parsed.data.billing_email_override ??
+    ((prospect as Record<string, unknown>).billing_email_override as string | null) ??
+    null;
+
+  let billingSellsyContactId: number | null = null;
+  if (billingContactId) {
+    const { data: bc } = await supabase
+      .from('contacts')
+      .select('sellsy_contact_id')
+      .eq('id', billingContactId)
+      .maybeSingle();
+    billingSellsyContactId = bc?.sellsy_contact_id ? Number(bc.sellsy_contact_id) : null;
+  }
+  const primaryContact = Array.isArray(prospect.contact) ? prospect.contact[0] : prospect.contact;
+  const fallbackSellsyContactId = primaryContact?.sellsy_contact_id
+    ? Number(primaryContact.sellsy_contact_id)
+    : null;
+  const sellsyContactId = billingSellsyContactId ?? fallbackSellsyContactId;
+
+  // 6. Note Sellsy : justification + bon de commande + email facturation externe.
+  const noteParts: string[] = [];
+  if (prospect.promo_reason?.trim()) noteParts.push(prospect.promo_reason.trim());
+  if (po) noteParts.push(`Bon de commande N° ${po}`);
+  if (billingEmailOverride && !billingContactId) {
+    noteParts.push(`Facturation à : ${billingEmailOverride}`);
+  }
+  const note = noteParts.length > 0 ? noteParts.join('\n') : undefined;
+
+  const payload = {
+    related: [{ type: 'company' as const, id: Number(sellsyCompanyId) }],
+    rows,
+    public_link_enabled: true,
+    ...(note ? { note } : {}),
+    ...(sellsyContactId ? { contact_id: sellsyContactId } : {}),
+  };
+
+  // 7. POST sur l'endpoint type.
+  const endpoint = endpointForDocumentType(document_type as SellsyDocumentType);
+  console.log(
+    '%s sellsy-post-%s prospect=%s payload=%s',
+    LOG_PREFIX,
+    document_type,
+    prospect_id,
+    JSON.stringify(payload),
+  );
+  let documentId: number;
+  try {
+    const createdRaw = await sellsyFetch<unknown>(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    const obj = (createdRaw as { data?: { id?: number }; id?: number }) ?? {};
+    documentId = obj.data?.id ?? obj.id ?? 0;
+    if (!documentId || documentId <= 0) {
+      await logSellsyCall({
+        entityType: 'prospects',
+        entityId: prospect_id,
+        operation: 'create',
+        status: 'error',
+        errorMessage: `Sellsy ${endpoint} : pas d’id retourné`,
+        payload: { request: payload, response: createdRaw },
+      });
+      return { ok: false, error: 'Sellsy n’a pas renvoyé d’id' };
+    }
+    await logSellsyCall({
+      entityType: 'prospects',
+      entityId: prospect_id,
+      operation: 'create',
+      status: 'success',
+      payload: { document_type, sellsy_document_id: documentId, rows_count: rows.length },
+    });
+  } catch (err) {
+    let bodyDetails = '';
+    if (err instanceof SellsyError && err.body) {
+      try {
+        bodyDetails = ` — Sellsy: ${JSON.stringify(err.body).slice(0, 500)}`;
+      } catch {
+        /* noop */
+      }
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(
+      '%s sellsy-create-%s-failed prospect=%s msg=%s',
+      LOG_PREFIX,
+      document_type,
+      prospect_id,
+      msg,
+    );
+    await logSellsyCall({
+      entityType: 'prospects',
+      entityId: prospect_id,
+      operation: 'create',
+      status: 'error',
+      errorMessage: msg,
+      payload: { request: payload, response: err instanceof SellsyError ? err.body : null },
+    });
+    return { ok: false, error: `Émission Sellsy échouée : ${msg}${bodyDetails}` };
+  }
+
+  // 8. Fetch détails (number, public_link, total) — best-effort.
+  let docNumber: string | null = null;
+  let publicUrl: string | null = null;
+  try {
+    type SellsyDoc = {
+      number?: string;
+      public_link?: string | null;
+      public_link_enabled?: boolean;
+      pdf_link?: string | null;
+    };
+    const res = await sellsyFetch<{ data?: SellsyDoc } & SellsyDoc>(`${endpoint}/${documentId}`);
+    const d: SellsyDoc = (res as { data?: SellsyDoc }).data ?? (res as SellsyDoc);
+    docNumber = d.number ?? null;
+    publicUrl = (d.public_link_enabled && d.public_link) || d.pdf_link || null;
+  } catch (err) {
+    console.warn('%s fetch-details-failed doc=%d msg=%s', LOG_PREFIX, documentId, String(err));
+  }
+
+  // 9. Update prospect : colonnes du type + persistance billing/PO.
+  const now = new Date().toISOString();
+  const totals = calculateQuoteTotals(items, VAT_RATE_DEFAULT);
+  const updatePatch: Record<string, unknown> = {
+    [cols.id]: String(documentId),
+    [cols.number]: docNumber,
+    [cols.publicUrl]: publicUrl,
+    [cols.emittedAt]: now,
+    last_synced_sellsy_at: now,
+  };
+  if (po) updatePatch.purchase_order_number = po;
+  if (parsed.data.billing_contact_id !== undefined)
+    updatePatch.billing_contact_id = parsed.data.billing_contact_id;
+  if (parsed.data.billing_email_override !== undefined)
+    updatePatch.billing_email_override = parsed.data.billing_email_override;
+
+  await asAnyDb(supabase).from('prospects').update(updatePatch).eq('id', prospect_id);
+
+  // 10. Si émission liée à une demande partenaire → approve + lien.
+  if (parsed.data.request_id) {
+    await asAnyDb(supabase)
+      .from('document_requests')
+      .update({
+        status: 'approved',
+        decided_by_user_id: profile.id,
+        decided_at: now,
+        sellsy_document_id: String(documentId),
+        updated_at: now,
+      })
+      .eq('id', parsed.data.request_id);
+  }
+
+  // 11. Audit log.
+  await supabase.from('audit_log').insert({
+    user_id: profile.id,
+    action: 'create',
+    entity_type: 'sellsy_document',
+    entity_id: String(documentId),
+    after: {
+      kind: 'sellsy_document_emitted',
+      document_type,
+      prospect_id,
+      purchase_order_number: po,
+      via_request_id: parsed.data.request_id ?? null,
+    } as never,
+  });
+
+  console.log(
+    '%s typed-doc-emitted prospect=%s type=%s doc=%d number=%s',
+    LOG_PREFIX,
+    prospect_id,
+    document_type,
+    documentId,
+    docNumber ?? '-',
+  );
+
+  revalidatePath(`/admin/prospects/${prospect_id}`);
+  return {
+    ok: true,
+    sellsy_document_id: String(documentId),
+    sellsy_document_number: docNumber,
+    public_url: publicUrl,
     total_ht: totals.total_ht,
   };
 }

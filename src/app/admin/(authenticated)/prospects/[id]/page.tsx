@@ -24,6 +24,9 @@ import { DeleteProspectButton } from './DeleteButton';
 import { IsTestToggle } from './IsTestToggle';
 import { ConciergePaymentLinkDialog } from './ConciergePaymentLinkDialog';
 import { SyncBadgesSection } from './SyncBadgesSection';
+import { EmitTypedDocumentMenu } from './EmitTypedDocumentMenu';
+import { PendingDocumentRequestsSection } from './PendingDocumentRequestsSection';
+import { listPendingDocumentRequests } from '@/lib/admin/document-requests/queries';
 import { StandPickerSection } from './StandPickerSection';
 import { listStands, getProspectStands } from '@/lib/admin/stands/queries';
 import { QuoteBuilder } from './_components/QuoteBuilder';
@@ -465,6 +468,15 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
                 </a>
               );
             })()}
+            <EmitTypedDocumentMenu
+              prospectId={id}
+              isTest={prospect.is_test}
+              proformaEmitted={!!prospect.sellsy_proforma_id}
+              invoiceEmitted={!!prospect.sellsy_invoice_id}
+              acompteUnpaid={
+                prospect.status !== 'acompte_paye' && prospect.status !== 'paye_integral'
+              }
+            />
             <ConciergePaymentLinkDialog
               prospectId={id}
               isTest={prospect.is_test}
@@ -477,6 +489,13 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
             />
           </>
         }
+      />
+
+      {/* P5.x.SellsyDocumentsFlow — demandes de documents partenaire en attente */}
+      <PendingDocumentRequestsSection
+        prospectId={id}
+        isTest={prospect.is_test}
+        requests={await listPendingDocumentRequests(id)}
       />
 
       {/* P6.x.2a — Attribution de stand (catalogue relationnel) */}

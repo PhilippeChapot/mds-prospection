@@ -36,6 +36,12 @@ export async function DocumentsSection({ data, locale }: SectionProps) {
         fallback={t('documents.devisNotYet')}
       />
       <DocumentRow
+        label={t('documents.proforma')}
+        url={data.documents.proformaUrl}
+        ctaLabel={t('documents.proformaCta')}
+        fallback={t('documents.proformaNotYet')}
+      />
+      <DocumentRow
         label={t('documents.invoice')}
         url={data.documents.invoiceUrl}
         ctaLabel={t('documents.invoiceCta')}

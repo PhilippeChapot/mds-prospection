@@ -23,6 +23,7 @@ export async function loadSectionData(locale: 'fr' | 'en'): Promise<SectionData>
   const loaded = await loadDashboardData(locale);
   const documents = getDocumentLinks({
     sellsyDevisPublicUrl: loaded.prospect.sellsy_devis_public_url,
+    sellsyProformaPublicUrl: loaded.prospect.sellsy_proforma_public_url,
     sellsyInvoicePublicUrl: loaded.prospect.sellsy_invoice_public_url,
   });
   // P5.x.10.bis : differencie la signature email selon la categorie tarifaire.

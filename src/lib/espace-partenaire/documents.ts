@@ -19,12 +19,16 @@ export interface DocumentLinks {
   floorPlanPdfUrl: string | null;
   /** Lien public Sellsy du devis (deja persiste sur prospects). */
   devisUrl: string | null;
+  /** Lien public Sellsy de la pro-forma. null tant que pas emise.
+   *  P5.x.SellsyDocumentsFlow — corrige le gap d'affichage silencieux. */
+  proformaUrl: string | null;
   /** Lien public Sellsy de la facture. null tant que pas emise. */
   invoiceUrl: string | null;
 }
 
 export interface DocumentLinksInput {
   sellsyDevisPublicUrl?: string | null;
+  sellsyProformaPublicUrl?: string | null;
   sellsyInvoicePublicUrl?: string | null;
 }
 
@@ -44,6 +48,7 @@ export function getDocumentLinks(input: DocumentLinksInput): DocumentLinks {
     guidePdfUrl: process.env.EXHIBITOR_GUIDE_PDF_URL || null,
     floorPlanPdfUrl: process.env.EXHIBITOR_FLOOR_PLAN_URL || null,
     devisUrl: input.sellsyDevisPublicUrl ?? null,
+    proformaUrl: input.sellsyProformaPublicUrl ?? null,
     invoiceUrl: input.sellsyInvoicePublicUrl ?? null,
   };
 }

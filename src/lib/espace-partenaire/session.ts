@@ -50,6 +50,12 @@ export interface EspacePartenaireDashboardData {
     acompte_payment_link_expires_at: string | null;
     // P5.x.10 — facture Sellsy + booth allocation.
     sellsy_invoice_public_url: string | null;
+    // P5.x.SellsyDocumentsFlow — pro-forma Sellsy (gap d'affichage corrigé).
+    sellsy_proforma_number: string | null;
+    sellsy_proforma_public_url: string | null;
+    sellsy_proforma_emitted_at: string | null;
+    sellsy_invoice_number: string | null;
+    sellsy_invoice_emitted_at: string | null;
     booth_assignment: string | null;
     booth_assigned_at: string | null;
   };
@@ -228,7 +234,8 @@ export async function loadDashboardData(locale: string): Promise<EspacePartenair
       id, status, pack_code, estimated_amount, payment_path, events_interest,
       sellsy_devis_id, sellsy_devis_number, sellsy_devis_public_url,
       sellsy_devis_emitted_at, sellsy_devis_total_ttc,
-      sellsy_invoice_public_url,
+      sellsy_invoice_public_url, sellsy_invoice_number, sellsy_invoice_emitted_at,
+      sellsy_proforma_number, sellsy_proforma_public_url, sellsy_proforma_emitted_at,
       acompte_amount_eur, acompte_paid_at,
       acompte_payment_link_url, acompte_payment_link_expires_at,
       booth_assignment, booth_assigned_at,
@@ -292,6 +299,11 @@ export async function loadDashboardData(locale: string): Promise<EspacePartenair
       acompte_payment_link_url: row.acompte_payment_link_url,
       acompte_payment_link_expires_at: row.acompte_payment_link_expires_at,
       sellsy_invoice_public_url: row.sellsy_invoice_public_url,
+      sellsy_proforma_number: row.sellsy_proforma_number,
+      sellsy_proforma_public_url: row.sellsy_proforma_public_url,
+      sellsy_proforma_emitted_at: row.sellsy_proforma_emitted_at,
+      sellsy_invoice_number: row.sellsy_invoice_number,
+      sellsy_invoice_emitted_at: row.sellsy_invoice_emitted_at,
       booth_assignment: row.booth_assignment,
       booth_assigned_at: row.booth_assigned_at,
     },
