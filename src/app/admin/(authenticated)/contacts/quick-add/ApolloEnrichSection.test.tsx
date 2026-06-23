@@ -7,7 +7,7 @@
  * « Continuer ».
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 const pushSpy = vi.fn();
@@ -59,6 +59,11 @@ import { ApolloEnrichSection } from './ApolloEnrichSection';
 describe('ApolloEnrichSection — post-création (P5.x régression)', () => {
   beforeEach(() => {
     pushSpy.mockClear();
+    // Feature flag décideurs activé pour ce test (off par défaut en prod).
+    vi.stubEnv('NEXT_PUBLIC_APOLLO_DECISION_MAKERS_ENABLED', 'true');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('après création : affiche le bandeau décideurs et ne redirige PAS', async () => {

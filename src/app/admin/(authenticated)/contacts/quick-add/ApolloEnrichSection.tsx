@@ -146,8 +146,17 @@ export function ApolloEnrichSection() {
         toast.error(r.error);
         return;
       }
-      toast.success('Prospect créé via Apollo.');
-      setCreated({ prospectId: r.prospect_id, companyId: r.company_id });
+      // Décideurs Apollo désactivé tant que le plan API Apollo n'autorise pas
+      // /mixed_people/search (HTTP 403 sur Basique). Set
+      // NEXT_PUBLIC_APOLLO_DECISION_MAKERS_ENABLED=true sur Vercel après
+      // upgrade plan API Pro. Sinon : redirect direct (comportement d'origine).
+      if (process.env.NEXT_PUBLIC_APOLLO_DECISION_MAKERS_ENABLED === 'true') {
+        toast.success('Prospect créé via Apollo.');
+        setCreated({ prospectId: r.prospect_id, companyId: r.company_id });
+      } else {
+        toast.success('Prospect créé via Apollo. Redirection…');
+        router.push(`/admin/prospects/${r.prospect_id}`);
+      }
     });
   }
 

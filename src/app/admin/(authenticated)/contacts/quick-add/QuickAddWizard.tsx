@@ -291,15 +291,26 @@ export function QuickAddWizard({ apolloEnabled = false }: { apolloEnabled?: bool
           [form.contactFirstName, form.contactLastName].filter(Boolean).join(' ').trim() ||
           form.contactEmail;
         if (audience === 'prospect') {
-          // P5.x.SmartAddApolloEnrichment : on n'enchaîne plus directement vers
-          // le formulaire prospect. On affiche un panneau post-confirm offrant
+          // P5.x.SmartAddApolloEnrichment : panneau post-confirm offrant
           // l'enrichissement « décideurs » Apollo avant de continuer.
-          toast.success(`Contact prêt (Brevo: ${json.brevoKind}).`);
-          setCreated({
-            companyId: json.companyId ?? null,
-            contactId: json.contactId ?? '',
-            contactName,
-          });
+          // Désactivé tant que le plan API Apollo n'autorise pas
+          // /mixed_people/search (HTTP 403 sur Basique). Set
+          // NEXT_PUBLIC_APOLLO_DECISION_MAKERS_ENABLED=true sur Vercel après
+          // upgrade plan API Pro. Sinon : redirect direct (comportement d'origine).
+          if (process.env.NEXT_PUBLIC_APOLLO_DECISION_MAKERS_ENABLED === 'true') {
+            toast.success(`Contact prêt (Brevo: ${json.brevoKind}).`);
+            setCreated({
+              companyId: json.companyId ?? null,
+              contactId: json.contactId ?? '',
+              contactName,
+            });
+          } else {
+            toast.success(`Contact prêt (Brevo: ${json.brevoKind}). Finalise le prospect…`);
+            const qp = new URLSearchParams();
+            if (json.contactId) qp.set('contact_id', json.contactId);
+            else if (json.companyId) qp.set('company_id', json.companyId);
+            router.push(`/admin/prospects/new?${qp.toString()}`);
+          }
         } else if (json.contactId) {
           toast.success(`Contact créé (Brevo: ${json.brevoKind}). Complète les infos.`);
           setCreated({
