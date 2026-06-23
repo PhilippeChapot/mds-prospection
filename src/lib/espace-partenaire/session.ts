@@ -29,7 +29,11 @@ import {
   EspacePartenaireTokenError,
 } from './jwt';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
-import { resolveActiveProspectIdForContact } from './resolve-prospect';
+import {
+  resolveActiveProspectIdForContact,
+  resolvePartnerWriteContext,
+  type PartnerWriteContext,
+} from './resolve-prospect';
 
 const LOG_PREFIX = '[espace-partenaire/session]';
 
@@ -213,6 +217,29 @@ export async function requireContactSession(
     contactId: prospect.primary_contact_id,
     prospectId: prospect.id,
   };
+}
+
+/**
+ * P11.x.PartnerContactWriteActions — contexte d'écriture { contactId,
+ * prospectId, role } pour la session courante, SANS redirect (retourne null
+ * si pas de session valide). Utilisé par les pages qui veulent gater l'UI
+ * selon le role (ex: bouton "Commander" désactivé pour un viewer). Le role
+ * est calculé exactement comme côté server action (legacy = 'owner').
+ */
+export async function getPartnerWriteContext(): Promise<PartnerWriteContext | null> {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get(ESPACE_EXPOSANT_SESSION_COOKIE);
+  if (!sessionCookie?.value) return null;
+  try {
+    const claims = await verifySessionToken(sessionCookie.value);
+    const supabase = getSupabaseServiceClient() as unknown as SupabaseClient;
+    return resolvePartnerWriteContext(supabase, {
+      kind: claims.kind,
+      prospectId: claims.prospectId,
+    });
+  } catch {
+    return null;
+  }
 }
 
 /**

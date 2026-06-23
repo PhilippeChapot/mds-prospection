@@ -45,9 +45,11 @@ interface State {
 }
 
 function mockAll(state: State) {
+  // P11.x : token legacy kind='prospect' → resolvePartnerWriteContext résout
+  // contactId via primary_contact_id et role='owner' (droits pleins).
   vi.doMock('@/lib/espace-partenaire/jwt', () => ({
     ESPACE_EXPOSANT_SESSION_COOKIE: 'espace_partenaire_session',
-    verifySessionToken: vi.fn().mockResolvedValue({ prospectId: 'prospect-1' }),
+    verifySessionToken: vi.fn().mockResolvedValue({ prospectId: 'prospect-1', kind: 'prospect' }),
   }));
 
   vi.doMock('./queries', async () => {
@@ -61,6 +63,20 @@ function mockAll(state: State) {
   vi.doMock('@/lib/supabase/service', () => ({
     getSupabaseServiceClient: () => ({
       from: (table: string) => {
+        if (table === 'prospects') {
+          // resolvePartnerWriteContext (legacy) : lookup primary_contact_id.
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: () =>
+                  Promise.resolve({ data: { primary_contact_id: 'contact-1' }, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'audit_log') {
+          return { insert: () => Promise.resolve({ error: null }) };
+        }
         if (table === 'sellsy_products_mirror') {
           return {
             select: () => ({

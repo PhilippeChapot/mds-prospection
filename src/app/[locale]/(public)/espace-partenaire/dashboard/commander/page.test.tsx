@@ -24,8 +24,15 @@ vi.mock('next-intl/server', () => ({
   setRequestLocale: vi.fn(),
 }));
 
+const mockWriteCtx = {
+  contactId: 'contact-1' as string | null,
+  prospectId: 'prospect-uuid-1' as string | null,
+  role: 'owner' as string | null,
+};
+
 vi.mock('@/lib/espace-partenaire/session', () => ({
   requireEspacePartenaireSession: vi.fn(async () => ({ prospectId: 'prospect-uuid-1' })),
+  getPartnerWriteContext: vi.fn(async () => mockWriteCtx),
 }));
 
 const mockProspect = {
@@ -57,6 +64,7 @@ describe('CommanderPage (P6.x.7 régression)', () => {
   beforeEach(() => {
     mockProspect.status = 'devis_envoye';
     mockProspect.signed_at = null;
+    mockWriteCtx.role = 'owner';
     vi.clearAllMocks();
   });
 
@@ -88,6 +96,20 @@ describe('CommanderPage (P6.x.7 régression)', () => {
   it('prospect eligible (signe + signed_at) → render catalog (toujours pas de redirect)', async () => {
     mockProspect.status = 'signe';
     mockProspect.signed_at = '2026-05-01T10:00:00Z';
+    const { default: CommanderPage } = await import('./page');
+    const { redirect } = await import('next/navigation');
+
+    const params = Promise.resolve({ locale: 'fr' as const });
+    const result = await CommanderPage({ params });
+
+    expect(redirect).not.toHaveBeenCalled();
+    expect(result).toBeTruthy();
+  });
+
+  it('P11.x : viewer → ViewerNotice (pas de catalog, pas de redirect)', async () => {
+    mockProspect.status = 'signe';
+    mockProspect.signed_at = '2026-05-01T10:00:00Z';
+    mockWriteCtx.role = 'viewer';
     const { default: CommanderPage } = await import('./page');
     const { redirect } = await import('next/navigation');
 

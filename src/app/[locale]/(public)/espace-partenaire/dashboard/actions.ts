@@ -12,20 +12,36 @@
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { verifySessionToken, ESPACE_EXPOSANT_SESSION_COOKIE } from '@/lib/espace-partenaire/jwt';
+import {
+  resolvePartnerWriteContext,
+  canPlaceOrder,
+  type PartnerWriteContext,
+} from '@/lib/espace-partenaire/resolve-prospect';
 
 // ---------------------------------------------------------------------------
 // Helper d'auth session espace partenaire (factor commun aux actions).
+//
+// P11.x.PartnerContactWriteActions : résolution unifiée { contactId,
+// prospectId, role } gérant les sessions kind='contact' (grant) et legacy
+// kind='prospect'. Remplace l'ancien resolveSessionProspect qui lisait
+// claims.prospectId comme un prospect_id (cassé pour les contacts
+// secondaires arrivés via partner_access_grants).
 // ---------------------------------------------------------------------------
 
-async function resolveSessionProspect(): Promise<{ prospectId: string } | null> {
+async function resolvePartnerSession(): Promise<PartnerWriteContext | null> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(ESPACE_EXPOSANT_SESSION_COOKIE);
   if (!sessionCookie?.value) return null;
   try {
     const claims = await verifySessionToken(sessionCookie.value);
-    return { prospectId: claims.prospectId };
+    const supabase = getSupabaseServiceClient() as unknown as SupabaseClient;
+    return resolvePartnerWriteContext(supabase, {
+      kind: claims.kind,
+      prospectId: claims.prospectId,
+    });
   } catch {
     return null;
   }
@@ -42,26 +58,21 @@ export interface UpdateContactResult {
 }
 
 /**
- * Modifie phone + role du contact rattache au prospect courant.
- * Email + first_name + last_name restent immuables (identite stable —
- * pour les changer, contacter Phil).
+ * P11.x.PartnerContactWriteActions : modifie phone + role du contact
+ * CONNECTÉ lui-même (session.contactId), et non plus le primary_contact du
+ * prospect. Décision Phil : chaque contact édite ses propres coordonnées.
+ * Email + first_name + last_name restent immuables (identité de login).
  */
 export async function updatePartenaireContactAction(input: {
   phone: string | null;
   role: string | null;
 }): Promise<UpdateContactResult> {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get(ESPACE_EXPOSANT_SESSION_COOKIE);
-  if (!sessionCookie?.value) {
+  const session = await resolvePartnerSession();
+  if (!session) {
     return { ok: false, error: 'unauthorized' };
   }
-
-  let prospectId: string;
-  try {
-    const claims = await verifySessionToken(sessionCookie.value);
-    prospectId = claims.prospectId;
-  } catch {
-    return { ok: false, error: 'invalid_session' };
+  if (!session.contactId) {
+    return { ok: false, error: 'no_contact' };
   }
 
   const parsed = updateContactSchema.safeParse({
@@ -73,32 +84,35 @@ export async function updatePartenaireContactAction(input: {
   }
 
   const supabase = getSupabaseServiceClient();
-  const { data: prospect } = await supabase
-    .from('prospects')
-    .select('primary_contact_id')
-    .eq('id', prospectId)
-    .maybeSingle();
-
-  if (!prospect?.primary_contact_id) {
-    return { ok: false, error: 'no_contact' };
-  }
-
   const { error } = await supabase
     .from('contacts')
     .update({
       phone: parsed.data.phone || null,
       role: parsed.data.role || null,
     })
-    .eq('id', prospect.primary_contact_id);
+    .eq('id', session.contactId);
 
   if (error) {
     console.error(
-      '[espace-partenaire/updateContact] update-failed prospect=%s msg=%s',
-      prospectId,
+      '[espace-partenaire/updateContact] update-failed contact=%s msg=%s',
+      session.contactId,
       error.message,
     );
     return { ok: false, error: error.message };
   }
+
+  // Audit : self-update contact (user_id null = ce n'est pas un admin).
+  await supabase.from('audit_log').insert({
+    user_id: null,
+    action: 'update',
+    entity_type: 'contact',
+    entity_id: session.contactId,
+    after: {
+      kind: 'contact_self_update',
+      actor_contact_id: session.contactId,
+      updated_fields: ['phone', 'role'],
+    } as never,
+  });
 
   revalidatePath('/fr/espace-partenaire/dashboard');
   revalidatePath('/en/espace-partenaire/dashboard');
@@ -155,8 +169,11 @@ export type UpdateSlugResult =
  *     vraie collision d'une erreur DB anonyme
  */
 export async function updateCompanySlugAction(input: { slug: string }): Promise<UpdateSlugResult> {
-  const session = await resolveSessionProspect();
+  const session = await resolvePartnerSession();
   if (!session) return { ok: false, error: 'unauthorized' };
+  // P11.x : viewer = lecture seule, ne peut pas rebrander la company.
+  if (!canPlaceOrder(session.role)) return { ok: false, error: 'forbidden' };
+  if (!session.prospectId) return { ok: false, error: 'forbidden' };
 
   const parsed = updateSlugSchema.safeParse({ slug: input.slug });
   if (!parsed.success) {
@@ -335,8 +352,11 @@ export type UploadLogoResult =
  *     company_id pour eviter les collisions cross-companies
  */
 export async function uploadCompanyLogoAction(formData: FormData): Promise<UploadLogoResult> {
-  const session = await resolveSessionProspect();
+  const session = await resolvePartnerSession();
   if (!session) return { ok: false, error: 'unauthorized' };
+  // P11.x : viewer = lecture seule, ne peut pas changer le logo.
+  if (!canPlaceOrder(session.role)) return { ok: false, error: 'forbidden' };
+  if (!session.prospectId) return { ok: false, error: 'forbidden' };
 
   const file = formData.get('logo');
   if (!(file instanceof File) || file.size === 0) {

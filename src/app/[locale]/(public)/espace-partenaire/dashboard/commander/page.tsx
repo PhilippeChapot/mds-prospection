@@ -4,7 +4,11 @@ import type { Locale } from 'next-intl';
 import { Lock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { requireEspacePartenaireSession } from '@/lib/espace-partenaire/session';
+import {
+  requireEspacePartenaireSession,
+  getPartnerWriteContext,
+} from '@/lib/espace-partenaire/session';
+import { canPlaceOrder } from '@/lib/espace-partenaire/resolve-prospect';
 import {
   getOrderableCatalog,
   getProspectForPartenaire,
@@ -31,6 +35,12 @@ export default async function CommanderPage({ params }: PageProps) {
     getProspectForPartenaire(prospectId),
     getOrderableCatalog(),
   ]);
+
+  // P11.x : un viewer (grant lecture seule) ne peut pas commander.
+  const writeCtx = await getPartnerWriteContext();
+  if (writeCtx && !canPlaceOrder(writeCtx.role)) {
+    return <ViewerNotice locale={locale} />;
+  }
 
   const eligibility = canAccessSupplementaryOrders(prospect);
   // P6.x.7 — au lieu de rediriger silencieusement vers /dashboard?... (jamais
@@ -60,6 +70,34 @@ export default async function CommanderPage({ params }: PageProps) {
       </header>
 
       <OrderCatalog catalog={catalog} />
+    </div>
+  );
+}
+
+/** P11.x : viewer (grant lecture seule) ne peut pas commander. */
+function ViewerNotice({ locale }: { locale: Locale }) {
+  return (
+    <div className="space-y-6">
+      <header>
+        <h1 className="font-display text-md-blue-deep text-2xl font-bold">
+          Vous avez oublié quelque chose ?
+        </h1>
+      </header>
+      <Card className="border-md-border space-y-4 p-6 shadow-sm sm:p-8">
+        <div className="bg-md-blue/10 text-md-blue mx-auto flex size-12 items-center justify-center rounded-full">
+          <Lock className="size-6" aria-hidden />
+        </div>
+        <h2 className="text-md-text text-center text-lg font-semibold">Accès en lecture seule</h2>
+        <p className="text-md-text-muted mx-auto max-w-md text-center text-sm leading-relaxed">
+          Vous n&apos;avez pas les droits pour passer commande. Demandez à un administrateur de
+          votre compte (owner ou collaborateur) de le faire.
+        </p>
+        <div className="flex flex-wrap justify-center gap-2 pt-2">
+          <Button asChild size="sm">
+            <Link href={`/${locale}/espace-partenaire/dashboard/stand`}>Retour au dashboard</Link>
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 }

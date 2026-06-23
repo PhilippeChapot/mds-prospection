@@ -19,8 +19,13 @@
 
 import { cookies } from 'next/headers';
 import { z } from 'zod';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { ESPACE_EXPOSANT_SESSION_COOKIE, verifySessionToken } from '@/lib/espace-partenaire/jwt';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import {
+  resolvePartnerWriteContext,
+  canPlaceOrder,
+} from '@/lib/espace-partenaire/resolve-prospect';
 import { isMdsReference } from '@/lib/sellsy/mds-filter';
 import { getStripe } from '@/lib/stripe/client';
 import { STRIPE_BUSINESS_TAG } from '@/lib/stripe/constants';
@@ -70,13 +75,41 @@ export async function createSupplementaryCheckoutSession(input: unknown): Promis
   if (!sessionCookie?.value) {
     return { ok: false, error: 'Session expirée. Reconnectez-vous.' };
   }
-  let prospectId: string;
+  // P11.x.PartnerContactWriteActions : résout le prospect par company
+  // (grant) + role, au lieu de lire claims.prospectId comme un prospect_id
+  // (cassé pour les contacts secondaires).
+  let contactId: string | null = null;
+  let prospectIdNullable: string | null = null;
+  let role: string | null = null;
   try {
     const claims = await verifySessionToken(sessionCookie.value);
-    prospectId = claims.prospectId;
+    const sb = getSupabaseServiceClient() as unknown as SupabaseClient;
+    const ctx = await resolvePartnerWriteContext(sb, {
+      kind: claims.kind,
+      prospectId: claims.prospectId,
+    });
+    contactId = ctx.contactId;
+    prospectIdNullable = ctx.prospectId;
+    role = ctx.role;
   } catch {
     return { ok: false, error: 'Session invalide. Reconnectez-vous.' };
   }
+
+  // Role : owner/collaborator engagent la company ; viewer = lecture seule.
+  if (!canPlaceOrder(role)) {
+    return {
+      ok: false,
+      error:
+        "Vous n'avez pas les droits pour commander. Demandez à un administrateur de votre compte.",
+    };
+  }
+  if (!prospectIdNullable) {
+    return {
+      ok: false,
+      error: 'Aucun dossier actif pour cette commande. Contactez philippe@mediadays.solutions.',
+    };
+  }
+  const prospectId: string = prospectIdNullable;
 
   // 2. Validation Zod
   const parsed = inputSchema.safeParse(input);
@@ -171,6 +204,20 @@ export async function createSupplementaryCheckoutSession(input: unknown): Promis
     console.error('%s insert-failed msg=%s', LOG_PREFIX, insertErr?.message);
     return { ok: false, error: 'Erreur création commande.' };
   }
+
+  // P11.x : audit — qui (contact) a commandé pour quel prospect, avec quel role.
+  await supabase.from('audit_log').insert({
+    user_id: null,
+    action: 'create',
+    entity_type: 'supplementary_order',
+    entity_id: order.id,
+    after: {
+      kind: 'partner_supplementary_order',
+      actor_contact_id: contactId,
+      role,
+      prospect_id: prospectId,
+    } as never,
+  });
 
   // 6. Stripe Checkout Session
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';

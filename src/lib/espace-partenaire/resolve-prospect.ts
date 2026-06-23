@@ -71,6 +71,74 @@ export async function resolveActiveProspectIdForContact(
   return (byPrimary?.id as string | undefined) ?? null;
 }
 
+export interface PartnerGrant {
+  company_id: string;
+  role: string;
+}
+
+/** Grant actif (non révoqué) d'un contact, ou null. */
+export async function getActiveGrantForContact(
+  supabase: SupabaseClient,
+  contactId: string,
+): Promise<PartnerGrant | null> {
+  const { data } = await supabase
+    .from('partner_access_grants')
+    .select('company_id, role')
+    .eq('contact_id', contactId)
+    .is('revoked_at', null)
+    .maybeSingle();
+  if (!data?.company_id) return null;
+  return { company_id: data.company_id as string, role: (data.role as string) ?? 'collaborator' };
+}
+
+/**
+ * Droit d'écriture engageant la company (commande, logo, slug). `viewer`
+ * = lecture seule. Les tokens legacy (kind='prospect', sans grant) sont
+ * traités comme 'owner' (rétro-compat : le partenaire historique avait
+ * tous les droits).
+ */
+export function canPlaceOrder(role: string | null): boolean {
+  return role === 'owner' || role === 'collaborator';
+}
+
+export interface PartnerWriteContext {
+  contactId: string | null;
+  prospectId: string | null;
+  /** owner | collaborator | viewer ; 'owner' pour les tokens legacy. */
+  role: string | null;
+}
+
+/**
+ * Résout le contexte d'écriture partenaire à partir des claims JWT déjà
+ * vérifiés (pas de cookie ici → testable). Gère les deux kinds :
+ *   - kind='contact' : sub = contact_id → grant (role + company) + prospect
+ *     résolu par company.
+ *   - kind='prospect' (legacy) : sub = prospect_id → role 'owner', contact =
+ *     primary_contact du prospect.
+ */
+export async function resolvePartnerWriteContext(
+  supabase: SupabaseClient,
+  claims: { kind: 'prospect' | 'contact'; prospectId: string },
+): Promise<PartnerWriteContext> {
+  if (claims.kind === 'contact') {
+    const contactId = claims.prospectId; // sub = contact_id
+    const grant = await getActiveGrantForContact(supabase, contactId);
+    const prospectId = await resolveActiveProspectIdForContact(supabase, contactId);
+    return { contactId, prospectId, role: grant?.role ?? null };
+  }
+  // Legacy : sub = prospect_id, droits pleins.
+  const { data } = await supabase
+    .from('prospects')
+    .select('primary_contact_id')
+    .eq('id', claims.prospectId)
+    .maybeSingle();
+  return {
+    contactId: (data?.primary_contact_id as string | null) ?? null,
+    prospectId: claims.prospectId,
+    role: 'owner',
+  };
+}
+
 /** Prospect le plus récent d'une company pour la saison active. */
 async function findCompanyActiveProspectId(
   supabase: SupabaseClient,
