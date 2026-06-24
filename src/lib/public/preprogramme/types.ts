@@ -14,6 +14,8 @@ export interface PreProgrammePole {
 
 export interface PreProgrammeConference {
   id: string;
+  slug: string | null;
+  track: ProgramTrack;
   title: string;
   description: string | null;
   conferenceType: string | null;

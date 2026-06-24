@@ -13,7 +13,7 @@ import { PREPROGRAMME_LABELS } from './_components/labels';
 import { PreProgrammeHero } from './_components/PreProgrammeHero';
 import { PreProgrammeKpiBand } from './_components/PreProgrammeKpiBand';
 import { PreProgrammePolesRepartition } from './_components/PreProgrammePolesRepartition';
-import { PreProgrammeTrackSection } from './_components/PreProgrammeTrackSection';
+import { PreProgrammeInteractive } from './_components/PreProgrammeInteractive';
 import { PreProgrammeFooterCta } from './_components/PreProgrammeFooterCta';
 
 export const dynamic = 'force-dynamic';
@@ -41,26 +41,14 @@ export default async function PreProgrammePage({ params }: PageProps) {
   }
 
   const { kpis, repartition, mds, prs } = result.data;
+  const allConferences = [...mds, ...prs];
 
   return (
     <div className="min-h-screen bg-white">
       <PreProgrammeHero labels={labels} locale={loc} token={token} />
       <PreProgrammeKpiBand labels={labels} kpis={kpis} />
       <PreProgrammePolesRepartition labels={labels} repartition={repartition} />
-      <PreProgrammeTrackSection
-        variant="mds"
-        title={labels.mdsTrack}
-        tagline={labels.mdsTagline}
-        conferences={mds}
-        labels={labels}
-      />
-      <PreProgrammeTrackSection
-        variant="prs"
-        title={labels.prsTrack}
-        tagline={labels.prsTagline}
-        conferences={prs}
-        labels={labels}
-      />
+      <PreProgrammeInteractive conferences={allConferences} locale={loc} token={token} />
       <PreProgrammeFooterCta labels={labels} />
     </div>
   );

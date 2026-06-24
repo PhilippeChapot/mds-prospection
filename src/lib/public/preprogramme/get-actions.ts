@@ -48,7 +48,7 @@ export async function getPreProgrammeAction(
   const { data: confRows, error } = await asAnyDb(supabase)
     .from('conferences')
     .select(
-      `id, title_fr, title_en, description_fr, description_en, program_track,
+      `id, slug, title_fr, title_en, description_fr, description_en, program_track,
        conference_type, poles, target_audience_fr, target_audience_en,
        key_figures_fr, key_figures_en`,
     )
@@ -97,6 +97,10 @@ export async function getPreProgrammeAction(
     }
     return {
       id: r.id as string,
+      slug: (r.slug as string | null) ?? null,
+      track: (r.program_track === 'prs_radio_audio'
+        ? 'prs_radio_audio'
+        : 'mds_solutions') as PreProgrammeConference['track'],
       title: ((locale === 'en' ? r.title_en : r.title_fr) || r.title_fr) as string,
       description: (locale === 'en' ? r.description_en : r.description_fr) as string | null,
       conferenceType: (r.conference_type as string | null) ?? null,
