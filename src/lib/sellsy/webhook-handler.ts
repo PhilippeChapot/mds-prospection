@@ -378,6 +378,27 @@ async function handleDocslogPaymentAdd(event: SellsyWebhookEvent): Promise<void>
     return;
   }
 
+  // BUG 1 (préventif) : si ce paiement a déjà été comptabilisé (créé via
+  // record-payment-action, qui pose une garde `payment-{id}` dans
+  // sellsy_events_processed), on skip pour éviter le double comptage de
+  // acompte_amount_eur. Best-effort : si Sellsy n'expose pas de payment id
+  // dans le payload, on garde le comportement historique.
+  const paymentId =
+    (event as { payment_id?: number | string }).payment_id ??
+    (event.relatedobject as { payment_id?: number | string } | undefined)?.payment_id ??
+    null;
+  if (paymentId != null) {
+    const { data: alreadyProcessed } = await supabase
+      .from('sellsy_events_processed')
+      .select('event_id')
+      .eq('event_id', `payment-${paymentId}`)
+      .maybeSingle();
+    if (alreadyProcessed) {
+      console.log('%s paymentadd-skip-already-processed key=payment-%s', LOG_PREFIX, paymentId);
+      return;
+    }
+  }
+
   // P4.x.2 sujet C : montant du paiement specifique. Sellsy paymentadd
   // peut envoyer soit relatedobject.amounts.total (le total du DOCUMENT,
   // pas du paiement) soit un champ amount dedie. On essaie d'abord
@@ -440,8 +461,23 @@ async function handleDocslogPaymentAdd(event: SellsyWebhookEvent): Promise<void>
       acompte_amount_eur: cumulativePaid,
       last_synced_sellsy_at: now,
       last_activity_at: now,
+      updated_at: now,
     })
     .eq('id', prospect.id);
+
+  // BUG 1 (préventif) : marque ce payment_id comme traité pour bloquer un
+  // éventuel rejeu (retry webhook ou create API suivi du webhook).
+  if (paymentId != null) {
+    await supabase.from('sellsy_events_processed').upsert(
+      {
+        event_id: `payment-${paymentId}`,
+        event_type: 'docslog.paymentadd',
+        prospect_id: prospect.id,
+        payload: { amount_eur: paymentEur, cumulative_eur: cumulativePaid } as never,
+      },
+      { onConflict: 'event_id', ignoreDuplicates: true },
+    );
+  }
 
   // P5.x.4 Phase C : sync Brevo (transition -> isAcomptePaid=true ou
   // isSigned=true selon computedStatus). L'automation "MDS Devis Emis"

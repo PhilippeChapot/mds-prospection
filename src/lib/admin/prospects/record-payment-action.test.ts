@@ -13,6 +13,7 @@ interface State {
   audits: Array<Record<string, unknown>>;
   sellsyResult: { paymentId: number | null; error: string | null };
   sellsyCalls: Array<Record<string, unknown>>;
+  guardUpserts: Array<Record<string, unknown>>;
 }
 
 const PID = '11111111-1111-4111-8111-111111111111';
@@ -24,6 +25,7 @@ const state: State = {
   audits: [],
   sellsyResult: { paymentId: 555, error: null },
   sellsyCalls: [],
+  guardUpserts: [],
 };
 
 function mockEnv() {
@@ -69,6 +71,14 @@ function mockEnv() {
             },
           };
         }
+        if (table === 'sellsy_events_processed') {
+          return {
+            upsert: (row: Record<string, unknown>) => {
+              state.guardUpserts.push(row);
+              return Promise.resolve({ error: null });
+            },
+          };
+        }
         return {};
       },
     }),
@@ -94,6 +104,7 @@ beforeEach(() => {
   state.audits = [];
   state.sellsyResult = { paymentId: 555, error: null };
   state.sellsyCalls = [];
+  state.guardUpserts = [];
   vi.stubEnv('SELLSY_PAYMENT_METHOD_ID_VIREMENT', '43504');
   vi.stubEnv('SELLSY_PAYMENT_METHOD_ID_CHEQUE', '43503');
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -211,6 +222,29 @@ describe('recordManualPaymentAction (P5.x)', () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.status_updated).toBe(false);
     expect(state.prospectUpdates).toHaveLength(0);
+  });
+
+  it('BUG2 : updated_at posé sur le prospect', async () => {
+    mockEnv();
+    const { recordManualPaymentAction } = await import('./record-payment-action');
+    await recordManualPaymentAction({ ...baseInput, payment_type: 'acompte', method: 'virement' });
+    expect(typeof state.prospectUpdates[0].updated_at).toBe('string');
+  });
+
+  it('BUG3 : acompte_status=paid posé pour un acompte', async () => {
+    mockEnv();
+    const { recordManualPaymentAction } = await import('./record-payment-action');
+    await recordManualPaymentAction({ ...baseInput, payment_type: 'acompte', method: 'virement' });
+    expect(state.prospectUpdates[0].acompte_status).toBe('paid');
+  });
+
+  it('BUG1 : garde idempotence — upsert payment-{id} dans sellsy_events_processed', async () => {
+    mockEnv();
+    const { recordManualPaymentAction } = await import('./record-payment-action');
+    await recordManualPaymentAction({ ...baseInput, payment_type: 'acompte', method: 'virement' });
+    expect(state.guardUpserts).toHaveLength(1);
+    expect(state.guardUpserts[0].event_id).toBe('payment-555');
+    expect(state.guardUpserts[0].event_type).toBe('payment_via_api');
   });
 
   it('audit log contient sellsy_collection + sellsy_doc_id + reference', async () => {

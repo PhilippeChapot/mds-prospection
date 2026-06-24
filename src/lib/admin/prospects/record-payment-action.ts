@@ -126,6 +126,31 @@ export async function recordManualPaymentAction(
     return { ok: false, error: `Sellsy: ${sellsy.error ?? 'création du paiement échouée'}` };
   }
 
+  // BUG 1 (préventif) : marque ce paiement comme déjà traité pour que le
+  // webhook docslog.paymentadd (si Sellsy en émet un pour ce paiement API)
+  // le skip au lieu de re-créditer acompte_amount_eur (double comptage).
+  try {
+    await supabase.from('sellsy_events_processed').upsert(
+      {
+        event_id: `payment-${sellsy.paymentId}`,
+        event_type: 'payment_via_api',
+        prospect_id: data.prospect_id,
+        payload: {
+          source: 'manual_api',
+          via: 'record-payment-action',
+          sellsy_payment_id: sellsy.paymentId,
+        } as never,
+      },
+      { onConflict: 'event_id', ignoreDuplicates: true },
+    );
+  } catch (err) {
+    console.warn(
+      '[record-payment] idempotency-guard-insert-failed payment=%s msg=%s',
+      sellsy.paymentId,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
   // 5. Maj prospect : statut + acompte cumulé. Seulement pour acompte/solde
   //    ET si also_update_status. 'ajustement' n'altère jamais le prospect.
   let statusUpdated = false;
@@ -140,6 +165,10 @@ export async function recordManualPaymentAction(
     const patch: Record<string, unknown> = {
       acompte_amount_eur: Number(prospect.acompte_amount_eur ?? 0) + data.amount_ttc,
       acompte_paid_at: new Date(data.paid_at).toISOString(),
+      // BUG 3 : marquer l'acompte comme payé (enum acompte_status).
+      acompte_status: 'paid',
+      // BUG 2 : pas de trigger updated_at en DB → on le pose explicitement.
+      updated_at: new Date().toISOString(),
       last_activity_at: new Date().toISOString(),
     };
     if (advances) {

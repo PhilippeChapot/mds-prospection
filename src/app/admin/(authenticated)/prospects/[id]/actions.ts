@@ -28,13 +28,21 @@ export async function updateProspectStatusAction(prospectId: string, newStatus: 
   // P14.4 : capture statut avant pour audit_log diff.
   const { data: before } = await supabase
     .from('prospects')
-    .select('status')
+    .select('status, signed_at')
     .eq('id', prospectId)
     .maybeSingle();
 
+  // BUG 2/4 : updated_at app-managé (pas de trigger DB) + signed_at posé au
+  // 1er passage en 'signe' (le dropdown ne le faisait pas, seul le webhook
+  // Sellsy docslog.step le posait).
+  const now = new Date().toISOString();
+  const patch: Record<string, unknown> = { status, last_activity_at: now, updated_at: now };
+  if (status === 'signe' && !(before as { signed_at?: string | null } | null)?.signed_at) {
+    patch.signed_at = now;
+  }
   const { error } = await supabase
     .from('prospects')
-    .update({ status, last_activity_at: new Date().toISOString() })
+    .update(patch as never)
     .eq('id', prospectId);
   if (error) throw new Error(error.message);
 
