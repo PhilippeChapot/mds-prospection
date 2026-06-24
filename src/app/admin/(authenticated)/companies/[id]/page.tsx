@@ -21,6 +21,8 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import type { AffiliatePickerItem } from '@/components/admin/affiliate-claims/AddAffiliateClaimModal';
 import type { PoleCode } from '@/lib/design-tokens';
 import { hasAdminAccess, isSuperAdmin } from '@/lib/auth/role-helpers';
+import { type SupabaseClient } from '@supabase/supabase-js';
+import { ApolloDataSection } from '@/components/admin/companies/ApolloDataSection';
 
 export const metadata = { title: 'Fiche societe' };
 
@@ -50,6 +52,14 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     .maybeSingle();
 
   if (!company) notFound();
+
+  // P5.x — données Apollo (colonnes hors query typée ci-dessus : pole_reasoning
+  // ajouté en 0110, apollo_raw_data en jsonb). Cast pour les lire.
+  const { data: apolloRow } = await (supabase as unknown as SupabaseClient)
+    .from('companies')
+    .select('apollo_raw_data, apollo_enriched_at, pole_confidence, pole_reasoning')
+    .eq('id', id)
+    .maybeSingle();
 
   const pole = pickFirst(company.pole);
 
@@ -354,6 +364,18 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           affiliates={affiliatesForPicker}
         />
       </Section>
+
+      {/* P5.x — Données Apollo (si enrichie) */}
+      {apolloRow?.apollo_raw_data ? (
+        <ApolloDataSection
+          companyId={id}
+          apolloData={apolloRow.apollo_raw_data as Record<string, unknown>}
+          apolloEnrichedAt={(apolloRow.apollo_enriched_at as string | null) ?? null}
+          poleConfidence={(apolloRow.pole_confidence as number | null) ?? null}
+          poleReasoning={(apolloRow.pole_reasoning as string | null) ?? null}
+          isSuperAdmin={isSuperAdmin(profile.role)}
+        />
+      ) : null}
 
       {/* Audit */}
       <Section title="Historique audit">

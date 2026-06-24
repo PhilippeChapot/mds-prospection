@@ -56,7 +56,7 @@ describe('mapApolloToCompany (P5.x.Apollo-bis — full payload persistence)', ()
     expect(r.linkedin_url).toBe('https://linkedin.com/company/freewheel');
     expect(r.industry).toBe('Marketing & Advertising');
     expect(r.phone).toBe('+12125550100');
-    expect(r.country).toBe('United States');
+    expect(r.country).toBe('US'); // P5.x : normalisé ISO 2 (était "United States")
   });
 
   it('2/ persiste keywords (text[] non-vide, max 30) — gin index utilisable', () => {

@@ -15,7 +15,11 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { requireAdminProfile, getActiveSeasonId } from '@/lib/supabase/auth-helpers';
+import {
+  requireAdminProfile,
+  requireSuperAdmin,
+  getActiveSeasonId,
+} from '@/lib/supabase/auth-helpers';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import {
@@ -41,8 +45,74 @@ import {
   type GetCreditsResult,
   type CreateProspectResult,
 } from './apollo-mapping';
+import { normalizeCountryToIso } from '@/lib/format/country';
+import {
+  classifyCompanyToPole,
+  resolvePoleCode,
+  type ClassifyCompanyResult,
+} from '@/lib/admin/companies/classify-pole';
+import { type SupabaseClient } from '@supabase/supabase-js';
 
 const LOG_PREFIX = '[admin/smart-add/apollo]';
+
+const asAnyDb = (c: ReturnType<typeof getSupabaseServiceClient>): SupabaseClient =>
+  c as unknown as SupabaseClient;
+
+/**
+ * P5.x — classifie la société via Haiku (données Apollo) puis écrit pole_id +
+ * métadonnées. Best-effort. Préserve une classification 'manual' existante.
+ */
+async function classifyAndAssignPole(
+  supabase: ReturnType<typeof getSupabaseServiceClient>,
+  companyId: string,
+  mapped: {
+    name: string;
+    industry?: string | null;
+    keywords?: string[] | null;
+    description?: string | null;
+    primary_domain?: string | null;
+  },
+  isExisting: boolean,
+): Promise<ClassifyCompanyResult | null> {
+  const db = asAnyDb(supabase);
+
+  if (isExisting) {
+    const { data: cur } = await db
+      .from('companies')
+      .select('pole_classified_by')
+      .eq('id', companyId)
+      .maybeSingle();
+    if ((cur as { pole_classified_by?: string } | null)?.pole_classified_by === 'manual') {
+      return null; // ne pas écraser une classification manuelle
+    }
+  }
+
+  const result = await classifyCompanyToPole({
+    name: mapped.name,
+    industry: mapped.industry,
+    keywords: mapped.keywords,
+    description: mapped.description,
+    domain: mapped.primary_domain,
+  });
+  if (!result) return null;
+
+  const code = resolvePoleCode(result);
+  const { data: pole } = await db.from('poles').select('id').eq('code', code).maybeSingle();
+  const poleId = (pole as { id?: string } | null)?.id ?? null;
+  if (!poleId) return result;
+
+  await db
+    .from('companies')
+    .update({
+      pole_id: poleId,
+      pole_classified_by: 'ai',
+      pole_classified_at: new Date().toISOString(),
+      pole_confidence: result.confidence,
+      pole_reasoning: result.reasoning,
+    } as never)
+    .eq('id', companyId);
+  return result;
+}
 
 // ---------------------------------------------------------------------------
 // enrichApolloAction
@@ -277,7 +347,8 @@ export async function createProspectFromApolloAction(
           .replace(/[^a-z0-9]+/g, ' ')
           .trim(),
         primary_domain: mapped.primary_domain,
-        country: mapped.country ?? 'FR',
+        // Défense : normalise même si `mapped` provient d'un client plus ancien.
+        country: normalizeCountryToIso(mapped.country) ?? 'FR',
         category,
         ...apolloFields,
       })
@@ -289,6 +360,9 @@ export async function createProspectFromApolloAction(
     }
     companyId = created.id;
   }
+
+  // P5.x — classification pôle via Haiku (best-effort, après upsert company).
+  await classifyAndAssignPole(supabase, companyId, mapped, !!existing_company_id);
 
   // 2. INSERT contact si email fourni (sinon prospect sans primary_contact).
   let contactId: string | null = null;
@@ -380,3 +454,82 @@ export async function createProspectFromApolloAction(
 
 // `mapApolloToCompany` est désormais dans `./apollo-mapping.ts` (helper sync
 // non-async, interdit dans un fichier 'use server' depuis Next.js 16).
+
+// ---------------------------------------------------------------------------
+// refreshApolloDataAction — re-enrichit une société existante (super_admin).
+// ---------------------------------------------------------------------------
+
+export type RefreshApolloResult =
+  | { ok: true; pole_code: string | null; confidence: number | null }
+  | { ok: false; error: string };
+
+export async function refreshApolloDataAction(companyId: string): Promise<RefreshApolloResult> {
+  const profile = await requireSuperAdmin(); // consomme un crédit Apollo
+  if (!(await isApolloEnabled())) return { ok: false, error: 'Apollo désactivé.' };
+
+  const supabase = getSupabaseServiceClient();
+  const { data: company } = await supabase
+    .from('companies')
+    .select('id, primary_domain')
+    .eq('id', companyId)
+    .maybeSingle();
+  if (!company) return { ok: false, error: 'Société introuvable.' };
+  const domain = company.primary_domain;
+  if (!domain) return { ok: false, error: 'Aucun domaine sur cette société.' };
+
+  let org: ApolloOrganization | null;
+  try {
+    org = await apolloOrganizationEnrich(domain);
+  } catch (err) {
+    return { ok: false, error: err instanceof ApolloError ? err.message : 'Erreur Apollo.' };
+  }
+  if (!org) return { ok: false, error: 'Aucun résultat Apollo pour ce domaine.' };
+
+  const mapped = mapApolloToCompany(org, normalizeDomain(domain));
+  const { error: updErr } = await asAnyDb(supabase)
+    .from('companies')
+    .update({
+      apollo_organization_id: mapped.apollo_organization_id,
+      apollo_enriched_at: mapped.apollo_enriched_at,
+      apollo_raw_data: mapped.apollo_raw_data,
+      employee_count: mapped.employee_count,
+      estimated_revenue_eur: mapped.estimated_revenue_eur,
+      parent_company: mapped.parent_company,
+      founded_year: mapped.founded_year,
+      industry: mapped.industry,
+      linkedin_url: mapped.linkedin_url,
+      phone: mapped.phone,
+      keywords: mapped.keywords,
+      raw_address: mapped.raw_address,
+      city: mapped.city,
+      postal_code: mapped.postal_code,
+      state: mapped.state,
+      description: mapped.description,
+      last_enrichment_source: 'apollo',
+      last_enriched_at: mapped.apollo_enriched_at,
+    } as never)
+    .eq('id', companyId);
+  if (updErr) return { ok: false, error: updErr.message };
+
+  const classification = await classifyAndAssignPole(supabase, companyId, mapped, true);
+
+  await supabase.from('audit_log').insert({
+    user_id: profile.id,
+    action: 'sync_manual',
+    entity_type: 'companies',
+    entity_id: companyId,
+    after: {
+      kind: 'company_apollo_refreshed',
+      apollo_organization_id: mapped.apollo_organization_id,
+      pole_code: classification ? resolvePoleCode(classification) : null,
+    } as never,
+  });
+
+  revalidatePath(`/admin/companies/${companyId}`);
+  revalidatePath(`/admin/companies/${companyId}/edit`);
+  return {
+    ok: true,
+    pole_code: classification ? resolvePoleCode(classification) : null,
+    confidence: classification?.confidence ?? null,
+  };
+}

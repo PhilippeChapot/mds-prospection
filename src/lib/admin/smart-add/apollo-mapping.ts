@@ -9,6 +9,7 @@
 
 import type { ApolloOrganization } from '@/lib/apollo/client';
 import { normalizeDomain } from '@/lib/utils/domain';
+import { normalizeCountryToIso } from '@/lib/format/country';
 
 // ---------------------------------------------------------------------------
 // Types partagés (importables depuis client + server)
@@ -95,7 +96,9 @@ export function mapApolloToCompany(
     city: org.city ?? null,
     postal_code: org.postal_code ?? null,
     state: org.state ?? null,
-    country: org.country ?? null,
+    // Apollo renvoie le nom complet ("France") → on normalise en ISO 2 ("FR")
+    // car companies.country attend un code 2 lettres (sinon CHECK length<=2).
+    country: normalizeCountryToIso(org.country),
     apollo_organization_id: org.id,
     apollo_enriched_at: new Date().toISOString(),
     // P5.x.Apollo-bis : on conserve le payload Apollo COMPLET (tous les
