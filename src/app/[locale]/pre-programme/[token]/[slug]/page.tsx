@@ -10,6 +10,7 @@ import type { Locale } from 'next-intl';
 import { getPreProgrammeAction } from '@/lib/public/preprogramme/get-actions';
 import { findConferenceBySlug } from '@/lib/public/preprogramme/filter';
 import { ConferenceDetailView } from './_components/ConferenceDetailView';
+import { QuestionDrawer } from '../_components/QuestionDrawer';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,5 +35,10 @@ export default async function ConferenceDetailPage({ params }: PageProps) {
   const conference = findConferenceBySlug(all, slug);
   if (!conference) notFound();
 
-  return <ConferenceDetailView conference={conference} locale={loc} token={token} />;
+  return (
+    <>
+      <ConferenceDetailView conference={conference} locale={loc} token={token} />
+      <QuestionDrawer locale={loc} />
+    </>
+  );
 }

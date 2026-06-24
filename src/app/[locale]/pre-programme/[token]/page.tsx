@@ -15,6 +15,7 @@ import { PreProgrammeKpiBand } from './_components/PreProgrammeKpiBand';
 import { PreProgrammePolesRepartition } from './_components/PreProgrammePolesRepartition';
 import { PreProgrammeInteractive } from './_components/PreProgrammeInteractive';
 import { PreProgrammeFooterCta } from './_components/PreProgrammeFooterCta';
+import { QuestionDrawer } from './_components/QuestionDrawer';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +51,7 @@ export default async function PreProgrammePage({ params }: PageProps) {
       <PreProgrammePolesRepartition labels={labels} repartition={repartition} />
       <PreProgrammeInteractive conferences={allConferences} locale={loc} token={token} />
       <PreProgrammeFooterCta labels={labels} />
+      <QuestionDrawer locale={loc} />
     </div>
   );
 }

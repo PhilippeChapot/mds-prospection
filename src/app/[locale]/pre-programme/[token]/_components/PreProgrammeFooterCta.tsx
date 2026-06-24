@@ -13,7 +13,7 @@ export function PreProgrammeFooterCta({ labels }: { labels: PreProgrammeLabels }
       <p className="mt-3 text-white/70">{labels.ctaSubtitle}</p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <a
-          href="https://mediadays.solutions"
+          href="https://www.mediadays.solutions/fr/inscription-partenaire?category=partenaire"
           target="_blank"
           rel="noopener noreferrer"
           className="rounded-full bg-[#E94E8A] px-7 py-3 text-sm font-bold text-white transition hover:opacity-90"
