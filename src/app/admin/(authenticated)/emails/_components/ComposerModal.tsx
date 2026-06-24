@@ -22,7 +22,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { sendEmailAction } from '@/lib/admin/emails/send-action';
-import { applyTemplateVars } from '@/lib/email/template-vars';
+import { resolveTemplateVarsAction } from '@/lib/admin/emails/actions';
+import {
+  applyTemplateVars,
+  normalizeTemplateNewlines,
+  textToHtml,
+} from '@/lib/email/template-vars';
 import type { EmailTemplateItem } from '@/lib/admin/emails/queries';
 
 export interface ComposerAccount {
@@ -69,12 +74,28 @@ export function ComposerModal({
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
 
-  function applyTemplate(key: string) {
+  async function applyTemplate(key: string) {
     const tpl = templates.find((t) => t.key === key);
     if (!tpl) return;
-    const vars = prefill?.vars ?? {};
-    setSubject(applyTemplateVars(tpl.subject, vars));
-    setBody(applyTemplateVars(tpl.body_text ?? tpl.body_html.replace(/<[^>]+>/g, ''), vars));
+    // Variables : contexte prospect (prefill) prioritaire, complété par une
+    // résolution du destinataire courant (contact MDS) au clic.
+    let vars: Record<string, string> = { ...(prefill?.vars ?? {}) };
+    const firstTo = splitAddrs(to)[0];
+    if (firstTo) {
+      const r = await resolveTemplateVarsAction(firstTo);
+      if (r.ok && r.matched) vars = { ...r.vars, ...vars };
+    }
+    const subjectOut = applyTemplateVars(normalizeTemplateNewlines(tpl.subject), vars);
+    const bodyOut = applyTemplateVars(
+      normalizeTemplateNewlines(tpl.body_text ?? tpl.body_html.replace(/<[^>]+>/g, '')),
+      vars,
+    );
+    setSubject(subjectOut);
+    setBody(bodyOut);
+    // Toast si des {variables} subsistent (destinataire hors MDS / pas de To).
+    if (/\{[a-z.]+\}/i.test(bodyOut)) {
+      toast.message('💡 Variables non remplies — destinataire pas dans MDS');
+    }
   }
 
   async function handleSend() {
@@ -84,10 +105,7 @@ export function ComposerModal({
     if (!subject.trim()) return toast.error('Sujet requis.');
     if (!body.trim()) return toast.error('Message vide.');
     setSending(true);
-    const bodyHtml = body
-      .split('\n')
-      .map((l) => `<p>${l.replace(/</g, '&lt;') || '&nbsp;'}</p>`)
-      .join('');
+    const bodyHtml = textToHtml(body);
     const r = await sendEmailAction({
       account_id: accountId,
       to: recipients,
@@ -137,7 +155,9 @@ export function ComposerModal({
                 <Label>Template</Label>
                 <select
                   defaultValue=""
-                  onChange={(e) => e.target.value && applyTemplate(e.target.value)}
+                  onChange={(e) => {
+                    if (e.target.value) void applyTemplate(e.target.value);
+                  }}
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
                 >
                   <option value="">— Aucun —</option>

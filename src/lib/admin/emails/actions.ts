@@ -91,6 +91,61 @@ export async function setEmailFlagAction(input: z.input<typeof flagSchema>): Pro
   return { ok: true };
 }
 
+/**
+ * Résout les variables de template pour un destinataire (au clic "Insérer
+ * template"). Match contact MDS par email exact → {contact.*, company.name,
+ * prospect.amount}. Renvoie vars vides si le destinataire n'est pas dans MDS.
+ */
+export async function resolveTemplateVarsAction(
+  email: string,
+): Promise<{ ok: true; matched: boolean; vars: Record<string, string> }> {
+  await requireAdminProfile();
+  const addr = email.trim().toLowerCase();
+  if (!addr) return { ok: true, matched: false, vars: {} };
+  const db = asAnyDb(getSupabaseServiceClient());
+
+  const { data: contact } = await db
+    .from('contacts')
+    .select('first_name, last_name, email, company_id')
+    .ilike('email', addr)
+    .maybeSingle();
+  if (!contact) return { ok: true, matched: false, vars: {} };
+
+  const c = contact as {
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+    company_id: string | null;
+  };
+  const vars: Record<string, string> = {
+    'contact.first_name': c.first_name ?? '',
+    'contact.last_name': c.last_name ?? '',
+    'contact.email': c.email ?? '',
+  };
+
+  if (c.company_id) {
+    const { data: company } = await db
+      .from('companies')
+      .select('name')
+      .eq('id', c.company_id)
+      .maybeSingle();
+    if (company?.name) vars['company.name'] = company.name as string;
+
+    const { data: prospect } = await db
+      .from('prospects')
+      .select('estimated_amount')
+      .eq('company_id', c.company_id)
+      .not('estimated_amount', 'is', null)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const amount = (prospect as { estimated_amount: number | null } | null)?.estimated_amount;
+    if (amount != null) vars['prospect.amount'] = `${amount} €`;
+  }
+
+  return { ok: true, matched: true, vars };
+}
+
 const createAccountSchema = z.object({
   email: z.string().email(),
   display_name: z.string().trim().max(120).optional(),
