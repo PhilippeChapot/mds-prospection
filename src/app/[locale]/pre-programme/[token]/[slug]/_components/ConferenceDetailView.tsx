@@ -136,7 +136,9 @@ export function ConferenceDetailView({
             ← {t('Voir toutes les conférences', 'See all conferences')}
           </Link>
           <a
-            href="mailto:philippe@mediadays.solutions"
+            href="https://www.mediadays.solutions/fr/inscription-partenaire?category=partenaire"
+            target="_blank"
+            rel="noopener noreferrer"
             className="rounded-full border border-slate-300 px-6 py-3 text-sm font-bold text-[#1F2240] transition hover:bg-slate-50"
           >
             🤝 {t('Devenir partenaire', 'Become a partner')}
