@@ -598,6 +598,7 @@ export type Database = {
           id: string;
           invite_sequence: number;
           is_all_day: boolean;
+          last_rsvp_notification_at: string | null;
           location: string | null;
           meet_conference_id: string | null;
           meet_url: string | null;
@@ -629,6 +630,7 @@ export type Database = {
           id?: string;
           invite_sequence?: number;
           is_all_day?: boolean;
+          last_rsvp_notification_at?: string | null;
           location?: string | null;
           meet_conference_id?: string | null;
           meet_url?: string | null;
@@ -660,6 +662,7 @@ export type Database = {
           id?: string;
           invite_sequence?: number;
           is_all_day?: boolean;
+          last_rsvp_notification_at?: string | null;
           location?: string | null;
           meet_conference_id?: string | null;
           meet_url?: string | null;

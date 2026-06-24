@@ -1,10 +1,12 @@
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
+import { isApolloEnabled } from '@/lib/apollo/client';
 import { NewCompanyForm } from './NewCompanyForm';
 
 export const metadata = { title: 'Nouvelle societe' };
 
 export default async function NewCompanyPage() {
   await requireAdminProfile();
+  const apolloEnabled = await isApolloEnabled();
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
@@ -18,7 +20,7 @@ export default async function NewCompanyPage() {
         </p>
       </header>
 
-      <NewCompanyForm />
+      <NewCompanyForm apolloEnabled={apolloEnabled} />
     </div>
   );
 }

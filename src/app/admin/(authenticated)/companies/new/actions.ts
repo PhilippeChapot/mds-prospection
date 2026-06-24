@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import type { Database } from '@/lib/supabase/database.types';
+import { apolloOrganizationEnrich, isApolloEnabled, ApolloError } from '@/lib/apollo/client';
+import { extractDomainFromQuery, mapOrgToPrefill, type CompanyPrefill } from './apollo-prefill';
 
 type CategoryTarif = Database['public']['Enums']['category_tarif'];
 type PoleCode = Database['public']['Enums']['pole_code'];
@@ -44,6 +46,63 @@ export type CreateCompanyState = {
   fieldErrors?: Record<string, string>;
   duplicateCompanyId?: string;
 };
+
+export type EnrichCompanyResult =
+  | { ok: true; match: CompanyPrefill | null }
+  | { ok: false; error: string; reason?: 'disabled' | 'need_domain' };
+
+/**
+ * P5.x.CompanyNewApolloEnrich — enrichit le formulaire société depuis Apollo
+ * (/organizations/enrich par domaine). Renvoie le mapping prêt à pré-remplir.
+ */
+export async function enrichCompanyFromApolloAction(query: string): Promise<EnrichCompanyResult> {
+  const profile = await requireAdminProfile();
+  if (!(await isApolloEnabled())) {
+    return { ok: false, error: 'Apollo désactivé.', reason: 'disabled' };
+  }
+
+  const domain = extractDomainFromQuery(query);
+  if (!domain) {
+    return {
+      ok: false,
+      reason: 'need_domain',
+      error: 'Renseignez un domaine ou une URL (la recherche par nom seul est indisponible).',
+    };
+  }
+
+  let org;
+  try {
+    org = await apolloOrganizationEnrich(domain);
+  } catch (err) {
+    const msg = err instanceof ApolloError ? err.message : 'Erreur Apollo.';
+    return { ok: false, error: msg };
+  }
+  if (!org) return { ok: true, match: null };
+
+  const match = mapOrgToPrefill(org);
+
+  // Audit (best-effort, non bloquant) — uniquement si match.
+  try {
+    const supabase = await createSupabaseServerClient();
+    await supabase.from('audit_log').insert({
+      user_id: profile.id,
+      action: 'sync_manual',
+      entity_type: 'company_form_prefill',
+      after: {
+        kind: 'company_enriched_apollo',
+        apollo_organization_id: match.apolloOrganizationId,
+        domain,
+        fields_prefilled: ['name', 'primary_domain', 'country'].filter(
+          (f) => match[f as 'name' | 'primary_domain' | 'country'],
+        ),
+      } as never,
+    });
+  } catch {
+    /* best-effort */
+  }
+
+  return { ok: true, match };
+}
 
 export async function createCompanyAction(
   _prev: CreateCompanyState,
