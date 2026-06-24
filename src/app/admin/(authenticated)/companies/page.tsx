@@ -11,6 +11,8 @@ import type { Database } from '@/lib/supabase/database.types';
 import { cn } from '@/lib/utils';
 import { CompaniesExportButton } from './CompaniesExportButton';
 import { CompaniesListClient } from './_components/CompaniesListClient';
+import { EventTagsFilter } from './_components/EventTagsFilter';
+import { parseEventTagKeys } from '@/lib/external-events/filter';
 
 export const metadata = { title: 'Societes' };
 
@@ -35,6 +37,8 @@ type SearchParams = Promise<{
   address?: string;
   /** P5.x.ProspectionIndicators : '1' pour masquer les sociétés déjà prospectées. */
   hideProspected?: string;
+  /** P5.x.CompaniesListEnrichments : clés d'événements CSV (prs,satis,…). */
+  event_tags?: string;
   page?: string;
 }>;
 
@@ -62,6 +66,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
   const addressFilter: 'missing' | 'complete' | '' =
     params.address === 'missing' ? 'missing' : params.address === 'complete' ? 'complete' : '';
   const hideProspected = params.hideProspected === '1';
+  const eventTags = parseEventTagKeys(params.event_tags);
   const page = Math.max(1, Number(params.page ?? '1'));
 
   const [{ rows, total }, countries, fuzzyResults] = await Promise.all([
@@ -73,6 +78,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
       missingAddress:
         addressFilter === 'missing' ? true : addressFilter === 'complete' ? false : null,
       hideProspected: hideProspected || null,
+      eventTags: eventTags.length > 0 ? eventTags : null,
       page,
       perPage: PER_PAGE,
     }),
@@ -84,7 +90,13 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
   const hasFilters = Boolean(
-    q || poleFilter || categoryFilter || countryFilter || addressFilter || hideProspected,
+    q ||
+    poleFilter ||
+    categoryFilter ||
+    countryFilter ||
+    addressFilter ||
+    hideProspected ||
+    eventTags.length > 0,
   );
 
   return (
@@ -189,6 +201,9 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Se
           <option value="missing">⚠ Adresse manquante</option>
           <option value="complete">✓ Adresse complète</option>
         </select>
+
+        {/* P5.x.CompaniesListEnrichments — filtre Tag salon (multi-select, OR) */}
+        <EventTagsFilter selected={eventTags} />
 
         {/* P5.x.ProspectionIndicators */}
         <label className="text-md-text-muted inline-flex cursor-pointer items-center gap-1.5 text-xs">

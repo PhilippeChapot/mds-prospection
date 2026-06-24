@@ -95,4 +95,6 @@ export type CompanyListItem = {
   pole: { code: string; name_fr: string } | null;
   /** P5.x.ProspectionIndicators — au moins un contact de la société est prospect. */
   has_prospected_contact: boolean;
+  /** P5.x.CompaniesListEnrichments — owner du prospect le plus récent (sous "Prospecté"). */
+  latest_prospect_owner: string | null;
 };

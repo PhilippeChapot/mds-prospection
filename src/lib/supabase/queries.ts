@@ -10,6 +10,8 @@
  * depuis un Client Component.
  */
 import { createSupabaseServerClient } from './server';
+import { buildEventTagsOrExpr } from '@/lib/external-events/filter';
+import type { ExternalEventKey } from '@/lib/external-events/types';
 import type { Database } from './database.types';
 import {
   PIPELINE_ORDER,
@@ -135,6 +137,8 @@ export async function listCompaniesPaginated(opts: {
   missingAddress?: boolean | null;
   /** P5.x.ProspectionIndicators : masquer sociétés déjà prospectées. */
   hideProspected?: boolean | null;
+  /** P5.x.CompaniesListEnrichments : filtre OR par clé d'événement externe. */
+  eventTags?: string[] | null;
   page?: number;
   perPage?: number;
 }): Promise<{ rows: CompanyListItem[]; total: number; page: number; perPage: number }> {
@@ -202,6 +206,11 @@ export async function listCompaniesPaginated(opts: {
   if (opts.hideProspected === true && prospectedCompanyIdsAll && prospectedCompanyIdsAll.size > 0) {
     query = query.not('id', 'in', `(${[...prospectedCompanyIdsAll].join(',')})`);
   }
+  // P5.x.CompaniesListEnrichments — filtre Tag salon : OR sur les clés JSONB
+  // présentes (external_event_tags->key non null). Clés déjà validées en amont.
+  if (opts.eventTags && opts.eventTags.length > 0) {
+    query = query.or(buildEventTagsOrExpr(opts.eventTags as ExternalEventKey[]));
+  }
 
   const { data, error, count } = await query;
   if (error) {
@@ -209,37 +218,41 @@ export async function listCompaniesPaginated(opts: {
     return { rows: [], total: 0, page, perPage };
   }
 
-  // P5.x.ProspectionIndicators — post-enrich with has_prospected_contact
+  // P5.x.ProspectionIndicators + CompaniesListEnrichments — post-enrich par page :
+  // statut prospecté + owner du prospect le plus récent (sous le badge Prospecté).
   const baseCompanyIds = (data ?? []).map((r) => r.id);
-  let prospectedIdsForPage: Set<string>;
-  if (prospectedCompanyIdsAll !== null) {
-    // Reuse pre-query data (hideProspected path)
-    prospectedIdsForPage = prospectedCompanyIdsAll;
-  } else if (baseCompanyIds.length > 0) {
+  const prospectedIdsForPage = new Set<string>();
+  const ownerByCompany = new Map<string, string>();
+  if (baseCompanyIds.length > 0) {
     const { data: contactsForPage } = await supabase
       .from('contacts')
       .select('id, company_id')
       .in('company_id', baseCompanyIds);
-    const contactIdsForPage = (
-      (contactsForPage ?? []) as Array<{ id: string; company_id: string | null }>
-    ).map((c) => c.id);
-    prospectedIdsForPage = new Set<string>();
+    const contactToCompany = new Map<string, string>();
+    for (const c of (contactsForPage ?? []) as Array<{ id: string; company_id: string | null }>) {
+      if (c.company_id) contactToCompany.set(c.id, c.company_id);
+    }
+    const contactIdsForPage = [...contactToCompany.keys()];
     if (contactIdsForPage.length > 0) {
+      // Prospects de ces contacts, plus récent d'abord → le 1er par company gagne.
       const { data: prospectRows } = await supabase
         .from('prospects')
-        .select('primary_contact_id')
-        .in('primary_contact_id', contactIdsForPage);
-      const prospectedContactIds = new Set(
-        ((prospectRows ?? []) as Array<{ primary_contact_id: string }>).map(
-          (p) => p.primary_contact_id,
-        ),
-      );
-      for (const c of (contactsForPage ?? []) as Array<{ id: string; company_id: string | null }>) {
-        if (prospectedContactIds.has(c.id) && c.company_id) prospectedIdsForPage.add(c.company_id);
+        .select('primary_contact_id, created_at, owner:users!prospects_owner_id_fkey(full_name)')
+        .in('primary_contact_id', contactIdsForPage)
+        .order('created_at', { ascending: false });
+      for (const p of (prospectRows ?? []) as Array<{
+        primary_contact_id: string;
+        owner: { full_name: string | null } | { full_name: string | null }[] | null;
+      }>) {
+        const companyId = contactToCompany.get(p.primary_contact_id);
+        if (!companyId) continue;
+        prospectedIdsForPage.add(companyId);
+        const owner = pickFirst(p.owner);
+        if (owner?.full_name && !ownerByCompany.has(companyId)) {
+          ownerByCompany.set(companyId, owner.full_name);
+        }
       }
     }
-  } else {
-    prospectedIdsForPage = new Set<string>();
   }
 
   const rows = (data ?? []).map((row) => ({
@@ -258,6 +271,7 @@ export async function listCompaniesPaginated(opts: {
     created_at: row.created_at,
     pole: pickFirst(row.pole),
     has_prospected_contact: prospectedIdsForPage.has(row.id),
+    latest_prospect_owner: ownerByCompany.get(row.id) ?? null,
   }));
 
   return { rows, total: count ?? 0, page, perPage };

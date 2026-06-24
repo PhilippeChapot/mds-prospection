@@ -145,9 +145,16 @@ const columns: ColumnDef<CompanyListItem>[] = [
     minSize: 90,
     cell: ({ row }) =>
       row.original.has_prospected_contact ? (
-        <span className="text-xs font-semibold whitespace-nowrap text-emerald-700">
-          ✓ Prospecté
-        </span>
+        <div className="leading-tight">
+          <span className="text-xs font-semibold whitespace-nowrap text-emerald-700">
+            ✓ Prospecté
+          </span>
+          {row.original.latest_prospect_owner && (
+            <span className="text-md-text-muted block truncate text-[11px]">
+              {row.original.latest_prospect_owner}
+            </span>
+          )}
+        </div>
       ) : (
         <span className="text-xs font-semibold whitespace-nowrap text-amber-600">
           ⚠ À prospecter
