@@ -17,6 +17,7 @@ export interface PreProgrammeLabels {
   prsTrack: string;
   prsTagline: string;
   targetAudience: string;
+  keyFigures: string;
   teaserNote: string;
   ctaTitle: string;
   ctaSubtitle: string;
@@ -42,6 +43,7 @@ export const PREPROGRAMME_LABELS: Record<'fr' | 'en', PreProgrammeLabels> = {
     prsTrack: 'Paris Radio Show',
     prsTagline: 'Le rendez-vous de la radio et de l’audio.',
     targetAudience: 'Pour qui ?',
+    keyFigures: '📊 Chiffres clés',
     teaserNote: 'Intervenants et horaires dévoilés prochainement.',
     ctaTitle: 'Envie d’en être ?',
     ctaSubtitle: 'Réservez votre place dans le programme 2026.',
@@ -65,6 +67,7 @@ export const PREPROGRAMME_LABELS: Record<'fr' | 'en', PreProgrammeLabels> = {
     prsTrack: 'Paris Radio Show',
     prsTagline: 'The radio & audio gathering.',
     targetAudience: 'Who for?',
+    keyFigures: '📊 Key figures',
     teaserNote: 'Speakers and schedule revealed soon.',
     ctaTitle: 'Want to be part of it?',
     ctaSubtitle: 'Secure your place in the 2026 programme.',

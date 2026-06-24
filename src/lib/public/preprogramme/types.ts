@@ -18,6 +18,7 @@ export interface PreProgrammeConference {
   description: string | null;
   conferenceType: string | null;
   targetAudience: string | null;
+  keyFigures: string[];
   poles: PreProgrammePole[];
 }
 

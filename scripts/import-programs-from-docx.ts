@@ -46,6 +46,8 @@ const SOURCES = [
 
 const args = process.argv.slice(2);
 const apply = args.includes('--apply');
+const reExtract = args.includes('--re-extract');
+const forceOverwrite = args.includes('--force-overwrite');
 const dryRun = !apply || args.includes('--dry-run');
 
 async function main() {
@@ -95,6 +97,27 @@ async function main() {
   if (!url || !key)
     throw new Error('NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquants.');
   const supabase = createClient<Database>(url, key);
+
+  // P16.x — mode --re-extract : met à jour uniquement les chiffres clés des
+  // conférences déjà importées (sans toucher au reste).
+  if (reExtract) {
+    const { reExtractKeyFigures } = await import('../src/lib/admin/programs/import-helpers');
+    const counts = { updated: 0, 'skipped-existing': 0, 'skipped-empty': 0, 'not-found': 0 };
+    for (const p of parsed) {
+      for (const conf of p.conferences) {
+        const r = await reExtractKeyFigures(supabase, conf, {
+          programTrack: p.track,
+          forceOverwrite,
+        });
+        counts[r] += 1;
+      }
+    }
+    console.log(
+      `\n=== RE-EXTRACT chiffres clés ===\n  updated: ${counts.updated}\n  skipped (déjà saisis): ${counts['skipped-existing']}\n  skipped (vides): ${counts['skipped-empty']}\n  not-found: ${counts['not-found']}` +
+        (forceOverwrite ? '\n  (--force-overwrite actif)' : ''),
+    );
+    return;
+  }
 
   let confCreated = 0;
   let spkCreated = 0;

@@ -26,6 +26,8 @@ export type ParsedConference = {
   pitch: string | null;
   poles: PoleCode[];
   speakers: ParsedSpeaker[];
+  /** P16.x : chiffres clés extraits de la section « CHIFFRES CLÉS » (max 5). */
+  keyFigures: string[];
 };
 
 function deburr(s: string): string {
@@ -171,6 +173,36 @@ const HEADER_RE = /^T(\d+)\.\s+(.{4,})$/;
 const SPEAKERS_LABEL_RE = /^(intervenants pressentis|speakers pressentis)$/i;
 const SPEAKERS_STOP_RE = /^(soci[ée]t|exposants|récapitulatif|public vis|chiffres cl)/i;
 const PITCH_INLINE_RE = /^pitch\s*[—–-]\s*(.+)$/i;
+const KEY_FIGURES_LABEL_RE = /^chiffres cl[ée]s\s*$/i;
+// Fin de la section chiffres clés : tout autre entête de section.
+const KEY_FIGURES_STOP_RE =
+  /^(intervenants|speakers|exposants|soci[ée]t|public vis|pitch|pourquoi|r[ée]capitulatif|format)/i;
+
+const MAX_KEY_FIGURES = 5;
+const MAX_KEY_FIGURE_LEN = 200;
+
+/**
+ * P16.x — extrait les chiffres clés d'un bloc conférence : lignes entre
+ * l'entête « CHIFFRES CLÉS » / « Chiffres clés » et l'entête de section
+ * suivante. Max 5, tronqués à 200 caractères, dédoublonnés.
+ */
+export function extractKeyFigures(block: string[]): string[] {
+  const start = block.findIndex((l) => KEY_FIGURES_LABEL_RE.test(l));
+  if (start < 0) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (let i = start + 1; i < block.length && out.length < MAX_KEY_FIGURES; i += 1) {
+    const line = block[i].trim();
+    if (!line) continue;
+    if (KEY_FIGURES_STOP_RE.test(line)) break;
+    const clean = line.slice(0, MAX_KEY_FIGURE_LEN);
+    const key = clean.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(clean);
+  }
+  return out;
+}
 
 /** Parse le texte brut d'un DOCX en conférences. */
 export function parseProgram(rawText: string): ParsedConference[] {
@@ -222,6 +254,7 @@ export function parseProgram(rawText: string): ParsedConference[] {
       pitch,
       poles: detectPoles(`${headers[h].title} ${pitch ?? ''}`),
       speakers,
+      keyFigures: extractKeyFigures(block),
     });
   }
 

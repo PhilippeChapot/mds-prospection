@@ -36,6 +36,8 @@ const ConferenceSchema = z.object({
   // P16.x.PreProgrammeTeaser — public cible (affiché dans le pré-programme).
   target_audience_fr: z.string().trim().max(2000).optional().nullable(),
   target_audience_en: z.string().trim().max(2000).optional().nullable(),
+  // P16.x.ConferencesKeyFigures — chiffres clés FR (max 5, 200 chars chacun).
+  key_figures_fr: z.array(z.string().trim().min(1).max(200)).max(5).optional().nullable(),
 });
 
 export type ConferenceInput = z.input<typeof ConferenceSchema>;

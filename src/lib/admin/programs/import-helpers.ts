@@ -156,6 +156,7 @@ export async function ensureConference(
 
   const { data: created, error } = await supabase
     .from('conferences')
+    // P16.x : key_figures_fr pas encore dans les types générés (migration 0105).
     .insert({
       title_fr: conf.title,
       description_fr: conf.pitch,
@@ -167,11 +168,43 @@ export async function ensureConference(
       slug,
       imported_at: input.nowIso,
       imported_source: input.importedSource,
-    })
+      key_figures_fr: conf.keyFigures.length ? conf.keyFigures : null,
+    } as never)
     .select('id')
     .single();
   if (error || !created) throw new Error(`ensureConference(${conf.title}): ${error?.message}`);
   return { conferenceId: created.id, created: true };
+}
+
+/**
+ * P16.x.ConferencesKeyFigures — mode `--re-extract` : met à jour les chiffres
+ * clés d'une conférence DÉJÀ importée (match title_fr + program_track), sans
+ * écraser une saisie manuelle (sauf forceOverwrite). Ne touche à rien d'autre.
+ */
+export async function reExtractKeyFigures(
+  supabase: Client,
+  conf: ParsedConference,
+  opts: { programTrack: string; forceOverwrite: boolean },
+): Promise<'updated' | 'skipped-existing' | 'skipped-empty' | 'not-found'> {
+  // key_figures_fr pas encore dans les types générés → cast.
+  const db = supabase as unknown as SupabaseClient;
+  const { data: existing } = await db
+    .from('conferences')
+    .select('id, key_figures_fr')
+    .eq('title_fr', conf.title)
+    .eq('program_track', opts.programTrack)
+    .maybeSingle();
+  if (!existing?.id) return 'not-found';
+
+  const current = (existing as Record<string, unknown>).key_figures_fr as string[] | null;
+  if (current && current.length > 0 && !opts.forceOverwrite) return 'skipped-existing';
+  if (conf.keyFigures.length === 0) return 'skipped-empty';
+
+  await db
+    .from('conferences')
+    .update({ key_figures_fr: conf.keyFigures } as never)
+    .eq('id', existing.id as string);
+  return 'updated';
 }
 
 /**

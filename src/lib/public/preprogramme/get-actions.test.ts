@@ -56,6 +56,8 @@ function conf(over: Record<string, unknown> = {}) {
     poles: ['AUDIO_RADIO'],
     target_audience_fr: 'Marketeurs',
     target_audience_en: 'Marketers',
+    key_figures_fr: ['Stat FR 1', 'Stat FR 2'],
+    key_figures_en: ['Stat EN 1', 'Stat EN 2'],
     ...over,
   };
 }
@@ -172,6 +174,20 @@ describe('getPreProgrammeAction (P16.x)', () => {
     const { getPreProgrammeAction } = await import('./get-actions');
     const r = await getPreProgrammeAction(TOKEN, 'en');
     if (r.ok) expect(r.data.mds[0].title).toBe('Conf FR');
+  });
+
+  it('keyFigures : EN si dispo, sinon fallback FR', async () => {
+    state.conferences = [
+      conf({ id: 'c1' }),
+      conf({ id: 'c2', key_figures_en: null }), // pas de EN → fallback FR
+    ];
+    mockEnv();
+    const { getPreProgrammeAction } = await import('./get-actions');
+    const r = await getPreProgrammeAction(TOKEN, 'en');
+    if (r.ok) {
+      expect(r.data.mds.find((c) => c.id === 'c1')?.keyFigures).toEqual(['Stat EN 1', 'Stat EN 2']);
+      expect(r.data.mds.find((c) => c.id === 'c2')?.keyFigures).toEqual(['Stat FR 1', 'Stat FR 2']);
+    }
   });
 });
 

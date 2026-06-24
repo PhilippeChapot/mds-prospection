@@ -1215,6 +1215,8 @@ export type Database = {
           room: string | null;
           slug: string | null;
           start_at: string | null;
+          target_audience_en: string | null;
+          target_audience_fr: string | null;
           title_en: string | null;
           title_fr: string;
           updated_at: string;
@@ -1240,6 +1242,8 @@ export type Database = {
           room?: string | null;
           slug?: string | null;
           start_at?: string | null;
+          target_audience_en?: string | null;
+          target_audience_fr?: string | null;
           title_en?: string | null;
           title_fr: string;
           updated_at?: string;
@@ -1265,6 +1269,8 @@ export type Database = {
           room?: string | null;
           slug?: string | null;
           start_at?: string | null;
+          target_audience_en?: string | null;
+          target_audience_fr?: string | null;
           title_en?: string | null;
           title_fr?: string;
           updated_at?: string;

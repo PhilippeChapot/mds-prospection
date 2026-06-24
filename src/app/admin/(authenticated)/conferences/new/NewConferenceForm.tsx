@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { KeyFiguresInput } from '../_components/KeyFiguresInput';
 import { POLE_CODES, type PoleCode } from '@/lib/design-tokens';
 import {
   CONFERENCE_TYPES,
@@ -43,6 +44,7 @@ export function NewConferenceForm() {
   const [descEn, setDescEn] = useState('');
   const [audienceFr, setAudienceFr] = useState('');
   const [audienceEn, setAudienceEn] = useState('');
+  const [keyFiguresFr, setKeyFiguresFr] = useState<string[]>([]);
   const [startAt, setStartAt] = useState('');
   const [endAt, setEndAt] = useState('');
   const [room, setRoom] = useState('');
@@ -83,6 +85,7 @@ export function NewConferenceForm() {
       description_en: descEn.trim() || undefined,
       target_audience_fr: audienceFr.trim() || undefined,
       target_audience_en: audienceEn.trim() || undefined,
+      key_figures_fr: keyFiguresFr.length ? keyFiguresFr : null,
       conference_type: type ? (type as ConferenceInput['conference_type']) : null,
       start_at: toIso(startAt),
       end_at: toIso(endAt),
@@ -204,6 +207,9 @@ export function NewConferenceForm() {
         </Field>
         <Field label="Public cible — pré-programme (EN)">
           <Textarea value={audienceEn} onChange={(e) => setAudienceEn(e.target.value)} rows={2} />
+        </Field>
+        <Field label="Chiffres clés — pré-programme (FR)">
+          <KeyFiguresInput value={keyFiguresFr} onChange={setKeyFiguresFr} />
         </Field>
       </Section>
 

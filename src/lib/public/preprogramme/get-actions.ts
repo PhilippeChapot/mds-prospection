@@ -49,7 +49,8 @@ export async function getPreProgrammeAction(
     .from('conferences')
     .select(
       `id, title_fr, title_en, description_fr, description_en, program_track,
-       conference_type, poles, target_audience_fr, target_audience_en`,
+       conference_type, poles, target_audience_fr, target_audience_en,
+       key_figures_fr, key_figures_en`,
     )
     .eq('is_validated', true)
     .eq('is_published', true);
@@ -101,6 +102,13 @@ export async function getPreProgrammeAction(
       conferenceType: (r.conference_type as string | null) ?? null,
       targetAudience:
         ((locale === 'en' ? r.target_audience_en : r.target_audience_fr) as string | null) ?? null,
+      keyFigures: (() => {
+        const en = (r.key_figures_en as string[] | null) ?? null;
+        const fr = (r.key_figures_fr as string[] | null) ?? null;
+        // EN si dispo (et non vide), sinon fallback FR.
+        const chosen = locale === 'en' && en && en.length > 0 ? en : (fr ?? []);
+        return chosen;
+      })(),
       poles,
     };
   };

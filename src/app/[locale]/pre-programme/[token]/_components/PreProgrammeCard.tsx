@@ -6,6 +6,9 @@
 import type { PreProgrammeLabels } from './labels';
 import type { PreProgrammeConference } from '@/lib/public/preprogramme/types';
 
+/** 5 couleurs cycliques pour les chiffres clés. */
+const KEY_FIGURE_COLORS = ['#294294', '#E94E8A', '#B3122F', '#2E8B57', '#D97706'];
+
 export function PreProgrammeCard({
   conference,
   labels,
@@ -37,6 +40,27 @@ export function PreProgrammeCard({
       </h3>
       {conference.description && (
         <p className="mt-2 line-clamp-3 text-sm text-[#5A6080]">{conference.description}</p>
+      )}
+      {conference.keyFigures.length > 0 && (
+        <div className="mt-4 border-t border-slate-100 pt-3">
+          <span className="text-[10px] font-bold tracking-widest text-[#5A6080] uppercase">
+            {labels.keyFigures}
+          </span>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {conference.keyFigures.map((fig, i) => (
+              <li
+                key={i}
+                className="rounded-lg px-2.5 py-1.5 text-xs leading-snug"
+                style={{
+                  backgroundColor: `${KEY_FIGURE_COLORS[i % KEY_FIGURE_COLORS.length]}14`,
+                  color: KEY_FIGURE_COLORS[i % KEY_FIGURE_COLORS.length],
+                }}
+              >
+                {fig}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {conference.targetAudience && (
         <div className="mt-4 border-t border-slate-100 pt-3">

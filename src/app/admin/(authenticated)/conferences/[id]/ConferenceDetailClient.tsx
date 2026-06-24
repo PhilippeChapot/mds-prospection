@@ -27,6 +27,8 @@ import {
 } from '@/lib/admin/conferences/crud-actions';
 import { ConferenceSpeakersManager, type ManagedSpeaker } from './ConferenceSpeakersManager';
 import { validateConferenceAction } from '@/lib/admin/programs/validation-actions';
+import { KeyFiguresInput } from '../_components/KeyFiguresInput';
+import { TranslateConferenceButton } from '../TranslateButtons';
 
 export type AttachedSpeaker = ManagedSpeaker;
 
@@ -38,6 +40,8 @@ export type ConferenceDetail = {
   description_en: string | null;
   target_audience_fr: string | null;
   target_audience_en: string | null;
+  key_figures_fr: string[] | null;
+  key_figures_en: string[] | null;
   conference_type: string | null;
   start_at: string | null;
   end_at: string | null;
@@ -98,6 +102,7 @@ export function ConferenceDetailClient({
   const [descEn, setDescEn] = useState(conference.description_en ?? '');
   const [audienceFr, setAudienceFr] = useState(conference.target_audience_fr ?? '');
   const [audienceEn, setAudienceEn] = useState(conference.target_audience_en ?? '');
+  const [keyFiguresFr, setKeyFiguresFr] = useState<string[]>(conference.key_figures_fr ?? []);
   const [startAt, setStartAt] = useState(isoToLocalInput(conference.start_at));
   const [endAt, setEndAt] = useState(isoToLocalInput(conference.end_at));
   const [room, setRoom] = useState(conference.room ?? '');
@@ -118,6 +123,7 @@ export function ConferenceDetailClient({
       description_en: descEn.trim() || undefined,
       target_audience_fr: audienceFr.trim() || undefined,
       target_audience_en: audienceEn.trim() || undefined,
+      key_figures_fr: keyFiguresFr.length ? keyFiguresFr : null,
       conference_type: type ? (type as ConferenceInput['conference_type']) : null,
       start_at: localToIso(startAt),
       end_at: localToIso(endAt),
@@ -191,6 +197,7 @@ export function ConferenceDetailClient({
           ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
+          <TranslateConferenceButton conferenceId={conference.id} />
           {!conference.is_validated ? (
             <Button
               size="sm"
@@ -341,6 +348,9 @@ export function ConferenceDetailClient({
                     onChange={(e) => setAudienceEn(e.target.value)}
                     rows={2}
                   />
+                </EditField>
+                <EditField label="Chiffres clés — pré-programme (FR)">
+                  <KeyFiguresInput value={keyFiguresFr} onChange={setKeyFiguresFr} />
                 </EditField>
                 <EditField label="Pôles">
                   <div className="flex flex-wrap gap-2">
