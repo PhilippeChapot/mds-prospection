@@ -12,6 +12,7 @@ import {
   CONFERENCE_CITIES,
 } from '@/lib/conferences/constants';
 import { ConferencesListClient } from './ConferencesListClient';
+import { PreProgrammePreviewButton } from './PreProgrammePreviewButton';
 
 export const metadata = { title: 'Conférences' };
 
@@ -64,12 +65,22 @@ export default async function ConferencesPage({ searchParams }: { searchParams: 
             Programme MDS 2026 (Marseille · Bruxelles · Paris).
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/conferences/new">
-            <Plus className="size-4" aria-hidden />
-            Nouvelle conférence
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {profile.role === 'super_admin' &&
+            (() => {
+              const token = process.env.PREPROGRAMME_TOKEN;
+              const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
+              const urlFr = token ? `${appUrl}/fr/pre-programme/${token}` : null;
+              const urlEn = token ? `${appUrl}/en/pre-programme/${token}` : null;
+              return <PreProgrammePreviewButton urlFr={urlFr} urlEn={urlEn} />;
+            })()}
+          <Button asChild>
+            <Link href="/admin/conferences/new">
+              <Plus className="size-4" aria-hidden />
+              Nouvelle conférence
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3">

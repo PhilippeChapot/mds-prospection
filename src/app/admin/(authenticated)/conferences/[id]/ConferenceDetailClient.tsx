@@ -36,6 +36,8 @@ export type ConferenceDetail = {
   title_en: string | null;
   description_fr: string | null;
   description_en: string | null;
+  target_audience_fr: string | null;
+  target_audience_en: string | null;
   conference_type: string | null;
   start_at: string | null;
   end_at: string | null;
@@ -94,6 +96,8 @@ export function ConferenceDetailClient({
   const [type, setType] = useState(conference.conference_type ?? '');
   const [descFr, setDescFr] = useState(conference.description_fr ?? '');
   const [descEn, setDescEn] = useState(conference.description_en ?? '');
+  const [audienceFr, setAudienceFr] = useState(conference.target_audience_fr ?? '');
+  const [audienceEn, setAudienceEn] = useState(conference.target_audience_en ?? '');
   const [startAt, setStartAt] = useState(isoToLocalInput(conference.start_at));
   const [endAt, setEndAt] = useState(isoToLocalInput(conference.end_at));
   const [room, setRoom] = useState(conference.room ?? '');
@@ -112,6 +116,8 @@ export function ConferenceDetailClient({
       title_en: titleEn.trim() || undefined,
       description_fr: descFr.trim() || undefined,
       description_en: descEn.trim() || undefined,
+      target_audience_fr: audienceFr.trim() || undefined,
+      target_audience_en: audienceEn.trim() || undefined,
       conference_type: type ? (type as ConferenceInput['conference_type']) : null,
       start_at: localToIso(startAt),
       end_at: localToIso(endAt),
@@ -320,6 +326,21 @@ export function ConferenceDetailClient({
                 </EditField>
                 <EditField label="Description (EN)">
                   <Textarea value={descEn} onChange={(e) => setDescEn(e.target.value)} rows={3} />
+                </EditField>
+                <EditField label="Public cible — pré-programme (FR)">
+                  <Textarea
+                    value={audienceFr}
+                    onChange={(e) => setAudienceFr(e.target.value)}
+                    rows={2}
+                    placeholder="Ex : Directeurs marketing, responsables média, agences"
+                  />
+                </EditField>
+                <EditField label="Public cible — pré-programme (EN)">
+                  <Textarea
+                    value={audienceEn}
+                    onChange={(e) => setAudienceEn(e.target.value)}
+                    rows={2}
+                  />
                 </EditField>
                 <EditField label="Pôles">
                   <div className="flex flex-wrap gap-2">

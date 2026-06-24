@@ -77,6 +77,8 @@ export default async function ConferenceDetailPage({ params }: { params: Params 
     title_en: (conf.title_en as string | null) ?? null,
     description_fr: (conf.description_fr as string | null) ?? null,
     description_en: (conf.description_en as string | null) ?? null,
+    target_audience_fr: (conf.target_audience_fr as string | null) ?? null,
+    target_audience_en: (conf.target_audience_en as string | null) ?? null,
     conference_type: (conf.conference_type as string | null) ?? null,
     start_at: (conf.start_at as string | null) ?? null,
     end_at: (conf.end_at as string | null) ?? null,

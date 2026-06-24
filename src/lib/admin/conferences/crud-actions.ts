@@ -33,6 +33,9 @@ const ConferenceSchema = z.object({
   poles: z.array(z.enum(POLE_CODES)).optional().nullable(),
   is_published: z.boolean().default(false),
   featured: z.boolean().default(false),
+  // P16.x.PreProgrammeTeaser — public cible (affiché dans le pré-programme).
+  target_audience_fr: z.string().trim().max(2000).optional().nullable(),
+  target_audience_en: z.string().trim().max(2000).optional().nullable(),
 });
 
 export type ConferenceInput = z.input<typeof ConferenceSchema>;
@@ -107,7 +110,8 @@ export async function createConferenceAction(
 
   const { data: newConf, error } = await supabase
     .from('conferences')
-    .insert({ ...parsed, slug })
+    // cast : target_audience_* pas encore dans les types générés (migration 0104).
+    .insert({ ...parsed, slug } as never)
     .select('id')
     .single();
   if (error || !newConf) throw new Error(error?.message ?? 'Erreur création conférence.');
@@ -136,7 +140,7 @@ export async function updateConferenceAction(
 
   const { error } = await supabase
     .from('conferences')
-    .update({ ...parsed, updated_at: new Date().toISOString() })
+    .update({ ...parsed, updated_at: new Date().toISOString() } as never)
     .eq('id', conferenceId);
   if (error) throw new Error(error.message);
 

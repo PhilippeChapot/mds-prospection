@@ -41,6 +41,8 @@ export function NewConferenceForm() {
   const [type, setType] = useState('');
   const [descFr, setDescFr] = useState('');
   const [descEn, setDescEn] = useState('');
+  const [audienceFr, setAudienceFr] = useState('');
+  const [audienceEn, setAudienceEn] = useState('');
   const [startAt, setStartAt] = useState('');
   const [endAt, setEndAt] = useState('');
   const [room, setRoom] = useState('');
@@ -79,6 +81,8 @@ export function NewConferenceForm() {
       title_en: titleEn.trim() || undefined,
       description_fr: descFr.trim() || undefined,
       description_en: descEn.trim() || undefined,
+      target_audience_fr: audienceFr.trim() || undefined,
+      target_audience_en: audienceEn.trim() || undefined,
       conference_type: type ? (type as ConferenceInput['conference_type']) : null,
       start_at: toIso(startAt),
       end_at: toIso(endAt),
@@ -189,6 +193,17 @@ export function NewConferenceForm() {
         </Field>
         <Field label="Description (EN)">
           <Textarea value={descEn} onChange={(e) => setDescEn(e.target.value)} rows={3} />
+        </Field>
+        <Field label="Public cible — pré-programme (FR)">
+          <Textarea
+            value={audienceFr}
+            onChange={(e) => setAudienceFr(e.target.value)}
+            rows={2}
+            placeholder="Ex : Directeurs marketing, responsables média, agences"
+          />
+        </Field>
+        <Field label="Public cible — pré-programme (EN)">
+          <Textarea value={audienceEn} onChange={(e) => setAudienceEn(e.target.value)} rows={2} />
         </Field>
       </Section>
 
