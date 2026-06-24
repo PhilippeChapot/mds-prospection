@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pencil, Eye, EyeOff, Trash2, BadgeCheck } from 'lucide-react';
+import { Pencil, Eye, EyeOff, Trash2, BadgeCheck, Wand2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,7 @@ import { ConferenceSpeakersManager, type ManagedSpeaker } from './ConferenceSpea
 import { validateConferenceAction } from '@/lib/admin/programs/validation-actions';
 import { KeyFiguresInput } from '../_components/KeyFiguresInput';
 import { TranslateConferenceButton } from '../TranslateButtons';
+import { translateConferenceFieldAction } from '@/lib/admin/conferences/translate-actions';
 
 export type AttachedSpeaker = ManagedSpeaker;
 
@@ -103,6 +104,26 @@ export function ConferenceDetailClient({
   const [audienceFr, setAudienceFr] = useState(conference.target_audience_fr ?? '');
   const [audienceEn, setAudienceEn] = useState(conference.target_audience_en ?? '');
   const [keyFiguresFr, setKeyFiguresFr] = useState<string[]>(conference.key_figures_fr ?? []);
+  const [keyFiguresEn, setKeyFiguresEn] = useState<string[]>(conference.key_figures_en ?? []);
+  const [translatingField, setTranslatingField] = useState<string | null>(null);
+
+  // P16.x — traduit un champ FR (valeur à l'écran) → remplit le champ EN.
+  function translateField(
+    field: 'title' | 'description' | 'target_audience' | 'key_figures',
+    payload: { source_text?: string; source_list?: string[] },
+    apply: (text: string, list: string[]) => void,
+  ) {
+    setTranslatingField(field);
+    startTransition(async () => {
+      const r = await translateConferenceFieldAction({ field, ...payload });
+      setTranslatingField(null);
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      apply(r.text ?? '', r.list ?? []);
+    });
+  }
   const [startAt, setStartAt] = useState(isoToLocalInput(conference.start_at));
   const [endAt, setEndAt] = useState(isoToLocalInput(conference.end_at));
   const [room, setRoom] = useState(conference.room ?? '');
@@ -124,6 +145,7 @@ export function ConferenceDetailClient({
       target_audience_fr: audienceFr.trim() || undefined,
       target_audience_en: audienceEn.trim() || undefined,
       key_figures_fr: keyFiguresFr.length ? keyFiguresFr : null,
+      key_figures_en: keyFiguresEn.length ? keyFiguresEn : null,
       conference_type: type ? (type as ConferenceInput['conference_type']) : null,
       start_at: localToIso(startAt),
       end_at: localToIso(endAt),
@@ -328,30 +350,57 @@ export function ConferenceDetailClient({
                     />
                   </EditField>
                 </div>
-                <EditField label="Description (FR)">
-                  <Textarea value={descFr} onChange={(e) => setDescFr(e.target.value)} rows={3} />
-                </EditField>
-                <EditField label="Description (EN)">
-                  <Textarea value={descEn} onChange={(e) => setDescEn(e.target.value)} rows={3} />
-                </EditField>
-                <EditField label="Public cible — pré-programme (FR)">
-                  <Textarea
-                    value={audienceFr}
-                    onChange={(e) => setAudienceFr(e.target.value)}
-                    rows={2}
-                    placeholder="Ex : Directeurs marketing, responsables média, agences"
-                  />
-                </EditField>
-                <EditField label="Public cible — pré-programme (EN)">
-                  <Textarea
-                    value={audienceEn}
-                    onChange={(e) => setAudienceEn(e.target.value)}
-                    rows={2}
-                  />
-                </EditField>
-                <EditField label="Chiffres clés — pré-programme (FR)">
-                  <KeyFiguresInput value={keyFiguresFr} onChange={setKeyFiguresFr} />
-                </EditField>
+                {/* P16.x — édition bilingue FR | EN côte à côte + 🪄 par champ. */}
+                <BilingualRow
+                  label="Description"
+                  onTranslate={() =>
+                    translateField('description', { source_text: descFr }, (text) =>
+                      setDescEn(text),
+                    )
+                  }
+                  translating={translatingField === 'description'}
+                  fr={
+                    <Textarea value={descFr} onChange={(e) => setDescFr(e.target.value)} rows={3} />
+                  }
+                  en={
+                    <Textarea value={descEn} onChange={(e) => setDescEn(e.target.value)} rows={3} />
+                  }
+                />
+                <BilingualRow
+                  label="Public cible — pré-programme"
+                  onTranslate={() =>
+                    translateField('target_audience', { source_text: audienceFr }, (text) =>
+                      setAudienceEn(text),
+                    )
+                  }
+                  translating={translatingField === 'target_audience'}
+                  fr={
+                    <Textarea
+                      value={audienceFr}
+                      onChange={(e) => setAudienceFr(e.target.value)}
+                      rows={2}
+                      placeholder="Ex : Directeurs marketing, responsables média"
+                    />
+                  }
+                  en={
+                    <Textarea
+                      value={audienceEn}
+                      onChange={(e) => setAudienceEn(e.target.value)}
+                      rows={2}
+                    />
+                  }
+                />
+                <BilingualRow
+                  label="Chiffres clés — pré-programme"
+                  onTranslate={() =>
+                    translateField('key_figures', { source_list: keyFiguresFr }, (_t, list) =>
+                      setKeyFiguresEn(list),
+                    )
+                  }
+                  translating={translatingField === 'key_figures'}
+                  fr={<KeyFiguresInput value={keyFiguresFr} onChange={setKeyFiguresFr} />}
+                  en={<KeyFiguresInput value={keyFiguresEn} onChange={setKeyFiguresEn} />}
+                />
                 <EditField label="Pôles">
                   <div className="flex flex-wrap gap-2">
                     {POLE_CODES.map((p) => (
@@ -502,6 +551,57 @@ function EditField({ label, children }: { label: string; children: React.ReactNo
     <div className="space-y-1.5">
       <Label>{label}</Label>
       {children}
+    </div>
+  );
+}
+
+/** P16.x — ligne d'édition bilingue FR | EN + bouton 🪄 « traduire ce champ ». */
+function BilingualRow({
+  label,
+  fr,
+  en,
+  onTranslate,
+  translating,
+}: {
+  label: string;
+  fr: React.ReactNode;
+  en: React.ReactNode;
+  onTranslate: () => void;
+  translating: boolean;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label>{label}</Label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={translating}
+          onClick={onTranslate}
+        >
+          {translating ? (
+            <Loader2 className="size-3.5 animate-spin" aria-hidden />
+          ) : (
+            <Wand2 className="size-3.5" aria-hidden />
+          )}
+          FR → EN
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="space-y-1">
+          <span className="text-md-text-muted text-[10px] font-bold tracking-widest uppercase">
+            FR
+          </span>
+          {fr}
+        </div>
+        <div className="space-y-1">
+          <span className="text-md-text-muted text-[10px] font-bold tracking-widest uppercase">
+            EN
+          </span>
+          {en}
+        </div>
+      </div>
     </div>
   );
 }

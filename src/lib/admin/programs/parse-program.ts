@@ -28,6 +28,8 @@ export type ParsedConference = {
   speakers: ParsedSpeaker[];
   /** P16.x : chiffres clés extraits de la section « CHIFFRES CLÉS » (max 5). */
   keyFigures: string[];
+  /** P16.x : public cible extrait de la section « PUBLIC VISÉ » (texte complet). */
+  targetAudience: string | null;
 };
 
 function deburr(s: string): string {
@@ -181,6 +183,29 @@ const KEY_FIGURES_STOP_RE =
 const MAX_KEY_FIGURES = 5;
 const MAX_KEY_FIGURE_LEN = 200;
 
+const TARGET_LABEL_RE = /^public (vis[ée]?|cibl)/i;
+const TARGET_STOP_RE =
+  /^(pitch|chiffres cl[ée]s|intervenants|speakers|exposants|soci[ée]t|pourquoi|format)/i;
+const MAX_TARGET_LEN = 2000;
+
+/**
+ * P16.x — extrait le public cible (section « PUBLIC VISÉ ») : tout le texte
+ * entre l'entête et la section suivante, joint en un paragraphe. null si absent.
+ */
+export function extractTargetAudience(block: string[]): string | null {
+  const start = block.findIndex((l) => TARGET_LABEL_RE.test(l));
+  if (start < 0) return null;
+  const parts: string[] = [];
+  for (let i = start + 1; i < block.length; i += 1) {
+    const line = block[i].trim();
+    if (!line) continue;
+    if (TARGET_STOP_RE.test(line)) break;
+    parts.push(line);
+  }
+  const text = parts.join(' ').trim().slice(0, MAX_TARGET_LEN);
+  return text.length > 0 ? text : null;
+}
+
 /**
  * P16.x — extrait les chiffres clés d'un bloc conférence : lignes entre
  * l'entête « CHIFFRES CLÉS » / « Chiffres clés » et l'entête de section
@@ -255,6 +280,7 @@ export function parseProgram(rawText: string): ParsedConference[] {
       poles: detectPoles(`${headers[h].title} ${pitch ?? ''}`),
       speakers,
       keyFigures: extractKeyFigures(block),
+      targetAudience: extractTargetAudience(block),
     });
   }
 

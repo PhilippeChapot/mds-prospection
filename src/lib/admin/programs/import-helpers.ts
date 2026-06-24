@@ -169,6 +169,7 @@ export async function ensureConference(
       imported_at: input.nowIso,
       imported_source: input.importedSource,
       key_figures_fr: conf.keyFigures.length ? conf.keyFigures : null,
+      target_audience_fr: conf.targetAudience,
     } as never)
     .select('id')
     .single();
@@ -186,23 +187,42 @@ export async function reExtractKeyFigures(
   conf: ParsedConference,
   opts: { programTrack: string; forceOverwrite: boolean },
 ): Promise<'updated' | 'skipped-existing' | 'skipped-empty' | 'not-found'> {
-  // key_figures_fr pas encore dans les types générés → cast.
+  // key_figures_fr / target_audience_fr pas encore dans les types générés → cast.
   const db = supabase as unknown as SupabaseClient;
   const { data: existing } = await db
     .from('conferences')
-    .select('id, key_figures_fr')
+    .select('id, key_figures_fr, target_audience_fr')
     .eq('title_fr', conf.title)
     .eq('program_track', opts.programTrack)
     .maybeSingle();
   if (!existing?.id) return 'not-found';
 
-  const current = (existing as Record<string, unknown>).key_figures_fr as string[] | null;
-  if (current && current.length > 0 && !opts.forceOverwrite) return 'skipped-existing';
-  if (conf.keyFigures.length === 0) return 'skipped-empty';
+  const row = existing as Record<string, unknown>;
+  const patch: Record<string, unknown> = {};
+
+  // Chiffres clés : MAJ si vide en base (ou --force) ET nouveaux dispo.
+  const curFigures = row.key_figures_fr as string[] | null;
+  const figuresEmpty = !curFigures || curFigures.length === 0;
+  if ((figuresEmpty || opts.forceOverwrite) && conf.keyFigures.length > 0) {
+    patch.key_figures_fr = conf.keyFigures;
+  }
+
+  // Public cible : MAJ si vide en base (ou --force) ET nouveau dispo.
+  const curAudience = row.target_audience_fr as string | null;
+  const audienceEmpty = !curAudience || curAudience.trim().length === 0;
+  if ((audienceEmpty || opts.forceOverwrite) && conf.targetAudience) {
+    patch.target_audience_fr = conf.targetAudience;
+  }
+
+  if (Object.keys(patch).length === 0) {
+    // Rien à mettre : soit tout déjà saisi (sans force), soit rien à extraire.
+    const nothingToExtract = conf.keyFigures.length === 0 && !conf.targetAudience;
+    return nothingToExtract ? 'skipped-empty' : 'skipped-existing';
+  }
 
   await db
     .from('conferences')
-    .update({ key_figures_fr: conf.keyFigures } as never)
+    .update(patch as never)
     .eq('id', existing.id as string);
   return 'updated';
 }

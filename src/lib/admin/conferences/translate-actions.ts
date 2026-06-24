@@ -128,6 +128,69 @@ key_figures_fr: ${JSON.stringify(source.key_figures_fr)}`,
   return { ok: true };
 }
 
+/**
+ * P16.x — traduit UN seul champ (bouton inline). Traduit la valeur FR fournie
+ * (celle à l'écran, éventuellement non sauvegardée) et renvoie la version EN
+ * au client, qui remplit le champ EN. Pas d'écriture DB ici (Save s'en charge).
+ */
+const fieldSchema = z.object({
+  field: z.enum(['title', 'description', 'target_audience', 'key_figures']),
+  source_text: z.string().max(4000).optional(),
+  source_list: z.array(z.string().max(200)).max(5).optional(),
+});
+
+export async function translateConferenceFieldAction(
+  input: z.input<typeof fieldSchema>,
+): Promise<{ ok: true; text?: string; list?: string[] } | { ok: false; error: string }> {
+  const profile = await requireAdminProfile();
+  if (profile.role === 'sales') {
+    return { ok: false, error: 'Seul un admin peut déclencher une traduction IA.' };
+  }
+  const parsed = fieldSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'Paramètres invalides' };
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return { ok: false, error: 'ANTHROPIC_API_KEY manquant.' };
+
+  const isList = parsed.data.field === 'key_figures';
+  const source = isList ? (parsed.data.source_list ?? []) : (parsed.data.source_text ?? '');
+  if ((isList && (source as string[]).length === 0) || (!isList && !(source as string))) {
+    return { ok: false, error: 'Champ source FR vide.' };
+  }
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 1500,
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: 'user',
+          content: isList
+            ? `Translate each item to English. Respond as JSON: { "list": ["..."] }\n${JSON.stringify(source)}`
+            : `Translate to English. Respond as JSON: { "text": "..." }\n${JSON.stringify(source)}`,
+        },
+      ],
+    });
+    const block = response.content[0];
+    const text = block?.type === 'text' ? block.text : '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return { ok: false, error: 'Réponse IA invalide (pas de JSON).' };
+    const json = JSON.parse(match[0]) as { text?: string; list?: string[] };
+    if (isList) {
+      if (!Array.isArray(json.list)) return { ok: false, error: 'Réponse IA: list manquante.' };
+      return { ok: true, list: json.list.slice(0, 5) };
+    }
+    if (typeof json.text !== 'string') return { ok: false, error: 'Réponse IA: text manquant.' };
+    return { ok: true, text: json.text };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('%s field-translate-failed field=%s msg=%s', LOG_PREFIX, parsed.data.field, msg);
+    return { ok: false, error: msg };
+  }
+}
+
 export async function translateConferenceAction(input: {
   conference_id: string;
 }): Promise<TranslateResult> {

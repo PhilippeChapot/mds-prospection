@@ -67,7 +67,9 @@ export function PreProgrammeCard({
           <span className="text-[10px] font-bold tracking-widest text-[#5A6080] uppercase">
             {labels.targetAudience}
           </span>
-          <p className="mt-1 text-sm text-[#1F2240]">{conference.targetAudience}</p>
+          <p className="mt-1 line-clamp-3 text-sm text-[#1F2240]" title={conference.targetAudience}>
+            {conference.targetAudience}
+          </p>
         </div>
       )}
     </article>

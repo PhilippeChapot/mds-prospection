@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { extractKeyFigures } from './parse-program';
+import { extractKeyFigures, extractTargetAudience } from './parse-program';
 import { reExtractKeyFigures } from './import-helpers';
 
 describe('extractKeyFigures (P16.x)', () => {
@@ -52,6 +52,29 @@ describe('extractKeyFigures (P16.x)', () => {
   });
 });
 
+describe('extractTargetAudience (P16.x)', () => {
+  it('extrait le paragraphe entre PUBLIC VISÉ et la section suivante', () => {
+    const block = [
+      'PUBLIC VISÉ',
+      'Directions innovation et technique des éditeurs (TV, radio).',
+      'PITCH',
+      'bla',
+    ];
+    expect(extractTargetAudience(block)).toBe(
+      'Directions innovation et technique des éditeurs (TV, radio).',
+    );
+  });
+
+  it('joint plusieurs lignes en un paragraphe', () => {
+    const block = ['Public visé', 'Ligne A', 'Ligne B', 'CHIFFRES CLÉS', 'x'];
+    expect(extractTargetAudience(block)).toBe('Ligne A Ligne B');
+  });
+
+  it('absent → null', () => {
+    expect(extractTargetAudience(['PITCH', 'bla', 'CHIFFRES CLÉS'])).toBeNull();
+  });
+});
+
 function mockDb(opts: {
   existing: { id: string; key_figures_fr: string[] | null } | null;
   onUpdate?: (patch: Record<string, unknown>) => void;
@@ -73,12 +96,13 @@ function mockDb(opts: {
   } as never;
 }
 
-const conf = (keyFigures: string[]) => ({
+const conf = (keyFigures: string[], targetAudience: string | null = null) => ({
   title: 'T1. IA',
   pitch: null,
   poles: [],
   speakers: [],
   keyFigures,
+  targetAudience,
 });
 
 describe('reExtractKeyFigures (P16.x --re-extract)', () => {
@@ -125,5 +149,21 @@ describe('reExtractKeyFigures (P16.x --re-extract)', () => {
       forceOverwrite: true,
     });
     expect(r).toBe('updated');
+  });
+
+  it('public cible vide en base + extrait dispo → updated avec target_audience_fr', async () => {
+    let patch: Record<string, unknown> | null = null;
+    const db = mockDb({
+      existing: { id: 'c1', key_figures_fr: ['déjà'] },
+      onUpdate: (p) => (patch = p),
+    });
+    const r = await reExtractKeyFigures(db, conf([], 'Directeurs marketing & médias'), {
+      programTrack: 'mds_solutions',
+      forceOverwrite: false,
+    });
+    expect(r).toBe('updated');
+    expect((patch as unknown as { target_audience_fr: string }).target_audience_fr).toBe(
+      'Directeurs marketing & médias',
+    );
   });
 });

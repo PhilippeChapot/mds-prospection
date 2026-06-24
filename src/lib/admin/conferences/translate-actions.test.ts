@@ -129,3 +129,45 @@ describe('translateConferenceAction (P16.x)', () => {
     expect((state.updates[0].key_figures_en as string[]).length).toBe(5);
   });
 });
+
+describe('translateConferenceFieldAction (P16.x inline)', () => {
+  it('champ texte → renvoie text EN (sans écrire en DB)', async () => {
+    state.aiText = '{ "text": "Target audience EN" }';
+    mockEnv();
+    const { translateConferenceFieldAction } = await import('./translate-actions');
+    const r = await translateConferenceFieldAction({
+      field: 'target_audience',
+      source_text: 'Public FR',
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.text).toBe('Target audience EN');
+    expect(state.updates).toHaveLength(0); // pas d'écriture DB
+  });
+
+  it('champ key_figures → renvoie list EN (max 5)', async () => {
+    state.aiText = '{ "list": ["a","b","c","d","e","f"] }';
+    mockEnv();
+    const { translateConferenceFieldAction } = await import('./translate-actions');
+    const r = await translateConferenceFieldAction({
+      field: 'key_figures',
+      source_list: ['x', 'y'],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.list).toHaveLength(5);
+  });
+
+  it('source vide → erreur', async () => {
+    mockEnv();
+    const { translateConferenceFieldAction } = await import('./translate-actions');
+    const r = await translateConferenceFieldAction({ field: 'description', source_text: '' });
+    expect(r.ok).toBe(false);
+  });
+
+  it('role sales → refusé', async () => {
+    state.role = 'sales';
+    mockEnv();
+    const { translateConferenceFieldAction } = await import('./translate-actions');
+    const r = await translateConferenceFieldAction({ field: 'title', source_text: 'Titre' });
+    expect(r.ok).toBe(false);
+  });
+});

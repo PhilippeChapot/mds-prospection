@@ -1210,6 +1210,8 @@ export type Database = {
           imported_source: string | null;
           is_published: boolean;
           is_validated: boolean;
+          key_figures_en: string[] | null;
+          key_figures_fr: string[] | null;
           poles: string[] | null;
           program_track: string | null;
           room: string | null;
@@ -1237,6 +1239,8 @@ export type Database = {
           imported_source?: string | null;
           is_published?: boolean;
           is_validated?: boolean;
+          key_figures_en?: string[] | null;
+          key_figures_fr?: string[] | null;
           poles?: string[] | null;
           program_track?: string | null;
           room?: string | null;
@@ -1264,6 +1268,8 @@ export type Database = {
           imported_source?: string | null;
           is_published?: boolean;
           is_validated?: boolean;
+          key_figures_en?: string[] | null;
+          key_figures_fr?: string[] | null;
           poles?: string[] | null;
           program_track?: string | null;
           room?: string | null;
