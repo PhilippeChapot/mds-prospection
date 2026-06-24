@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { sendEmailAction } from '@/lib/admin/emails/send-action';
+import { applyTemplateVars } from '@/lib/email/template-vars';
 import type { EmailTemplateItem } from '@/lib/admin/emails/queries';
 
 export interface ComposerAccount {
@@ -45,10 +46,6 @@ function splitAddrs(s: string): string[] {
     .split(/[,;]/)
     .map((x) => x.trim())
     .filter(Boolean);
-}
-
-function applyVars(text: string, vars: Record<string, string>): string {
-  return text.replace(/\{([a-z._]+)\}/gi, (m, key) => vars[key] ?? m);
 }
 
 export function ComposerModal({
@@ -76,8 +73,8 @@ export function ComposerModal({
     const tpl = templates.find((t) => t.key === key);
     if (!tpl) return;
     const vars = prefill?.vars ?? {};
-    setSubject(applyVars(tpl.subject, vars));
-    setBody(applyVars(tpl.body_text ?? tpl.body_html.replace(/<[^>]+>/g, ''), vars));
+    setSubject(applyTemplateVars(tpl.subject, vars));
+    setBody(applyTemplateVars(tpl.body_text ?? tpl.body_html.replace(/<[^>]+>/g, ''), vars));
   }
 
   async function handleSend() {

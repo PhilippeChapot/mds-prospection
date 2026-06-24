@@ -140,12 +140,12 @@ export async function getEmailDetail(id: string): Promise<EmailDetail | null> {
   const { data: linkRows } = await db
     .from('email_links')
     .select(
-      'prospect_id, contact_id, company_id, contact:contacts(first_name, last_name), company:companies(name)',
+      'prospect_id, contact_id, company_id, contact_ref:contacts(first_name, last_name), company:companies(name)',
     )
     .eq('email_id', id);
   const links: EmailLinkInfo[] = (linkRows ?? []).map((r) => {
     const row = r as Record<string, unknown>;
-    const c = Array.isArray(row.contact) ? row.contact[0] : row.contact;
+    const c = Array.isArray(row.contact_ref) ? row.contact_ref[0] : row.contact_ref;
     const co = Array.isArray(row.company) ? row.company[0] : row.company;
     return {
       prospect_id: (row.prospect_id as string | null) ?? null,
