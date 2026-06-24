@@ -7,13 +7,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 interface State {
-  role: 'admin' | 'sales';
+  role: 'admin' | 'sales' | 'super_admin';
   conf: Record<string, unknown> | null;
   updates: Array<Record<string, unknown>>;
   audits: Array<Record<string, unknown>>;
   aiText: string;
+  bulkRows: Array<Record<string, unknown>>;
 }
-const state: State = { role: 'admin', conf: null, updates: [], audits: [], aiText: '' };
+const state: State = {
+  role: 'admin',
+  conf: null,
+  updates: [],
+  audits: [],
+  aiText: '',
+  bulkRows: [],
+};
 
 const CID = '11111111-1111-4111-8111-111111111111';
 
@@ -36,6 +44,7 @@ function mockEnv() {
           return {
             select: () => ({
               eq: () => ({ maybeSingle: () => Promise.resolve({ data: state.conf, error: null }) }),
+              or: () => Promise.resolve({ data: state.bulkRows, error: null }),
             }),
             update: (patch: Record<string, unknown>) => ({
               eq: () => {
@@ -70,6 +79,7 @@ beforeEach(() => {
   };
   state.updates = [];
   state.audits = [];
+  state.bulkRows = [];
   state.aiText =
     'Voici: { "title_en": "AI in radio", "description_en": "desc en", "target_audience_en": "Radios", "key_figures_en": ["50% of adults use AI", "47% less inclined"] }';
   vi.stubEnv('ANTHROPIC_API_KEY', 'sk-test');
@@ -169,5 +179,84 @@ describe('translateConferenceFieldAction (P16.x inline)', () => {
     const { translateConferenceFieldAction } = await import('./translate-actions');
     const r = await translateConferenceFieldAction({ field: 'title', source_text: 'Titre' });
     expect(r.ok).toBe(false);
+  });
+});
+
+describe('generateConferenceTargetAudienceAction (P16.x)', () => {
+  it('happy path → renvoie le texte sans écrire en DB', async () => {
+    state.aiText = 'Directeurs d’antenne · Responsables programmation · Régies radio';
+    mockEnv();
+    const { generateConferenceTargetAudienceAction } = await import('./translate-actions');
+    const r = await generateConferenceTargetAudienceAction({ conference_id: CID });
+    expect(r.ok).toBe(true);
+    if (r.ok)
+      expect(r.text).toBe('Directeurs d’antenne · Responsables programmation · Régies radio');
+    expect(state.updates).toHaveLength(0);
+  });
+
+  it('strip préambule "Public cible :" + point final', async () => {
+    state.aiText = 'Public cible : Directeurs marketing · Régies.';
+    mockEnv();
+    const { generateConferenceTargetAudienceAction } = await import('./translate-actions');
+    const r = await generateConferenceTargetAudienceAction({ conference_id: CID });
+    if (r.ok) expect(r.text).toBe('Directeurs marketing · Régies');
+  });
+
+  it('description vide → erreur', async () => {
+    state.conf = { id: CID, title_fr: 'T', description_fr: '' };
+    mockEnv();
+    const { generateConferenceTargetAudienceAction } = await import('./translate-actions');
+    const r = await generateConferenceTargetAudienceAction({ conference_id: CID });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/description/i);
+  });
+
+  it('strip guillemets englobants + ne garde que la 1re ligne', async () => {
+    state.aiText = '« Directeurs · Régies »\nNote: blabla';
+    mockEnv();
+    const { generateConferenceTargetAudienceAction } = await import('./translate-actions');
+    const r = await generateConferenceTargetAudienceAction({ conference_id: CID });
+    if (r.ok) expect(r.text).toBe('Directeurs · Régies');
+  });
+
+  it('role sales → refusé', async () => {
+    state.role = 'sales';
+    mockEnv();
+    const { generateConferenceTargetAudienceAction } = await import('./translate-actions');
+    const r = await generateConferenceTargetAudienceAction({ conference_id: CID });
+    expect(r.ok).toBe(false);
+  });
+});
+
+describe('generateAllMissingTargetAudienceAction (P16.x bulk)', () => {
+  it('super_admin → génère + sauve les conf sans public cible', async () => {
+    state.role = 'super_admin';
+    state.bulkRows = [{ id: CID, target_audience_fr: null, description_fr: 'desc' }];
+    state.aiText = 'Directeurs · Régies';
+    mockEnv();
+    const { generateAllMissingTargetAudienceAction } = await import('./translate-actions');
+    const r = await generateAllMissingTargetAudienceAction();
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.generated).toBe(1);
+    expect(state.updates[0].target_audience_fr).toBe('Directeurs · Régies');
+  });
+
+  it('admin (non super) → refusé', async () => {
+    state.role = 'admin';
+    state.bulkRows = [{ id: CID, target_audience_fr: null, description_fr: 'desc' }];
+    mockEnv();
+    const { generateAllMissingTargetAudienceAction } = await import('./translate-actions');
+    const r = await generateAllMissingTargetAudienceAction();
+    expect(r.ok).toBe(false);
+    expect(state.updates).toHaveLength(0);
+  });
+
+  it('aucune conf manquante → generated 0', async () => {
+    state.role = 'super_admin';
+    state.bulkRows = [{ id: CID, target_audience_fr: 'déjà', description_fr: 'desc' }];
+    mockEnv();
+    const { generateAllMissingTargetAudienceAction } = await import('./translate-actions');
+    const r = await generateAllMissingTargetAudienceAction();
+    if (r.ok) expect(r.generated).toBe(0);
   });
 });

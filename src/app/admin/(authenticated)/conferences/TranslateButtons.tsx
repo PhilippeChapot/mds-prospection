@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import {
   translateConferenceAction,
   translateAllPendingConferencesAction,
+  generateAllMissingTargetAudienceAction,
 } from '@/lib/admin/conferences/translate-actions';
 
 export function TranslateConferenceButton({ conferenceId }: { conferenceId: string }) {
@@ -75,6 +76,40 @@ export function TranslateAllButton() {
         <Wand2 className="size-4" aria-hidden />
       )}
       Traduire toutes (EN)
+    </Button>
+  );
+}
+
+export function GenerateMissingAudienceButton() {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      disabled={pending}
+      onClick={() => {
+        if (!confirm('Générer le public cible (Haiku) pour les conférences sans public cible ?'))
+          return;
+        start(async () => {
+          const r = await generateAllMissingTargetAudienceAction();
+          if (!r.ok) {
+            toast.error(r.error);
+            return;
+          }
+          toast.success(
+            `${r.generated} public(s) cible généré(s)${r.failed ? `, ${r.failed} échec(s)` : ''}.`,
+          );
+          setTimeout(() => router.refresh(), 1000);
+        });
+      }}
+    >
+      {pending ? (
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+      ) : (
+        <Wand2 className="size-4" aria-hidden />
+      )}
+      Générer public cible manquant
     </Button>
   );
 }

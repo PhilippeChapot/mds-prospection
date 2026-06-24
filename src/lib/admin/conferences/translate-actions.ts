@@ -236,3 +236,165 @@ export async function translateAllPendingConferencesAction(): Promise<
   revalidatePath('/admin/conferences');
   return { ok: true, translated, failed };
 }
+
+// ---------------------------------------------------------------------------
+// P16.x.GenerateTargetAudienceHaiku — génération du public cible (FR) pour les
+// conférences sans section « Public visé » dans le DOCX (cas PRS).
+// ---------------------------------------------------------------------------
+
+const GEN_AUDIENCE_SYSTEM = `Tu génères le PUBLIC CIBLE d'une conférence B2B des secteurs audio, radio, podcast, broadcast et média (MediaDays Solutions / Paris Radio Show 2026).
+
+À partir du titre et de la description, déduis 2 à 4 profils de décisionnaires concernés.
+
+RÈGLES STRICTES :
+1. Réponds UNIQUEMENT avec la liste des profils, séparés par " · " (espace point-médian espace).
+2. AUCUN préambule, AUCune phrase d'intro, AUCUN guillemet, AUCun point final.
+3. Profils concrets et orientés métier (ex: "Directeurs d'antenne", "Responsables programmation", "Régies publicitaires radio", "Éditeurs de podcasts").
+4. Français.
+Exemple de réponse : Directeurs d'antenne · Responsables programmation · Régies radio · Producteurs de podcasts`;
+
+const genSchema = z.object({ conference_id: z.string().uuid() });
+
+/** Nettoie un éventuel préambule renvoyé par Haiku ("Public cible : ...", etc.). */
+function stripAudiencePreamble(raw: string): string {
+  let s = raw.trim();
+  // Retire fences markdown éventuelles.
+  s = s
+    .replace(/^```[a-z]*\s*/i, '')
+    .replace(/```$/i, '')
+    .trim();
+  // Garde la 1re ligne non vide (la liste).
+  s =
+    s
+      .split('\n')
+      .map((l) => l.trim())
+      .find((l) => l.length > 0) ?? s;
+  // Retire un label de tête type "Public cible :", "Cible :", "Target:".
+  s = s.replace(/^(public\s*cible|cible|target(\s*audience)?|audience)\s*[:\-—]\s*/i, '');
+  // Retire guillemets englobants et point final.
+  s = s.replace(/^["«»“”']+|["«»“”']+$/g, '').trim();
+  s = s.replace(/[.\s]+$/g, '').trim();
+  return s.slice(0, 2000);
+}
+
+async function generateAudienceFor(
+  conferenceId: string,
+): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return { ok: false, error: 'ANTHROPIC_API_KEY manquant.' };
+
+  const supabase = getSupabaseServiceClient();
+  const { data: conf } = await supabase
+    .from('conferences')
+    .select('id, title_fr, description_fr')
+    .eq('id', conferenceId)
+    .maybeSingle();
+  if (!conf) return { ok: false, error: 'Conférence introuvable.' };
+
+  const title = (conf.title_fr as string) ?? '';
+  const description = (conf.description_fr as string | null) ?? '';
+  if (!description.trim()) {
+    return {
+      ok: false,
+      error: 'Renseigner d’abord la description (FR) pour générer le public cible.',
+    };
+  }
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 300,
+      system: GEN_AUDIENCE_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Titre : ${title}\n\nDescription : ${description}\n\nPublic cible (liste " · ") :`,
+        },
+      ],
+    });
+    const block = response.content[0];
+    const text = block?.type === 'text' ? block.text : '';
+    const cleaned = stripAudiencePreamble(text);
+    if (!cleaned) return { ok: false, error: 'Réponse IA vide.' };
+    return { ok: true, text: cleaned };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('%s gen-audience-failed conf=%s msg=%s', LOG_PREFIX, conferenceId, msg);
+    return { ok: false, error: msg };
+  }
+}
+
+/**
+ * Génère le public cible FR d'une conférence (bouton inline). NE SAUVE PAS :
+ * renvoie le texte au client qui remplit le champ FR (révision puis Save).
+ */
+export async function generateConferenceTargetAudienceAction(
+  input: z.input<typeof genSchema>,
+): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+  const profile = await requireAdminProfile();
+  if (profile.role === 'sales') {
+    return { ok: false, error: 'Seul un admin peut déclencher une génération IA.' };
+  }
+  const parsed = genSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'conference_id invalide' };
+  return generateAudienceFor(parsed.data.conference_id);
+}
+
+/**
+ * Génère + SAUVE le public cible FR pour toutes les conférences sans public
+ * cible (cas PRS). Super_admin uniquement. Délai 500 ms entre appels Haiku.
+ */
+export async function generateAllMissingTargetAudienceAction(): Promise<
+  { ok: true; generated: number; failed: number } | { ok: false; error: string }
+> {
+  const profile = await requireAdminProfile();
+  if (profile.role !== 'super_admin') {
+    return { ok: false, error: 'Réservé au super_admin (génération IA en masse).' };
+  }
+
+  const supabase = getSupabaseServiceClient();
+  const { data: rows } = await asAnyDb(supabase)
+    .from('conferences')
+    .select('id, target_audience_fr, description_fr')
+    .or('target_audience_fr.is.null,target_audience_fr.eq.');
+  const ids = (rows ?? [])
+    .filter((r) => {
+      const row = r as Record<string, unknown>;
+      const ta = (row.target_audience_fr as string | null) ?? '';
+      return !ta.trim();
+    })
+    .map((r) => (r as Record<string, unknown>).id as string);
+
+  let generated = 0;
+  let failed = 0;
+  for (const id of ids) {
+    const r = await generateAudienceFor(id);
+    if (!r.ok) {
+      failed += 1;
+      continue;
+    }
+    const now = new Date().toISOString();
+    const { error } = await asAnyDb(supabase)
+      .from('conferences')
+      .update({ target_audience_fr: r.text, updated_at: now })
+      .eq('id', id);
+    if (error) {
+      failed += 1;
+    } else {
+      generated += 1;
+      await supabase.from('audit_log').insert({
+        user_id: profile.id,
+        action: 'update',
+        entity_type: 'conferences',
+        entity_id: id,
+        after: { kind: 'target_audience_generated_by_ai', model: MODEL } as never,
+      });
+    }
+    // Délai entre appels (coût/rate-limit) — sauf après le dernier.
+    await new Promise((res) => setTimeout(res, 500));
+  }
+
+  revalidatePath('/admin/conferences');
+  return { ok: true, generated, failed };
+}

@@ -13,7 +13,7 @@ import {
 } from '@/lib/conferences/constants';
 import { ConferencesListClient } from './ConferencesListClient';
 import { PreProgrammePreviewButton } from './PreProgrammePreviewButton';
-import { TranslateAllButton } from './TranslateButtons';
+import { TranslateAllButton, GenerateMissingAudienceButton } from './TranslateButtons';
 
 export const metadata = { title: 'Conférences' };
 
@@ -68,6 +68,7 @@ export default async function ConferencesPage({ searchParams }: { searchParams: 
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <TranslateAllButton />
+          {profile.role === 'super_admin' && <GenerateMissingAudienceButton />}
           {profile.role === 'super_admin' &&
             (() => {
               const token = process.env.PREPROGRAMME_TOKEN;

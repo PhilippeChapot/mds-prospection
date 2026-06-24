@@ -29,7 +29,10 @@ import { ConferenceSpeakersManager, type ManagedSpeaker } from './ConferenceSpea
 import { validateConferenceAction } from '@/lib/admin/programs/validation-actions';
 import { KeyFiguresInput } from '../_components/KeyFiguresInput';
 import { TranslateConferenceButton } from '../TranslateButtons';
-import { translateConferenceFieldAction } from '@/lib/admin/conferences/translate-actions';
+import {
+  translateConferenceFieldAction,
+  generateConferenceTargetAudienceAction,
+} from '@/lib/admin/conferences/translate-actions';
 
 export type AttachedSpeaker = ManagedSpeaker;
 
@@ -106,6 +109,22 @@ export function ConferenceDetailClient({
   const [keyFiguresFr, setKeyFiguresFr] = useState<string[]>(conference.key_figures_fr ?? []);
   const [keyFiguresEn, setKeyFiguresEn] = useState<string[]>(conference.key_figures_en ?? []);
   const [translatingField, setTranslatingField] = useState<string | null>(null);
+  const [generatingAudience, setGeneratingAudience] = useState(false);
+
+  // P16.x — génère le public cible FR (conf sans section dans le DOCX, ex PRS).
+  function generateAudience() {
+    setGeneratingAudience(true);
+    startTransition(async () => {
+      const r = await generateConferenceTargetAudienceAction({ conference_id: conference.id });
+      setGeneratingAudience(false);
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      setAudienceFr(r.text);
+      toast.success('Public cible généré (Haiku). Relecture conseillée.');
+    });
+  }
 
   // P16.x — traduit un champ FR (valeur à l'écran) → remplit le champ EN.
   function translateField(
@@ -374,6 +393,8 @@ export function ConferenceDetailClient({
                     )
                   }
                   translating={translatingField === 'target_audience'}
+                  onGenerate={!audienceFr.trim() ? generateAudience : undefined}
+                  generating={generatingAudience}
                   fr={
                     <Textarea
                       value={audienceFr}
@@ -562,31 +583,54 @@ function BilingualRow({
   en,
   onTranslate,
   translating,
+  onGenerate,
+  generating,
 }: {
   label: string;
   fr: React.ReactNode;
   en: React.ReactNode;
   onTranslate: () => void;
   translating: boolean;
+  /** P16.x — génération IA du champ FR (ex: public cible PRS, si vide). */
+  onGenerate?: () => void;
+  generating?: boolean;
 }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <Label>{label}</Label>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={translating}
-          onClick={onTranslate}
-        >
-          {translating ? (
-            <Loader2 className="size-3.5 animate-spin" aria-hidden />
-          ) : (
-            <Wand2 className="size-3.5" aria-hidden />
+        <div className="flex items-center gap-1">
+          {onGenerate && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={generating}
+              onClick={onGenerate}
+            >
+              {generating ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              ) : (
+                <Wand2 className="size-3.5" aria-hidden />
+              )}
+              Générer (FR)
+            </Button>
           )}
-          FR → EN
-        </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={translating}
+            onClick={onTranslate}
+          >
+            {translating ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+            ) : (
+              <Wand2 className="size-3.5" aria-hidden />
+            )}
+            FR → EN
+          </Button>
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="space-y-1">
