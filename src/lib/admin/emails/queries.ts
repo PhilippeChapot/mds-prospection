@@ -13,7 +13,7 @@ import type { EmailAccountRow } from '@/lib/email/types';
 const asAnyDb = (c: ReturnType<typeof getSupabaseServiceClient>): SupabaseClient =>
   c as unknown as SupabaseClient;
 
-export type EmailFilter = 'all' | 'unread' | 'starred' | 'archived' | 'sent';
+export type EmailFilter = 'all' | 'received' | 'sent' | 'unread' | 'starred' | 'archived';
 
 export interface EmailListItem {
   id: string;
@@ -85,10 +85,11 @@ export async function listEmails(opts: {
     .order('received_at', { ascending: false })
     .range(from, to);
 
-  if (opts.filter === 'unread') query = query.eq('is_read', false).eq('is_archived', false);
+  if (opts.filter === 'received') query = query.eq('direction', 'inbound');
+  else if (opts.filter === 'sent') query = query.eq('direction', 'outbound');
+  else if (opts.filter === 'unread') query = query.eq('is_read', false).eq('is_archived', false);
   else if (opts.filter === 'starred') query = query.eq('is_starred', true);
   else if (opts.filter === 'archived') query = query.eq('is_archived', true);
-  else if (opts.filter === 'sent') query = query.eq('direction', 'outbound');
   else query = query.eq('is_archived', false);
 
   if (opts.q && opts.q.trim().length >= 2) {

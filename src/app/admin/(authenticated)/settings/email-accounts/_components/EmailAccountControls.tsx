@@ -42,7 +42,9 @@ export function EmailAccountControls({ accountId }: { accountId: string }) {
         toast.error(r.error);
         return;
       }
-      toast.success(`Sync : ${r.inserted} nouveau(x) email(s) (${r.fetched} récupéré(s)).`);
+      toast.success(
+        `Sync : ${r.inserted} nouveau(x) · ${r.skipped} ignoré(s) · ${r.fetched} récupéré(s).`,
+      );
       router.refresh();
     });
   }

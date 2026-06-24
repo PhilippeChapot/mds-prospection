@@ -33,7 +33,16 @@ export async function syncEmailAccount(db: SupabaseClient, accountId: string): P
     .maybeSingle();
   const account = accountRaw as EmailAccountRow | null;
   if (!account)
-    return { accountId, email: '?', ok: false, fetched: 0, inserted: 0, error: 'not_found' };
+    return {
+      accountId,
+      email: '?',
+      ok: false,
+      fetched: 0,
+      inserted: 0,
+      skipped: 0,
+      errors: [],
+      error: 'not_found',
+    };
 
   const resolved = resolveAccountConfig(account);
   if (!resolved) {
@@ -47,6 +56,8 @@ export async function syncEmailAccount(db: SupabaseClient, accountId: string): P
       ok: false,
       fetched: 0,
       inserted: 0,
+      skipped: 0,
+      errors: ['no_creds'],
       error: 'no_creds',
     };
   }
@@ -61,6 +72,8 @@ export async function syncEmailAccount(db: SupabaseClient, accountId: string): P
 
   let fetched = 0;
   let inserted = 0;
+  let skipped = 0;
+  const errors: string[] = [];
   let maxUid = account.last_uid ?? 0;
 
   try {
@@ -85,7 +98,6 @@ export async function syncEmailAccount(db: SupabaseClient, accountId: string): P
 
       for (const m of messages) {
         fetched += 1;
-        if (m.uid > maxUid) maxUid = m.uid;
         const parsed = await simpleParser(m.source);
         const toEmails = addrList(parsed.to);
         const ccEmails = addrList(parsed.cc);
@@ -95,36 +107,55 @@ export async function syncEmailAccount(db: SupabaseClient, accountId: string): P
           ? parsed.references.join(' ')
           : (parsed.references ?? null);
         const snippet = (parsed.text ?? '').replace(/\s+/g, ' ').trim().slice(0, 200);
+        console.log('%s fetched uid=%s subject=%s', LOG_PREFIX, m.uid, parsed.subject ?? '(none)');
 
+        // INSERT direct (pas d'upsert : l'index unique (account_id, imap_uid)
+        // est PARTIEL — `ON CONFLICT (cols)` ne matche pas un index partiel et
+        // échouait silencieusement 42P10). Le doublon (23505) est traité comme
+        // skip ; toute autre erreur est enregistrée (plus de silent failure).
         const { data: row, error } = await db
           .from('emails')
-          .upsert(
-            {
-              account_id: accountId,
-              direction: 'inbound',
-              imap_uid: m.uid,
-              message_id: parsed.messageId ?? null,
-              in_reply_to: parsed.inReplyTo ?? null,
-              email_references: refs,
-              from_email: fromEmail,
-              from_name: fromName,
-              to_emails: toEmails,
-              cc_emails: ccEmails,
-              subject: parsed.subject ?? null,
-              snippet,
-              body_text: parsed.text ?? null,
-              body_html: typeof parsed.html === 'string' ? parsed.html : null,
-              has_attachments: (parsed.attachments?.length ?? 0) > 0,
-              is_read: m.seen,
-              received_at: parsed.date?.toISOString() ?? null,
-            } as never,
-            { onConflict: 'account_id,imap_uid', ignoreDuplicates: true },
-          )
+          .insert({
+            account_id: accountId,
+            direction: 'inbound',
+            imap_uid: m.uid,
+            message_id: parsed.messageId ?? null,
+            in_reply_to: parsed.inReplyTo ?? null,
+            email_references: refs,
+            from_email: fromEmail,
+            from_name: fromName,
+            to_emails: toEmails,
+            cc_emails: ccEmails,
+            subject: parsed.subject ?? null,
+            snippet,
+            body_text: parsed.text ?? null,
+            body_html: typeof parsed.html === 'string' ? parsed.html : null,
+            has_attachments: (parsed.attachments?.length ?? 0) > 0,
+            is_read: m.seen,
+            received_at: parsed.date?.toISOString() ?? null,
+          } as never)
           .select('id')
           .maybeSingle();
 
-        if (error || !row?.id) continue; // déjà présent (dédup) ou erreur → skip
+        if (error) {
+          if (error.code === '23505') {
+            // Doublon UID (déjà inséré) → skip, on peut avancer le curseur.
+            skipped += 1;
+            if (m.uid > maxUid) maxUid = m.uid;
+            continue;
+          }
+          // Erreur réelle : on NE relève PAS le curseur (retry au prochain run).
+          errors.push(`uid ${m.uid}: ${error.message}`);
+          console.error('%s insert-failed uid=%s msg=%s', LOG_PREFIX, m.uid, error.message);
+          continue;
+        }
+        if (!row?.id) {
+          errors.push(`uid ${m.uid}: insert sans id retourné`);
+          continue;
+        }
         inserted += 1;
+        if (m.uid > maxUid) maxUid = m.uid;
+        console.log('%s inserted uid=%s direction=inbound', LOG_PREFIX, m.uid);
         const emailId = row.id as string;
 
         // Auto-link (best-effort).
@@ -161,16 +192,35 @@ export async function syncEmailAccount(db: SupabaseClient, accountId: string): P
     }
     await client.logout();
 
+    // last_error reflète les vrais échecs d'INSERT (plus de silent failure).
+    const lastError = errors.length > 0 ? errors.slice(0, 5).join(' | ') : null;
     await db
       .from('email_accounts')
       .update({
         last_uid: maxUid,
         last_synced_at: new Date().toISOString(),
-        last_error: null,
+        last_error: lastError,
       })
       .eq('id', accountId);
 
-    return { accountId, email: account.email, ok: true, fetched, inserted };
+    console.log(
+      '%s done account=%s fetched=%s inserted=%s skipped=%s errors=%s',
+      LOG_PREFIX,
+      accountId,
+      fetched,
+      inserted,
+      skipped,
+      errors.length,
+    );
+    return {
+      accountId,
+      email: account.email,
+      ok: errors.length === 0,
+      fetched,
+      inserted,
+      skipped,
+      errors,
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('%s failed account=%s msg=%s', LOG_PREFIX, accountId, msg);
@@ -180,6 +230,15 @@ export async function syncEmailAccount(db: SupabaseClient, accountId: string): P
       /* noop */
     }
     await db.from('email_accounts').update({ last_error: msg }).eq('id', accountId);
-    return { accountId, email: account.email, ok: false, fetched, inserted, error: msg };
+    return {
+      accountId,
+      email: account.email,
+      ok: false,
+      fetched,
+      inserted,
+      skipped,
+      errors,
+      error: msg,
+    };
   }
 }

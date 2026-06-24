@@ -20,9 +20,10 @@ export const dynamic = 'force-dynamic';
 
 const FILTERS: Array<{ key: EmailFilter; label: string }> = [
   { key: 'all', label: 'Tous' },
+  { key: 'received', label: 'Reçus' },
+  { key: 'sent', label: 'Envoyés' },
   { key: 'unread', label: 'Non lus' },
   { key: 'starred', label: 'Étoilés' },
-  { key: 'sent', label: 'Envoyés' },
   { key: 'archived', label: 'Archivés' },
 ];
 

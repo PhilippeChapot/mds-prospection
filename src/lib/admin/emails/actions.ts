@@ -35,7 +35,9 @@ async function ownedAccount(
 
 export async function resyncEmailAccountAction(
   accountId: string,
-): Promise<{ ok: true; fetched: number; inserted: number } | { ok: false; error: string }> {
+): Promise<
+  { ok: true; fetched: number; inserted: number; skipped: number } | { ok: false; error: string }
+> {
   const profile = await requireAdminProfile();
   const db = asAnyDb(getSupabaseServiceClient());
   const acc = await ownedAccount(db, accountId, profile.id);
@@ -43,8 +45,10 @@ export async function resyncEmailAccountAction(
   const r = await syncEmailAccount(db, accountId);
   revalidatePath('/admin/emails');
   revalidatePath('/admin/settings/email-accounts');
-  if (!r.ok) return { ok: false, error: r.error ?? 'Sync échouée' };
-  return { ok: true, fetched: r.fetched, inserted: r.inserted };
+  if (!r.ok) {
+    return { ok: false, error: r.error ?? r.errors[0] ?? 'Sync échouée' };
+  }
+  return { ok: true, fetched: r.fetched, inserted: r.inserted, skipped: r.skipped };
 }
 
 export async function testEmailAccountAction(

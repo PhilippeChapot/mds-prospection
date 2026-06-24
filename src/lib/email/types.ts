@@ -32,5 +32,7 @@ export interface SyncResult {
   ok: boolean;
   fetched: number;
   inserted: number;
+  skipped: number;
+  errors: string[];
   error?: string;
 }
