@@ -596,6 +596,7 @@ export type Database = {
           google_calendar_synced_at: string | null;
           google_etag: string | null;
           id: string;
+          invite_sequence: number;
           is_all_day: boolean;
           location: string | null;
           meet_conference_id: string | null;
@@ -626,6 +627,7 @@ export type Database = {
           google_calendar_synced_at?: string | null;
           google_etag?: string | null;
           id?: string;
+          invite_sequence?: number;
           is_all_day?: boolean;
           location?: string | null;
           meet_conference_id?: string | null;
@@ -656,6 +658,7 @@ export type Database = {
           google_calendar_synced_at?: string | null;
           google_etag?: string | null;
           id?: string;
+          invite_sequence?: number;
           is_all_day?: boolean;
           location?: string | null;
           meet_conference_id?: string | null;

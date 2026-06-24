@@ -10,7 +10,10 @@
  */
 
 import { NextResponse } from 'next/server';
-import { listTokensForWebhookRenewal } from '@/lib/admin/calendar/google/tokens-store';
+import {
+  listTokensForWebhookRenewal,
+  updateOAuthToken,
+} from '@/lib/admin/calendar/google/tokens-store';
 import { registerWebhook } from '@/lib/admin/calendar/google/webhook-manager';
 
 export const dynamic = 'force-dynamic';
@@ -31,15 +34,36 @@ export async function GET(request: Request) {
   if (!isAuthorized(request)) return new NextResponse('Unauthorized', { status: 401 });
 
   const startedAt = Date.now();
-  const threshold = new Date(Date.now() + RENEW_WINDOW_MS).toISOString();
+  const now = Date.now();
+  const threshold = new Date(now + RENEW_WINDOW_MS).toISOString();
   const tokens = await listTokensForWebhookRenewal(threshold);
 
-  const stats = { candidates: tokens.length, renewed: 0, errors: 0 };
+  // Désactive la sync quand un webhook DÉJÀ expiré ne peut pas être renouvelé :
+  // le refresh token est probablement révoqué → l'UI doit inviter à reconnecter
+  // (sinon échec silencieux permanent, cf. webhook de Phil expiré 15 jours).
+  const stats = { candidates: tokens.length, renewed: 0, errors: 0, disabled: 0 };
   for (const token of tokens) {
     try {
       const r = await registerWebhook(token.user_id);
-      if (r.ok) stats.renewed++;
-      else stats.errors++;
+      if (r.ok) {
+        stats.renewed++;
+        continue;
+      }
+      stats.errors++;
+      const expIso = token.webhook_expires_at;
+      const alreadyExpired = expIso !== null && new Date(expIso).getTime() < now;
+      if (alreadyExpired) {
+        await updateOAuthToken(token.user_id, {
+          sync_enabled: false,
+          last_sync_error: `Webhook renewal failed (reconnexion requise) : ${r.error ?? 'unknown'}`,
+        });
+        stats.disabled++;
+        console.warn(
+          '[google-webhook-renewal] user=%s disabled (webhook expiré + renew KO): %s',
+          token.user_id,
+          r.error,
+        );
+      }
     } catch (err) {
       stats.errors++;
       console.warn(
