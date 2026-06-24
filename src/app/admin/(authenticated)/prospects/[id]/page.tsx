@@ -8,6 +8,7 @@ import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { PoleBadge } from '@/components/admin/PoleBadge';
 import { ProspectStatusAndPayment } from './ProspectStatusAndPayment';
 import { ActivitiesSection, type ActivityRow } from '@/components/admin/ActivitiesSection';
+import { ProspectEmailsSection } from './_components/ProspectEmailsSection';
 import { ProspectCalendarSection } from './_components/ProspectCalendarSection';
 import { getOAuthToken } from '@/lib/admin/calendar/google/tokens-store';
 import { ProspectTimelineDrawer } from './_components/timeline/ProspectTimelineDrawer';
@@ -643,6 +644,18 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
           companyName={prospect.company?.name ?? 'ce prospect'}
           currentUserRole={profile.role}
           googleConnected={googleConnected}
+        />
+      </Section>
+
+      {/* Emails (P12.x) */}
+      <Section title="Emails">
+        <ProspectEmailsSection
+          prospectId={id}
+          profileId={profile.id}
+          contactEmail={(contact as { email?: string | null } | null)?.email ?? null}
+          contactFirstName={(contact as { first_name?: string | null } | null)?.first_name ?? null}
+          companyName={(company as { name?: string | null } | null)?.name ?? null}
+          amount={prospect.estimated_amount ?? null}
         />
       </Section>
 

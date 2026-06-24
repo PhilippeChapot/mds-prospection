@@ -6,6 +6,7 @@ import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ADMIN_NAV_SECTIONS, filterNavSectionsForRole, type AdminNavItem } from './nav-config';
 import { QuickLoginSection } from './QuickLoginSection';
+import { EmailUnreadBadge } from './EmailUnreadBadge';
 import type { UserRole } from '@/lib/supabase/auth-helpers';
 
 /**
@@ -115,6 +116,7 @@ function SidebarItem({
         <span aria-hidden>{item.emoji}</span>
         <span>{item.label}</span>
       </span>
+      {item.href === '/admin/emails' ? <EmailUnreadBadge /> : null}
       {item.badge ? (
         <span className="bg-md-blue/10 text-md-blue rounded-full px-1.5 py-0.5 text-[10px] font-bold">
           {item.badge}

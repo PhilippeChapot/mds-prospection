@@ -71,6 +71,13 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         emoji: '📅',
         enabled: true,
       },
+      {
+        href: '/admin/emails',
+        label: 'Emails',
+        emoji: '📧',
+        enabled: true,
+        roles_allowed: ADMIN_PLUS,
+      },
     ],
   },
   {
