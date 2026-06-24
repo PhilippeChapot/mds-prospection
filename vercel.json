@@ -4,6 +4,10 @@
   "regions": ["cdg1"],
   "crons": [
     {
+      "path": "/api/cron/sync-emails",
+      "schedule": "*/2 * * * *"
+    },
+    {
       "path": "/api/cron/sync-sellsy-products",
       "schedule": "0 6 * * *"
     },
