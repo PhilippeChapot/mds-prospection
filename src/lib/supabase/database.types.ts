@@ -940,6 +940,7 @@ export type Database = {
           pole_classified_by: Database['public']['Enums']['classification_source'] | null;
           pole_confidence: number | null;
           pole_id: string | null;
+          pole_reasoning: string | null;
           postal_code: string | null;
           preferred_room: string | null;
           primary_domain: string | null;
@@ -1000,6 +1001,7 @@ export type Database = {
           pole_classified_by?: Database['public']['Enums']['classification_source'] | null;
           pole_confidence?: number | null;
           pole_id?: string | null;
+          pole_reasoning?: string | null;
           postal_code?: string | null;
           preferred_room?: string | null;
           primary_domain?: string | null;
@@ -1060,6 +1062,7 @@ export type Database = {
           pole_classified_by?: Database['public']['Enums']['classification_source'] | null;
           pole_confidence?: number | null;
           pole_id?: string | null;
+          pole_reasoning?: string | null;
           postal_code?: string | null;
           preferred_room?: string | null;
           primary_domain?: string | null;
