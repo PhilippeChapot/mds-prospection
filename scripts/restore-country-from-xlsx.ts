@@ -16,7 +16,12 @@
 import * as XLSX from 'xlsx';
 import { createClient } from '@supabase/supabase-js';
 import { normalizeCountryToIso } from '../src/lib/format/country';
-import { buildNameCountryIndex, matchCountry } from '../src/lib/admin/companies/restore-country';
+import {
+  buildNameCountryIndex,
+  buildDomainCountryIndex,
+  matchCountryCascade,
+  type CountrySourceV2,
+} from '../src/lib/admin/companies/restore-country';
 
 const HOME = process.env.HOME ?? '/Users/mbprophilippechapot';
 const DRIVE = `${HOME}/Library/CloudStorage/GoogleDrive-philippe.chapot@gmail.com/Mon Drive/MEDIADAYS`;
@@ -66,32 +71,50 @@ function pick(row: Row, candidates: string[]): string | null {
 }
 
 async function main() {
-  // 1. Index Prospection_v2 (nom → pays).
+  // 1. Index Prospection_v2 (nom + domaine → pays).
   const prospRows = readSheet(PROSPECTION_PATH, 'Sociétés');
-  const prospectionIndex = buildNameCountryIndex(
-    prospRows.map((r) => ({
-      names: [pick(r, ['Société', 'Societe', 'Nom', 'Raison sociale', 'Entreprise', 'Company'])],
-      country: pick(r, ['Pays', 'Country']),
-    })),
+  const prospName = (r: Row) =>
+    pick(r, ['Société', 'Societe', 'Nom', 'Raison sociale', 'Entreprise', 'Company']);
+  const prospCountry = (r: Row) => pick(r, ['Pays', 'Country']);
+  const prospUrl = (r: Row) => pick(r, ['URL', 'Url', 'Site web', 'Site', 'Website', 'Domaine']);
+  const prospectionByName = buildNameCountryIndex(
+    prospRows.map((r) => ({ names: [prospName(r)], country: prospCountry(r) })),
   );
-  console.log(`Index Prospection_v2 : ${prospectionIndex.size} entrées.`);
+  const prospectionByDomain = buildDomainCountryIndex(
+    prospRows.map((r) => ({ url: prospUrl(r), country: prospCountry(r) })),
+  );
+  console.log(
+    `Index Prospection_v2 : ${prospectionByName.size} noms, ${prospectionByDomain.size} domaines.`,
+  );
 
-  // 2. Index ConnectOnAir (raison_social / abrege / sigle → pays).
+  // 2. Index ConnectOnAir (raison_social/abrege/sigle + url → pays).
   const coaRows = readSheet(CONNECTONAIR_PATH);
-  const connectOnAirIndex = buildNameCountryIndex(
+  const coaCountry = (r: Row) => pick(r, ['pays', 'country']);
+  const coaUrl = (r: Row) => pick(r, ['url', 'site_web', 'website', 'URL', 'site']);
+  const connectOnAirByName = buildNameCountryIndex(
     coaRows.map((r) => ({
       names: [
         pick(r, ['raison_social', 'raison sociale']),
         pick(r, ['abrege', 'abrégé']),
         pick(r, ['sigle']),
       ],
-      country: pick(r, ['pays', 'country']),
+      country: coaCountry(r),
     })),
   );
-  console.log(`Index ConnectOnAir : ${coaRows.length} rows → ${connectOnAirIndex.size} aliases.`);
+  const connectOnAirByDomain = buildDomainCountryIndex(
+    coaRows.map((r) => ({ url: coaUrl(r), country: coaCountry(r) })),
+  );
+  console.log(
+    `Index ConnectOnAir : ${coaRows.length} rows → ${connectOnAirByName.size} noms, ${connectOnAirByDomain.size} domaines.`,
+  );
 
-  // 3. Sociétés à restaurer.
-  const { data: rows, error } = await db.from('companies').select('id, name').is('country', null);
+  const idx = { prospectionByDomain, connectOnAirByDomain, prospectionByName, connectOnAirByName };
+
+  // 3. Sociétés à restaurer (avec domaine pour la stratégie 1).
+  const { data: rows, error } = await db
+    .from('companies')
+    .select('id, name, primary_domain')
+    .is('country', null);
   if (error) {
     console.error('SELECT failed:', error.message);
     process.exit(1);
@@ -101,12 +124,21 @@ async function main() {
     `${companies.length} sociétés à restaurer (country IS NULL).${APPLY ? '' : ' [DRY-RUN]'}`,
   );
 
-  const stats = { processed: 0, prospection: 0, connectonair: 0, updated: 0, skipped: 0 };
+  const bySource: Record<CountrySourceV2, number> = {
+    prospection_v2_domain: 0,
+    connectonair_domain: 0,
+    prospection_v2_name: 0,
+    connectonair_name: 0,
+  };
+  const stats = { processed: 0, updated: 0, skipped: 0 };
   let i = 0;
   for (const c of companies) {
     stats.processed += 1;
     i += 1;
-    const match = matchCountry(c.name as string, prospectionIndex, connectOnAirIndex);
+    const match = matchCountryCascade(
+      { name: c.name as string, domain: c.primary_domain as string | null },
+      idx,
+    );
     if (!match) {
       stats.skipped += 1;
       continue;
@@ -117,8 +149,7 @@ async function main() {
       console.log(`  [${i}] ${c.name} → "${match.rawCountry}" non-mappable en ISO (skip)`);
       continue;
     }
-    if (match.source === 'prospection_v2') stats.prospection += 1;
-    else stats.connectonair += 1;
+    bySource[match.source] += 1;
     console.log(`  [${i}] ${c.name} → ${iso} (source: ${match.source})`);
 
     if (!APPLY) {
@@ -146,7 +177,15 @@ async function main() {
   }
 
   console.log(
-    `Terminé. processed=${stats.processed} matched_prospection=${stats.prospection} matched_connectonair=${stats.connectonair} updated=${stats.updated} skipped=${stats.skipped}${APPLY ? '' : ' [DRY-RUN]'}`,
+    [
+      `Terminé. processed=${stats.processed}`,
+      `matched_prospection_domain=${bySource.prospection_v2_domain}`,
+      `matched_prospection_name=${bySource.prospection_v2_name}`,
+      `matched_connectonair_domain=${bySource.connectonair_domain}`,
+      `matched_connectonair_name=${bySource.connectonair_name}`,
+      `updated=${stats.updated}`,
+      `skipped=${stats.skipped}${APPLY ? '' : ' [DRY-RUN]'}`,
+    ].join(' '),
   );
 }
 

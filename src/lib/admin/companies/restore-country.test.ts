@@ -5,7 +5,14 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { normalizeName, buildNameCountryIndex, matchCountry } from './restore-country';
+import {
+  normalizeName,
+  buildNameCountryIndex,
+  matchCountry,
+  extractDomain,
+  buildDomainCountryIndex,
+  matchCountryCascade,
+} from './restore-country';
 import { normalizeCountryToIso } from '@/lib/format/country';
 
 describe('normalizeName (P5.x)', () => {
@@ -44,6 +51,52 @@ describe('matchCountry (P5.x)', () => {
 
   it('aucun match → null', () => {
     expect(matchCountry('Société Inconnue XYZ', prospection, coa)).toBeNull();
+  });
+});
+
+describe('extractDomain (P5.x v2)', () => {
+  it('couvre URLs / domaines / www / casse / vides', () => {
+    expect(extractDomain('https://nagraaudio.com')).toBe('nagraaudio.com');
+    expect(extractDomain('http://www.nagraaudio.com/about')).toBe('nagraaudio.com');
+    expect(extractDomain('nagraaudio.com')).toBe('nagraaudio.com');
+    expect(extractDomain('www.nagraaudio.com')).toBe('nagraaudio.com');
+    expect(extractDomain('NAGRAAUDIO.COM')).toBe('nagraaudio.com');
+    expect(extractDomain('')).toBeNull();
+    expect(extractDomain(null)).toBeNull();
+  });
+});
+
+describe('matchCountryCascade — domaine prioritaire (P5.x v2)', () => {
+  const idx = {
+    prospectionByDomain: buildDomainCountryIndex([
+      { url: 'https://20minutes.fr', country: 'France' },
+    ]),
+    connectOnAirByDomain: buildDomainCountryIndex([
+      { url: 'http://www.skyrock.com', country: 'France' },
+    ]),
+    prospectionByName: buildNameCountryIndex([
+      { names: ['20 Minutes SAS'], country: 'Belgique' }, // pays différent pour prouver la priorité domaine
+    ]),
+    connectOnAirByName: buildNameCountryIndex([{ names: ['Radio Test'], country: 'Suisse' }]),
+  };
+
+  it('strategy 1 (domaine) gagne sur le nom', () => {
+    const m = matchCountryCascade({ name: '20 Minutes SAS', domain: '20minutes.fr' }, idx);
+    expect(m).toEqual({ rawCountry: 'France', source: 'prospection_v2_domain' });
+  });
+
+  it('domaine ConnectOnAir matché', () => {
+    const m = matchCountryCascade({ name: 'Skyrock', domain: 'www.skyrock.com' }, idx);
+    expect(m?.source).toBe('connectonair_domain');
+  });
+
+  it('sans domaine → fallback nom', () => {
+    const m = matchCountryCascade({ name: 'Radio Test', domain: null }, idx);
+    expect(m).toEqual({ rawCountry: 'Suisse', source: 'connectonair_name' });
+  });
+
+  it('aucun match → null', () => {
+    expect(matchCountryCascade({ name: 'Inconnu XYZ', domain: 'inconnu.zz' }, idx)).toBeNull();
   });
 });
 
