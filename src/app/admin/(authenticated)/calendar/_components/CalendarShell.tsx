@@ -29,6 +29,11 @@ import {
   type CalendarEventRow,
   type CalendarEventType,
 } from '@/lib/admin/calendar/helpers';
+import {
+  computeRsvpColor,
+  computeRsvpSummary,
+  formatRsvpSummary,
+} from '@/lib/admin/calendar/rsvp-ui';
 import { listCalendarEventsAction } from '@/lib/admin/calendar/actions';
 import type { AdminUserSummary } from '@/lib/admin/calendar/collaboration-actions';
 import { CalendarEventFormModal } from './CalendarEventFormModal';
@@ -59,6 +64,26 @@ const TYPE_OPTIONS: Array<{ value: CalendarEventType | ''; label: string }> = [
 ];
 
 const VIEWS: View[] = ['month', 'week', 'day', 'agenda'];
+
+/**
+ * P14.x.RSVP-UI — rendu d'un event avec dot coloré RSVP (accessibilité
+ * daltoniens : la bordure seule ne suffit pas).
+ */
+function RsvpEventContent({ event }: { event: RbcEvent }) {
+  const rsvp = computeRsvpColor(event.resource.attendees, event.resource.event_type);
+  return (
+    <span className="flex items-center gap-1">
+      {rsvp && (
+        <span
+          aria-hidden
+          className="inline-block size-1.5 shrink-0 rounded-full"
+          style={{ backgroundColor: rsvp.dot }}
+        />
+      )}
+      <span className="truncate">{event.title}</span>
+    </span>
+  );
+}
 
 export function CalendarShell({
   currentUserId,
@@ -233,9 +258,27 @@ export function CalendarShell({
             onSelectEvent={handleSelectEvent}
             selectable
             popup
-            eventPropGetter={(e: RbcEvent) => ({
-              className: `${getEventTypeColor(e.resource.event_type)} rounded-md border px-1 text-xs`,
-            })}
+            eventPropGetter={(e: RbcEvent) => {
+              const rsvp = computeRsvpColor(e.resource.attendees, e.resource.event_type);
+              return {
+                className: `${getEventTypeColor(e.resource.event_type)} rounded-md border px-1 text-xs`,
+                ...(rsvp
+                  ? {
+                      style: {
+                        borderColor: rsvp.borderColor,
+                        backgroundColor: rsvp.backgroundColor,
+                      },
+                    }
+                  : {}),
+              };
+            }}
+            tooltipAccessor={(e: RbcEvent) => {
+              const rsvp = computeRsvpColor(e.resource.attendees, e.resource.event_type);
+              return rsvp
+                ? `${e.title} · ${formatRsvpSummary(computeRsvpSummary(e.resource.attendees), 'fr')}`
+                : e.title;
+            }}
+            components={{ event: RsvpEventContent }}
             culture="fr"
             messages={messages}
           />

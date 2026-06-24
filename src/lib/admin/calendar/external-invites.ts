@@ -36,14 +36,19 @@ export interface InviteSendResult {
   sent: number;
 }
 
+/** Cible du renvoi : tous / seulement en attente / un email précis. */
+export type InviteScope = 'all' | 'pending' | { email: string };
+
 /**
- * Envoie l'invitation/update/cancel/reminder à tous les attendees externes
- * d'un RDV. No-op (gated) si l'event n'est pas un meeting.
+ * Envoie l'invitation/update/cancel/reminder aux attendees externes d'un RDV.
+ * No-op (gated) si l'event n'est pas un meeting. `scope` restreint la cible
+ * (relance des en attente / d'un invité précis).
  */
 export async function sendExternalInvitesForEvent(
   db: SupabaseClient,
   event: CalendarEventRow,
   kind: InviteKind,
+  scope: InviteScope = 'all',
 ): Promise<InviteSendResult> {
   // ── GATE de type : RDV uniquement (jamais Appel/tâche). ──
   if (!shouldSendExternalInvites(event)) {
@@ -59,7 +64,14 @@ export async function sendExternalInvitesForEvent(
   const organizerEmail = (owner?.email as string | undefined) ?? 'philippe@mediadays.solutions';
   const organizerName = (owner?.full_name as string | undefined) ?? 'MediaDays Solutions';
 
-  const recipients = externalAttendees(event.attendees, organizerEmail);
+  let recipients = externalAttendees(event.attendees, organizerEmail);
+  // Restriction de portée (relance ciblée).
+  if (scope === 'pending') {
+    recipients = recipients.filter((a) => (a.responseStatus ?? 'needsAction') === 'needsAction');
+  } else if (typeof scope === 'object') {
+    const target = scope.email.trim().toLowerCase();
+    recipients = recipients.filter((a) => a.email.trim().toLowerCase() === target);
+  }
   if (recipients.length === 0) return { gated: false, total: 0, sent: 0 };
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
@@ -71,6 +83,7 @@ export async function sendExternalInvitesForEvent(
   const sequence = (event as { invite_sequence?: number }).invite_sequence ?? 0;
 
   let sent = 0;
+  const sentEmails = new Set<string>();
   for (const att of recipients) {
     try {
       const token = await signRsvpToken({ eventId: event.id, email: att.email });
@@ -121,6 +134,7 @@ export async function sendExternalInvitesForEvent(
         ],
       });
       sent += 1;
+      sentEmails.add(att.email.trim().toLowerCase());
     } catch (err) {
       console.error(
         '%s send-failed event=%s to=%s msg=%s',
@@ -131,6 +145,19 @@ export async function sendExternalInvitesForEvent(
       );
     }
   }
+
+  // P14.x.RSVP-UI — stampe sent_at sur les invités notifiés (sert au bouton
+  // "Relancer" individuel : pending + sent_at > 24h).
+  if (sentEmails.size > 0) {
+    const merged = (event.attendees ?? []).map((a) =>
+      sentEmails.has(a.email?.trim().toLowerCase() ?? '') ? { ...a, sent_at: dtstampIso } : a,
+    );
+    await db
+      .from('calendar_events')
+      .update({ attendees: merged } as never)
+      .eq('id', event.id);
+  }
+
   console.log(
     '%s kind=%s event=%s sent=%s/%s',
     LOG_PREFIX,

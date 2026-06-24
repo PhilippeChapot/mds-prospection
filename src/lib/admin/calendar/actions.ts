@@ -493,15 +493,23 @@ export async function deleteCalendarEventAction(
 
 // ─── RESEND INVITES (P14.x) ───
 
+const resendSchema = z.object({
+  eventId: z.string().uuid(),
+  scope: z
+    .union([z.literal('all'), z.literal('pending'), z.object({ email: z.string().email() })])
+    .default('all'),
+});
+
 export async function resendEventInvitesAction(
-  eventId: string,
+  input: z.input<typeof resendSchema>,
 ): Promise<
   { ok: true; sent: number; total: number; gated: boolean } | { ok: false; error: string }
 > {
   const profile = await requireAdminProfile();
-  if (!z.string().uuid().safeParse(eventId).success) {
-    return { ok: false, error: 'id invalide' };
-  }
+  const parsed = resendSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'Paramètres invalides' };
+  const { eventId, scope } = parsed.data;
+
   const supabase = getSupabaseServiceClient();
   const { data: event } = await supabase
     .from('calendar_events')
@@ -512,10 +520,30 @@ export async function resendEventInvitesAction(
   if (event.user_id !== profile.id && !isSuperAdmin(profile)) {
     return { ok: false, error: 'Réservé au propriétaire ou au super_admin.' };
   }
-  const res = await sendExternalInvitesForEvent(supabase, event as CalendarEventRow, 'invitation');
+  const res = await sendExternalInvitesForEvent(
+    supabase,
+    event as CalendarEventRow,
+    'invitation',
+    scope,
+  );
   if (res.gated) {
     return { ok: false, error: 'Invitations réservées aux RDV (pas aux appels/tâches).' };
   }
+
+  // Action sensible (envoi email manuel) → audit log.
+  await supabase.from('audit_log').insert({
+    user_id: profile.id,
+    entity_type: 'calendar_events',
+    entity_id: eventId,
+    action: 'update',
+    after: {
+      kind: 'calendar_invites_resent',
+      scope: typeof scope === 'object' ? `email:${scope.email}` : scope,
+      sent: res.sent,
+      total: res.total,
+    } as never,
+  });
+
   return { ok: true, sent: res.sent, total: res.total, gated: false };
 }
 

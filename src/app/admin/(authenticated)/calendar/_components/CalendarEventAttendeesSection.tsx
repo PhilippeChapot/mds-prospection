@@ -23,12 +23,25 @@ import {
   searchContactsForCalendarAction,
   type ContactSuggestion,
 } from '@/lib/admin/calendar/actions';
+import {
+  RSVP_BADGE,
+  statusOf,
+  computeRsvpSummary,
+  formatRsvpSummary,
+  canResendIndividual,
+} from '@/lib/admin/calendar/rsvp-ui';
+import { formatDateTimeShortFr } from '@/lib/format/dates';
+import { ResendInviteButton } from './ResendInviteButton';
 
 interface Props {
   attendees: AttendeeRecord[];
   onChange: (attendees: AttendeeRecord[]) => void;
   prospectId?: string | null;
   locale?: 'fr' | 'en';
+  /** P14.x.RSVP-UI — section RSVP enrichie (meeting existant uniquement). */
+  eventId?: string | null;
+  isMeeting?: boolean;
+  isSuperAdmin?: boolean;
 }
 
 const RESPONSE_STATUS_LABELS: Record<string, string> = {
@@ -68,8 +81,16 @@ export function CalendarEventAttendeesSection({
   onChange,
   prospectId,
   locale = 'fr',
+  eventId = null,
+  isMeeting = false,
+  isSuperAdmin = false,
 }: Props) {
   const c = COPY[locale];
+  // P14.x.RSVP-UI — section RSVP visible seulement pour un RDV existant.
+  const showRsvp = isMeeting && !!eventId && attendees.length > 0;
+  const summary = computeRsvpSummary(attendees);
+  // Date.now() est impur en render → init paresseuse (1 seule fois au montage).
+  const [nowMs] = useState(() => Date.now());
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ContactSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -168,6 +189,22 @@ export function CalendarEventAttendeesSection({
     <div className="space-y-2">
       <label className="text-xs font-semibold text-inherit">{c.label}</label>
 
+      {/* P14.x.RSVP-UI — récap global + relance bulk (super_admin) */}
+      {showRsvp && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-slate-50 px-2 py-1.5 text-[11px] text-slate-600">
+          <span>{formatRsvpSummary(summary, locale)}</span>
+          {isSuperAdmin && summary.needsAction > 0 && eventId && (
+            <ResendInviteButton
+              eventId={eventId}
+              scope="pending"
+              variant="ghost"
+              label={locale === 'fr' ? 'Relancer les en attente' : 'Remind pending'}
+              locale={locale}
+            />
+          )}
+        </div>
+      )}
+
       {/* Liste des invités courants — max-h-48 pour ne pas exploser la modal */}
       {attendees.length > 0 && (
         <ul className="max-h-48 space-y-1 overflow-y-auto">
@@ -181,12 +218,39 @@ export function CalendarEventAttendeesSection({
                 {a.displayName && a.displayName !== a.email && (
                   <span className="text-md-text-muted ml-1">({a.email})</span>
                 )}
+                {showRsvp && a.responded_at && (
+                  <span className="text-md-text-muted ml-1 block text-[10px]">
+                    {RSVP_BADGE[statusOf(a)].labelFr} {locale === 'fr' ? 'le' : 'on'}{' '}
+                    {formatDateTimeShortFr(a.responded_at)}
+                  </span>
+                )}
               </span>
               <div className="flex shrink-0 items-center gap-1.5">
-                {a.responseStatus && a.responseStatus !== 'needsAction' && (
-                  <span title={a.responseStatus}>
-                    {RESPONSE_STATUS_LABELS[a.responseStatus] ?? ''}
+                {showRsvp ? (
+                  <span
+                    className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${RSVP_BADGE[statusOf(a)].className}`}
+                  >
+                    {RSVP_BADGE[statusOf(a)].emoji}{' '}
+                    {locale === 'fr'
+                      ? RSVP_BADGE[statusOf(a)].labelFr
+                      : RSVP_BADGE[statusOf(a)].labelEn}
                   </span>
+                ) : (
+                  a.responseStatus &&
+                  a.responseStatus !== 'needsAction' && (
+                    <span title={a.responseStatus}>
+                      {RESPONSE_STATUS_LABELS[a.responseStatus] ?? ''}
+                    </span>
+                  )
+                )}
+                {showRsvp && eventId && canResendIndividual(a, nowMs) && (
+                  <ResendInviteButton
+                    eventId={eventId}
+                    scope={{ email: a.email }}
+                    variant="ghost"
+                    label={locale === 'fr' ? 'Relancer' : 'Remind'}
+                    locale={locale}
+                  />
                 )}
                 <button
                   type="button"

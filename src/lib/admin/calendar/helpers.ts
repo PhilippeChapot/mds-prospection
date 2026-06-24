@@ -19,11 +19,15 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 export type CalendarEventType = 'call_relance' | 'meeting' | 'task';
 
 /** P14.2 #9 — un invité sur un calendar_event. Stocké en JSONB. */
+export type AttendeeResponseStatus = 'needsAction' | 'accepted' | 'declined' | 'tentative';
 export type AttendeeRecord = {
   email: string;
   displayName?: string | null;
-  responseStatus?: 'needsAction' | 'accepted' | 'declined' | 'tentative' | null;
+  responseStatus?: AttendeeResponseStatus | null;
   contact_id?: string | null;
+  // P14.x.RSVP-UI — horodatages (ISO8601).
+  sent_at?: string | null; // dernier envoi de l'invitation à cet invité
+  responded_at?: string | null; // dernier clic RSVP de l'invité
 };
 export type CalendarEventStatus = 'pending' | 'done' | 'cancelled' | 'missed';
 export type CalendarEventPriority = 'low' | 'normal' | 'high';

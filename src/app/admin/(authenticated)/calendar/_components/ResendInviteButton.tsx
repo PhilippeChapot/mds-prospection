@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * P14.x.CalendarExternalInvites — bouton "Renvoyer l'invitation" (RDV only).
- * Affiché dans la modale pour un meeting existant ayant des invités externes.
+ * P14.x.CalendarExternalInvites / RSVP-UI — bouton "Renvoyer l'invitation".
+ * scope : 'all' (tous) | 'pending' (en attente) | { email } (un invité).
  */
 
 import { useTransition } from 'react';
@@ -13,22 +13,28 @@ import { resendEventInvitesAction } from '@/lib/admin/calendar/actions';
 
 export function ResendInviteButton({
   eventId,
+  scope = 'all',
+  label,
+  variant = 'outline',
   locale = 'fr',
 }: {
   eventId: string;
+  scope?: 'all' | 'pending' | { email: string };
+  label?: string;
+  variant?: 'outline' | 'ghost' | 'secondary';
   locale?: 'fr' | 'en';
 }) {
   const [pending, start] = useTransition();
-  const label = locale === 'fr' ? "Renvoyer l'invitation" : 'Resend invitation';
+  const text = label ?? (locale === 'fr' ? "Renvoyer l'invitation" : 'Resend invitation');
   return (
     <Button
       type="button"
       size="sm"
-      variant="outline"
+      variant={variant}
       disabled={pending}
       onClick={() =>
         start(async () => {
-          const r = await resendEventInvitesAction(eventId);
+          const r = await resendEventInvitesAction({ eventId, scope });
           if (!r.ok) {
             toast.error(r.error);
             return;
@@ -46,7 +52,7 @@ export function ResendInviteButton({
       ) : (
         <Send className="size-3.5" aria-hidden />
       )}
-      {label}
+      {text}
     </Button>
   );
 }

@@ -418,6 +418,9 @@ export function CalendarEventFormModal({
               onChange={setAttendees}
               prospectId={defaultProspectId ?? initialEvent?.prospect_id ?? null}
               locale="fr"
+              eventId={initialEvent?.id ?? null}
+              isMeeting={isMeeting}
+              isSuperAdmin={currentUserRole === 'super_admin'}
             />
           )}
 

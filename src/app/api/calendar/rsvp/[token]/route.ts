@@ -9,6 +9,7 @@
 import { type SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { verifyRsvpToken, RsvpTokenError } from '@/lib/calendar/rsvp-jwt';
+import { notifyOwnerOfRsvp } from '@/lib/admin/calendar/rsvp-notify';
 import type { AttendeeRecord } from '@/lib/admin/calendar/helpers';
 
 export const runtime = 'nodejs';
@@ -64,22 +65,51 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   const db = getSupabaseServiceClient() as unknown as SupabaseClient;
   const { data: event } = await db
     .from('calendar_events')
-    .select('id, attendees')
+    .select('*')
     .eq('id', claims.eventId)
     .maybeSingle();
   if (!event) {
     return page('Événement introuvable', 'Ce rendez-vous n’existe plus.', '⚠️');
   }
 
+  const target = claims.email.trim().toLowerCase();
+  const prior = ((event.attendees as AttendeeRecord[] | null) ?? []).find(
+    (a) => a.email?.trim().toLowerCase() === target,
+  );
+  const oldStatus = prior?.responseStatus ?? 'needsAction';
+  const nowMs = Date.now();
+  const nowIso = new Date(nowMs).toISOString();
+
   const attendees = ((event.attendees as AttendeeRecord[] | null) ?? []).map((a) =>
-    a.email?.trim().toLowerCase() === claims.email.trim().toLowerCase()
-      ? { ...a, responseStatus: r }
+    a.email?.trim().toLowerCase() === target
+      ? { ...a, responseStatus: r, responded_at: nowIso }
       : a,
   );
   await db
     .from('calendar_events')
     .update({ attendees } as never)
     .eq('id', claims.eventId);
+
+  // P14.x.RSVP-UI — notifie l'owner (idempotence + throttle, best-effort).
+  try {
+    await notifyOwnerOfRsvp(db, {
+      eventId: claims.eventId,
+      ownerUserId: event.user_id as string,
+      eventTitle: (event.title as string) ?? 'Rendez-vous',
+      startAt: event.start_at as string,
+      attendees,
+      responderEmail: claims.email,
+      responderName: prior?.displayName ?? claims.email,
+      oldStatus,
+      newStatus: r,
+      lastNotificationAt:
+        (event as { last_rsvp_notification_at?: string | null }).last_rsvp_notification_at ?? null,
+      nowMs,
+      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions',
+    });
+  } catch {
+    /* best-effort */
+  }
 
   const emoji = r === 'accepted' ? '✅' : r === 'declined' ? '❌' : '🤔';
   return page(LABEL[r], 'Merci, votre réponse a bien été transmise à l’organisateur.', emoji);

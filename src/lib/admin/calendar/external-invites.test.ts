@@ -41,6 +41,10 @@ function mockDb(): SupabaseClient {
           }),
         };
       }
+      if (table === 'calendar_events') {
+        // Writeback sent_at (P14.x.RSVP-UI) — no-op dans le test.
+        return { update: () => ({ eq: () => Promise.resolve({ error: null }) }) };
+      }
       return {};
     },
   } as unknown as SupabaseClient;
@@ -132,5 +136,41 @@ describe('sendExternalInvitesForEvent — GATE de type (P14.x critique)', () => 
     expect(r.gated).toBe(false);
     expect(r.sent).toBe(0);
     expect(state.sends).toHaveLength(0);
+  });
+
+  it("scope 'pending' → seuls les en attente sont relancés", async () => {
+    mockEnv();
+    const { sendExternalInvitesForEvent } = await import('./external-invites');
+    const r = await sendExternalInvitesForEvent(
+      mockDb(),
+      baseEvent({
+        attendees: [
+          { email: 'accepted@acme.fr', responseStatus: 'accepted' },
+          { email: 'pending@acme.fr', responseStatus: 'needsAction' },
+        ],
+      }),
+      'invitation',
+      'pending',
+    );
+    expect(r.sent).toBe(1);
+    expect(state.sends[0].to).toBe('pending@acme.fr');
+  });
+
+  it('scope { email } → seul cet invité est relancé', async () => {
+    mockEnv();
+    const { sendExternalInvitesForEvent } = await import('./external-invites');
+    const r = await sendExternalInvitesForEvent(
+      mockDb(),
+      baseEvent({
+        attendees: [
+          { email: 'a@acme.fr', responseStatus: 'needsAction' },
+          { email: 'b@acme.fr', responseStatus: 'needsAction' },
+        ],
+      }),
+      'invitation',
+      { email: 'b@acme.fr' },
+    );
+    expect(r.sent).toBe(1);
+    expect(state.sends[0].to).toBe('b@acme.fr');
   });
 });
