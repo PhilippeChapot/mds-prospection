@@ -17,6 +17,8 @@ import {
 } from '@/lib/resend/templates/calendar-reminder';
 import type { AdminLocale } from './i18n-helpers';
 import type { CalendarEventRow } from './helpers';
+import { sendExternalInvitesForEvent } from './external-invites';
+import { type SupabaseClient } from '@supabase/supabase-js';
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_APP_URL ??
@@ -130,6 +132,12 @@ export async function sendEventReminder(
     console.warn(
       `[calendar-reminder] flag-update-failed event=${event.id} kind=${kind} err=${updErr.message}`,
     );
+  }
+
+  // P14.x — rappel aux invités externes (RDV only, gate dans le helper). Envoyé
+  // UNE seule fois, sur la fenêtre 1h, pour éviter le triple-envoi (24h/1h/15min).
+  if (kind === 'reminder_1h') {
+    await sendExternalInvitesForEvent(supabase as unknown as SupabaseClient, event, 'reminder');
   }
 
   return { ok: true, eventId: event.id, kind, emailId };

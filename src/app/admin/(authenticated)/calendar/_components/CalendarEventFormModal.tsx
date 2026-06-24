@@ -26,6 +26,7 @@ import { Loader2, Trash2, Check, Video, Users } from 'lucide-react';
 import type { AdminUserSummary } from '@/lib/admin/calendar/collaboration-actions';
 import { assignEventToUsersAction } from '@/lib/admin/calendar/collaboration-actions';
 import { CalendarEventAttendeesSection } from './CalendarEventAttendeesSection';
+import { ResendInviteButton } from './ResendInviteButton';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -418,6 +419,13 @@ export function CalendarEventFormModal({
               prospectId={defaultProspectId ?? initialEvent?.prospect_id ?? null}
               locale="fr"
             />
+          )}
+
+          {/* P14.x — renvoyer l'invitation externe (RDV existant avec invités) */}
+          {isMeeting && initialEvent?.id && attendees.length > 0 && (
+            <div className="flex justify-end">
+              <ResendInviteButton eventId={initialEvent.id} locale="fr" />
+            </div>
           )}
 
           {/* P14.5 — Assignataires (admin/super_admin only) */}

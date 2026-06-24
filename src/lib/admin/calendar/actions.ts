@@ -22,6 +22,7 @@ import { requireAdminProfile, type AdminProfile } from '@/lib/supabase/auth-help
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { checkOverlap, type CalendarEventRow, type CalendarEventStatus } from './helpers';
 import { pushEventBestEffort, deleteEventFromGoogle } from './google/push-sync';
+import { sendExternalInvitesForEvent } from './external-invites';
 
 // ─── Types partagés ───
 
@@ -264,6 +265,10 @@ export async function createCalendarEventAction(
     data.generate_meet === true && data.event_type === 'meeting',
   );
 
+  // P14.x — invitations externes (.ics) : RDV uniquement (gate dans le helper),
+  // best-effort. Les Appels/tâches ne déclenchent JAMAIS d'email tiers.
+  await sendExternalInvitesForEvent(supabase, created as CalendarEventRow, 'invitation');
+
   revalidatePath('/admin/calendar');
   if (data.prospect_id) revalidatePath(`/admin/prospects/${data.prospect_id}`);
   return { ok: true, event: created as CalendarEventRow };
@@ -288,7 +293,7 @@ export async function updateCalendarEventAction(
 
   const { data: current, error: readErr } = await supabase
     .from('calendar_events')
-    .select('id, user_id, start_at, end_at, status, prospect_id')
+    .select('*')
     .eq('id', data.id)
     .maybeSingle();
   if (readErr) return { ok: false, error: readErr.message, errorCode: 'internal' };
@@ -358,6 +363,12 @@ export async function updateCalendarEventAction(
   if (data.attendees !== undefined) updates.attendees = data.attendees;
   if (data.assignee_user_ids !== undefined) updates.assignee_user_ids = data.assignee_user_ids;
 
+  // P14.x — bump SEQUENCE iCalendar pour les RDV (clients mail honorent l'UPDATE).
+  const willBeMeeting = (data.event_type ?? current.event_type) === 'meeting';
+  if (willBeMeeting) {
+    updates.invite_sequence = ((current as { invite_sequence?: number }).invite_sequence ?? 0) + 1;
+  }
+
   const { data: updated, error: updErr } = await supabase
     .from('calendar_events')
     .update(updates as never)
@@ -402,6 +413,14 @@ export async function updateCalendarEventAction(
     data.generate_meet === true && (updated as CalendarEventRow).event_type === 'meeting',
   );
 
+  // P14.x — notifie les invités externes (RDV only, gate dans le helper). Un
+  // event passé à 'cancelled' envoie une annulation, sinon une mise à jour.
+  {
+    const ev = updated as CalendarEventRow;
+    const kind = ev.status === 'cancelled' ? 'cancellation' : 'update';
+    await sendExternalInvitesForEvent(supabase, ev, kind);
+  }
+
   revalidatePath('/admin/calendar');
   if (current.prospect_id) revalidatePath(`/admin/prospects/${current.prospect_id}`);
   return { ok: true, event: updated as CalendarEventRow };
@@ -421,7 +440,7 @@ export async function deleteCalendarEventAction(
 
   const { data: current } = await supabase
     .from('calendar_events')
-    .select('id, user_id, prospect_id, google_calendar_event_id')
+    .select('*')
     .eq('id', parsed.data.id)
     .maybeSingle();
   if (!current) return { ok: false, error: 'Event introuvable.', errorCode: 'not_found' };
@@ -433,6 +452,10 @@ export async function deleteCalendarEventAction(
       errorCode: 'forbidden',
     };
   }
+
+  // P14.x — annulation aux invités externes AVANT suppression (RDV only, gate
+  // dans le helper). On lit l'event complet ci-dessus pour disposer des attendees.
+  await sendExternalInvitesForEvent(supabase, current as CalendarEventRow, 'cancellation');
 
   // P14.2 — supprime d'abord côté Google (best-effort, 404/410 = déjà absent).
   const googleEventId = (current as { google_calendar_event_id?: string | null })
@@ -466,6 +489,34 @@ export async function deleteCalendarEventAction(
   revalidatePath('/admin/calendar');
   if (current.prospect_id) revalidatePath(`/admin/prospects/${current.prospect_id}`);
   return { ok: true };
+}
+
+// ─── RESEND INVITES (P14.x) ───
+
+export async function resendEventInvitesAction(
+  eventId: string,
+): Promise<
+  { ok: true; sent: number; total: number; gated: boolean } | { ok: false; error: string }
+> {
+  const profile = await requireAdminProfile();
+  if (!z.string().uuid().safeParse(eventId).success) {
+    return { ok: false, error: 'id invalide' };
+  }
+  const supabase = getSupabaseServiceClient();
+  const { data: event } = await supabase
+    .from('calendar_events')
+    .select('*')
+    .eq('id', eventId)
+    .maybeSingle();
+  if (!event) return { ok: false, error: 'Event introuvable.' };
+  if (event.user_id !== profile.id && !isSuperAdmin(profile)) {
+    return { ok: false, error: 'Réservé au propriétaire ou au super_admin.' };
+  }
+  const res = await sendExternalInvitesForEvent(supabase, event as CalendarEventRow, 'invitation');
+  if (res.gated) {
+    return { ok: false, error: 'Invitations réservées aux RDV (pas aux appels/tâches).' };
+  }
+  return { ok: true, sent: res.sent, total: res.total, gated: false };
 }
 
 // ─── LIST ───

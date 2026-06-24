@@ -47,6 +47,8 @@ export interface ResendEmailParams {
   replyTo?: string;
   /** Tags Resend pour observabilite (max 10, valeurs ASCII alphanumeriques + _ -). */
   tags?: { name: string; value: string }[];
+  /** Pieces jointes (ex: invitation .ics P14.x). content = Buffer ou string. */
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[];
 }
 
 export interface ResendEmailResult {
@@ -82,6 +84,15 @@ export async function sendTransactionalEmailViaResend(
     text: params.text,
     replyTo: params.replyTo ?? sender.email,
     ...(params.tags ? { tags: params.tags } : {}),
+    ...(params.attachments
+      ? {
+          attachments: params.attachments.map((a) => ({
+            filename: a.filename,
+            content: a.content,
+            ...(a.contentType ? { contentType: a.contentType } : {}),
+          })),
+        }
+      : {}),
   });
 
   if (error || !data) {

@@ -79,6 +79,8 @@ export type CalendarEventRow = {
   attendees?: AttendeeRecord[] | null;
   // P14.5 — assignataires (migration 0093).
   assignee_user_ids?: string[] | null;
+  // P14.x — SEQUENCE iCalendar pour invitations externes (migration 0108).
+  invite_sequence?: number | null;
 };
 
 // ─── Mappings UI (couleurs + icones) ───
