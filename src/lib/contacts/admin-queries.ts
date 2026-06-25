@@ -244,6 +244,8 @@ export type CompanyContactRow = {
   prefs_active_count: number;
   prefs_locked_count: number;
   prefs_unsubscribed: boolean;
+  /** P5.x.CompanyContactsConvertedBadge — id du prospect le plus récent (si converti). */
+  latest_prospect_id: string | null;
 };
 
 export async function listContactsForCompany(companyId: string): Promise<CompanyContactRow[]> {
@@ -270,6 +272,24 @@ export async function listContactsForCompany(companyId: string): Promise<Company
   if (error) {
     console.error('[admin-queries.listContactsForCompany]', error);
     return [];
+  }
+
+  // P5.x.CompanyContactsConvertedBadge — prospect le plus récent par contact
+  // (1 seule requête, pas de N+1). Filtre par colonne primary_contact_id (pas un
+  // embed → pas d'ambiguïté FK billing_contact_id).
+  const contactIds = (data ?? []).map((r) => r.id);
+  const latestProspectByContact = new Map<string, string>();
+  if (contactIds.length > 0) {
+    const { data: pRows } = await supabase
+      .from('prospects')
+      .select('id, primary_contact_id, created_at')
+      .in('primary_contact_id', contactIds)
+      .order('created_at', { ascending: false });
+    for (const p of (pRows ?? []) as Array<{ id: string; primary_contact_id: string }>) {
+      if (!latestProspectByContact.has(p.primary_contact_id)) {
+        latestProspectByContact.set(p.primary_contact_id, p.id);
+      }
+    }
   }
 
   type RawPrefs = {
@@ -325,6 +345,7 @@ export async function listContactsForCompany(companyId: string): Promise<Company
       prefs_active_count: activeCount,
       prefs_locked_count: lockedCount,
       prefs_unsubscribed: Boolean(prefs?.unsubscribed_all_at),
+      latest_prospect_id: latestProspectByContact.get(r.id) ?? null,
     } as CompanyContactRow;
   });
 }

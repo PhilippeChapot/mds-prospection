@@ -29,6 +29,7 @@ import type { CompanyContactRow } from '@/lib/contacts/admin-queries';
 import { listContactPreferencesByCompanyAction } from '@/lib/admin/contact-preferences/actions';
 import type { ContactPreferencesRow } from '@/lib/admin/contact-preferences/types';
 import { ContactPreferencesDrawer } from './ContactPreferencesDrawer';
+import { contactConversionLink } from './contact-conversion';
 
 interface Props {
   companyId: string;
@@ -218,14 +219,28 @@ export function CompanyContactsSection({ companyId, contacts, canDelete }: Props
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
-                        <Link
-                          href={`/admin/prospects/new?contact_id=${c.id}`}
-                          title="Convertir en prospect"
-                          className="text-md-blue hover:text-md-blue-dark inline-flex items-center gap-0.5 text-[10px] font-semibold"
-                        >
-                          <ArrowRight className="size-3" aria-hidden />
-                          Convertir
-                        </Link>
+                        {/* P5.x — déjà converti → badge vers la fiche prospect (évite le doublon). */}
+                        {(() => {
+                          const conv = contactConversionLink(c);
+                          return conv.converted ? (
+                            <Link
+                              href={conv.href}
+                              title="Voir le prospect"
+                              className="text-md-text-muted hover:text-md-text inline-flex items-center gap-0.5 text-[10px] font-semibold"
+                            >
+                              {conv.label}
+                            </Link>
+                          ) : (
+                            <Link
+                              href={conv.href}
+                              title="Convertir en prospect"
+                              className="text-md-blue hover:text-md-blue-dark inline-flex items-center gap-0.5 text-[10px] font-semibold"
+                            >
+                              <ArrowRight className="size-3" aria-hidden />
+                              {conv.label}
+                            </Link>
+                          );
+                        })()}
                         <button
                           type="button"
                           onClick={() => setEditing(c)}
