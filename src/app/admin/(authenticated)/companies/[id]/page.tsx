@@ -339,6 +339,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           companyId={id}
           contacts={companyContacts}
           canDelete={hasAdminAccess(profile.role)}
+          canReassign={hasAdminAccess(profile.role)}
         />
       </Section>
 

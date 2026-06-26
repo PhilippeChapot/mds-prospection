@@ -13,6 +13,7 @@ import {
   Settings2,
   Lock,
   AlertTriangle,
+  Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -29,19 +30,47 @@ import type { CompanyContactRow } from '@/lib/contacts/admin-queries';
 import { listContactPreferencesByCompanyAction } from '@/lib/admin/contact-preferences/actions';
 import type { ContactPreferencesRow } from '@/lib/admin/contact-preferences/types';
 import { ContactPreferencesDrawer } from './ContactPreferencesDrawer';
+import { ReassignContactsModal } from './ReassignContactsModal';
 import { contactConversionLink } from './contact-conversion';
 
 interface Props {
   companyId: string;
   contacts: CompanyContactRow[];
   canDelete: boolean;
+  /** P5.x.ReassignContactsToCompany — autorise la sélection multi + déplacement. */
+  canReassign: boolean;
 }
 
-export function CompanyContactsSection({ companyId, contacts, canDelete }: Props) {
+export function CompanyContactsSection({ companyId, contacts, canDelete, canReassign }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<CompanyContactRow | null>(null);
+  // P5.x.ReassignContactsToCompany — sélection multi + modal de déplacement.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showReassign, setShowReassign] = useState(false);
+
+  const allSelected = contacts.length > 0 && selected.size === contacts.length;
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function toggleAll() {
+    setSelected((prev) =>
+      prev.size === contacts.length ? new Set() : new Set(contacts.map((c) => c.id)),
+    );
+  }
+  const selectedContacts = contacts
+    .filter((c) => selected.has(c.id))
+    .map((c) => ({
+      id: c.id,
+      email: c.email,
+      name: [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email || '(générique)',
+    }));
   // P8.1 — drawer Préférences pour 1 contact a la fois.
   const [prefsContact, setPrefsContact] = useState<CompanyContactRow | null>(null);
   const [prefsLoading, setPrefsLoading] = useState(false);
@@ -119,10 +148,35 @@ export function CompanyContactsSection({ companyId, contacts, canDelete }: Props
         </div>
       ) : (
         <>
+          {canReassign ? (
+            <div className="flex min-h-8 items-center justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={selected.size === 0 || pending}
+                onClick={() => setShowReassign(true)}
+              >
+                <Send className="size-3.5" aria-hidden />
+                Déplacer {selected.size > 0 ? `${selected.size} ` : ''}contact
+                {selected.size > 1 ? 's' : ''}
+              </Button>
+            </div>
+          ) : null}
           <div className="overflow-x-auto rounded-md border">
             <table className="w-full text-left text-sm">
               <thead className="bg-muted/40 text-md-text-muted text-[10px] font-semibold tracking-wider uppercase">
                 <tr>
+                  {canReassign ? (
+                    <th className="px-3 py-2">
+                      <input
+                        type="checkbox"
+                        aria-label="Tout sélectionner"
+                        checked={allSelected}
+                        onChange={toggleAll}
+                      />
+                    </th>
+                  ) : null}
                   <th className="px-3 py-2">Nom</th>
                   <th className="px-3 py-2">Email</th>
                   <th className="px-3 py-2">Rôle</th>
@@ -141,6 +195,16 @@ export function CompanyContactsSection({ companyId, contacts, canDelete }: Props
                     id={`contact-${c.id}`}
                     className="border-md-border hover:bg-muted/30 scroll-mt-20 border-t"
                   >
+                    {canReassign ? (
+                      <td className="px-3 py-2">
+                        <input
+                          type="checkbox"
+                          aria-label={`Sélectionner ${c.email}`}
+                          checked={selected.has(c.id)}
+                          onChange={() => toggleOne(c.id)}
+                        />
+                      </td>
+                    ) : null}
                     <td className="text-md-text px-3 py-2 font-medium">
                       {[c.first_name, c.last_name].filter(Boolean).join(' ') || (
                         <span className="text-md-text-muted italic">(générique)</span>
@@ -322,6 +386,16 @@ export function CompanyContactsSection({ companyId, contacts, canDelete }: Props
           onSaved={() => {
             refresh();
           }}
+        />
+      ) : null}
+
+      {canReassign ? (
+        <ReassignContactsModal
+          open={showReassign}
+          onOpenChange={setShowReassign}
+          currentCompanyId={companyId}
+          selectedContacts={selectedContacts}
+          onDone={() => setSelected(new Set())}
         />
       ) : null}
     </div>

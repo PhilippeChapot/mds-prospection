@@ -633,6 +633,7 @@ export default async function ProspectDetailPage({ params }: { params: Promise<{
             companyId={company.id}
             contacts={companyContacts}
             canDelete={hasAdminAccess(profile.role)}
+            canReassign={false}
           />
         </section>
       ) : null}
