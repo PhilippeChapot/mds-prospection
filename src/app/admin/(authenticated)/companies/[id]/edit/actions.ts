@@ -41,6 +41,17 @@ const InputSchema = z.object({
     .union([z.literal('on'), z.literal('true'), z.literal('')])
     .optional()
     .transform((v) => v === 'on' || v === 'true'),
+  // P5.x.CompanyEditAddressSave — coordonnées postales éditables manuellement.
+  // Optionnels : si la clé est absente du FormData (champ non rendu), on ne
+  // touche PAS la colonne (évite d'écraser une valeur posée par l'enrichissement,
+  // ex: `state` qui n'a pas de champ dans le form). Une chaîne vide "" reste
+  // distincte de `undefined` → elle EFFACE la colonne (mise à NULL).
+  raw_address: z.string().trim().max(300).optional(),
+  city: z.string().trim().max(120).optional(),
+  postal_code: z.string().trim().max(20).optional(),
+  state: z.string().trim().max(120).optional(),
+  website: z.string().trim().max(255).optional(),
+  phone: z.string().trim().max(40).optional(),
 });
 
 export type UpdateCompanyState = {
@@ -115,23 +126,75 @@ export async function updateCompanyAction(
     altDomains = altDomains.filter((d) => d !== normalizedPrimary);
   }
 
+  // Snapshot avant pour le diff audit (champs trackés human-readable).
+  const { data: before } = await supabase
+    .from('companies')
+    .select(
+      'name, primary_domain, country, category, raw_address, city, postal_code, state, website, phone',
+    )
+    .eq('id', data.company_id)
+    .maybeSingle();
+
+  // Patch de base (champs toujours présents dans le form).
+  const patch: Record<string, unknown> = {
+    name: data.name,
+    name_normalized: data.name.toLowerCase(),
+    primary_domain: normalizedPrimary,
+    alternate_domains: altDomains,
+    country: data.country?.toUpperCase() || null,
+    category: data.category,
+    pole_id: poleRow.id,
+    was_prs_2026_exhibitor: data.was_prs_2026_exhibitor,
+    updated_at: new Date().toISOString(),
+  };
+
+  // Coordonnées postales : on n'inclut une colonne QUE si la clé a été
+  // soumise (undefined = champ absent → ne pas toucher). Chaîne vide → NULL
+  // (l'admin efface volontairement). Cf. note Supabase null vs undefined.
+  const addressFields = [
+    'raw_address',
+    'city',
+    'postal_code',
+    'state',
+    'website',
+    'phone',
+  ] as const;
+  for (const f of addressFields) {
+    const v = data[f];
+    if (v !== undefined) patch[f] = v === '' ? null : v;
+  }
+
   const { error: updateErr } = await supabase
     .from('companies')
-    .update({
-      name: data.name,
-      name_normalized: data.name.toLowerCase(),
-      primary_domain: normalizedPrimary,
-      alternate_domains: altDomains,
-      country: data.country?.toUpperCase() || null,
-      category: data.category,
-      pole_id: poleRow.id,
-      was_prs_2026_exhibitor: data.was_prs_2026_exhibitor,
-      updated_at: new Date().toISOString(),
-    })
+    .update(patch as never)
     .eq('id', data.company_id);
 
   if (updateErr) {
     return { error: updateErr.message };
+  }
+
+  // Audit log : diff before/after sur les champs trackés effectivement modifiés.
+  const tracked = ['name', 'primary_domain', 'country', 'category', ...addressFields] as const;
+  const beforeDiff: Record<string, unknown> = {};
+  const afterDiff: Record<string, unknown> = {};
+  for (const k of tracked) {
+    if (!(k in patch)) continue; // champ non concerné par cet update
+    const newVal = patch[k] ?? null;
+    const oldVal = (before as Record<string, unknown> | null)?.[k] ?? null;
+    if (oldVal !== newVal) {
+      beforeDiff[k] = oldVal;
+      afterDiff[k] = newVal;
+    }
+  }
+  if (Object.keys(afterDiff).length > 0) {
+    await supabase.from('audit_log').insert({
+      user_id: profile.id,
+      entity_type: 'companies',
+      entity_id: data.company_id,
+      action: 'update',
+      before: beforeDiff as never,
+      after: { kind: 'company_updated', ...afterDiff } as never,
+    });
   }
 
   revalidatePath(`/admin/companies/${data.company_id}`);

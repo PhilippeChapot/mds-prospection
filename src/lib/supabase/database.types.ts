@@ -4679,6 +4679,14 @@ export type Database = {
         Args: { p_actor_id: string; p_source_id: string; p_target_id: string };
         Returns: Json;
       };
+      reassign_contacts_to_company: {
+        Args: {
+          p_actor_id: string;
+          p_contact_ids: string[];
+          p_target_company_id: string;
+        };
+        Returns: Json;
+      };
       search_companies_fuzzy: {
         Args: {
           p_limit_exact?: number;
