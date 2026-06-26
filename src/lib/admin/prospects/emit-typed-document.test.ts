@@ -15,6 +15,8 @@ interface ProspectStub {
   is_test: boolean;
   billing_contact_id: string | null;
   billing_email_override: string | null;
+  pack_code: string | null;
+  booth_assignment: string | null;
   sellsy_proforma_id: string | null;
   sellsy_invoice_id: string | null;
   company: { id: string; name: string; sellsy_id: number | null };
@@ -61,11 +63,13 @@ const PACK = {
 function baseProspect(): ProspectStub {
   return {
     id: PROSPECT_ID,
-    quote_items: [{ ...PACK }],
+    quote_items: [{ ...PACK, name: 'Pack CLASSIC' }],
     promo_reason: null,
     is_test: false,
     billing_contact_id: null,
     billing_email_override: null,
+    pack_code: 'CLASSIC',
+    booth_assignment: 'F4',
     sellsy_proforma_id: null,
     sellsy_invoice_id: null,
     company: { id: 'co-1', name: 'Acme Media', sellsy_id: 9999 },
@@ -169,7 +173,17 @@ function mockEnv() {
     sellsyFetch: vi.fn(async (endpoint: string, opts?: { method?: string; body?: string }) => {
       state.sellsyCalls.push({ endpoint, method: opts?.method ?? 'GET', body: opts?.body });
       const key = `${opts?.method ?? 'GET'} ${endpoint}`;
-      return state.sellsyResponses.get(key) ?? {};
+      const resp = state.sellsyResponses.get(key);
+      // Convention test : { __throw: { status, body } } → throw SellsyError.
+      if (resp && typeof resp === 'object' && '__throw' in (resp as Record<string, unknown>)) {
+        const t = (resp as { __throw: { status: number; body: unknown } }).__throw;
+        throw new SellsyErrorMock(
+          `Sellsy fetch ${endpoint} failed (${t.status})`,
+          t.status,
+          t.body,
+        );
+      }
+      return resp ?? {};
     }),
   }));
 }
@@ -331,5 +345,138 @@ describe('emitSellsyTypedDocumentAction (P5.x.SellsyDocumentsFlow)', () => {
     });
     expect(r.ok).toBe(false);
     expect(state.sellsyCalls).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P5.x.SellsyInvoiceCreationFixes — Fix 1 (validate), Fix 2 (subject), Fix 3 (url)
+// ---------------------------------------------------------------------------
+
+describe('P5.x.SellsyInvoiceCreationFixes', () => {
+  beforeEach(() => {
+    state.role = 'admin';
+    state.prospect = baseProspect();
+    state.companySellsyId = 9999;
+    state.billingContactSellsyId = null;
+    state.prospectUpdates = [];
+    state.requestUpdates = [];
+    state.auditInserts = [];
+    state.sellsyCalls = [];
+    state.sellsyResponses = new Map();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.resetModules();
+  });
+
+  // --- Fix 1 : validate ----------------------------------------------------
+
+  it('Fix 1 — facture : POST /invoices/{id}/validate appelé après création (draft→due)', async () => {
+    seedSellsyOk('invoice');
+    mockEnv();
+    const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
+    const r = await emitSellsyTypedDocumentAction({
+      prospect_id: PROSPECT_ID,
+      document_type: 'invoice',
+    });
+    expect(r.ok).toBe(true);
+    const validate = state.sellsyCalls.find(
+      (c) => c.method === 'POST' && c.endpoint === '/invoices/555/validate',
+    );
+    expect(validate).toBeDefined();
+  });
+
+  it('Fix 1 — pro-forma : PAS de validate (document non-comptable)', async () => {
+    seedSellsyOk('proforma');
+    mockEnv();
+    const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
+    await emitSellsyTypedDocumentAction({ prospect_id: PROSPECT_ID, document_type: 'proforma' });
+    const validate = state.sellsyCalls.find((c) => c.endpoint.includes('/validate'));
+    expect(validate).toBeUndefined();
+  });
+
+  it('Fix 1 — validate échoue → ok:false + message + id persisté (anti-doublon)', async () => {
+    state.sellsyResponses.set('POST /invoices', { data: { id: 555 } });
+    state.sellsyResponses.set('POST /invoices/555/validate', {
+      __throw: { status: 400, body: { error: { message: 'cannot validate' } } },
+    });
+    // GET re-fetch reste seedé pour le best-effort
+    state.sellsyResponses.set('GET /invoices/555', {
+      data: { number: 'FA-2026-001', public_link: { enabled: true, url: 'https://sellsy.link/x' } },
+    });
+    mockEnv();
+    const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
+    const r = await emitSellsyTypedDocumentAction({
+      prospect_id: PROSPECT_ID,
+      document_type: 'invoice',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/finalisation a échoué/);
+    // L'id est quand même persisté (la facture brouillon existe côté Sellsy).
+    const upd = state.prospectUpdates.find((u) => u.sellsy_invoice_id !== undefined);
+    expect(upd?.sellsy_invoice_id).toBe('555');
+  });
+
+  // --- Fix 2 : subject -----------------------------------------------------
+
+  it('Fix 2 — payload contient subject auto (event + stand + pack)', async () => {
+    seedSellsyOk('invoice');
+    mockEnv();
+    const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
+    await emitSellsyTypedDocumentAction({ prospect_id: PROSPECT_ID, document_type: 'invoice' });
+    const post = state.sellsyCalls.find((c) => c.method === 'POST' && c.endpoint === '/invoices');
+    const body = JSON.parse(post!.body!) as { subject?: string };
+    expect(body.subject).toBe('MediaDays Solutions 2026 — Stand F4 — Pack CLASSIC');
+  });
+
+  it('Fix 2 — buildInvoiceSubject : sans stand → event + pack', async () => {
+    mockEnv();
+    const { buildInvoiceSubject } = await import('./invoice-subject');
+    expect(
+      buildInvoiceSubject({
+        packCode: 'PREMIUM',
+        boothAssignment: null,
+        items: [{ category: 'pack', name: 'Pack PREMIUM' }],
+      }),
+    ).toBe('MediaDays Solutions 2026 — Pack PREMIUM');
+  });
+
+  it('Fix 2 — buildInvoiceSubject : fallback pack_code si pas de ligne pack nommée', async () => {
+    mockEnv();
+    const { buildInvoiceSubject } = await import('./invoice-subject');
+    expect(
+      buildInvoiceSubject({
+        packCode: 'DUO',
+        boothAssignment: 'C2',
+        items: [{ category: 'option', name: 'Logo' }],
+      }),
+    ).toBe('MediaDays Solutions 2026 — Stand C2 — Pack DUO');
+  });
+
+  // --- Fix 3 : url stable (public_link.url objet) ---------------------------
+
+  it('Fix 3 — GET public_link objet { enabled, url } → URL stable stockée (pas pdf_link cassé)', async () => {
+    state.sellsyResponses.set('POST /invoices', { data: { id: 555 } });
+    state.sellsyResponses.set('POST /invoices/555/validate', {});
+    state.sellsyResponses.set('GET /invoices/555', {
+      data: {
+        number: 'FA-2026-001',
+        public_link: { enabled: true, url: 'https://sellsy.link/STABLE' },
+        pdf_link: 'https://file.sellsy.com/?id=BROKEN',
+      },
+    });
+    mockEnv();
+    const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
+    const r = await emitSellsyTypedDocumentAction({
+      prospect_id: PROSPECT_ID,
+      document_type: 'invoice',
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.public_url).toBe('https://sellsy.link/STABLE');
+    const upd = state.prospectUpdates.find((u) => u.sellsy_invoice_public_url !== undefined);
+    expect(upd?.sellsy_invoice_public_url).toBe('https://sellsy.link/STABLE');
   });
 });

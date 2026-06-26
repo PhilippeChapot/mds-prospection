@@ -24,8 +24,10 @@ import { sellsyFetch } from '@/lib/sellsy/client';
 import { syncProspectToSellsy } from '@/lib/sellsy/sync-prospect';
 import { endpointForDocumentType, type SellsyDocumentType } from '@/lib/sellsy/create-document';
 import { SellsyError } from '@/lib/sellsy/client';
+import { extractSellsyPublicUrl } from '@/lib/sellsy/public-url';
 import { logSellsyCall } from '@/lib/sellsy/sync-logger';
 import { calculateQuoteTotals, clampDiscountForItem, type QuoteItem } from './quote-calc';
+import { buildInvoiceSubject } from './invoice-subject';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 /**
@@ -315,7 +317,7 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
     type SellsyDoc = {
       number?: string;
       amounts?: { total?: string; total_excl_tax?: string };
-      public_link?: string | null;
+      public_link?: unknown;
       public_link_enabled?: boolean;
       pdf_link?: string | null;
     };
@@ -324,7 +326,8 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
     );
     const d: SellsyDoc = (res as { data?: SellsyDoc }).data ?? (res as SellsyDoc);
     devisNumber = d.number ?? null;
-    publicUrl = (d.public_link_enabled && d.public_link) || d.pdf_link || null;
+    // Fix 3 — extraction robuste (public_link réel = { enabled, url }).
+    publicUrl = extractSellsyPublicUrl(d);
     totalTtc = d.amounts?.total ? Number(d.amounts.total) : null;
   } catch (err) {
     console.warn('%s fetch-details-failed doc=%d msg=%s', LOG_PREFIX, documentId, String(err));
@@ -501,6 +504,7 @@ export async function emitSellsyTypedDocumentAction(
     .from('prospects')
     .select(
       `id, quote_items, promo_reason, is_test, billing_contact_id, billing_email_override,
+       pack_code, booth_assignment,
        sellsy_proforma_id, sellsy_invoice_id,
        company:companies!inner(id, name, sellsy_id),
        contact:contacts!primary_contact_id(sellsy_contact_id)`,
@@ -593,9 +597,18 @@ export async function emitSellsyTypedDocumentAction(
   }
   const note = noteParts.length > 0 ? noteParts.join('\n') : undefined;
 
+  // Fix 2 — Objet auto (champ Sellsy V2 `subject`). Évite la colonne Objet
+  // vide côté Sellsy (Phil devait la saisir à la main).
+  const subject = buildInvoiceSubject({
+    packCode: (prospect as Record<string, unknown>).pack_code as string | null,
+    boothAssignment: (prospect as Record<string, unknown>).booth_assignment as string | null,
+    items,
+  });
+
   const payload = {
     related: [{ type: 'company' as const, id: Number(sellsyCompanyId) }],
     rows,
+    subject,
     public_link_enabled: true,
     ...(note ? { note } : {}),
     ...(sellsyContactId ? { contact_id: sellsyContactId } : {}),
@@ -664,20 +677,69 @@ export async function emitSellsyTypedDocumentAction(
     return { ok: false, error: `Émission Sellsy échouée : ${msg}${bodyDetails}` };
   }
 
-  // 8. Fetch détails (number, public_link, total) — best-effort.
+  // 7b. Fix 1 — finaliser la facture (draft → due). Sellsy crée TOUJOURS la
+  //     facture en brouillon (le champ `status` n'est pas writable au POST,
+  //     confirmé OpenAPI V2 InvoiceCreate). Sans validation : le PDF n'est pas
+  //     généré, le lien public est cassé, le numéro n'est pas verrouillé, et
+  //     l'admin reste bloqué (animation « génération du document… » en boucle).
+  //     POST /invoices/{id}/validate passe le brouillon en « due » (open beta).
+  //     Pro-forma exclue : document non-comptable, pas de validation.
+  let validateError: string | null = null;
+  if (document_type === 'invoice') {
+    try {
+      await sellsyFetch<unknown>(`/invoices/${documentId}/validate`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+      console.log('%s invoice-validated prospect=%s doc=%d', LOG_PREFIX, prospect_id, documentId);
+    } catch (err) {
+      validateError = err instanceof Error ? err.message : String(err);
+      if (err instanceof SellsyError && err.body) {
+        try {
+          validateError += ` — Sellsy: ${JSON.stringify(err.body).slice(0, 300)}`;
+        } catch {
+          /* noop */
+        }
+      }
+      console.error(
+        '%s invoice-validate-failed prospect=%s doc=%d msg=%s',
+        LOG_PREFIX,
+        prospect_id,
+        documentId,
+        validateError,
+      );
+      // Garde-fou : on ne laisse PAS un brouillon orphelin/non tracé. On loggue
+      // l'échec en audit et on persiste quand même l'id (anti-doublon), puis on
+      // renvoie une erreur visible pour que Phil finalise manuellement.
+      await logSellsyCall({
+        entityType: 'prospects',
+        entityId: prospect_id,
+        operation: 'update',
+        status: 'error',
+        errorMessage: `Validation facture Sellsy échouée (reste en brouillon): ${validateError}`,
+        payload: { sellsy_invoice_id: documentId },
+      });
+    }
+  }
+
+  // 8. Fetch détails (number, public_link, total) — best-effort. Après
+  //    validation pour la facture : le PDF existe et public_link.url est stable.
   let docNumber: string | null = null;
   let publicUrl: string | null = null;
   try {
     type SellsyDoc = {
       number?: string;
-      public_link?: string | null;
+      public_link?: unknown;
       public_link_enabled?: boolean;
       pdf_link?: string | null;
     };
     const res = await sellsyFetch<{ data?: SellsyDoc } & SellsyDoc>(`${endpoint}/${documentId}`);
     const d: SellsyDoc = (res as { data?: SellsyDoc }).data ?? (res as SellsyDoc);
     docNumber = d.number ?? null;
-    publicUrl = (d.public_link_enabled && d.public_link) || d.pdf_link || null;
+    // Fix 3 — extraction robuste : public_link réel = { enabled, url } (objet),
+    // pas la string plate lue avant. pdf_link reste le dernier recours (cassé
+    // tant que brouillon → d'où Fix 1 en amont).
+    publicUrl = extractSellsyPublicUrl(d);
   } catch (err) {
     console.warn('%s fetch-details-failed doc=%d msg=%s', LOG_PREFIX, documentId, String(err));
   }
@@ -739,6 +801,17 @@ export async function emitSellsyTypedDocumentAction(
   );
 
   revalidatePath(`/admin/prospects/${prospect_id}`);
+
+  // Fix 1 — si la validation a échoué, la facture existe (tracée en DB,
+  // anti-doublon actif) mais reste en brouillon : on remonte un message clair
+  // pour que Phil la finalise manuellement dans Sellsy.
+  if (validateError) {
+    return {
+      ok: false,
+      error: `Facture créée (Sellsy #${documentId}) mais sa finalisation a échoué : ${validateError}. Finalise-la manuellement dans Sellsy.`,
+    };
+  }
+
   return {
     ok: true,
     sellsy_document_id: String(documentId),

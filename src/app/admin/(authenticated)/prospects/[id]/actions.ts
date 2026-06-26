@@ -232,6 +232,17 @@ export async function resyncProspectAction(prospectId: string) {
   const { syncProspectToSellsy } = await import('@/lib/sellsy/sync-prospect');
   await syncProspectToSellsy(prospectId);
 
+  // P5.x.SellsyInvoiceCreationFixes (Fix 3) — re-fetch des URLs publiques des
+  // documents Sellsy (devis/proforma/facture). Corrige le cas d'une facture
+  // passée de brouillon → finalisée dont le lien stocké restait cassé
+  // (file.sellsy.com/?id=... « aucun fichier trouvé »). Best-effort.
+  try {
+    const { refreshSellsyDocumentUrls } = await import('@/lib/sellsy/refresh-document-urls');
+    await refreshSellsyDocumentUrls(prospectId);
+  } catch (err) {
+    console.error('[resync] refresh-doc-urls-failed:', err);
+  }
+
   // Brevo lifecycle (best-effort).
   try {
     const { upsertContactBrevo } = await import('@/lib/brevo/lifecycle');
