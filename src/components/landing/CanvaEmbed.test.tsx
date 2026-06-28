@@ -65,10 +65,13 @@ describe('DeckAndContactSection (Lot 5 — remplace CanvaEmbed)', () => {
     expect(emailLink.getAttribute('href')).toBe('mailto:philippe@mediadays.solutions');
   });
 
-  it('placeholder avatar PC visible (photo non encore déposée)', () => {
+  it('photo Philippe Chapot : <img> src="/brand/philippe-chapot-nb.jpg" dans avatar', () => {
     renderI18n(<DeckAndContactSection />);
-    expect(screen.getByTestId('contact-avatar')).toBeInTheDocument();
-    expect(screen.getByTestId('contact-avatar').textContent).toContain('PC');
+    const avatar = screen.getByTestId('contact-avatar');
+    expect(avatar).toBeInTheDocument();
+    const img = avatar.querySelector('img');
+    expect(img).toBeTruthy();
+    expect(img?.getAttribute('src')).toContain('philippe-chapot-nb');
   });
 
   it('boutons CTA ont la classe bg-md-magenta (rose vif)', () => {

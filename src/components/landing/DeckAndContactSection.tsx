@@ -6,6 +6,7 @@
  * puis activer le <Image> ci-dessous (actuellement placeholder initiales "PC").
  */
 
+import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { ExternalLink, Mail } from 'lucide-react';
 
@@ -48,13 +49,18 @@ export function DeckAndContactSection() {
 
           {/* Droite — Contact Philippe Chapot */}
           <div className="flex flex-col items-center rounded-2xl border border-white/20 bg-white/10 p-8 text-center md:items-start md:text-left">
-            {/* Placeholder initiales — remplacer par <Image> quand photo déposée */}
             <div
               data-testid="contact-avatar"
-              aria-hidden
-              className="mb-5 flex h-28 w-28 items-center justify-center self-center rounded-full border-4 border-white bg-white text-3xl font-extrabold text-[#0D1D6D]"
+              className="mb-5 h-28 w-28 self-center overflow-hidden rounded-full border-4 border-white"
             >
-              PC
+              <Image
+                src="/brand/philippe-chapot-nb.jpg"
+                alt="Philippe Chapot"
+                width={600}
+                height={600}
+                className="h-full w-full object-cover"
+                priority
+              />
             </div>
             <h3 className="mb-3 text-xl font-extrabold text-white">{t('contactTitle')}</h3>
             <p className="mb-1 text-base font-bold text-white">Philippe Chapot</p>
