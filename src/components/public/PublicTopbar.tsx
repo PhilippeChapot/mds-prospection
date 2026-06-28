@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { LogIn } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
+import { Button } from '@/components/ui/button';
 import { HeaderLogo } from '@/components/brand/HeaderLogo';
 import { LocaleSwitcher } from '@/components/public/LocaleSwitcher';
 
@@ -37,6 +38,16 @@ export function PublicTopbar() {
             <LogIn className="h-3.5 w-3.5" aria-hidden />
             <span>{t('exhibitorSpace')}</span>
           </Link>
+          <Button
+            asChild
+            size="sm"
+            className="bg-md-blue-dark hover:bg-md-blue-deep shrink-0 text-white"
+          >
+            <Link href={{ pathname: '/inscription-partenaire', query: { category: 'partenaire' } }}>
+              <span className="sm:hidden">{t('ctaRegisterShort')}</span>
+              <span className="hidden sm:inline">{t('ctaRegister')}</span>
+            </Link>
+          </Button>
         </div>
       </div>
     </header>

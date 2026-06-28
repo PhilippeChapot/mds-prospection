@@ -25,6 +25,8 @@
     "locale_en": "English",
     "exhibitorSpace": "Espace Partenaire",
     "visitorSpace": "Invitation (Visa)",
+    "ctaRegister": "M'inscrire comme partenaire",
+    "ctaRegisterShort": "S'inscrire",
     "exhibitorSpaceComingSoon": "Espace Partenaire — bientôt disponible",
     "publisher": "Éditeur",
     "legalSection": "Mentions légales",
@@ -38,8 +40,9 @@
   },
   "home": {
     "eyebrow": "Édition 2026",
-    "tagline": "Le NOUVEAU rendez-vous des médias",
-    "subtitle": "Deux journées professionnelles dédiées aux acteurs de la radio, du podcast, de la vidéo et du média numérique.",
+    "tagline": "Le Paris Radio Show s'enrichit avec MediaDays Solutions",
+    "subtitle": "En 2026, le Paris Radio Show fait évoluer son format et rejoint les MediaDays Solutions. MediaDays Solutions est le nouvel espace dédié aux acteurs et aux solutions de la radio, du podcast, de la vidéo et du numérique.",
+    "body": "Un seul rendez-vous, un seul lieu, pour multiplier les rencontres et les opportunités business pour tous les acteurs de la chaîne technologique des médias.",
     "ctaExhibitor": "M'inscrire comme partenaire",
     "ctaVisitor": "M'inscrire comme visiteur",
     "ctaLogin": "Mon espace",
@@ -982,6 +985,7 @@
         "title": "MEDIADAYS PARIS",
         "date": "15 décembre 2026",
         "venue": "Carrousel du Louvre",
+        "badge": "Édition principale",
         "cta": "Réserver mon stand"
       },
       "bruxelles": {

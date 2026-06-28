@@ -34,19 +34,19 @@ interface Etape {
 
 export const ETAPES: readonly Etape[] = [
   {
-    id: 'marseille',
-    flag: '🇫🇷',
-    image: '/landing/etape-marseille.png',
-    venueParam: 'marseille',
-    cardClass: 'bg-blue-50',
-    buttonClass: 'bg-md-magenta hover:bg-md-magenta-soft text-white',
-  },
-  {
     id: 'paris',
     flag: '🇫🇷',
     image: '/landing/etape-paris.png',
     venueParam: 'paris',
     cardClass: 'bg-pink-50',
+    buttonClass: 'bg-md-magenta hover:bg-md-magenta-soft text-white',
+  },
+  {
+    id: 'marseille',
+    flag: '🇫🇷',
+    image: '/landing/etape-marseille.png',
+    venueParam: 'marseille',
+    cardClass: 'bg-blue-50',
     buttonClass: 'bg-md-magenta hover:bg-md-magenta-soft text-white',
   },
   {
@@ -61,6 +61,7 @@ export const ETAPES: readonly Etape[] = [
 
 export function EtapesSection() {
   const t = useTranslations('landing.etapes');
+  const [featured, ...rest] = ETAPES;
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-16">
@@ -72,12 +73,61 @@ export function EtapesSection() {
           {t('sectionSubtitle')}
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {ETAPES.map((etape) => (
+      {/* Paris — carte vedette (pleine largeur, horizontale sur md+) */}
+      <div className="mb-6">
+        <EtapeCardFeatured etape={featured} />
+      </div>
+      {/* Marseille + Bruxelles — sous-cartes côte à côte */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        {rest.map((etape) => (
           <EtapeCard key={etape.id} etape={etape} />
         ))}
       </div>
     </section>
+  );
+}
+
+function EtapeCardFeatured({ etape }: { etape: Etape }) {
+  const t = useTranslations(`landing.etapes.${etape.id}`);
+  return (
+    <article
+      className={cn(
+        'flex flex-col overflow-hidden rounded-2xl shadow-md transition hover:shadow-xl md:flex-row',
+        etape.cardClass,
+      )}
+    >
+      <div className="relative h-56 overflow-hidden md:h-auto md:w-2/5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={etape.image} alt={t('title')} className="h-full w-full object-cover" />
+        <div className="absolute top-2 right-3 text-3xl drop-shadow-md" aria-hidden>
+          {etape.flag}
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col justify-center p-8 md:w-3/5">
+        <span className="bg-md-magenta/10 text-md-magenta mb-3 inline-block self-start rounded-full px-3 py-0.5 text-xs font-semibold tracking-wide">
+          📍 {t('badge')}
+        </span>
+        <h3 className="text-md-magenta mb-2 text-xl font-extrabold tracking-wide md:text-2xl">
+          {t('title')}
+        </h3>
+        <div className="text-md-blue-dark mb-1 flex items-center gap-1.5 text-xl font-extrabold md:text-2xl">
+          <Calendar className="size-5 opacity-70" aria-hidden />
+          <span>{t('date')}</span>
+        </div>
+        <div className="text-md-text-muted mb-8 flex items-center gap-1.5 text-sm">
+          <MapPin className="size-3.5 opacity-70" aria-hidden />
+          <span>{t('venue')}</span>
+        </div>
+        <div>
+          <EtapeCta
+            etape={etape}
+            label={t('cta')}
+            ariaLabel={`${t('title')} — ${t('cta')}`}
+            className="md:w-auto md:min-w-48"
+          />
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -117,8 +167,18 @@ function EtapeCard({ etape }: { etape: Etape }) {
   );
 }
 
-function EtapeCta({ etape, label, ariaLabel }: { etape: Etape; label: string; ariaLabel: string }) {
-  const className = cn('w-full', etape.buttonClass);
+function EtapeCta({
+  etape,
+  label,
+  ariaLabel,
+  className: extraClass,
+}: {
+  etape: Etape;
+  label: string;
+  ariaLabel: string;
+  className?: string;
+}) {
+  const className = cn('w-full', etape.buttonClass, extraClass);
   if (etape.venueParam) {
     return (
       <Button asChild className={className}>

@@ -44,6 +44,7 @@ function HomeContent() {
             <p className="mx-auto max-w-2xl text-lg text-pretty text-white/85 md:text-xl">
               {t('subtitle')}
             </p>
+            <p className="mx-auto max-w-2xl text-base text-white/70 md:text-lg">{t('body')}</p>
           </div>
 
           {/* P6.x.4-a-nonies — cards quick-info Marseille/Paris retirees du hero

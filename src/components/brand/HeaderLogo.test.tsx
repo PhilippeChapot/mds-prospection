@@ -21,7 +21,7 @@ describe('HeaderLogo — SPEC §3.31 logo contextuel', () => {
     expect(screen.queryByTestId('header-logo-prs')).not.toBeInTheDocument();
     expect(screen.getByAltText('MediaDays Solutions 2026')).toHaveAttribute(
       'src',
-      '/brand/MDS-LogoBlanc2026.svg',
+      '/brand/MDSLogo_final_blanc_ligne.svg',
     );
   });
 
@@ -43,7 +43,7 @@ describe('HeaderLogo — SPEC §3.31 logo contextuel', () => {
     render(<HeaderLogo category="admin" theme="light" />);
     expect(screen.getByAltText('MediaDays Solutions 2026')).toHaveAttribute(
       'src',
-      '/brand/MDS-LogoBleu2026.svg',
+      '/brand/MDSLogo_final_bleu_ligne.svg',
     );
     expect(screen.getByAltText('Paris Radio Show 2026')).toHaveAttribute(
       'src',

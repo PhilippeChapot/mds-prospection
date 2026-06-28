@@ -62,11 +62,11 @@ vi.mock('@/i18n/navigation', () => {
 });
 
 describe('EtapesSection (P6.x.4-a-octies/nonies)', () => {
-  it('rend les 3 cartes dans l’ordre Marseille → Paris → Bruxelles', () => {
+  it("rend les 3 cartes dans l'ordre Paris → Marseille → Bruxelles (Paris en vedette)", () => {
     renderI18n(<EtapesSection />);
     const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
-    expect(titles).toEqual(['MEDIADAYS MARSEILLE', 'MEDIADAYS PARIS', 'MEDIADAYS BRUXELLES']);
-    expect(ETAPES.map((e) => e.id)).toEqual(['marseille', 'paris', 'bruxelles']);
+    expect(titles).toEqual(['MEDIADAYS PARIS', 'MEDIADAYS MARSEILLE', 'MEDIADAYS BRUXELLES']);
+    expect(ETAPES.map((e) => e.id)).toEqual(['paris', 'marseille', 'bruxelles']);
   });
 
   it('Marseille → CTA Link interne /inscription-partenaire?venue=marseille (FR)', () => {
