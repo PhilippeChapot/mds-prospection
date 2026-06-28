@@ -123,7 +123,7 @@ function FamilyCard({
     <button
       type="button"
       onClick={onClick}
-      className="border-md-border bg-card hover:border-md-magenta/40 group focus-visible:ring-md-magenta/40 flex flex-col rounded-xl border p-4 text-left transition focus:outline-none focus-visible:ring-2"
+      className="group focus-visible:ring-md-magenta/40 flex flex-col rounded-xl border-2 border-[#0D1D6D] bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2"
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <h3 className="text-md-blue-dark line-clamp-2 text-sm font-bold">{name}</h3>

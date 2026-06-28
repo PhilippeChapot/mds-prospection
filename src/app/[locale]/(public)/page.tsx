@@ -94,7 +94,7 @@ function HomeContent() {
       </section>
 
       {/* Visiteurs */}
-      <section className="bg-md-blue-deep/[0.03] py-16">
+      <section className="bg-white py-16">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-10 text-center">
             <p className="text-md-magenta text-xs font-semibold tracking-widest uppercase">
