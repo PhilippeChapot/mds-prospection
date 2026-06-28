@@ -102,11 +102,11 @@ describe('HeaderLogo — nouveau chemin MDSLogo_final_*', () => {
     );
   });
 
-  it('theme=light → MDSLogo_final_bleu_ligne.svg (fond clair)', () => {
+  it('theme=light → MDSLogo_final_bleu_rond.svg (header sticky, fond clair)', () => {
     render(<HeaderLogo category="standard" theme="light" />);
     expect(screen.getByAltText('MediaDays Solutions 2026')).toHaveAttribute(
       'src',
-      '/brand/MDSLogo_final_bleu_ligne.svg',
+      '/brand/MDSLogo_final_bleu_rond.svg',
     );
   });
 });

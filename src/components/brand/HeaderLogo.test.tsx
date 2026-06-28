@@ -39,11 +39,11 @@ describe('HeaderLogo — SPEC §3.31 logo contextuel', () => {
     expect(screen.getByTestId('header-logo-prs')).toBeInTheDocument();
   });
 
-  it('theme="light" -> bascule sur les versions Bleu', () => {
+  it('theme="light" -> MDS utilise la variante Bleu ROND (compact, header sticky)', () => {
     render(<HeaderLogo category="admin" theme="light" />);
     expect(screen.getByAltText('MediaDays Solutions 2026')).toHaveAttribute(
       'src',
-      '/brand/MDSLogo_final_bleu_ligne.svg',
+      '/brand/MDSLogo_final_bleu_rond.svg',
     );
     expect(screen.getByAltText('Paris Radio Show 2026')).toHaveAttribute(
       'src',

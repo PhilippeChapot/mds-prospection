@@ -1,7 +1,9 @@
 /**
  * @vitest-environment jsdom
  *
- * Lot 1 — PublicTopbar : bouton sticky "M'inscrire comme partenaire".
+ * PublicTopbar — header sticky public.
+ * Lot 1 : CTA "M'inscrire" ajouté.
+ * Lot 2 fix : CTA retiré (doublon avec le hero bandeau). Garde-fous mis à jour.
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -55,25 +57,25 @@ function renderTopbar(locale: 'fr' | 'en' = 'fr') {
   );
 }
 
-describe('PublicTopbar — Lot 1 CTA sticky', () => {
-  it('FR — bouton "M\'inscrire comme partenaire" (sm+) et "S\'inscrire" (mobile) présents', () => {
+describe('PublicTopbar', () => {
+  it('contient le logo + locale switcher + liens espace partenaire/visiteur', () => {
     renderTopbar('fr');
-    expect(screen.getByText("M'inscrire comme partenaire")).toBeInTheDocument();
-    expect(screen.getByText("S'inscrire")).toBeInTheDocument();
+    expect(screen.getByTestId('header-logo')).toBeInTheDocument();
+    expect(screen.getByTestId('locale-switcher')).toBeInTheDocument();
+    expect(screen.getByText('Invitation (Visa)')).toBeInTheDocument();
+    expect(screen.getByText('Espace Partenaire')).toBeInTheDocument();
   });
 
-  it('FR — lien du bouton CTA pointe vers /inscription-partenaire?category=partenaire', () => {
+  it('Lot 2 fix — pas de lien vers /inscription-partenaire (CTA déplacé dans le bandeau)', () => {
     renderTopbar('fr');
-    const link = screen
-      .getAllByRole('link')
-      .find((a) => a.getAttribute('href')?.includes('inscription-partenaire'));
-    expect(link).toBeDefined();
-    expect(link!.getAttribute('href')).toBe('/inscription-partenaire?category=partenaire');
+    const links = screen.getAllByRole('link');
+    const ctaLink = links.find((a) => a.getAttribute('href')?.includes('inscription-partenaire'));
+    expect(ctaLink).toBeUndefined();
   });
 
-  it('EN — bouton traduit "Register as a partner" présent', () => {
+  it('EN — liens traduits présents', () => {
     renderTopbar('en');
-    expect(screen.getByText('Register as a partner')).toBeInTheDocument();
-    expect(screen.getByText('Register')).toBeInTheDocument();
+    expect(screen.getByText('Invitation (Visa)')).toBeInTheDocument();
+    expect(screen.getByText('Partner area')).toBeInTheDocument();
   });
 });

@@ -29,7 +29,7 @@ function logoSrc(brand: 'MDS' | 'PRS', theme: LogoTheme) {
   if (brand === 'MDS') {
     return theme === 'dark'
       ? '/brand/MDSLogo_final_blanc_ligne.svg'
-      : '/brand/MDSLogo_final_bleu_ligne.svg';
+      : '/brand/MDSLogo_final_bleu_rond.svg';
   }
   const variant = theme === 'dark' ? 'Blanc' : 'Bleu';
   return `/brand/PRS-Logo${variant}2026.svg`;

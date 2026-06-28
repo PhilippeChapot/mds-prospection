@@ -24,7 +24,7 @@ export function HeroBandeau() {
   return (
     <section
       data-testid="hero-bandeau"
-      className="relative w-full overflow-hidden"
+      className="relative w-full overflow-hidden bg-gradient-to-br from-[#0D1D6D] to-[#1A2A8A]"
       style={{
         backgroundImage: "url('/brand/HEADER_MD_SOLUTIONS.png')",
         backgroundSize: 'cover',
