@@ -10,6 +10,7 @@ import { VisitorFamiliesExplorer } from '@/components/landing/VisitorFamiliesExp
 import { InstitutionnelEcoleFormProvider } from '@/components/landing/institutionnel-ecole-form-context';
 import { CanvaEmbed } from '@/components/landing/CanvaEmbed';
 import { EtapesSection } from '@/components/landing/EtapesSection';
+import { HeroBandeau } from '@/components/landing/HeroBandeau';
 
 export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
@@ -24,7 +25,10 @@ function HomeContent() {
 
   return (
     <InstitutionnelEcoleFormProvider>
-      {/* Hero */}
+      {/* Lot 2 — Hero bandeau immersif : fond HEADER_MD_SOLUTIONS.png + 2 logos ronds */}
+      <HeroBandeau />
+
+      {/* Hero texte */}
       <section
         className="relative overflow-hidden px-6 py-20 text-white sm:py-28"
         style={{
