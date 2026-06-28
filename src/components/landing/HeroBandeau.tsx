@@ -32,22 +32,22 @@ export function HeroBandeau() {
       }}
       aria-label="MediaDays Solutions × Paris Radio Show 2026"
     >
-      <div className="flex min-h-[200px] flex-col items-center justify-center gap-6 px-4 py-10 md:min-h-[280px] md:py-14">
+      <div className="flex min-h-[280px] flex-col items-center justify-center gap-8 px-4 py-12 md:min-h-[400px] md:py-16 lg:min-h-[480px]">
         {/* 2 logos ronds blancs côte à côte */}
-        <div className="flex items-center gap-8 md:gap-14">
+        <div className="flex items-center gap-10 md:gap-14 lg:gap-16">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/brand/PRS-LogoBlanc2026.svg"
             alt="Paris Radio Show 2026"
             data-testid="hero-bandeau-logo-prs"
-            className="h-[80px] w-auto md:h-[130px]"
+            className="h-[140px] w-[140px] md:h-[200px] md:w-[200px] lg:h-[240px] lg:w-[240px]"
           />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/brand/MDSLogo_final_blanc_rond.svg"
             alt="MediaDays Solutions 2026"
             data-testid="hero-bandeau-logo-mds"
-            className="h-[80px] w-auto md:h-[130px]"
+            className="h-[140px] w-[140px] md:h-[200px] md:w-[200px] lg:h-[240px] lg:w-[240px]"
           />
         </div>
 
@@ -55,11 +55,11 @@ export function HeroBandeau() {
         <Button
           asChild
           size="lg"
-          className="bg-md-magenta hover:bg-md-magenta-soft rounded-full px-8 text-white shadow-lg"
+          className="bg-md-magenta hover:bg-md-magenta-soft rounded-full px-8 text-lg text-white shadow-lg"
         >
           <Link href={{ pathname: '/inscription-partenaire', query: { category: 'partenaire' } }}>
             {t('ctaRegister')}
-            <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+            <ArrowRight className="ml-2 h-5 w-5" aria-hidden />
           </Link>
         </Button>
       </div>
