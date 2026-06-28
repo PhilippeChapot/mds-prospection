@@ -1043,6 +1043,14 @@
       "subtitle": "La présentation complète de l'événement.",
       "iframeTitle": "Présentation MediaDays Solutions"
     },
+    "deckContact": {
+      "sectionTitle": "En savoir plus sur MediaDays Solutions",
+      "deckTitle": "Télécharger le Deck",
+      "deckDescription": "Découvrez la présentation complète de l'événement MediaDays Solutions.",
+      "deckButton": "Télécharger le Deck",
+      "contactTitle": "Contact organisateur",
+      "contactRole": "Coordinateur des MediaDays Solutions et du Paris Radio Show"
+    },
     "poles": {
       "REGIES_RETAIL_MEDIA": {
         "name": "RÉGIES & RETAIL MEDIA",

@@ -1,53 +1,68 @@
 /**
  * @vitest-environment jsdom
  *
- * P6.x.4-a — sanity test embed Canva.
- * P6.x.4-a-quinquies — URL Canva différenciée par locale.
+ * Lot 5 — Regression guard : l'embed iframe Canva a été supprimé.
+ * DeckAndContactSection remplace CanvaEmbed depuis le Lot 5 Havas.
+ *
+ * Tests DeckAndContactSection :
+ *   1. iframe Canva ABSENT du DOM (régression)
+ *   2. Section title "En savoir plus sur MediaDays Solutions" (FR)
+ *   3. Bouton Deck FR → href canva.link/29m0ohjwcpmo15b
+ *   4. Bouton Deck EN → href canva.link/c5uqrizp8gyd4v2
+ *   5. Carte contact : Philippe Chapot + mailto
+ *   6. Section : grid md:grid-cols-2 (responsive)
+ *   7. EN : section title + deckButton traduits
  */
 
 import { describe, it, expect } from 'vitest';
-import { CanvaEmbed, CANVA_URLS } from './CanvaEmbed';
+import { screen } from '@testing-library/react';
+import { DeckAndContactSection } from './DeckAndContactSection';
 import { renderI18n } from './__test-helpers__/i18n-render';
 
-describe('CanvaEmbed (P6.x.4-a / quinquies)', () => {
-  it('iframe lazy-loaded, allow=fullscreen', () => {
-    const { container } = renderI18n(<CanvaEmbed />);
-    const iframe = container.querySelector('iframe');
-    expect(iframe).toBeTruthy();
-    expect(iframe?.getAttribute('loading')).toBe('lazy');
-    expect(iframe?.getAttribute('allow')).toBe('fullscreen');
+describe('DeckAndContactSection (Lot 5 — remplace CanvaEmbed)', () => {
+  it('iframe Canva ABSENT du DOM (regression guard)', () => {
+    const { container } = renderI18n(<DeckAndContactSection />);
+    expect(container.querySelector('iframe')).toBeNull();
   });
 
-  it('P6.x.4-a-quinquies — locale=fr → URL Canva FR (DAHJ3nuKMro)', () => {
-    const { container } = renderI18n(<CanvaEmbed />, { locale: 'fr' });
-    const iframe = container.querySelector('iframe');
-    expect(iframe?.getAttribute('src')).toBe(CANVA_URLS.fr);
-    expect(iframe?.getAttribute('src')).toContain('DAHJ3nuKMro');
+  it('FR — titre section "En savoir plus sur MediaDays Solutions"', () => {
+    renderI18n(<DeckAndContactSection />);
+    expect(screen.getByText('En savoir plus sur MediaDays Solutions')).toBeInTheDocument();
   });
 
-  it('P6.x.4-a-quinquies — locale=en → URL Canva EN (DAHJ31nTEq0)', () => {
-    const { container } = renderI18n(<CanvaEmbed />, { locale: 'en' });
-    const iframe = container.querySelector('iframe');
-    expect(iframe?.getAttribute('src')).toBe(CANVA_URLS.en);
-    expect(iframe?.getAttribute('src')).toContain('DAHJ31nTEq0');
+  it('FR — lien Deck pointe vers canva.link/29m0ohjwcpmo15b', () => {
+    renderI18n(<DeckAndContactSection />, { locale: 'fr' });
+    const link = screen.getByTestId('deck-download-link');
+    expect(link.getAttribute('href')).toBe('https://canva.link/29m0ohjwcpmo15b');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
   });
 
-  it('P6.x.4-a-septies — URL EN inclut le token de partage Canva (u0b0MJ1xXEDao5Fg5NOZoQ)', () => {
-    // Sans ce token, Canva renvoie une page d'erreur "design not found" dans
-    // l'iframe (cf. regression P6.x.4-a-septies — token perdu lors d'un refresh).
-    expect(CANVA_URLS.en).toContain('u0b0MJ1xXEDao5Fg5NOZoQ');
-    expect(CANVA_URLS.en).toBe(
-      'https://www.canva.com/design/DAHJ31nTEq0/u0b0MJ1xXEDao5Fg5NOZoQ/view?embed',
-    );
+  it('EN — lien Deck pointe vers canva.link/c5uqrizp8gyd4v2', () => {
+    renderI18n(<DeckAndContactSection />, { locale: 'en' });
+    const link = screen.getByTestId('deck-download-link');
+    expect(link.getAttribute('href')).toBe('https://canva.link/c5uqrizp8gyd4v2');
   });
 
-  it('renders the FR section heading "Découvrir MediaDays en image"', () => {
-    const { getByText } = renderI18n(<CanvaEmbed />, { locale: 'fr' });
-    expect(getByText(/Découvrir MediaDays en image/)).toBeTruthy();
+  it('carte contact : Philippe Chapot + lien mailto', () => {
+    renderI18n(<DeckAndContactSection />);
+    expect(screen.getByText('Philippe Chapot')).toBeInTheDocument();
+    const emailLink = screen.getByTestId('contact-email-link');
+    expect(emailLink.getAttribute('href')).toBe('mailto:philippe@mediadays.solutions');
+    expect(emailLink.textContent).toContain('philippe@mediadays.solutions');
   });
 
-  it('renders the EN section heading "Discover MediaDays in pictures"', () => {
-    const { getByText } = renderI18n(<CanvaEmbed />, { locale: 'en' });
-    expect(getByText(/Discover MediaDays in pictures/)).toBeTruthy();
+  it('section data-testid="deck-contact-section" + grille md:grid-cols-2', () => {
+    const { container } = renderI18n(<DeckAndContactSection />);
+    expect(screen.getByTestId('deck-contact-section')).toBeInTheDocument();
+    const grid = container.querySelector('.grid');
+    expect(grid?.className).toContain('md:grid-cols-2');
+  });
+
+  it('EN — titre "Learn more about MediaDays Solutions" + bouton "Download the Deck"', () => {
+    renderI18n(<DeckAndContactSection />, { locale: 'en' });
+    expect(screen.getByText('Learn more about MediaDays Solutions')).toBeInTheDocument();
+    // deckTitle et deckButton partagent le même libellé EN → plusieurs occurrences
+    expect(screen.getAllByText('Download the Deck').length).toBeGreaterThanOrEqual(1);
   });
 });

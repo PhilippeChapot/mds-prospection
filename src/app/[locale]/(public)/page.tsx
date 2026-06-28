@@ -8,7 +8,7 @@ import { getTaxonomy } from '@/lib/landing/taxonomy';
 import { PolesExplorer } from '@/components/landing/PolesExplorer';
 import { VisitorFamiliesExplorer } from '@/components/landing/VisitorFamiliesExplorer';
 import { InstitutionnelEcoleFormProvider } from '@/components/landing/institutionnel-ecole-form-context';
-import { CanvaEmbed } from '@/components/landing/CanvaEmbed';
+import { DeckAndContactSection } from '@/components/landing/DeckAndContactSection';
 import { EtapesSection } from '@/components/landing/EtapesSection';
 import { HeroBandeau } from '@/components/landing/HeroBandeau';
 
@@ -122,8 +122,8 @@ function HomeContent() {
         </p>
       </section>
 
-      {/* Canva embed */}
-      <CanvaEmbed />
+      {/* Deck + Contact organisateur */}
+      <DeckAndContactSection />
     </InstitutionnelEcoleFormProvider>
   );
 }
