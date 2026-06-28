@@ -22,7 +22,7 @@ let logosCache: { mds: string | null; prs: string | null } | undefined;
 function getLogos(): { mds: string | null; prs: string | null } {
   if (!logosCache) {
     logosCache = {
-      mds: loadLogoDataUri('MDS-LogoBlanc-email-2x.png'),
+      mds: loadLogoDataUri('MDSLogo_final_blanc_ligne.png'),
       prs: loadLogoDataUri('PRS-LogoBlanc-email-2x.png'),
     };
   }

@@ -64,7 +64,7 @@ export async function GET(): Promise<Response> {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
-  const logoMds = `${baseUrl}/brand/MDS-LogoBlanc-badge.png`;
+  const logoMds = `${baseUrl}/brand/MDSLogo_final_blanc_rond.png`;
   const logoPrs = `${baseUrl}/brand/PRS-LogoBlanc-badge.png`;
   const heroImage = `${baseUrl}/landing/affilie-hero.png`;
   const trackingUrl = `mediadays.solutions/?ref=${encodeURIComponent(affiliate.token)}`;

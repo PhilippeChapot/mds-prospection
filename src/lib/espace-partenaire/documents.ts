@@ -89,11 +89,8 @@ export function getCommunicationKit(
 ): CommunicationKit {
   const isPrsExhibitor = category === 'prs_exhibitor';
   return {
-    logoMdsSvgUrl: `${BRAND_BASE}/MDS-LogoBleu2026.svg`,
-    // PNG haute-res couleur non disponible — fallback sur la version
-    // blanche email (160x160 retina) en attendant une vraie version
-    // couleur. A remplacer quand un PNG bleu sera livre.
-    logoMdsPngUrl: `${BRAND_BASE}/MDS-LogoBlanc2026-email.png`,
+    logoMdsSvgUrl: `${BRAND_BASE}/MDSLogo_final_bleu_ligne.svg`,
+    logoMdsPngUrl: `${BRAND_BASE}/MDSLogo_final_bleu_ligne.png`,
     logoPrsSvgUrl: `${BRAND_BASE}/PRS-LogoBleu2026.svg`,
     logoPrsPngUrl: `${BRAND_BASE}/PRS-LogoBlanc2026-email.png`,
     badgeJexposeUrl: process.env.EXHIBITOR_BADGE_URL || null,
@@ -111,7 +108,7 @@ export function getEmailSignatureHtml(locale: 'fr' | 'en', isPrsExhibitor: boole
   // tombe sur l'alt text — acceptable pour MVP.
   const logoUrl = isPrsExhibitor
     ? `${baseUrl}/brand/PRS-LogoBleu2026.svg`
-    : `${baseUrl}/brand/MDS-LogoBleu2026.svg`;
+    : `${baseUrl}/brand/MDSLogo_final_bleu_ligne.svg`;
   const logoAlt = isPrsExhibitor ? 'Paris Radio Show 2026' : 'MediaDays Solutions 2026';
 
   // Tagline + sub-line selon variant (4 combinaisons).

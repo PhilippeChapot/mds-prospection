@@ -45,7 +45,7 @@ describe('getCommunicationKit (P5.x.10)', () => {
 
   it('retourne les URLs logos depuis /brand', () => {
     const kit = getCommunicationKit('fr');
-    expect(kit.logoMdsSvgUrl).toBe('/brand/MDS-LogoBleu2026.svg');
+    expect(kit.logoMdsSvgUrl).toBe('/brand/MDSLogo_final_bleu_ligne.svg');
     expect(kit.logoPrsSvgUrl).toBe('/brand/PRS-LogoBleu2026.svg');
   });
 
@@ -81,7 +81,7 @@ describe('getEmailSignatureHtml — variants PRS/MDS (P5.x.10.bis)', () => {
     expect(html).toContain('Retrouvez-nous au Paris Radio Show / MediaDays Solutions 2026');
     expect(html).toContain('Paris, 15 décembre et/ou Marseille, 10 décembre');
     expect(html).toContain('PRS-LogoBleu2026.svg');
-    expect(html).not.toContain('MDS-LogoBleu2026.svg');
+    expect(html).not.toContain('MDSLogo_final_bleu_ligne.svg');
     expect(html).toContain('alt="Paris Radio Show 2026"');
     // P5.x.10.ter : double lien footer
     expect(html).toContain('Infos partenaires');
@@ -107,7 +107,7 @@ describe('getEmailSignatureHtml — variants PRS/MDS (P5.x.10.bis)', () => {
     const html = getEmailSignatureHtml('fr', false);
     expect(html).toContain('Retrouvez-nous aux MediaDays Solutions 2026');
     expect(html).toContain('Paris et/ou Marseille');
-    expect(html).toContain('MDS-LogoBleu2026.svg');
+    expect(html).toContain('MDSLogo_final_bleu_ligne.svg');
     expect(html).not.toContain('Paris Radio Show');
     expect(html).toContain('alt="MediaDays Solutions 2026"');
     expect(html).toContain('Infos partenaires');
@@ -120,7 +120,7 @@ describe('getEmailSignatureHtml — variants PRS/MDS (P5.x.10.bis)', () => {
     const html = getEmailSignatureHtml('en', false);
     expect(html).toContain('Find us at MediaDays Solutions 2026');
     expect(html).toContain('Paris and/or Marseille');
-    expect(html).toContain('MDS-LogoBleu2026.svg');
+    expect(html).toContain('MDSLogo_final_bleu_ligne.svg');
     expect(html).not.toContain('Paris Radio Show');
     expect(html).toContain('Partner info');
     expect(html).toContain('Visitor info');

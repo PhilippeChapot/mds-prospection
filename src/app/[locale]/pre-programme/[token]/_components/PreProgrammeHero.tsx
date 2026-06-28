@@ -28,7 +28,11 @@ export function PreProgrammeHero({
 
       <div className="mb-8 flex items-center gap-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/MDS-LogoBlanc2026.svg" alt="MediaDays Solutions" className="h-12 w-auto" />
+        <img
+          src="/brand/MDSLogo_final_blanc_ligne.svg"
+          alt="MediaDays Solutions"
+          className="h-12 w-auto"
+        />
         <span className="text-2xl font-light text-white/50">×</span>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

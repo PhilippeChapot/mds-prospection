@@ -87,7 +87,7 @@ function renderFr({ firstName, doiUrl }: DoiTemplateParams): DoiTemplate {
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto;">
                 <tr>
                   <td style="padding: 0 8px; vertical-align:middle;">
-                    <img src="https://mediadays.solutions/brand/MDS-LogoBlanc2026-email.png" alt="MediaDays Solutions" width="40" height="40" style="display:block; width:40px; height:40px; max-width:40px; max-height:40px; border:0;">
+                    <img src="https://mediadays.solutions/brand/MDSLogo_final_blanc_ligne.png" alt="MediaDays Solutions" width="40" height="40" style="display:block; width:40px; height:40px; max-width:40px; max-height:40px; border:0;">
                   </td>
                   <td style="padding: 0 8px; vertical-align:middle; color:rgba(255,255,255,0.4); font-size:24px; font-family:Arial, sans-serif; line-height:1;">|</td>
                   <td style="padding: 0 8px; vertical-align:middle;">
@@ -217,7 +217,7 @@ function renderEn({ firstName, doiUrl }: DoiTemplateParams): DoiTemplate {
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto;">
                 <tr>
                   <td style="padding: 0 8px; vertical-align:middle;">
-                    <img src="https://mediadays.solutions/brand/MDS-LogoBlanc2026-email.png" alt="MediaDays Solutions" width="40" height="40" style="display:block; width:40px; height:40px; max-width:40px; max-height:40px; border:0;">
+                    <img src="https://mediadays.solutions/brand/MDSLogo_final_blanc_ligne.png" alt="MediaDays Solutions" width="40" height="40" style="display:block; width:40px; height:40px; max-width:40px; max-height:40px; border:0;">
                   </td>
                   <td style="padding: 0 8px; vertical-align:middle; color:rgba(255,255,255,0.4); font-size:24px; font-family:Arial, sans-serif; line-height:1;">|</td>
                   <td style="padding: 0 8px; vertical-align:middle;">

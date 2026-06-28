@@ -10,7 +10,7 @@
 
 export function getEventLogos(baseUrl: string): { mds: string; prs: string } {
   return {
-    mds: `${baseUrl}/brand/MDS-LogoBlanc-badge.png`,
+    mds: `${baseUrl}/brand/MDSLogo_final_blanc_rond.png`,
     prs: `${baseUrl}/brand/PRS-LogoBlanc-badge.png`,
   };
 }

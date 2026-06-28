@@ -42,8 +42,16 @@ const PROSPECT_STATUSES = [
 ] as const;
 
 const LOGO_FILES = [
-  { src: '/brand/MDS-LogoBlanc2026.svg', label: 'MDS-LogoBlanc2026.svg', dark: true },
-  { src: '/brand/MDS-LogoBleu2026.svg', label: 'MDS-LogoBleu2026.svg', dark: false },
+  {
+    src: '/brand/MDSLogo_final_blanc_ligne.svg',
+    label: 'MDSLogo_final_blanc_ligne.svg',
+    dark: true,
+  },
+  {
+    src: '/brand/MDSLogo_final_bleu_ligne.svg',
+    label: 'MDSLogo_final_bleu_ligne.svg',
+    dark: false,
+  },
   { src: '/brand/PRS-LogoBlanc2026.svg', label: 'PRS-LogoBlanc2026.svg', dark: true },
   { src: '/brand/PRS-LogoBleu2026.svg', label: 'PRS-LogoBleu2026.svg', dark: false },
 ];

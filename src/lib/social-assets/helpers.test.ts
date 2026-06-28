@@ -37,7 +37,7 @@ describe('social-assets — helpers (P5.x.14)', () => {
   describe('getEventLogos', () => {
     it('genere les URLs MDS + PRS avec baseUrl fourni', () => {
       const logos = getEventLogos('https://example.com');
-      expect(logos.mds).toBe('https://example.com/brand/MDS-LogoBlanc-badge.png');
+      expect(logos.mds).toBe('https://example.com/brand/MDSLogo_final_blanc_rond.png');
       expect(logos.prs).toBe('https://example.com/brand/PRS-LogoBlanc-badge.png');
     });
   });
