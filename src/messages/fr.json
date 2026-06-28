@@ -956,12 +956,12 @@
     "polesSection": {
       "eyebrow": "{poles} pôles · {sectors} sous-secteurs · {partners} partenaires cibles",
       "title": "Êtes-vous concerné par MediaDays ?",
-      "subtitle": "Cliquez sur un pôle pour découvrir les sous-secteurs, partenaires attendus et le bon parcours d’inscription."
+      "subtitle": "Cliquez sur un pôle pour découvrir les sous-secteurs, partenaires attendus et le bon parcours d'inscription."
     },
     "visitorsSection": {
       "eyebrow": "{families} familles · {entities} entités identifiées",
       "title": "Êtes-vous un visiteur cible ?",
-      "subtitle": "MediaDays Solutions s’adresse à 14 grandes familles de visiteurs. Trouvez la vôtre."
+      "subtitle": "MediaDays Solutions s'adresse à 14 grandes familles de visiteurs. Trouvez la vôtre."
     },
     "card": {
       "subSectorsStats": "{count} sous-secteurs · {partners} partenaires cibles",
@@ -970,11 +970,12 @@
       "explore": "Explorer",
       "view": "Voir",
       "mediadays": "MediaDays",
-      "mdSolutions": "MD Solutions"
+      "mdSolutions": "MD Solutions",
+      "separateHallBadge": "Hall séparé"
     },
     "etapes": {
-      "sectionTitle": "Les étapes de l’édition 2026",
-      "sectionSubtitle": "Trois rendez-vous, trois villes, une même ambition : faire grandir l’écosystème des médias professionnels.",
+      "sectionTitle": "Les étapes de l'édition 2026",
+      "sectionSubtitle": "Trois rendez-vous, trois villes, une même ambition : faire grandir l'écosystème des médias professionnels.",
       "marseille": {
         "title": "MEDIADAYS MARSEILLE",
         "date": "10 décembre 2026",
@@ -996,7 +997,7 @@
       }
     },
     "drawer": {
-      "hostingRoom": "Salle d’accueil",
+      "hostingRoom": "Salle d'accueil",
       "stats": "Stats",
       "subSectorsTitle": "Sous-secteurs",
       "examplesTitle": "Exemples",
@@ -1008,7 +1009,7 @@
     },
     "cta": {
       "exhibitMediadaysNet": "Exposer sur mediadays.net",
-      "registerVisitorFree": "S’inscrire comme visiteur (gratuit)",
+      "registerVisitorFree": "S'inscrire comme visiteur (gratuit)",
       "bookMyBooth": "Réserver mon stand",
       "requestInstitPricing": "Demander un tarif Institutionnel",
       "requestSchoolPricing": "Demander un tarif École"
@@ -1018,7 +1019,7 @@
       "titleEcole": "Demander un tarif École",
       "titleBruxelles": "Demander des informations Bruxelles",
       "descriptionInstitutionnel": "Syndicats, fédérations, organismes professionnels : décrivez votre intérêt pour MediaDays Solutions. Notre équipe revient vers vous sous 48h.",
-      "descriptionEcole": "Écoles, formations supérieures, organismes de formation continue : précisez votre projet d’accès. Notre équipe revient vers vous sous 48h.",
+      "descriptionEcole": "Écoles, formations supérieures, organismes de formation continue : précisez votre projet d'accès. Notre équipe revient vers vous sous 48h.",
       "descriptionBruxelles": "MediaDays Bruxelles · 26 novembre 2026 · Mix Brussels. Laissez-nous vos coordonnées : on revient vers vous avec le programme et les modalités sous 48h.",
       "fieldOrgName": "Organisation",
       "fieldFirstName": "Prénom",
@@ -1034,12 +1035,12 @@
       "validationMinLength": "Minimum 2 caractères",
       "validationEmail": "Email invalide",
       "toastSuccess": "Demande envoyée — nous revenons vers vous sous 48h.",
-      "toastErrorFallback": "Échec de l’envoi.",
+      "toastErrorFallback": "Échec de l'envoi.",
       "toastErrorUnknown": "Erreur inconnue."
     },
     "canva": {
       "title": "Découvrir MediaDays en image",
-      "subtitle": "La présentation complète de l’événement.",
+      "subtitle": "La présentation complète de l'événement.",
       "iframeTitle": "Présentation MediaDays Solutions"
     },
     "poles": {
@@ -1050,27 +1051,27 @@
       },
       "AUDIO_RADIO": {
         "name": "AUDIO & RADIO",
-        "description": "Solutions audio vendues aux radios, plateformes et régies audio. Cœur du Paris Radio Show.",
+        "description": "Les solutions audio au service des radios, plateformes et régies — Un pôle historique au cœur du Paris Radio Show",
         "subLabel": "Paris Radio Show"
       },
       "DIFFUSION_INFRA": {
         "name": "DIFFUSION & INFRA",
-        "description": "Cloud, distribution, transport du contenu, opérateurs FM/DAB+/TNT/5G.",
+        "description": "Les solutions pour distribuer, transporter et diffuser les contenus médias — Cloud, réseaux, broadcast, opérateurs FM / DAB+ / TNT / 5G",
         "subLabel": ""
       },
       "VIDEO_CTV": {
         "name": "VIDÉO & CTV",
-        "description": "Distribution, monétisation, analytics vidéo + production vidéo pro.",
+        "description": "Les solutions pour produire, distribuer, analyser et monétiser les contenus vidéo — CTV, plateformes, adtech, analytics et production vidéo professionnelle",
         "subLabel": ""
       },
       "OUTDOOR_DOOH": {
         "name": "OUTDOOR & DOOH",
-        "description": "Tech DOOH, programmatique outdoor, solutions d’affichage. Les régies OOH (JCDecaux, Clear Channel…) sont dans le pôle RÉGIES & RETAIL MEDIA.",
+        "description": "Les solutions technologiques de l'affichage digital et du DOOH — Programmatique, diffusion, technologies d'écrans",
         "subLabel": ""
       },
       "DATA_ADTECH": {
         "name": "DATA & ADTECH",
-        "description": "Adtech, data, mesure, IA marketing, retail media tech. Le cœur business de MediaDays Solutions.",
+        "description": "Les solutions data et publicitaires au cœur de la performance des médias — Adtech, data, mesure, IA marketing et technologies de retail media",
         "subLabel": ""
       }
     },

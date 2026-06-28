@@ -55,7 +55,13 @@ export interface Taxonomy {
 }
 
 export function getTaxonomy(): Taxonomy {
-  return taxonomyJson as Taxonomy;
+  const data = taxonomyJson as Taxonomy;
+  // RÉGIES & RETAIL MEDIA (mediadays_classique) en dernier — hall séparé visuellement
+  const poles = [
+    ...data.poles.filter((p) => p.category !== 'mediadays_classique'),
+    ...data.poles.filter((p) => p.category === 'mediadays_classique'),
+  ];
+  return { ...data, poles };
 }
 
 export function getPoleByCode(code: string): Pole | undefined {

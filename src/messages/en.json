@@ -970,7 +970,8 @@
       "explore": "Explore",
       "view": "View",
       "mediadays": "MediaDays",
-      "mdSolutions": "MD Solutions"
+      "mdSolutions": "MD Solutions",
+      "separateHallBadge": "Separate hall"
     },
     "etapes": {
       "sectionTitle": "The 2026 edition stages",
@@ -1050,27 +1051,27 @@
       },
       "AUDIO_RADIO": {
         "name": "AUDIO & RADIO",
-        "description": "Audio solutions sold to radios, platforms and audio media agencies. The heart of Paris Radio Show.",
+        "description": "Audio solutions for radio stations, platforms and media agencies — A landmark hub at the heart of Paris Radio Show",
         "subLabel": "Paris Radio Show"
       },
       "DIFFUSION_INFRA": {
         "name": "BROADCAST & INFRASTRUCTURE",
-        "description": "Cloud, content distribution & transport, FM/DAB+/DTT/5G operators.",
+        "description": "Solutions for distributing, transporting and broadcasting media content — Cloud, networks, broadcast, FM / DAB+ / DTT / 5G operators",
         "subLabel": ""
       },
       "VIDEO_CTV": {
         "name": "VIDEO & CTV",
-        "description": "Video distribution, monetization, analytics + pro video production.",
+        "description": "Solutions for producing, distributing, analysing and monetising video content — CTV, platforms, adtech, analytics and professional video production",
         "subLabel": ""
       },
       "OUTDOOR_DOOH": {
         "name": "OUTDOOR & DOOH",
-        "description": "DOOH tech, programmatic outdoor, signage solutions. OOH media agencies (JCDecaux, Clear Channel…) belong to the MEDIA AGENCIES & RETAIL MEDIA hub.",
+        "description": "Technology solutions for digital out-of-home and DOOH — Programmatic, broadcast, screen technologies",
         "subLabel": ""
       },
       "DATA_ADTECH": {
         "name": "DATA & ADTECH",
-        "description": "Adtech, data, measurement, marketing AI, retail media tech. The business heart of MediaDays Solutions.",
+        "description": "Data and advertising solutions at the heart of media performance — Adtech, data, measurement, marketing AI and retail media technologies",
         "subLabel": ""
       }
     },

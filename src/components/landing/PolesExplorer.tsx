@@ -16,6 +16,7 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
 import { ArrowRight, ExternalLink, ChevronDown, ChevronUp, X } from 'lucide-react';
 import {
   Sheet,
@@ -75,14 +76,22 @@ function PoleCard({ pole, onClick }: { pole: Pole; onClick: () => void }) {
   const name = tp('name');
   const description = tp('description');
   const subLabel = tp('subLabel');
+  const isSeparateHall = pole.category === 'mediadays_classique';
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group focus:ring-md-magenta/40 relative flex flex-col rounded-2xl border border-black/5 p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2"
-      style={{ background: hexWithAlpha(pole.color, 0.35) }}
+      className={cn(
+        'group focus:ring-md-magenta/40 relative flex flex-col rounded-2xl border-2 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2',
+        isSeparateHall ? 'border-dashed border-[#0D1D6D]/50' : 'border-[#0D1D6D]',
+      )}
     >
+      {isSeparateHall && (
+        <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+          🏛️ {t('card.separateHallBadge')}
+        </span>
+      )}
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <div className="mb-1 text-2xl leading-none">{pole.emoji}</div>

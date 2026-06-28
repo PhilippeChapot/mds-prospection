@@ -43,15 +43,16 @@ describe('Landing — EN locale (P6.x.4-a-ter)', () => {
   it('DIFFUSION & INFRA EN description ne contient PLUS aucune mention concurrent (SATIS)', () => {
     renderI18n(<PolesExplorer poles={tax.poles} />, { locale: 'en' });
     fireEvent.click(screen.getAllByText('BROADCAST & INFRASTRUCTURE')[0].closest('button')!);
-    // EN description should mention DTT/5G operators but never "SATIS" / "competitor"
-    expect(screen.getAllByText(/DTT\/5G operators/).length).toBeGreaterThan(0);
+    // Lot 3 Havas : nouveau wording — "FM / DAB+ / DTT / 5G operators" (spaces autour du /)
+    expect(document.body.textContent).toMatch(/5G operators/);
     expect(document.body.textContent).not.toMatch(/SATIS|competitor/i);
   });
 
   it('VIDEO & CTV EN description ne mentionne PAS SATIS / concurrence', () => {
     renderI18n(<PolesExplorer poles={tax.poles} />, { locale: 'en' });
     fireEvent.click(screen.getAllByText('VIDEO & CTV')[0].closest('button')!);
-    expect(screen.getAllByText(/pro video production/i).length).toBeGreaterThan(0);
+    // Lot 3 Havas : "professional video production" (pas "pro video production")
+    expect(document.body.textContent).toMatch(/professional video production/i);
     expect(document.body.textContent).not.toMatch(/SATIS|competitor/i);
   });
 

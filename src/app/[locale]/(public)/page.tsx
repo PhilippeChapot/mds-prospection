@@ -72,23 +72,25 @@ function HomeContent() {
       <EtapesSection />
 
       {/* Pôles explorer */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="mb-10 text-center">
-          <p className="text-md-magenta text-xs font-semibold tracking-widest uppercase">
-            {tLanding('polesSection.eyebrow', {
-              poles: taxonomy.stats.total_poles,
-              sectors: taxonomy.stats.total_sous_secteurs,
-              partners: taxonomy.stats.total_partenaires_cibles,
-            })}
-          </p>
-          <h2 className="text-md-blue-dark mt-2 text-3xl font-extrabold tracking-tight md:text-4xl">
-            🎯 {tLanding('polesSection.title')}
-          </h2>
-          <p className="text-md-text-muted mx-auto mt-3 max-w-2xl text-base">
-            {tLanding('polesSection.subtitle')}
-          </p>
+      <section className="bg-white py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mb-10 text-center">
+            <p className="text-md-magenta text-xs font-semibold tracking-widest uppercase">
+              {tLanding('polesSection.eyebrow', {
+                poles: taxonomy.stats.total_poles,
+                sectors: taxonomy.stats.total_sous_secteurs,
+                partners: taxonomy.stats.total_partenaires_cibles,
+              })}
+            </p>
+            <h2 className="text-md-blue-dark mt-2 text-3xl font-extrabold tracking-tight md:text-4xl">
+              🎯 {tLanding('polesSection.title')}
+            </h2>
+            <p className="text-md-text-muted mx-auto mt-3 max-w-2xl text-base">
+              {tLanding('polesSection.subtitle')}
+            </p>
+          </div>
+          <PolesExplorer poles={taxonomy.poles} />
         </div>
-        <PolesExplorer poles={taxonomy.poles} />
       </section>
 
       {/* Visiteurs */}
