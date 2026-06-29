@@ -51,8 +51,8 @@ function makeStand(
 }
 
 const SAMPLE: StandWithProspect[] = [
-  makeStand({ number: 'A1', pole_recommended: 'AUDIO_RADIO', taille_m2: 6 }),
-  makeStand({ number: 'B0', pole_recommended: 'DATA_ADTECH', taille_m2: 6 }),
+  makeStand({ number: 'A1', pole_recommended: 'AUDIO_RADIO' }),
+  makeStand({ number: 'B0', pole_recommended: 'DATA_ADTECH' }),
   makeStand({ number: 'E5', pole_recommended: 'DIFFUSION_INFRA' }),
   makeStand({
     number: 'B5',
@@ -66,7 +66,7 @@ const SAMPLE: StandWithProspect[] = [
     status: 'paye',
     prospect_id: 'p-2',
   }),
-  makeStand({ number: 'G0', pole_recommended: 'OUTDOOR_DOOH', taille_m2: 6 }),
+  makeStand({ number: 'G0', pole_recommended: 'OUTDOOR_DOOH' }),
   makeStand({ number: 'H9', pole_recommended: 'VIDEO_CTV' }),
 ];
 
