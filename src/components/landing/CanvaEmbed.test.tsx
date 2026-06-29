@@ -58,10 +58,11 @@ describe('DeckAndContactSection (Lot 5 — remplace CanvaEmbed)', () => {
     expect(link.getAttribute('href')).toBe('https://canva.link/c5uqrizp8gyd4v2');
   });
 
-  it('carte contact : Philippe Chapot + lien mailto', () => {
+  it('carte contact : Philippe Chapot + lien mailto sur un <a> natif (pas <button>)', () => {
     renderI18n(<DeckAndContactSection />);
     expect(screen.getByText('Philippe Chapot')).toBeInTheDocument();
     const emailLink = screen.getByTestId('contact-email-link');
+    expect(emailLink.tagName).toBe('A');
     expect(emailLink.getAttribute('href')).toBe('mailto:philippe@mediadays.solutions');
   });
 

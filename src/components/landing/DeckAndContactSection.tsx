@@ -1,10 +1,4 @@
-/**
- * Lot 5 fix — Redesign : fond bleu PRS marine, placeholder photo Phil (ronde),
- * boutons rose md-magenta, wording "Consultez" (Canva s'ouvre en ligne, pas download).
- *
- * Photo Philippe Chapot N&B : à déposer dans public/brand/team/philippe-chapot-nb.jpg
- * puis activer le <Image> ci-dessous (actuellement placeholder initiales "PC").
- */
+'use client';
 
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
