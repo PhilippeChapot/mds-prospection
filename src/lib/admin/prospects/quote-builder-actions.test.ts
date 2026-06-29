@@ -24,6 +24,8 @@ interface ProspectStub {
   id: string;
   quote_items: unknown;
   promo_reason: string | null;
+  booth_assignment?: string | null;
+  pack_code?: string | null;
   sellsy_devis_id: string | null;
   sellsy_devis_number?: string | null;
   acompte_payment_link_id?: string | null;
@@ -383,6 +385,8 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
         { ...SPONSOR, discount_pct: 10 },
       ],
       promo_reason: 'Tarif Institutionnel UDECAM',
+      booth_assignment: 'F4',
+      pack_code: 'CLASSIC',
       sellsy_devis_id: null,
       company: { id: 'co-1', sellsy_id: null },
       contact: null,
@@ -463,6 +467,7 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
         discount?: { type: 'percent' | 'amount'; value: string };
       }>;
       note?: string;
+      subject?: string;
     };
     // unit_amount = prix catalogue (Sellsy applique la remise et affiche %)
     expect(body.rows[0].unit_amount).toBe('12500.00');
@@ -473,6 +478,24 @@ describe('emitSellsyDevisFromQuoteBuilderAction (P6.x.5-ter)', () => {
     // Note Sellsy : justification libre uniquement (la remise s'affiche
     // dans la colonne native Sellsy, plus de redondance dans la note)
     expect(body.note).toBe('Tarif Institutionnel UDECAM');
+    // Subject auto : préfixe MDS/PRS + stand + pack (nom lisible depuis items)
+    expect(body.subject).toBe(
+      'MediaDays Solutions / Paris Radio Show — Stand F4 — Pack ACCESS Standard',
+    );
+  });
+
+  it('devis — subject fallback si pas de booth ni pack', async () => {
+    state.prospect!.booth_assignment = null;
+    state.prospect!.pack_code = null;
+    state.prospect!.quote_items = [{ ...PACK_STD, discount_pct: 0, category: 'option' }];
+    mockEnv();
+    const { emitSellsyDevisFromQuoteBuilderAction } = await import('./quote-builder-actions');
+    await emitSellsyDevisFromQuoteBuilderAction({
+      prospect_id: '92d51b10-7085-4695-b257-72c61d01917a',
+    });
+    const post = state.sellsyCalls.find((c) => c.method === 'POST' && c.endpoint === '/estimates');
+    const body = JSON.parse(post!.body!) as { subject?: string };
+    expect(body.subject).toBe('MediaDays Solutions / Paris Radio Show');
   });
 
   it('PREMIUM dans items → pas de champ discount (clamp forcé 0%), unit_amount = prix plein', async () => {

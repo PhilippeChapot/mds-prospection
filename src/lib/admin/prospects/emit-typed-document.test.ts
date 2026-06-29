@@ -429,31 +429,31 @@ describe('P5.x.SellsyInvoiceCreationFixes', () => {
     await emitSellsyTypedDocumentAction({ prospect_id: PROSPECT_ID, document_type: 'invoice' });
     const post = state.sellsyCalls.find((c) => c.method === 'POST' && c.endpoint === '/invoices');
     const body = JSON.parse(post!.body!) as { subject?: string };
-    expect(body.subject).toBe('MediaDays Solutions 2026 — Stand F4 — Pack CLASSIC');
+    expect(body.subject).toBe('MediaDays Solutions / Paris Radio Show — Stand F4 — Pack CLASSIC');
   });
 
   it('Fix 2 — buildInvoiceSubject : sans stand → event + pack', async () => {
     mockEnv();
-    const { buildInvoiceSubject } = await import('./invoice-subject');
+    const { buildSellsySubject: buildInvoiceSubject } = await import('@/lib/sellsy/subject');
     expect(
       buildInvoiceSubject({
         packCode: 'PREMIUM',
         boothAssignment: null,
         items: [{ category: 'pack', name: 'Pack PREMIUM' }],
       }),
-    ).toBe('MediaDays Solutions 2026 — Pack PREMIUM');
+    ).toBe('MediaDays Solutions / Paris Radio Show — Pack PREMIUM');
   });
 
   it('Fix 2 — buildInvoiceSubject : fallback pack_code si pas de ligne pack nommée', async () => {
     mockEnv();
-    const { buildInvoiceSubject } = await import('./invoice-subject');
+    const { buildSellsySubject: buildInvoiceSubject } = await import('@/lib/sellsy/subject');
     expect(
       buildInvoiceSubject({
         packCode: 'DUO',
         boothAssignment: 'C2',
         items: [{ category: 'option', name: 'Logo' }],
       }),
-    ).toBe('MediaDays Solutions 2026 — Stand C2 — Pack DUO');
+    ).toBe('MediaDays Solutions / Paris Radio Show — Stand C2 — Pack DUO');
   });
 
   // --- Fix 3 : url stable (public_link.url objet) ---------------------------

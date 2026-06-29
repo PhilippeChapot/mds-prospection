@@ -27,7 +27,7 @@ import { SellsyError } from '@/lib/sellsy/client';
 import { extractSellsyPublicUrl } from '@/lib/sellsy/public-url';
 import { logSellsyCall } from '@/lib/sellsy/sync-logger';
 import { calculateQuoteTotals, clampDiscountForItem, type QuoteItem } from './quote-calc';
-import { buildInvoiceSubject } from './invoice-subject';
+import { buildSellsySubject } from '@/lib/sellsy/subject';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 /**
@@ -157,11 +157,11 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
   if (!parsed.success) return { ok: false, error: 'prospect_id invalide' };
 
   const supabase = getSupabaseServiceClient();
-  const { data: prospect, error: pErr } = await supabase
+  const { data: prospect, error: pErr } = await asAnyDb(supabase)
     .from('prospects')
     .select(
       `id, quote_items, promo_reason, sellsy_devis_id, sellsy_devis_number,
-       acompte_payment_link_id, is_test,
+       acompte_payment_link_id, is_test, pack_code, booth_assignment,
        company:companies!inner(id, name, sellsy_id),
        contact:contacts!primary_contact_id(sellsy_contact_id, email, first_name, language)`,
     )
@@ -225,9 +225,16 @@ export async function emitSellsyDevisFromQuoteBuilderAction(input: {
 
   const contactRow = Array.isArray(prospect.contact) ? prospect.contact[0] : prospect.contact;
 
+  const subject = buildSellsySubject({
+    boothAssignment: (prospect as Record<string, unknown>).booth_assignment as string | null,
+    packCode: (prospect as Record<string, unknown>).pack_code as string | null,
+    items,
+  });
+
   const payload = {
     related: [{ type: 'company' as const, id: Number(sellsyCompanyId) }],
     rows,
+    subject,
     public_link_enabled: true,
     ...(note ? { note } : {}),
     ...(contactRow?.sellsy_contact_id ? { contact_id: Number(contactRow.sellsy_contact_id) } : {}),
@@ -599,7 +606,7 @@ export async function emitSellsyTypedDocumentAction(
 
   // Fix 2 — Objet auto (champ Sellsy V2 `subject`). Évite la colonne Objet
   // vide côté Sellsy (Phil devait la saisir à la main).
-  const subject = buildInvoiceSubject({
+  const subject = buildSellsySubject({
     packCode: (prospect as Record<string, unknown>).pack_code as string | null,
     boothAssignment: (prospect as Record<string, unknown>).booth_assignment as string | null,
     items,
