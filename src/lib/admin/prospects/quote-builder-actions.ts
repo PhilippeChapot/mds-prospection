@@ -28,6 +28,7 @@ import { extractSellsyPublicUrl } from '@/lib/sellsy/public-url';
 import { logSellsyCall } from '@/lib/sellsy/sync-logger';
 import { calculateQuoteTotals, clampDiscountForItem, type QuoteItem } from './quote-calc';
 import { buildSellsySubject } from '@/lib/sellsy/subject';
+import { transferAcompteToInvoice } from '@/lib/sellsy/transfer-acompte';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
 
 /**
@@ -511,7 +512,7 @@ export async function emitSellsyTypedDocumentAction(
     .from('prospects')
     .select(
       `id, quote_items, promo_reason, is_test, billing_contact_id, billing_email_override,
-       pack_code, booth_assignment,
+       pack_code, booth_assignment, acompte_amount_eur,
        sellsy_proforma_id, sellsy_invoice_id,
        company:companies!inner(id, name, sellsy_id),
        contact:contacts!primary_contact_id(sellsy_contact_id)`,
@@ -726,6 +727,27 @@ export async function emitSellsyTypedDocumentAction(
         errorMessage: `Validation facture Sellsy échouée (reste en brouillon): ${validateError}`,
         payload: { sellsy_invoice_id: documentId },
       });
+    }
+  }
+
+  // 7c. Transfert acompte devis → facture (best-effort, non bloquant).
+  //     Si un acompte a été enregistré AVANT l'émission de la facture, il est
+  //     lié au devis côté Sellsy. On ré-attache les paiements à la nouvelle
+  //     facture pour que le restant dû = TTC - acompte.
+  if (document_type === 'invoice') {
+    const acompteAmtEur = (prospect as Record<string, unknown>).acompte_amount_eur as number | null;
+    if (acompteAmtEur && acompteAmtEur > 0) {
+      try {
+        await transferAcompteToInvoice(prospect_id, documentId, asAnyDb(supabase));
+      } catch (err) {
+        console.warn(
+          '%s transfer-acompte-unexpected-error prospect=%s invoice=%d msg=%s',
+          LOG_PREFIX,
+          prospect_id,
+          documentId,
+          err instanceof Error ? err.message : String(err),
+        );
+      }
     }
   }
 

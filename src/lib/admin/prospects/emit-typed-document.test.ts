@@ -17,6 +17,7 @@ interface ProspectStub {
   billing_email_override: string | null;
   pack_code: string | null;
   booth_assignment: string | null;
+  acompte_amount_eur: number | null;
   sellsy_proforma_id: string | null;
   sellsy_invoice_id: string | null;
   company: { id: string; name: string; sellsy_id: number | null };
@@ -31,6 +32,7 @@ interface MockState {
   prospectUpdates: Array<Record<string, unknown>>;
   requestUpdates: Array<Record<string, unknown>>;
   auditInserts: Array<Record<string, unknown>>;
+  auditLogPayments: Array<{ after: Record<string, unknown> }>;
   sellsyCalls: Array<{ endpoint: string; method: string; body?: string }>;
   sellsyResponses: Map<string, unknown>;
 }
@@ -43,6 +45,7 @@ const state: MockState = {
   prospectUpdates: [],
   requestUpdates: [],
   auditInserts: [],
+  auditLogPayments: [],
   sellsyCalls: [],
   sellsyResponses: new Map(),
 };
@@ -70,6 +73,7 @@ function baseProspect(): ProspectStub {
     billing_email_override: null,
     pack_code: 'CLASSIC',
     booth_assignment: 'F4',
+    acompte_amount_eur: null,
     sellsy_proforma_id: null,
     sellsy_invoice_id: null,
     company: { id: 'co-1', name: 'Acme Media', sellsy_id: 9999 },
@@ -149,6 +153,13 @@ function mockEnv() {
             state.auditInserts.push(row);
             return Promise.resolve({ error: null });
           },
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                filter: () => Promise.resolve({ data: state.auditLogPayments, error: null }),
+              }),
+            }),
+          }),
         };
       }
       return {};
@@ -209,6 +220,7 @@ describe('emitSellsyTypedDocumentAction (P5.x.SellsyDocumentsFlow)', () => {
     state.prospectUpdates = [];
     state.requestUpdates = [];
     state.auditInserts = [];
+    state.auditLogPayments = [];
     state.sellsyCalls = [];
     state.sellsyResponses = new Map();
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -361,6 +373,7 @@ describe('P5.x.SellsyInvoiceCreationFixes', () => {
     state.prospectUpdates = [];
     state.requestUpdates = [];
     state.auditInserts = [];
+    state.auditLogPayments = [];
     state.sellsyCalls = [];
     state.sellsyResponses = new Map();
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -454,6 +467,66 @@ describe('P5.x.SellsyInvoiceCreationFixes', () => {
         items: [{ category: 'option', name: 'Logo' }],
       }),
     ).toBe('MediaDays Solutions / Paris Radio Show — Stand C2 — Pack DUO');
+  });
+
+  // --- Fix 4 : transfert acompte devis → facture ---------------------------
+
+  it('Fix 4 — acompte_amount_eur > 0 → POST /invoices/{id}/payments/{paymentId} pour chaque paiement audit_log', async () => {
+    state.prospect!.acompte_amount_eur = 1485;
+    state.auditLogPayments = [
+      { after: { kind: 'manual_payment_recorded', sellsy_payment_id: 4242, amount_ttc: 1485 } },
+    ];
+    seedSellsyOk('invoice', 555);
+    mockEnv();
+    const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
+    const r = await emitSellsyTypedDocumentAction({
+      prospect_id: PROSPECT_ID,
+      document_type: 'invoice',
+    });
+    expect(r.ok).toBe(true);
+    const transferCall = state.sellsyCalls.find(
+      (c) => c.method === 'POST' && c.endpoint === '/invoices/555/payments/4242',
+    );
+    expect(transferCall).toBeDefined();
+    expect(JSON.parse(transferCall!.body!)).toEqual({ amount: 1485 });
+  });
+
+  it('Fix 4 — plusieurs paiements → chacun re-lié à la facture', async () => {
+    state.prospect!.acompte_amount_eur = 2000;
+    state.auditLogPayments = [
+      { after: { kind: 'manual_payment_recorded', sellsy_payment_id: 100, amount_ttc: 1000 } },
+      { after: { kind: 'manual_payment_recorded', sellsy_payment_id: 101, amount_ttc: 1000 } },
+    ];
+    seedSellsyOk('invoice', 555);
+    mockEnv();
+    const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
+    await emitSellsyTypedDocumentAction({
+      prospect_id: PROSPECT_ID,
+      document_type: 'invoice',
+    });
+    const transferCalls = state.sellsyCalls.filter(
+      (c) => c.method === 'POST' && c.endpoint.startsWith('/invoices/555/payments/'),
+    );
+    expect(transferCalls).toHaveLength(2);
+    expect(transferCalls.map((c) => c.endpoint).sort()).toEqual([
+      '/invoices/555/payments/100',
+      '/invoices/555/payments/101',
+    ]);
+  });
+
+  it('Fix 4 — acompte_amount_eur = null → pas de transfert (nouveau prospect sans paiement)', async () => {
+    state.prospect!.acompte_amount_eur = null;
+    seedSellsyOk('invoice', 555);
+    mockEnv();
+    const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
+    await emitSellsyTypedDocumentAction({
+      prospect_id: PROSPECT_ID,
+      document_type: 'invoice',
+    });
+    const transferCalls = state.sellsyCalls.filter(
+      (c) => c.method === 'POST' && c.endpoint.includes('/payments/'),
+    );
+    expect(transferCalls).toHaveLength(0);
   });
 
   // --- Fix 3 : url stable (public_link.url objet) ---------------------------
