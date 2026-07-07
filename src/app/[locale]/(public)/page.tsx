@@ -11,11 +11,20 @@ import { InstitutionnelEcoleFormProvider } from '@/components/landing/institutio
 import { DeckAndContactSection } from '@/components/landing/DeckAndContactSection';
 import { EtapesSection } from '@/components/landing/EtapesSection';
 import { HeroBandeau } from '@/components/landing/HeroBandeau';
+import { LANDING_JSON_LD } from '@/lib/landing/structured-data';
 
 export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <HomeContent />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(LANDING_JSON_LD) }}
+      />
+      <HomeContent />
+    </>
+  );
 }
 
 function HomeContent() {

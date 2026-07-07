@@ -6,7 +6,9 @@ import type { Locale } from 'next-intl';
 import type { SignupCategory } from '@/lib/signup/schema';
 
 export const metadata = {
-  title: 'Inscription',
+  title: 'Devenir partenaire',
+  description:
+    'Inscrivez votre entreprise comme partenaire MediaDays Solutions 2026 — Paris, Marseille, Bruxelles. Radio, podcast, vidéo, adtech, DOOH, retail media.',
 };
 
 type ReboundReason = 'expired' | 'invalid' | 'notfound' | 'error';
