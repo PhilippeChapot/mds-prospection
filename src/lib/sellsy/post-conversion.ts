@@ -34,6 +34,7 @@ import { syncProspectToSellsy } from './sync-prospect';
 import { sellsyFetch } from './client';
 
 const LOG_PREFIX = '[sellsy/post-conversion]';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.mediadays.solutions';
 
 /**
  * Resultat structure de runPostConversion (P5.x.3 S2).
@@ -553,9 +554,13 @@ async function triggerAcomptePaymentLink(input: TriggerAcompteInput): Promise<vo
       return;
     }
 
-    // 4. Email prospect avec lien Sellsy + Payment Link Stripe.
+    // 4. Email prospect avec lien Sellsy + proxy paiement (jamais l'URL
+    //    Stripe brute — cf. incident 404 2026-07-08 : le proxy regenere un
+    //    lien frais a la volee si celui-ci a ete desactive par le cron
+    //    cleanup-payment-links entre-temps).
     const { renderProspectAcomptePaymentLinkTemplate } =
       await import('@/lib/resend/templates/prospect-acompte-paymentlink');
+    const paymentLinkProxyUrl = `${APP_URL}/regler-acompte/${input.prospectId}`;
     const sellsyDocUrl =
       (input.docDetails.publicLinkEnabled && input.docDetails.publicUrl) ||
       input.docDetails.pdfLink ||
@@ -581,7 +586,7 @@ async function triggerAcomptePaymentLink(input: TriggerAcompteInput): Promise<vo
               companyName,
               documentNumber: input.docDetails.number ?? `D-${input.documentId}`,
               sellsyDocumentUrl: sellsyDocUrl,
-              paymentLinkUrl: result.url,
+              paymentLinkUrl: paymentLinkProxyUrl,
               acompteAmount: formatEur(acompteTtc),
               resteDuAmount: formatEur(resteDu),
               autoliquidation,
@@ -596,7 +601,7 @@ async function triggerAcomptePaymentLink(input: TriggerAcompteInput): Promise<vo
         companyName,
         documentNumber: input.docDetails.number ?? `D-${input.documentId}`,
         sellsyDocumentUrl: sellsyDocUrl,
-        paymentLinkUrl: result.url,
+        paymentLinkUrl: paymentLinkProxyUrl,
         acompteAmount: formatEur(acompteTtc),
         resteDuAmount: formatEur(resteDu),
         autoliquidation,

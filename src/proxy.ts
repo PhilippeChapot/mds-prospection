@@ -123,6 +123,11 @@ export const config = {
    *    visiteurs envoyees par les partenaires. URL courte sans locale
    *    pour faire propre dans les emails. Sert le route handler
    *    src/app/i/[companyId]/route.ts directement.)
+   *  - `/regler-acompte/<id>` (proxy de redirection paiement acompte,
+   *    URL courte sans locale dans les emails. Sert le route handler
+   *    src/app/regler-acompte/[prospectId]/route.ts directement — sinon
+   *    next-intl tente de rediriger vers /fr/regler-acompte/... qui
+   *    n'existe pas et 404.)
    *
    * Matchers additionnels pour SCANNER_PATTERNS :
    *  - `.php` URLs (wp-login.php, xmlrpc.php, setup-config.php) que le
@@ -131,7 +136,7 @@ export const config = {
    *    deja capturees par le matcher principal.
    */
   matcher: [
-    '/((?!api|_next|_vercel|auth|brand|video|sentry-test|favicon\\.ico|robots\\.txt|sitemap\\.xml|merci-oui|merci-non|i/|.*\\..*).*)',
+    '/((?!api|_next|_vercel|auth|brand|video|sentry-test|favicon\\.ico|robots\\.txt|sitemap\\.xml|merci-oui|merci-non|i/|regler-acompte/|.*\\..*).*)',
     '/wp-login.php',
     '/wp-admin/install.php',
     '/xmlrpc.php',
