@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { POLE_CODES, type PoleCode } from '@/lib/design-tokens';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
+import { isSuperAdmin } from '@/lib/auth/role-helpers';
 import {
   listContactsPaginated,
   getContactsKpis,
@@ -10,6 +11,7 @@ import {
 } from '@/lib/contacts/admin-queries';
 import { ContactsTable } from './_components/ContactsTable';
 import { ContactsKpisCards } from './_components/ContactsKpisCards';
+import { ExportContactsButton } from './ExportContactsButton';
 import { searchContactsFuzzy } from '@/lib/admin/search/fuzzy-search';
 import { SearchSuggestions } from '@/components/admin/SearchSuggestions';
 
@@ -31,7 +33,7 @@ type SearchParams = Promise<{
 }>;
 
 export default async function AdminContactsPage({ searchParams }: { searchParams: SearchParams }) {
-  await requireAdminProfile();
+  const profile = await requireAdminProfile();
   const params = await searchParams;
 
   const q = params.q?.trim() ?? '';
@@ -90,14 +92,17 @@ export default async function AdminContactsPage({ searchParams }: { searchParams
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-md-blue-dark font-[family-name:var(--font-montserrat)] text-2xl font-extrabold tracking-tight">
-          Contacts · {total}
-        </h1>
-        <p className="text-md-text-muted text-sm">
-          Vue globale des contacts, filtres + recherche. Pour ajouter / modifier un contact, passer
-          par la fiche société.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-md-blue-dark font-[family-name:var(--font-montserrat)] text-2xl font-extrabold tracking-tight">
+            Contacts · {total}
+          </h1>
+          <p className="text-md-text-muted text-sm">
+            Vue globale des contacts, filtres + recherche. Pour ajouter / modifier un contact,
+            passer par la fiche société.
+          </p>
+        </div>
+        {isSuperAdmin(profile.role) && <ExportContactsButton filters={filters} />}
       </div>
 
       <ContactsKpisCards kpis={kpis} />
