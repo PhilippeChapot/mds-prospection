@@ -502,6 +502,22 @@ export async function emitSellsyTypedDocumentAction(
   const { prospect_id, document_type } = parsed.data;
   const po = parsed.data.purchase_order_number?.trim() || null;
 
+  // Incident 2026-07-08 (WinMedia / Florin VELEA-GRUMEZEA) — Sellsy V2 ne
+  // propose AUCUN endpoint de creation de pro-forma (verifie sur la spec
+  // OpenAPI officielle docs.sellsy.com/api/v2 : ni /proformas, ni
+  // /proforma-invoices, ni flag type=proforma sur /estimates ou /invoices —
+  // seul GET/PUT /proforma-invoices/{id}/custom-fields existe, sur une
+  // pro-forma DEJA creee ailleurs). Ce n'est pas un mauvais path a corriger :
+  // Sellsy n'expose pas encore cette capacite via API. On fail-fast avec un
+  // message actionnable plutot que le 404 Sellsy brut.
+  if (document_type === 'proforma') {
+    return {
+      ok: false,
+      error:
+        "Sellsy V2 ne permet pas encore la creation de pro-forma via l'API (aucun endpoint disponible, verifie sur la doc officielle). Cree la pro-forma manuellement dans Sellsy (Ventes → Pro-forma → Nouveau), puis envoie le lien au partenaire.",
+    };
+  }
+
   const supabase = getSupabaseServiceClient();
   const cols = columnsForType(document_type);
 
@@ -525,12 +541,13 @@ export async function emitSellsyTypedDocumentAction(
   }
 
   // 2. Anti-doublon : un seul document de ce type par prospect.
+  //    (document_type est necessairement 'invoice' ici — 'proforma' a deja
+  //    fail-fast plus haut, Sellsy V2 n'exposant aucun endpoint de creation.)
   const existingDocId = (prospect as Record<string, unknown>)[cols.id] as string | null;
   if (existingDocId) {
-    const label = document_type === 'proforma' ? 'pro-forma' : 'facture';
     return {
       ok: false,
-      error: `Une ${label} a déjà été émise (Sellsy #${existingDocId}). Annule-la dans Sellsy avant d'en réémettre une.`,
+      error: `Une facture a déjà été émise (Sellsy #${existingDocId}). Annule-la dans Sellsy avant d'en réémettre une.`,
     };
   }
 

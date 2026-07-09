@@ -81,6 +81,18 @@ export async function createSellsyDocument(
 ): Promise<{ documentId: number; total: number }> {
   console.log('%s start prospect_id=%s type=%s', LOG_PREFIX, prospectId, type);
 
+  // Incident 2026-07-08 (WinMedia) — Sellsy V2 n'expose aucun endpoint de
+  // creation de pro-forma (verifie sur la spec OpenAPI officielle
+  // docs.sellsy.com/api/v2 : ni /proformas, ni /proforma-invoices, ni flag
+  // type=proforma sur /estimates ou /invoices). Fail-fast explicite plutot
+  // que de laisser sellsyFetch renvoyer un 404 brut sur un endpoint qui
+  // n'existera jamais.
+  if (type === 'proforma') {
+    throw new SellsyMappingError(
+      "Sellsy V2 ne permet pas encore la creation de pro-forma via l'API (aucun endpoint disponible). Cree la pro-forma manuellement dans Sellsy.",
+    );
+  }
+
   const supabase = getSupabaseServiceClient();
 
   // 1. Lookup prospect + company.sellsy_id + step2_payload (depuis le signup parent)

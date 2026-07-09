@@ -1,10 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   assembleRows,
+  createSellsyDocument,
   endpointForDocumentType,
   formatAmount,
   paymentPathToDocumentType,
 } from './create-document';
+
+describe('createSellsyDocument (type=proforma)', () => {
+  it("refuse immédiatement — Sellsy V2 n'expose aucun endpoint de création de pro-forma, aucun appel DB/Sellsy", async () => {
+    await expect(createSellsyDocument('any-prospect-id', 'proforma')).rejects.toThrow(
+      /manuellement dans Sellsy/,
+    );
+  });
+});
 
 describe('paymentPathToDocumentType', () => {
   it('maps devis_sepa -> estimate', () => {

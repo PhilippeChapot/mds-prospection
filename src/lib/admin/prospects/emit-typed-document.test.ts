@@ -244,7 +244,7 @@ describe('emitSellsyTypedDocumentAction (P5.x.SellsyDocumentsFlow)', () => {
     expect(state.sellsyCalls).toHaveLength(0);
   });
 
-  it('émet une pro-forma → POST /proformas + colonnes sellsy_proforma_*', async () => {
+  it("pro-forma → refuse immédiatement (Sellsy V2 n'expose aucun endpoint de création), pas d'appel Sellsy", async () => {
     seedSellsyOk('proforma');
     mockEnv();
     const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
@@ -252,14 +252,10 @@ describe('emitSellsyTypedDocumentAction (P5.x.SellsyDocumentsFlow)', () => {
       prospect_id: PROSPECT_ID,
       document_type: 'proforma',
     });
-    expect(r.ok).toBe(true);
-    expect(state.sellsyCalls.some((c) => c.method === 'POST' && c.endpoint === '/proformas')).toBe(
-      true,
-    );
-    const upd = state.prospectUpdates[0];
-    expect(upd.sellsy_proforma_id).toBe('555');
-    expect(upd.sellsy_proforma_number).toBe('PF-2026-001');
-    expect(upd.sellsy_proforma_public_url).toBe('https://sellsy.example/proforma/555');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/manuellement dans Sellsy/);
+    expect(state.sellsyCalls).toHaveLength(0);
+    expect(state.prospectUpdates).toHaveLength(0);
   });
 
   it('émet une facture avec bon de commande → note contient "Bon de commande N°" + PO persisté', async () => {
@@ -317,12 +313,12 @@ describe('emitSellsyTypedDocumentAction (P5.x.SellsyDocumentsFlow)', () => {
   });
 
   it('émission liée à une demande → document_requests passe à approved + sellsy_document_id', async () => {
-    seedSellsyOk('proforma');
+    seedSellsyOk('invoice');
     mockEnv();
     const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
     const r = await emitSellsyTypedDocumentAction({
       prospect_id: PROSPECT_ID,
-      document_type: 'proforma',
+      document_type: 'invoice',
       request_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     });
     expect(r.ok).toBe(true);
@@ -353,7 +349,7 @@ describe('emitSellsyTypedDocumentAction (P5.x.SellsyDocumentsFlow)', () => {
     const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
     const r = await emitSellsyTypedDocumentAction({
       prospect_id: PROSPECT_ID,
-      document_type: 'proforma',
+      document_type: 'invoice',
     });
     expect(r.ok).toBe(false);
     expect(state.sellsyCalls).toHaveLength(0);
@@ -402,13 +398,16 @@ describe('P5.x.SellsyInvoiceCreationFixes', () => {
     expect(validate).toBeDefined();
   });
 
-  it('Fix 1 — pro-forma : PAS de validate (document non-comptable)', async () => {
+  it('pro-forma : aucun appel Sellsy (ni création ni validate) — endpoint indisponible côté Sellsy V2', async () => {
     seedSellsyOk('proforma');
     mockEnv();
     const { emitSellsyTypedDocumentAction } = await import('./quote-builder-actions');
-    await emitSellsyTypedDocumentAction({ prospect_id: PROSPECT_ID, document_type: 'proforma' });
-    const validate = state.sellsyCalls.find((c) => c.endpoint.includes('/validate'));
-    expect(validate).toBeUndefined();
+    const r = await emitSellsyTypedDocumentAction({
+      prospect_id: PROSPECT_ID,
+      document_type: 'proforma',
+    });
+    expect(r.ok).toBe(false);
+    expect(state.sellsyCalls).toHaveLength(0);
   });
 
   it('Fix 1 — validate échoue → ok:false + message + id persisté (anti-doublon)', async () => {
