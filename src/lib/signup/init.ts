@@ -13,6 +13,7 @@ import { signDoiToken, computeDoiExpiresAt } from '@/lib/doi/jwt';
 import { generateShortToken, computeShortTokenExpiresAt } from '@/lib/doi/short-token';
 import { sendTransactionalEmailViaResend } from '@/lib/resend/client';
 import { renderDoiTemplate } from '@/lib/resend/templates/doi';
+import { notifyAdminNewSignup } from '@/lib/signup/notify-admin-new-signup';
 import { verifyVatNumber, EU_COUNTRIES_NON_FR } from '@/lib/vies/verify';
 import freeProviders from 'free-email-domains';
 import disposableProviders from 'disposable-email-domains';
@@ -418,6 +419,21 @@ export async function initSignup(
   } catch (err) {
     console.error('[signup/init] Brevo send failed (signup created, retry possible)', err);
   }
+
+  // Notif admin best-effort — envoyee des l'etape 1, meme si le signup
+  // reste incomplet (Phil veut etre alerte pour relancer). Ne bloque
+  // jamais le retour ok=true.
+  await notifyAdminNewSignup({
+    id: signupId,
+    email: input.email,
+    companyName: input.companyName,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    category: input.category,
+    step2SubmittedAt: null,
+    language: input.locale === 'fr' ? 'FR' : 'EN',
+    createdAt: new Date().toISOString(),
+  });
 
   return { ok: true, signupId };
 }

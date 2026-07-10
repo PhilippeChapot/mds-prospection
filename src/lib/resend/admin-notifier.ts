@@ -26,6 +26,7 @@ const LOG_PREFIX = '[resend/admin-notifier]';
 const FALLBACK_RECIPIENT = 'philippe.chapot@gmail.com';
 
 export type AdminNotificationCategory =
+  | 'admin_signup_recu'
   | 'admin_signup_converti'
   | 'admin_acompte_paye'
   | 'admin_concierge_paye'

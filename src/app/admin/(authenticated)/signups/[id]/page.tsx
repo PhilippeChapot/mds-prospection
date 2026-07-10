@@ -9,6 +9,7 @@ import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { Step2PayloadView } from './Step2PayloadView';
 import { AdminActionsBar } from './AdminActionsBar';
+import { MarkViewedOnMount } from './MarkViewedOnMount';
 import { SignupSelectionRecap } from './SignupSelectionRecap';
 import { getSignupAddonsDetails } from '@/lib/signup/addon-details';
 import { hasAdminAccess } from '@/lib/auth/role-helpers';
@@ -91,6 +92,7 @@ export default async function SignupDetailPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
+      <MarkViewedOnMount signupId={signup.id} />
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

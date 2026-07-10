@@ -7,6 +7,7 @@
  *   - rejectSignup : status='rejected' + reason en notes.
  *   - resendDoi : regenerate JWT + envoi Brevo (pour signups awaiting/expired).
  *   - reclassifySignup : relance Claude Haiku, UPDATE ai_classification.
+ *   - markSignupViewed : marque viewed_by_admin_at (badge sidebar, idempotent).
  *
  * Auth : requireAdminProfile() + check explicite role='admin'.
  *
@@ -15,6 +16,7 @@
  * via SECURITY DEFINER, mais service-role bypass tout = simple et previsible).
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { requireAdminProfile, getActiveSeasonId } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
@@ -638,6 +640,42 @@ export async function reclassifySignup(signupId: string): Promise<ActionResult> 
   }
 
   revalidatePath(`/admin/signups/${signupId}`);
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// markSignupViewed
+// ---------------------------------------------------------------------------
+
+/**
+ * Marque le signup comme vu par un admin (badge sidebar "Inscriptions web").
+ * Appelee cote client au mount de la fiche (cf. MarkViewedOnMount) — jamais
+ * depuis le render du Server Component, sinon le prefetch Next.js d'un
+ * <Link> vers /admin/signups/[id] la marquerait vue avant tout clic reel
+ * (cf. [[feedback_no_destructive_get]]).
+ *
+ * Idempotent : `.is('viewed_by_admin_at', null)` -> no-op si deja vu.
+ *
+ * viewed_by_admin_at (migration 0113) n'est pas encore dans
+ * database.types.ts tant que `pnpm db:types` n'a pas ete relance post-deploy.
+ * Cast local, a retirer une fois regen.
+ */
+export async function markSignupViewed(signupId: string): Promise<ActionResult> {
+  const profile = await requireAdminProfile();
+  if (!hasAdminAccess(profile.role)) {
+    return { success: false, error: 'Réservé aux admins.' };
+  }
+  const supabase = getSupabaseServiceClient() as unknown as SupabaseClient;
+
+  const { error } = await supabase
+    .from('public_signup_attempts')
+    .update({ viewed_by_admin_at: new Date().toISOString() })
+    .eq('id', signupId)
+    .is('viewed_by_admin_at', null);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
   return { success: true };
 }
 

@@ -144,6 +144,63 @@ function renderCasB(p: SignupConvertiParams): AdminNotificationTemplate {
 }
 
 // ============================================================================
+// admin_signup_recu — notif immediate a chaque nouvelle entree signup
+// (etape 1, meme incomplete). Distinct de admin_signup_converti (conversion
+// manuelle admin) : ici on notifie des la soumission du formulaire.
+// ============================================================================
+
+export interface SignupRecuParams {
+  signupUrl: string;
+  email: string;
+  companyName: string | null;
+  contactName: string;
+  category: string;
+  stepCompleted: 1 | 2;
+  language: 'FR' | 'EN';
+  createdAtFormatted: string;
+}
+
+export function renderAdminSignupRecuEmail(p: SignupRecuParams): AdminNotificationTemplate {
+  const subject = `📥 Nouvelle inscription — ${p.companyName ?? p.email}`;
+
+  const html = `
+    <div style="${ADMIN_BASE_STYLES}">
+      <div style="max-width: 540px; margin: 0 auto; background: #fff; border: 1px solid #e0e4ee; border-radius: 12px; padding: 28px;">
+        <h2 style="margin: 0 0 8px; color: #294294;">Nouvelle inscription reçue</h2>
+        <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 14px;">
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Email</td><td style="text-align: right;">${p.email}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Société</td><td style="text-align: right;">${p.companyName ?? '(non renseigné)'}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Nom</td><td style="text-align: right;">${p.contactName || '—'}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Catégorie</td><td style="text-align: right;">${p.category}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Étape complétée</td><td style="text-align: right;">${p.stepCompleted}/2</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Langue</td><td style="text-align: right;">${p.language}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Créé le</td><td style="text-align: right;">${p.createdAtFormatted}</td></tr>
+        </table>
+        <p style="margin: 24px 0 0;">
+          <a href="${p.signupUrl}" style="display: inline-block; padding: 10px 20px; background: #294294; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">Voir dans l'admin</a>
+        </p>
+      </div>
+    </div>
+  `.trim();
+
+  const text = [
+    `Nouvelle inscription recue`,
+    ``,
+    `Email : ${p.email}`,
+    `Societe : ${p.companyName ?? '(non renseigne)'}`,
+    `Nom : ${p.contactName || '—'}`,
+    `Categorie : ${p.category}`,
+    `Etape completee : ${p.stepCompleted}/2`,
+    `Langue : ${p.language}`,
+    `Cree le : ${p.createdAtFormatted}`,
+    ``,
+    `Fiche signup : ${p.signupUrl}`,
+  ].join('\n');
+
+  return { subject, html, text };
+}
+
+// ============================================================================
 // admin_signature_finale (prepare pour M7)
 // ============================================================================
 

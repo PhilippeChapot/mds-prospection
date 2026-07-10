@@ -125,3 +125,52 @@ describe('listSignups (P7.x.1.F-quater regression)', () => {
     expect((SIGNUP_STATUSES as readonly string[]).includes('step2_completed')).toBe(true);
   });
 });
+
+describe('countUnviewedSignups (MDS-Prospection-SignupNotifs+Badge)', () => {
+  const countState: { count: number; filters: string[] } = { count: 0, filters: [] };
+
+  function mockCountEnv() {
+    vi.doMock('@/lib/supabase/server', () => ({
+      createSupabaseServerClient: async () => ({
+        from: () => ({
+          select: () => ({
+            is: (col: string, val: unknown) => {
+              countState.filters.push(`is:${col}=${val}`);
+              return {
+                gte: (col2: string) => {
+                  countState.filters.push(`gte:${col2}`);
+                  return Promise.resolve({ count: countState.count, error: null });
+                },
+              };
+            },
+          }),
+        }),
+      }),
+    }));
+  }
+
+  beforeEach(() => {
+    vi.resetModules();
+    countState.count = 0;
+    countState.filters.length = 0;
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('retourne le count exact renvoye par la query', async () => {
+    mockCountEnv();
+    countState.count = 4;
+    const { countUnviewedSignups } = await import('./queries');
+    const result = await countUnviewedSignups();
+    expect(result).toBe(4);
+    expect(countState.filters).toContain('is:viewed_by_admin_at=null');
+    expect(countState.filters).toContain('gte:created_at');
+  });
+
+  it('count null (aucun match) -> retourne 0', async () => {
+    mockCountEnv();
+    countState.count = null as unknown as number;
+    const { countUnviewedSignups } = await import('./queries');
+    expect(await countUnviewedSignups()).toBe(0);
+  });
+});

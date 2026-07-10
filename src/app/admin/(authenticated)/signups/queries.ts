@@ -1,5 +1,14 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { SIGNUP_STATUSES, type SignupRow, type SignupStatus } from './types';
+
+const UNVIEWED_WINDOW_DAYS = 30;
+
+// viewed_by_admin_at (migration 0113) n'est pas encore dans
+// database.types.ts tant que `pnpm db:types` n'a pas ete relance post-deploy
+// (cf. brief SignupNotifs+Badge). Cast local, a retirer une fois regen.
+const asAnyDb = (c: Awaited<ReturnType<typeof createSupabaseServerClient>>): SupabaseClient =>
+  c as unknown as SupabaseClient;
 
 interface ListSignupsParams {
   q?: string;
@@ -155,4 +164,26 @@ export async function countSignupsByStatus(): Promise<Record<SignupStatus, numbe
     if (init[s] != null) init[s] += 1;
   }
   return init;
+}
+
+/**
+ * Count des signups non vus (badge sidebar "Inscriptions web"), borne aux
+ * `UNVIEWED_WINDOW_DAYS` derniers jours pour ne pas accumuler artificiellement
+ * les tres vieux signups jamais ouverts. RLS admin only -> 0 pour sales.
+ */
+export async function countUnviewedSignups(): Promise<number> {
+  const supabase = await createSupabaseServerClient();
+  const since = new Date(Date.now() - UNVIEWED_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+  const { count, error } = await asAnyDb(supabase)
+    .from('public_signup_attempts')
+    .select('id', { count: 'exact', head: true })
+    .is('viewed_by_admin_at', null)
+    .gte('created_at', since);
+
+  if (error) {
+    console.error('[signups/queries] countUnviewedSignups failed', error);
+    return 0;
+  }
+  return count ?? 0;
 }

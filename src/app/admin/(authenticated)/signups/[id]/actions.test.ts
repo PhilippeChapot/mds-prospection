@@ -220,6 +220,68 @@ describe('convertSignupToProspect (P5.x.ForceConversion)', () => {
   });
 });
 
+describe('markSignupViewed (MDS-Prospection-SignupNotifs+Badge)', () => {
+  const viewedState: { updates: Array<{ patch: Record<string, unknown>; filters: string[] }> } = {
+    updates: [],
+  };
+
+  function mockViewedEnv(role: 'admin' | 'sales' = 'admin') {
+    vi.doMock('@/lib/supabase/auth-helpers', () => ({
+      requireAdminProfile: vi.fn(async () => ({
+        id: PROFILE_ID,
+        email: 'admin@mds.fr',
+        full_name: 'Admin',
+        role,
+      })),
+    }));
+    vi.doMock('@/lib/auth/role-helpers', () => ({
+      hasAdminAccess: vi.fn((r: string) => r !== 'sales'),
+    }));
+    vi.doMock('@/lib/supabase/service', () => ({
+      getSupabaseServiceClient: () => ({
+        from: () => ({
+          update: (patch: Record<string, unknown>) => ({
+            eq: (col: string, val: unknown) => ({
+              is: (col2: string, val2: unknown) => {
+                viewedState.updates.push({
+                  patch,
+                  filters: [`eq:${col}=${val}`, `is:${col2}=${val2}`],
+                });
+                return Promise.resolve({ error: null });
+              },
+            }),
+          }),
+        }),
+      }),
+    }));
+  }
+
+  beforeEach(() => {
+    vi.resetModules();
+    viewedState.updates.length = 0;
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('admin -> UPDATE viewed_by_admin_at avec garde-fou is-null (idempotent)', async () => {
+    mockViewedEnv('admin');
+    const { markSignupViewed } = await import('./actions');
+    const result = await markSignupViewed(SIGNUP_ID);
+    expect(result.success).toBe(true);
+    expect(viewedState.updates).toHaveLength(1);
+    expect(viewedState.updates[0].filters).toContain(`eq:id=${SIGNUP_ID}`);
+    expect(viewedState.updates[0].filters).toContain('is:viewed_by_admin_at=null');
+    expect(viewedState.updates[0].patch).toHaveProperty('viewed_by_admin_at');
+  });
+
+  it('sales -> refuse (pas de UPDATE)', async () => {
+    mockViewedEnv('sales');
+    const { markSignupViewed } = await import('./actions');
+    const result = await markSignupViewed(SIGNUP_ID);
+    expect(result.success).toBe(false);
+    expect(viewedState.updates).toHaveLength(0);
+  });
+});
+
 describe('mapAuditLogToAutoEntry — signup_force_converted (P5.x)', () => {
   it('retourne kind=signup_force_converted + chip orange ⚠️', () => {
     const r = mapAuditLogToAutoEntry({
