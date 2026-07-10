@@ -16,12 +16,15 @@ export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
 function isAuthorized(request: Request): boolean {
+  // Vercel Cron interne (plan Pro envoie x-vercel-cron automatiquement)
+  if (request.headers.get('x-vercel-cron')) return true;
+
+  // Fallback Bearer token (pour tests curl manuels)
   const auth = request.headers.get('authorization');
-  const cronHeader = request.headers.get('x-vercel-cron');
   const expected = process.env.EMAIL_SYNC_CRON_SECRET;
-  if (cronHeader && expected) return true;
-  if (!expected) return false;
-  return auth === `Bearer ${expected}`;
+  if (expected && auth === `Bearer ${expected}`) return true;
+
+  return false;
 }
 
 export async function GET(request: Request) {
