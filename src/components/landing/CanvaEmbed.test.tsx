@@ -10,9 +10,13 @@
  *   3. Bouton FR : label "Consultez le Deck" (pas "Téléchargez")
  *   4. Bouton EN : label "View the Deck" (pas "Download")
  *   5. Href FR/EN corrects
- *   6. Carte contact : Philippe Chapot + mailto + placeholder avatar PC
+ *   6. Carte contact : Philippe Chapot + placeholder avatar PC
  *   7. Boutons CTA : classe bg-md-magenta (rose vif)
  *   8. Section i18n : titre FR + EN traduits
+ *
+ * Landing-ContactPhil-LinkedIn — mailto remplacé par un lien LinkedIn :
+ *   9. Bouton LinkedIn FR/EN : href + target=_blank + rel=noopener noreferrer
+ *  10. Régression : plus aucun mailto: dans le DOM
  */
 
 import { describe, it, expect } from 'vitest';
@@ -58,12 +62,35 @@ describe('DeckAndContactSection (Lot 5 — remplace CanvaEmbed)', () => {
     expect(link.getAttribute('href')).toBe('https://canva.link/c5uqrizp8gyd4v2');
   });
 
-  it('carte contact : Philippe Chapot + lien mailto sur un <a> natif (pas <button>)', () => {
+  it('carte contact : Philippe Chapot + lien LinkedIn sur un <a> natif (pas <button>)', () => {
     renderI18n(<DeckAndContactSection />);
     expect(screen.getByText('Philippe Chapot')).toBeInTheDocument();
-    const emailLink = screen.getByTestId('contact-email-link');
-    expect(emailLink.tagName).toBe('A');
-    expect(emailLink.getAttribute('href')).toBe('mailto:philippe@mediadays.solutions');
+    const linkedInLink = screen.getByTestId('contact-linkedin-link');
+    expect(linkedInLink.tagName).toBe('A');
+    expect(linkedInLink.getAttribute('href')).toBe('https://www.linkedin.com/in/philippechapot/');
+  });
+
+  it('bouton LinkedIn : target=_blank + rel=noopener noreferrer (security)', () => {
+    renderI18n(<DeckAndContactSection />);
+    const linkedInLink = screen.getByTestId('contact-linkedin-link');
+    expect(linkedInLink.getAttribute('target')).toBe('_blank');
+    expect(linkedInLink.getAttribute('rel')).toContain('noopener');
+    expect(linkedInLink.getAttribute('rel')).toContain('noreferrer');
+  });
+
+  it('régression : plus aucun mailto: dans DeckAndContactSection', () => {
+    const { container } = renderI18n(<DeckAndContactSection />);
+    expect(container.innerHTML).not.toContain('mailto:');
+  });
+
+  it('FR — bouton "Me contacter sur LinkedIn"', () => {
+    renderI18n(<DeckAndContactSection />, { locale: 'fr' });
+    expect(screen.getByText('Me contacter sur LinkedIn')).toBeInTheDocument();
+  });
+
+  it('EN — bouton "Reach out on LinkedIn"', () => {
+    renderI18n(<DeckAndContactSection />, { locale: 'en' });
+    expect(screen.getByText('Reach out on LinkedIn')).toBeInTheDocument();
   });
 
   it('photo Philippe Chapot : <img> src="/brand/philippe-chapot-nb.jpg" dans avatar', () => {
@@ -78,9 +105,9 @@ describe('DeckAndContactSection (Lot 5 — remplace CanvaEmbed)', () => {
   it('boutons CTA ont la classe bg-md-magenta (rose vif)', () => {
     renderI18n(<DeckAndContactSection />);
     const deckBtn = screen.getByTestId('deck-download-link');
-    const mailBtn = screen.getByTestId('contact-email-link');
+    const linkedInBtn = screen.getByTestId('contact-linkedin-link');
     expect(deckBtn.className).toContain('bg-md-magenta');
-    expect(mailBtn.className).toContain('bg-md-magenta');
+    expect(linkedInBtn.className).toContain('bg-md-magenta');
   });
 
   it('grille md:grid-cols-2 responsive', () => {

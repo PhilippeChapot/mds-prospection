@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
-import { ExternalLink, Mail } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
+import { LinkedinIcon } from '@/components/icons/LinkedinIcon';
 
 const DECK_URLS = {
   fr: 'https://canva.link/29m0ohjwcpmo15b',
@@ -61,12 +62,14 @@ export function DeckAndContactSection() {
             <p className="mb-6 text-sm text-white/70">{t('contactRole')}</p>
             <div className="mt-auto">
               <a
-                href="mailto:philippe@mediadays.solutions"
-                data-testid="contact-email-link"
+                href="https://www.linkedin.com/in/philippechapot/"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="contact-linkedin-link"
                 className="bg-md-magenta hover:bg-md-magenta-soft inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-sm transition"
               >
-                <Mail className="size-4" aria-hidden />
-                {t('contactEmailButton')}
+                <LinkedinIcon className="size-4" />
+                {t('contactLinkedInButton')}
               </a>
             </div>
           </div>
