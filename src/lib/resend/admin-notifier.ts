@@ -36,7 +36,8 @@ export type AdminNotificationCategory =
   | 'admin_sync_error'
   | 'admin_supplementary_received'
   | 'admin_institutionnel_ecole_request'
-  | 'admin_visitor_message';
+  | 'admin_visitor_message'
+  | 'admin_calendar_webhook_renewal_failed';
 
 export interface AdminNotificationTemplateInput {
   subject: string;

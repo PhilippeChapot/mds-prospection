@@ -81,6 +81,7 @@ export async function registerWebhook(userId: string): Promise<WatchResult> {
       webhook_resource_id: resourceId,
       webhook_token: webhookToken,
       webhook_expires_at: expiration,
+      webhook_last_renewed_at: new Date().toISOString(),
     });
 
     return {

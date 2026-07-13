@@ -359,6 +359,57 @@ export function renderAdminSyncErrorEmail(p: SyncErrorParams): AdminNotification
   return { subject, html, text };
 }
 
+// ============================================================================
+// admin_calendar_webhook_renewal_failed (P14.5 → brief GoogleCalendarWebhookAutoRenew)
+// ============================================================================
+
+export interface CalendarWebhookRenewalFailedParams {
+  settingsUrl: string;
+  googleAccountEmail: string | null;
+  errorMessage: string;
+  webhookExpiresAt: string | null; // ISO, pre-formate a l'appelant si besoin
+}
+
+export function renderCalendarWebhookRenewalFailedEmail(
+  p: CalendarWebhookRenewalFailedParams,
+): AdminNotificationTemplate {
+  const subject = '⚠️ Renouvellement Google Calendar webhook échoué';
+  const account = p.googleAccountEmail ?? '(compte inconnu)';
+  const expires = p.webhookExpiresAt ?? '—';
+
+  const html = `
+    <div style="${ADMIN_BASE_STYLES}">
+      <div style="max-width: 540px; margin: 0 auto; background: #fff; border: 1px solid #e5484d33; border-radius: 12px; padding: 28px;">
+        <h2 style="margin: 0 0 8px; color: #e5484d;">Renouvellement webhook Google Calendar échoué ✗</h2>
+        <p style="margin: 0 0 20px; color: #5c6b85;">Le cron de renouvellement automatique n'a pas pu renouveler le push channel Google Calendar.</p>
+        <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 14px;">
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Compte</td><td style="text-align: right; font-weight: 600;">${account}</td></tr>
+          <tr><td style="padding: 6px 0; color: #5c6b85;">Expiration prévue</td><td style="text-align: right;">${expires}</td></tr>
+        </table>
+        <div style="margin-top: 16px; padding: 12px; background: #f4f6fb; border-radius: 8px; font-family: monospace; font-size: 12px; color: #e5484d; white-space: pre-wrap; word-break: break-word;">${escapeHtml(p.errorMessage)}</div>
+        <p style="margin: 20px 0 0; color: #5c6b85;">Actions recommandées : vérifier la connexion Google, reconnecter si nécessaire (Déconnecter puis Se connecter).</p>
+        <p style="margin: 24px 0 0;">
+          <a href="${p.settingsUrl}" style="display: inline-block; padding: 10px 20px; background: #294294; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">Vérifier la connexion</a>
+        </p>
+      </div>
+    </div>
+  `.trim();
+
+  const text = [
+    `Renouvellement Google Calendar webhook echoue`,
+    ``,
+    `Compte : ${account}`,
+    `Expiration prevue : ${expires}`,
+    `Erreur : ${p.errorMessage}`,
+    ``,
+    `Actions recommandees :`,
+    `1. Verifier votre connexion Google : ${p.settingsUrl}`,
+    `2. Reconnecter si necessaire (Deconnecter puis Se connecter avec Google)`,
+  ].join('\n');
+
+  return { subject, html, text };
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')

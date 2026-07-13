@@ -23,6 +23,7 @@ export interface OAuthTokenRow {
   webhook_resource_id: string | null;
   webhook_token: string | null;
   webhook_expires_at: string | null;
+  webhook_last_renewed_at: string | null;
   sync_token: string | null;
   last_synced_at: string | null;
   last_sync_error: string | null;
