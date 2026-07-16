@@ -90,6 +90,7 @@ function baseProspect(over: Record<string, unknown> = {}) {
     id: PID,
     status: 'signe',
     acompte_amount_eur: null,
+    sellsy_devis_total_ttc: null,
     sellsy_invoice_id: '9001',
     sellsy_proforma_id: null,
     sellsy_devis_id: '8001',
@@ -125,7 +126,8 @@ const baseInput = {
 };
 
 describe('recordManualPaymentAction (P5.x)', () => {
-  it('acompte virement → Sellsy appelé + acompte_amount_eur incrémenté + status=acompte_paye', async () => {
+  it('acompte virement, montant < total devis → Sellsy appelé + acompte_amount_eur incrémenté + status=acompte_paye', async () => {
+    state.prospect = baseProspect({ sellsy_devis_total_ttc: '3000' });
     mockEnv();
     const { recordManualPaymentAction } = await import('./record-payment-action');
     const r = await recordManualPaymentAction({
@@ -142,7 +144,8 @@ describe('recordManualPaymentAction (P5.x)', () => {
     expect(upd.status).toBe('acompte_paye');
   });
 
-  it('solde → status=paye_integral', async () => {
+  it('solde, montant atteint le total devis → status=paye_integral', async () => {
+    state.prospect = baseProspect({ sellsy_devis_total_ttc: '1000' });
     mockEnv();
     const { recordManualPaymentAction } = await import('./record-payment-action');
     const r = await recordManualPaymentAction({
@@ -152,6 +155,49 @@ describe('recordManualPaymentAction (P5.x)', () => {
     });
     expect(r.ok).toBe(true);
     expect(state.prospectUpdates[0].status).toBe('paye_integral');
+  });
+
+  it("dropdown 'acompte' mais montant cumulé atteint le total → status=paye_integral quand même", async () => {
+    // Le statut doit refléter le montant réel, pas le libellé choisi dans le
+    // dropdown : un admin qui sélectionne "acompte" par erreur (ou parce que
+    // c'est le dernier acompte qui solde le devis) ne doit pas laisser le
+    // prospect bloqué en 'acompte_paye'.
+    state.prospect = baseProspect({ sellsy_devis_total_ttc: '1000' });
+    mockEnv();
+    const { recordManualPaymentAction } = await import('./record-payment-action');
+    const r = await recordManualPaymentAction({
+      ...baseInput,
+      payment_type: 'acompte',
+      method: 'virement',
+    });
+    expect(r.ok).toBe(true);
+    expect(state.prospectUpdates[0].status).toBe('paye_integral');
+  });
+
+  it("dropdown 'solde' mais montant cumulé partiel → reste acompte_paye", async () => {
+    state.prospect = baseProspect({ sellsy_devis_total_ttc: '5000' });
+    mockEnv();
+    const { recordManualPaymentAction } = await import('./record-payment-action');
+    const r = await recordManualPaymentAction({
+      ...baseInput,
+      payment_type: 'solde',
+      method: 'virement',
+    });
+    expect(r.ok).toBe(true);
+    expect(state.prospectUpdates[0].status).toBe('acompte_paye');
+  });
+
+  it('devis total TTC inconnu → conservateur, reste acompte_paye même en solde', async () => {
+    state.prospect = baseProspect({ sellsy_devis_total_ttc: null });
+    mockEnv();
+    const { recordManualPaymentAction } = await import('./record-payment-action');
+    const r = await recordManualPaymentAction({
+      ...baseInput,
+      payment_type: 'solde',
+      method: 'virement',
+    });
+    expect(r.ok).toBe(true);
+    expect(state.prospectUpdates[0].status).toBe('acompte_paye');
   });
 
   it('ajustement → ni status ni acompte_amount_eur touchés', async () => {

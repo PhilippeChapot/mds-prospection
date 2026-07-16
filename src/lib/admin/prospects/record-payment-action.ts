@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { requireAdminProfile } from '@/lib/supabase/auth-helpers';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { notifySellsyPaymentReceived } from '@/lib/sellsy/payments';
+import { calculatePaymentStatus } from '@/lib/prospects/calculate-payment-status';
 
 const recordSchema = z.object({
   prospect_id: z.string().uuid(),
@@ -75,7 +76,7 @@ export async function recordManualPaymentAction(
   const { data: prospect, error: pErr } = await supabase
     .from('prospects')
     .select(
-      'id, status, acompte_amount_eur, sellsy_invoice_id, sellsy_proforma_id, sellsy_devis_id',
+      'id, status, acompte_amount_eur, sellsy_devis_total_ttc, sellsy_invoice_id, sellsy_proforma_id, sellsy_devis_id',
     )
     .eq('id', data.prospect_id)
     .maybeSingle();
@@ -153,17 +154,26 @@ export async function recordManualPaymentAction(
 
   // 5. Maj prospect : statut + acompte cumulé. Seulement pour acompte/solde
   //    ET si also_update_status. 'ajustement' n'altère jamais le prospect.
+  //
+  //    Le statut n'est PAS déduit du dropdown 'payment_type' (un admin peut
+  //    sélectionner "acompte" tout en réglant le solde intégral, ou l'inverse) :
+  //    on utilise calculatePaymentStatus() sur le cumul réel vs le TTC du devis,
+  //    exactement comme le fait le webhook Sellsy docslog.paymentadd, pour que
+  //    le statut reflète toujours le montant effectivement versé.
   let statusUpdated = false;
   if (data.payment_type !== 'ajustement' && data.also_update_status) {
-    const target =
-      data.payment_type === 'solde' ? ('paye_integral' as const) : ('acompte_paye' as const);
+    const cumulativePaid = Number(prospect.acompte_amount_eur ?? 0) + data.amount_ttc;
+    const devisTotalTtc = prospect.sellsy_devis_total_ttc
+      ? Number(prospect.sellsy_devis_total_ttc)
+      : null;
+    const target = calculatePaymentStatus(cumulativePaid, devisTotalTtc);
     const advances =
       target === 'paye_integral'
         ? prospect.status !== 'paye_integral'
         : prospect.status !== 'acompte_paye' && prospect.status !== 'paye_integral';
 
     const patch: Record<string, unknown> = {
-      acompte_amount_eur: Number(prospect.acompte_amount_eur ?? 0) + data.amount_ttc,
+      acompte_amount_eur: cumulativePaid,
       acompte_paid_at: new Date(data.paid_at).toISOString(),
       // BUG 3 : marquer l'acompte comme payé (enum acompte_status).
       acompte_status: 'paid',
